@@ -1,0 +1,88 @@
+{
+  "$schema": "https://json-schema.org/draft/2020-12/schema",
+  "$id": "https://saturn-sync.cloud/config.schema.json",
+  "title": "saturn-sync Configuration",
+  "description": "Configuration settings of saturn-sync.",
+  "type": "object",
+  "properties": {
+    "custom": {
+      "description": "Key/value pairs to set custom configuration for tasks. The key/value pairs are passed to each task.",
+      "type": "object",
+      "additionalProperties": {
+        "type": "string"
+      }
+    },
+    "dataDir": {
+      "description": "Path to directory to store files and repository clones.",
+      "type": "string"
+    },
+    "dryRun": {
+      "default": false,
+      "description": "Toggle dry-run mode. No pull requests will be created or merged when enabled.",
+      "type": "boolean"
+    },
+    "logFormat": {
+      "default": "auto",
+      "description": "Format of log messages.",
+      "enum": ["auto", "console", "json"],
+      "type": "string"
+    },
+    "logLevel": {
+      "default": "info",
+      "description": "Log level of the application.",
+      "enum": ["debug", "error", "info", "warn"],
+      "type": "string"
+    },
+    "gitAuthor": {
+      "default": "saturn-sync <bot@saturn-sync.localhost>",
+      "description": "Author to use for git commits. Must conform to RFC5322.",
+      "type": "string"
+    },
+    "gitCloneOptions": {
+      "default": ["--filter", "blob:none"],
+      "description": "Command-line options to pass to `git clone`.",
+      "type": "array"
+    },
+    "gitCommitMessage": {
+      "default": "changes by saturn-sync",
+      "description": "Default commit message to use if a task does not define a custom one.",
+      "type": "string"
+    },
+    "gitLogLevel": {
+      "default": "warn",
+      "description": "Level for logs sent by the git sub-system. These logs can be very verbose and can make it tricky to find logs of other sub-systems.",
+      "enum": ["debug", "error", "info", "warn"],
+      "type": "string"
+    },
+    "gitPath": {
+      "default": "git",
+      "description": "Path to `git` executable. PATH will be searched if not set.",
+      "type": "string"
+    },
+    "githubAddress": {
+      "description": "Address of GitHub server to use.",
+      "type": "string"
+    },
+    "githubCacheDisabled": {
+      "default": false,
+      "description": "If true, disables caching of HTTP responses received from the GitHub API.",
+      "type": "boolean"
+    },
+    "githubToken": {
+      "description": "Token to use for authentication at the GitHub API.",
+      "type": "string"
+    },
+    "gitlabAddress": {
+      "description": "Address of GitLab server to use.",
+      "type": "string"
+    },
+    "gitlabToken": {
+      "description": "Token to use for authentication at the GitLab API.",
+      "type": "string"
+    }
+  },
+  "dependentRequired": {
+    "githubAddress": ["githubToken"],
+    "gitlabAddress": ["gitlabToken"]
+  }
+}
