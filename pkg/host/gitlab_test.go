@@ -636,6 +636,7 @@ func TestGitLabHost_CreateFromName(t *testing.T) {
 
 func TestGitLabHost_ListRepositories(t *testing.T) {
 	defer gock.Off()
+	gock.Observe(gock.DumpRequest)
 	gock.New("http://gitlab.local").
 		Get("/api/v4/projects").
 		MatchParams(map[string]string{
