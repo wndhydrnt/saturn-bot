@@ -641,7 +641,7 @@ func TestGitLabHost_ListRepositories(t *testing.T) {
 		MatchParams(map[string]string{
 			"archived": "false",
 			// Use regexp.QuoteMeta() because gock parses matchers as regular expressions
-			"last_activity_after": regexp.QuoteMeta(time.Unix(0, 0).Format("2006-01-02T15:04:05-07:00")),
+			"last_activity_after": regexp.QuoteMeta(time.Unix(0, 0).Format("2006-01-02T15:04:05Z07:00")),
 			"min_access_level":    "30",
 			"per_page":            "20",
 		}).
