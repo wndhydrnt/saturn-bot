@@ -9,7 +9,6 @@ COPY . .
 FROM base AS builder
 ARG VERSION=dev
 ARG VERSION_HASH
-ARG VERSION_DATETIME
 RUN --mount=type=cache,target=/go/pkg/mod/ \
     make build
 
