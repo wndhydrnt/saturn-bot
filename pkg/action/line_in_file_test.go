@@ -48,10 +48,25 @@ func TestLineInFile_Apply(t *testing.T) {
 			wantFiles: map[string]string{"test.txt": "abc\ndef\n\nghi\njkl\n"},
 		},
 		{
+			name:      "When state=delete and path contains a glob pattern then it deletes the line from each matching file",
+			files:     map[string]string{"test1.txt": testContent, "test2.txt": testContent},
+			input:     input{path: "*.txt", regex: "^ghi$", state: "delete"},
+			wantFiles: map[string]string{"test1.txt": "abc\ndef\n\njkl\n", "test2.txt": "abc\ndef\n\njkl\n"},
+		},
+		{
 			name:      "When state=insert then it adds the line at the end of the file",
 			files:     map[string]string{"test.txt": testContent},
 			input:     input{line: "ttt", path: "test.txt", state: "insert"},
 			wantFiles: map[string]string{"test.txt": "abc\ndef\n\nghi\njkl\nttt\n"},
+		},
+		{
+			name:  "When state=insert and path is a glob pattern then it adds the line at the end of each file",
+			files: map[string]string{"test1.txt": testContent, "test2.txt": testContent},
+			input: input{line: "ttt", path: "*.txt", state: "insert"},
+			wantFiles: map[string]string{
+				"test1.txt": "abc\ndef\n\nghi\njkl\nttt\n",
+				"test2.txt": "abc\ndef\n\nghi\njkl\nttt\n",
+			},
 		},
 		{
 			name:      "When state=insert and insertAt=BOF then it adds the line at the end of the file",
@@ -88,6 +103,12 @@ func TestLineInFile_Apply(t *testing.T) {
 			files:     map[string]string{"test.txt": testContent},
 			input:     input{line: "ttt", path: "test.txt", regex: "def", state: "replace"},
 			wantFiles: map[string]string{"test.txt": "abc\nttt\n\nghi\njkl\n"},
+		},
+		{
+			name:      "When state=replace and path contains a glob pattern and regex matches a line then it replaces the line in each file",
+			files:     map[string]string{"test1.txt": testContent, "test2.txt": testContent},
+			input:     input{line: "ttt", path: "*.txt", regex: "def", state: "replace"},
+			wantFiles: map[string]string{"test1.txt": "abc\nttt\n\nghi\njkl\n", "test2.txt": "abc\nttt\n\nghi\njkl\n"},
 		},
 		{
 			name:      "When state=replace and regex matches multiple lines then it replaces each line",
