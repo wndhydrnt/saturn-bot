@@ -4,12 +4,19 @@ import (
 	_ "embed"
 	"encoding/json"
 	"fmt"
-	"log/slog"
 	"net/mail"
 	"strings"
 
+	"github.com/knadh/koanf/parsers/yaml"
+	"github.com/knadh/koanf/providers/confmap"
+	"github.com/knadh/koanf/providers/env"
+	"github.com/knadh/koanf/providers/file"
+	"github.com/knadh/koanf/v2"
 	"github.com/santhosh-tekuri/jsonschema/v5"
-	"github.com/spf13/viper"
+)
+
+const (
+	envPrefix = "SATURN_SYNC_"
 )
 
 var (
@@ -74,52 +81,80 @@ func Read(cfgFile string) (Config, error) {
 		return Config{}, fmt.Errorf("compile json schema: %w", err)
 	}
 
-	setDefaultsFromJSONSchema(schema)
-	viper.SetEnvPrefix("SATURN_SYNC_")
-	viper.AutomaticEnv()
+	koanfDefaults := createKoanfDefaults(schema)
+	var k = koanf.New("")
+	// Define defaults first
+	if err := k.Load(confmap.Provider(koanfDefaults, ""), nil); err != nil {
+		return Config{}, fmt.Errorf("load configuration defaults: %w", err)
+	}
+
 	if cfgFile != "" {
-		slog.Debug("adding config file", "file", cfgFile)
-		viper.SetConfigFile(cfgFile)
-		err := viper.ReadInConfig()
-		if err != nil {
-			slog.Error("read config file", "err", err, "file", cfgFile)
+		// If file is defined, load configuration from file
+		if err := k.Load(file.Provider(cfgFile), yaml.Parser()); err != nil {
+			return Config{}, fmt.Errorf("load configuration file: %w", err)
 		}
 	}
-	cfg := Config{}
-	err = viper.Unmarshal(&cfg)
+
+	// Load configuration from env vars last. Env vars overwrite previously set configuration.
+	if err := k.Load(env.Provider(envPrefix, ".", createEnvMapper(schema)), nil); err != nil {
+		return Config{}, fmt.Errorf("load configuration from environment: %w", err)
+	}
+
+	var c Config
+	err = k.Unmarshal("", &c)
 	if err != nil {
-		return cfg, fmt.Errorf("unmarshal configuration: %w", err)
+		return Config{}, fmt.Errorf("unmarshal config: %w", err)
 	}
 
-	if cfg.Custom == nil {
-		cfg.Custom = map[string]string{}
+	if c.Custom == nil {
+		c.Custom = map[string]string{}
 	}
 
-	err = schema.Validate(cfg.toValidation())
+	err = schema.Validate(c.toValidation())
 	if err != nil {
-		return cfg, fmt.Errorf("schema validation failed: %w", err)
+		return c, fmt.Errorf("schema validation failed: %w", err)
 	}
 
-	cfg.customMarshaled, err = json.Marshal(cfg.Custom)
+	c.customMarshaled, err = json.Marshal(c.Custom)
 	if err != nil {
-		return cfg, fmt.Errorf("marshal custom configuration into JSON: %w", err)
+		return c, fmt.Errorf("marshal custom configuration into JSON: %w", err)
 	}
 
-	mailAddress, err := mail.ParseAddress(cfg.GitAuthor)
+	mailAddress, err := mail.ParseAddress(c.GitAuthor)
 	if err != nil {
-		return cfg, fmt.Errorf("failed to parse field `gitAuthor`: %w", err)
+		return c, fmt.Errorf("failed to parse field `gitAuthor`: %w", err)
 	}
 
-	cfg.gitUserEmail = mailAddress.Address
-	cfg.gitUserName = mailAddress.Name
+	c.gitUserEmail = mailAddress.Address
+	c.gitUserName = mailAddress.Name
 
-	return cfg, nil
+	return c, nil
 }
 
-func setDefaultsFromJSONSchema(schema *jsonschema.Schema) {
+func createKoanfDefaults(schema *jsonschema.Schema) map[string]interface{} {
+	defaults := map[string]interface{}{}
 	for name, item := range schema.Properties {
 		if item.Default != nil {
-			viper.SetDefault(name, item.Default)
+			defaults[name] = item.Default
 		}
+	}
+
+	return defaults
+}
+
+func createEnvMapper(schema *jsonschema.Schema) func(s string) string {
+	mapping := map[string]string{}
+	for name := range schema.Properties {
+		envKey := strings.ToUpper(fmt.Sprintf("%s%s", envPrefix, name))
+		mapping[envKey] = name
+	}
+
+	return func(s string) string {
+		realKey, ok := mapping[s]
+		if ok {
+			return realKey
+		}
+
+		return s
 	}
 }

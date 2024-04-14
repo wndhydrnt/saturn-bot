@@ -73,6 +73,7 @@
       "type": "string"
     },
     "gitlabAddress": {
+      "default": "https://gitlab.com",
       "description": "Address of GitLab server to use.",
       "type": "string"
     },
@@ -82,7 +83,6 @@
     }
   },
   "dependentRequired": {
-    "githubAddress": ["githubToken"],
-    "gitlabAddress": ["gitlabToken"]
+    "githubAddress": ["githubToken"]
   }
 }
