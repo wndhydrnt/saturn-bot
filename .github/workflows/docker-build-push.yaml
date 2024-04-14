@@ -17,6 +17,7 @@ jobs:
   build:
     name: release
     runs-on: ubuntu-latest
+    if: ${{ github.event.workflow_run.conclusion == 'success' || github.ref_type == 'tag' }}
     permissions:
       contents: read
       packages: write
