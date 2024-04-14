@@ -58,7 +58,7 @@ jobs:
         uses: docker/build-push-action@v5
         with:
           build-args: |
-            "BASE=${{ env.REGISTRY }}/${{ env.IMAGE_NAME }}:${{ github.ref_name }}"
+            "BASE=${{ github.ref_name }}"
           context: .
           file: full.Dockerfile
           platforms: linux/amd64,linux/arm64
