@@ -1,10 +1,10 @@
 # golang:1.22.2-bookworm
 FROM golang@sha256:b03f3ba515751657c75475b20941fef47341fccb3341c3c0b64283ff15d3fb46 as base
 WORKDIR /src
-COPY go.mod go.sum .
+COPY go.mod go.sum ./
 RUN --mount=type=cache,target=/go/pkg/mod/ \
     go mod download -x
-COPY . ./
+COPY . .
 
 FROM base AS builder
 ARG VERSION=dev
