@@ -17,7 +17,7 @@ jobs:
   build:
     name: release
     runs-on: ubuntu-latest
-    if: ${{ github.event.workflow_run.conclusion == 'success' || github.ref_type == 'tag' }}
+    if: ${{ (github.event.workflow_run.conclusion == 'success' && github.ref_name == 'main') || github.ref_type == 'tag' }}
     permissions:
       contents: read
       packages: write
@@ -39,8 +39,10 @@ jobs:
         run: |
           if [[ "${{ github.ref_name }}" == "main" ]]; then
             echo "TAGS=${{ env.REGISTRY }}/${{ env.IMAGE_NAME }}:${{ github.ref_name }}" >> "$GITHUB_OUTPUT"
+            echo "TAGS_FULL=${{ env.REGISTRY }}/${{ env.IMAGE_NAME }}:${{ github.ref_name }}-full" >> "$GITHUB_OUTPUT"
           else
             echo "TAGS=${{ env.REGISTRY }}/${{ env.IMAGE_NAME }}:${{ github.ref_name }},${{ env.REGISTRY }}/${{ env.IMAGE_NAME }}:latest" >> "$GITHUB_OUTPUT"
+            echo "TAGS_FULL=${{ env.REGISTRY }}/${{ env.IMAGE_NAME }}:${{ github.ref_name }}-full,${{ env.REGISTRY }}/${{ env.IMAGE_NAME }}:latest-full" >> "$GITHUB_OUTPUT"
           fi
       - name: Build and push
         uses: docker/build-push-action@v5
@@ -52,3 +54,13 @@ jobs:
           platforms: linux/amd64,linux/arm64
           push: true
           tags: ${{ steps.set-tags.outputs.TAGS }}
+      - name: Build and push full
+        uses: docker/build-push-action@v5
+        with:
+          build-args: |
+            "BASE=${{ env.REGISTRY }}/${{ env.IMAGE_NAME }}:${{ github.ref_name }}"
+          context: .
+          file: full.Dockerfile
+          platforms: linux/amd64,linux/arm64
+          push: true
+          tags: ${{ steps.set-tags.outputs.TAGS_FULL }}
