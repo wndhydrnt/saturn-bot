@@ -75,7 +75,7 @@ func Read(cfgFile string) (Config, error) {
 	}
 
 	setDefaultsFromJSONSchema(schema)
-	viper.SetEnvPrefix("SATURN_")
+	viper.SetEnvPrefix("SATURN_SYNC_")
 	viper.AutomaticEnv()
 	if cfgFile != "" {
 		slog.Debug("adding config file", "file", cfgFile)
