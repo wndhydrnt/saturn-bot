@@ -19,7 +19,7 @@ RUN useradd --create-home --shell /usr/sbin/nologin --uid 1001 saturn-sync && \
     mkdir /home/saturn-sync/data && \
     chown 1001:1001 /home/saturn-sync/data && \
     apt-get update && \
-    apt-get install --no-install-recommends -y git=1:2.39.2-1.1 && \
+    apt-get install --no-install-recommends -y git=1:2.39.2-1.1 ca-certificates=20230311 && \
     apt-get clean && \
     rm -rf /var/lib/apt/lists/*
 COPY --from=builder --chown=1001:1001 /src/saturn-sync /bin/saturn-sync
