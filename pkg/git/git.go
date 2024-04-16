@@ -4,11 +4,13 @@ import (
 	"bytes"
 	"errors"
 	"fmt"
+	"net/url"
 	"os"
 	"os/exec"
 	"path"
 	"strings"
 
+	"github.com/wndhydrnt/saturn-sync/pkg/config"
 	"github.com/wndhydrnt/saturn-sync/pkg/host"
 	"github.com/wndhydrnt/saturn-sync/pkg/log"
 )
@@ -51,22 +53,29 @@ type Git struct {
 	checkoutDir      string
 	dataDir          string
 	defaultCommitMsg string
+	envVars          []string
 	executor         func(*exec.Cmd) error // executor exists to mock calls in unit tests
 	gitPath          string
 	userEmail        string
 	userName         string
 }
 
-func New(cloneOpts []string, dataDir, defaultCommitMsg, gitPath, userEmail, userName string) *Git {
-	return &Git{
-		cloneOpts:        cloneOpts,
-		dataDir:          dataDir,
-		defaultCommitMsg: defaultCommitMsg,
-		executor:         execCmd,
-		gitPath:          gitPath,
-		userEmail:        userEmail,
-		userName:         userName,
+func New(cfg config.Config) (*Git, error) {
+	envVars, err := createGitEnvVars(cfg)
+	if err != nil {
+		return nil, fmt.Errorf("create git auth env vars: %w", err)
 	}
+
+	return &Git{
+		cloneOpts:        cfg.GitCloneOptions,
+		dataDir:          cfg.DataDir,
+		defaultCommitMsg: cfg.GitCommitMessage,
+		envVars:          envVars,
+		executor:         execCmd,
+		gitPath:          cfg.GitPath,
+		userEmail:        cfg.GitUserEmail(),
+		userName:         cfg.GitUserName(),
+	}, nil
 }
 
 func (g *Git) CommitChanges(msg string) error {
@@ -153,6 +162,7 @@ func (g *Git) Prepare(repo host.Repository, retry bool) (string, error) {
 func (g *Git) Execute(arg ...string) (string, string, error) {
 	cmd := exec.Command(g.gitPath, arg...) // #nosec G204 -- git executable is checked and arguments are controlled by saturn-sync
 	cmd.Dir = g.checkoutDir
+	cmd.Env = g.envVars
 	stderr := &bytes.Buffer{}
 	cmd.Stderr = stderr
 	stdout := &bytes.Buffer{}
@@ -401,6 +411,51 @@ func (g *Git) reset(checkoutDir string) error {
 	}
 
 	return nil
+}
+
+// Set up authentication for git via environment variables
+// See https://git-scm.com/docs/git-config#Documentation/git-config.txt-GITCONFIGCOUNT
+func createGitEnvVars(c config.Config) ([]string, error) {
+	count := 0
+	envVars := []string{}
+	if c.GitHubToken != "" {
+		addr := c.GitHubAddress
+		if addr == "" {
+			addr = "https://github.com/"
+		}
+
+		u, err := url.Parse(addr)
+		if err != nil {
+			return nil, fmt.Errorf("parse URL of GitHub: %w", err)
+		}
+
+		envVars = append(envVars, []string{
+			fmt.Sprintf("GIT_CONFIG_KEY_%d=url.%s://%s@%s/.insteadOf", count, u.Scheme, c.GitHubToken, u.Host),
+			fmt.Sprintf("GIT_CONFIG_VALUE_%d=%s", count, addr),
+		}...)
+		count += 1
+	}
+
+	if c.GitLabToken != "" {
+		addr := c.GitLabAddress
+		if addr == "" {
+			addr = "https://gitlab.com/"
+		}
+
+		u, err := url.Parse(addr)
+		if err != nil {
+			return nil, fmt.Errorf("parse URL of GitLab: %w", err)
+		}
+
+		envVars = append(envVars, []string{
+			fmt.Sprintf("GIT_CONFIG_KEY_%d=url.%s://gitlab-ci-token:%s@%s/.insteadOf", count, u.Scheme, c.GitLabToken, u.Host),
+			fmt.Sprintf("GIT_CONFIG_VALUE_%d=%s", count, addr),
+		}...)
+		count += 1
+	}
+
+	envVars = append(envVars, fmt.Sprintf("GIT_CONFIG_COUNT=%d", count))
+	return envVars, nil
 }
 
 func execCmd(cmd *exec.Cmd) error {

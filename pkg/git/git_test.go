@@ -10,6 +10,7 @@ import (
 
 	"github.com/stretchr/testify/assert"
 	"github.com/stretchr/testify/require"
+	"github.com/wndhydrnt/saturn-sync/pkg/config"
 	"github.com/wndhydrnt/saturn-sync/pkg/log"
 	"github.com/wndhydrnt/saturn-sync/pkg/mock"
 	"go.uber.org/mock/gomock"
@@ -419,4 +420,58 @@ func TestGit_UpdateTaskBranch_BranchModified(t *testing.T) {
 	assert.ErrorAs(t, err, &expectedErr)
 	assert.False(t, conflict)
 	assert.True(t, em.finished())
+}
+
+func TestCreateGitEnvVars(t *testing.T) {
+	testCases := []struct {
+		name string
+		in   config.Config
+		want []string
+	}{
+		{
+			name: "GitHub",
+			in: config.Config{
+				GitHubToken: "gh-123",
+			},
+			want: []string{
+				"GIT_CONFIG_KEY_0=url.https://gh-123@github.com/.insteadOf",
+				"GIT_CONFIG_VALUE_0=https://github.com/",
+				"GIT_CONFIG_COUNT=1",
+			},
+		},
+		{
+			name: "GitLab",
+			in: config.Config{
+				GitLabToken: "gl-456",
+			},
+			want: []string{
+				"GIT_CONFIG_KEY_0=url.https://gitlab-ci-token:gl-456@gitlab.com/.insteadOf",
+				"GIT_CONFIG_VALUE_0=https://gitlab.com/",
+				"GIT_CONFIG_COUNT=1",
+			},
+		},
+		{
+			name: "GitHub and GitLab",
+			in: config.Config{
+				GitHubToken: "gh-123",
+				GitLabToken: "gl-456",
+			},
+			want: []string{
+				"GIT_CONFIG_KEY_0=url.https://gh-123@github.com/.insteadOf",
+				"GIT_CONFIG_VALUE_0=https://github.com/",
+				"GIT_CONFIG_KEY_1=url.https://gitlab-ci-token:gl-456@gitlab.com/.insteadOf",
+				"GIT_CONFIG_VALUE_1=https://gitlab.com/",
+				"GIT_CONFIG_COUNT=2",
+			},
+		},
+	}
+
+	for _, tc := range testCases {
+		t.Run(tc.name, func(t *testing.T) {
+			envVars, err := createGitEnvVars(tc.in)
+			require.NoError(t, err)
+
+			assert.ElementsMatch(t, tc.want, envVars)
+		})
+	}
 }

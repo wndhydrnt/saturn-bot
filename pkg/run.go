@@ -171,11 +171,16 @@ func ExecuteRun(cfgFile string, taskFiles []string) error {
 		return err
 	}
 
+	gitClient, err := git.New(cfg)
+	if err != nil {
+		return fmt.Errorf("new git client for run: %w", err)
+	}
+
 	e := &executeRunner{
 		applyTaskFunc: applyTaskToRepository,
 		cache:         cache,
 		dryRun:        cfg.DryRun,
-		git:           git.New(cfg.GitCloneOptions, cfg.DataDir, cfg.GitCommitMessage, cfg.GitPath, cfg.GitUserEmail(), cfg.GitUserName()),
+		git:           gitClient,
 		hosts:         hosts,
 		taskRegistry:  taskRegistry,
 	}
