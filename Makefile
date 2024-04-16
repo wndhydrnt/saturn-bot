@@ -41,3 +41,9 @@ test_cover:
 	go test -coverprofile cover.out ./...
 	go tool cover -html cover.out -o cover.html
 	rm cover.out
+
+docker_build:
+	docker build -t ghcr.io/wndhydrnt/saturn-sync:${VERSION} .
+
+docker_build_full: docker_build
+	docker build --build-arg="BASE=${VERSION}" -t ghcr.io/wndhydrnt/saturn-sync:${VERSION}-full -f full.Dockerfile .
