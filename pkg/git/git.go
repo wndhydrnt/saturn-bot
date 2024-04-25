@@ -60,7 +60,7 @@ type Git struct {
 	userName         string
 }
 
-func New(cfg config.Config) (*Git, error) {
+func New(cfg config.Configuration) (*Git, error) {
 	envVars, err := createGitEnvVars(cfg)
 	if err != nil {
 		return nil, fmt.Errorf("create git auth env vars: %w", err)
@@ -68,7 +68,7 @@ func New(cfg config.Config) (*Git, error) {
 
 	return &Git{
 		cloneOpts:        cfg.GitCloneOptions,
-		dataDir:          cfg.DataDir,
+		dataDir:          *cfg.DataDir,
 		defaultCommitMsg: cfg.GitCommitMessage,
 		envVars:          envVars,
 		executor:         execCmd,
@@ -415,13 +415,15 @@ func (g *Git) reset(checkoutDir string) error {
 
 // Set up authentication for git via environment variables
 // See https://git-scm.com/docs/git-config#Documentation/git-config.txt-GITCONFIGCOUNT
-func createGitEnvVars(c config.Config) ([]string, error) {
+func createGitEnvVars(c config.Configuration) ([]string, error) {
 	count := 0
 	envVars := []string{}
-	if c.GitHubToken != "" {
-		addr := c.GitHubAddress
-		if addr == "" {
+	if c.GithubToken != nil {
+		var addr string
+		if c.GithubAddress == nil {
 			addr = "https://github.com/"
+		} else {
+			addr = *c.GithubAddress
 		}
 
 		u, err := url.Parse(addr)
@@ -430,14 +432,14 @@ func createGitEnvVars(c config.Config) ([]string, error) {
 		}
 
 		envVars = append(envVars, []string{
-			fmt.Sprintf("GIT_CONFIG_KEY_%d=url.%s://%s@%s/.insteadOf", count, u.Scheme, c.GitHubToken, u.Host),
+			fmt.Sprintf("GIT_CONFIG_KEY_%d=url.%s://%s@%s/.insteadOf", count, u.Scheme, *c.GithubToken, u.Host),
 			fmt.Sprintf("GIT_CONFIG_VALUE_%d=%s", count, addr),
 		}...)
 		count += 1
 	}
 
-	if c.GitLabToken != "" {
-		addr := c.GitLabAddress
+	if c.GitlabToken != nil {
+		addr := c.GitlabAddress
 		if addr == "" {
 			addr = "https://gitlab.com/"
 		}
@@ -448,7 +450,7 @@ func createGitEnvVars(c config.Config) ([]string, error) {
 		}
 
 		envVars = append(envVars, []string{
-			fmt.Sprintf("GIT_CONFIG_KEY_%d=url.%s://gitlab-ci-token:%s@%s/.insteadOf", count, u.Scheme, c.GitLabToken, u.Host),
+			fmt.Sprintf("GIT_CONFIG_KEY_%d=url.%s://gitlab-ci-token:%s@%s/.insteadOf", count, u.Scheme, *c.GitlabToken, u.Host),
 			fmt.Sprintf("GIT_CONFIG_VALUE_%d=%s", count, addr),
 		}...)
 		count += 1

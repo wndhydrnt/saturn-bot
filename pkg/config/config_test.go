@@ -1,31 +1,41 @@
 package config
 
 import (
+	"fmt"
 	"os"
+	"path/filepath"
 	"testing"
 
 	"github.com/stretchr/testify/require"
 	"gopkg.in/yaml.v3"
 )
 
+func defaultDataDir() *string {
+	homeDir, err := os.UserHomeDir()
+	if err != nil {
+		panic(fmt.Errorf("defaultDataDir: %w", err))
+	}
+
+	dir := filepath.Join(homeDir, ".saturn-sync", "data")
+	return &dir
+}
+
 func TestReadConfig(t *testing.T) {
 	testCases := []struct {
 		name string
-		in   Config
-		out  Config
+		in   Configuration
+		out  Configuration
 	}{
 		{
 			name: "default and required values",
-			in:   Config{},
-			out: Config{
+			in:   Configuration{},
+			out: Configuration{
 				Custom:           map[string]string{},
-				customMarshaled:  []byte("{}"),
+				DataDir:          defaultDataDir(),
 				GitAuthor:        "saturn-sync <bot@saturn-sync.localhost>",
-				gitUserEmail:     "bot@saturn-sync.localhost",
-				gitUserName:      "saturn-sync",
 				GitCloneOptions:  []string{"--filter", "blob:none"},
 				GitCommitMessage: "changes by saturn-sync",
-				GitLabAddress:    "https://gitlab.com",
+				GitlabAddress:    "https://gitlab.com",
 				GitLogLevel:      "warn",
 				GitPath:          "git",
 				LogFormat:        "auto",
@@ -34,18 +44,16 @@ func TestReadConfig(t *testing.T) {
 		},
 		{
 			name: "keys in custom configuration keep their casing",
-			in: Config{
+			in: Configuration{
 				Custom: map[string]string{"customKey": "customValue"},
 			},
-			out: Config{
+			out: Configuration{
 				Custom:           map[string]string{"customKey": "customValue"},
-				customMarshaled:  []byte(`{"customKey":"customValue"}`),
+				DataDir:          defaultDataDir(),
 				GitAuthor:        "saturn-sync <bot@saturn-sync.localhost>",
-				gitUserEmail:     "bot@saturn-sync.localhost",
-				gitUserName:      "saturn-sync",
 				GitCloneOptions:  []string{"--filter", "blob:none"},
 				GitCommitMessage: "changes by saturn-sync",
-				GitLabAddress:    "https://gitlab.com",
+				GitlabAddress:    "https://gitlab.com",
 				GitLogLevel:      "warn",
 				GitPath:          "git",
 				LogFormat:        "auto",

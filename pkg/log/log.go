@@ -11,6 +11,7 @@ import (
 	"github.com/hashicorp/go-hclog"
 	"github.com/lmittmann/tint"
 	"github.com/mattn/go-isatty"
+	"github.com/wndhydrnt/saturn-sync/pkg/config"
 )
 
 var (
@@ -133,19 +134,19 @@ func mapHclogToSlogLevel(in hclog.Level) slog.Level {
 	return slog.LevelInfo
 }
 
-func InitLog(format string, level string, levelGit string) {
-	lvl := logStringToLevel(level)
+func InitLog(format config.ConfigurationLogFormat, level config.ConfigurationLogLevel, levelGit config.ConfigurationGitLogLevel) {
+	lvl := logStringToLevel(string(level))
 	w := os.Stderr
 	isTty := isatty.IsTerminal(w.Fd())
-	handler := newHandler(format, isTty, lvl, w)
+	handler := newHandler(string(format), isTty, lvl, w)
 	logger := slog.New(handler)
 	slog.SetDefault(logger)
 	defaultHclogAdapter.level = lvl
 	defaultHclogAdapter.levelHclog = hclog.Info
 	defaultHclogAdapter.logger = logger
 	defaultHclogAdapter.name = "plugin"
-	lvlGit := logStringToLevel(levelGit)
-	handlerGit := newHandler(format, isTty, lvlGit, w)
+	lvlGit := logStringToLevel(string(levelGit))
+	handlerGit := newHandler(string(format), isTty, lvlGit, w)
 	gitLogger = slog.New(handlerGit)
 }
 

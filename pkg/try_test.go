@@ -22,7 +22,7 @@ func TestTryRunner_Run_FilesModified(t *testing.T) {
 	repoMock.EXPECT().FullName().Return("git.local/unit/test")
 	hostMock := mock.NewMockHost(ctrl)
 	hostMock.EXPECT().CreateFromName("git.local/unit/test").Return(repoMock, nil)
-	registry := task.NewRegistry([]byte{})
+	registry := task.NewRegistry()
 	gitcMock := mock.NewMockGitClient(ctrl)
 	gitcMock.EXPECT().Prepare(repoMock, false).Return("/checkout", nil)
 	gitcMock.EXPECT().UpdateTaskBranch("saturn-sync--unit-test", false, repoMock).Return(false, nil)
@@ -57,7 +57,7 @@ func TestTryRunner_Run_NoChanges(t *testing.T) {
 	repoMock.EXPECT().FullName().Return(repoName)
 	hostMock := mock.NewMockHost(ctrl)
 	hostMock.EXPECT().CreateFromName(repoName).Return(repoMock, nil)
-	registry := task.NewRegistry([]byte{})
+	registry := task.NewRegistry()
 	gitcMock := mock.NewMockGitClient(ctrl)
 	gitcMock.EXPECT().Prepare(repoMock, false).Return("/checkout", nil)
 	gitcMock.EXPECT().UpdateTaskBranch("saturn-sync--unit-test", false, repoMock).Return(false, nil)
@@ -86,7 +86,7 @@ func TestTryRunner_Run_EmptyTaskFile(t *testing.T) {
 	repoMock := mock.NewMockRepository(ctrl)
 	hostMock := mock.NewMockHost(ctrl)
 	hostMock.EXPECT().CreateFromName(repoName).Return(repoMock, nil)
-	registry := task.NewRegistry([]byte{})
+	registry := task.NewRegistry()
 	gitcMock := mock.NewMockGitClient(ctrl)
 	out := &bytes.Buffer{}
 	taskFile := createTempFile("", "*.yaml")
@@ -112,7 +112,7 @@ func TestTryRunner_Run_TaskName(t *testing.T) {
 	repoMock := mock.NewMockRepository(ctrl)
 	hostMock := mock.NewMockHost(ctrl)
 	hostMock.EXPECT().CreateFromName(repoName).Return(repoMock, nil)
-	registry := task.NewRegistry([]byte{})
+	registry := task.NewRegistry()
 	gitcMock := mock.NewMockGitClient(ctrl)
 	out := &bytes.Buffer{}
 	taskFile := createTestTask(repoName)
@@ -139,7 +139,7 @@ func TestTryRunner_Run_FilterDoesNotMatch(t *testing.T) {
 	repoMock.EXPECT().FullName().Return("git.local/unit/test")
 	hostMock := mock.NewMockHost(ctrl)
 	hostMock.EXPECT().CreateFromName("git.local/unit/test").Return(repoMock, nil)
-	registry := task.NewRegistry([]byte{})
+	registry := task.NewRegistry()
 	gitcMock := mock.NewMockGitClient(ctrl)
 	out := &bytes.Buffer{}
 	content := `name: Unit Test
@@ -166,7 +166,7 @@ filters:
 func TestTryRunner_Run_UnsetRepositoryName(t *testing.T) {
 	ctrl := gomock.NewController(t)
 	hostMock := mock.NewMockHost(ctrl)
-	registry := task.NewRegistry([]byte{})
+	registry := task.NewRegistry()
 	gitcMock := mock.NewMockGitClient(ctrl)
 	taskFile := createTestTask("git.local/unit/test")
 
@@ -187,7 +187,7 @@ func TestTryRunner_Run_UnsetRepositoryName(t *testing.T) {
 func TestTryRunner_Run_UnsetTaskFile(t *testing.T) {
 	ctrl := gomock.NewController(t)
 	hostMock := mock.NewMockHost(ctrl)
-	registry := task.NewRegistry([]byte{})
+	registry := task.NewRegistry()
 	gitcMock := mock.NewMockGitClient(ctrl)
 
 	underTest := &TryRunner{

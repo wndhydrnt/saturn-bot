@@ -425,13 +425,13 @@ func TestGit_UpdateTaskBranch_BranchModified(t *testing.T) {
 func TestCreateGitEnvVars(t *testing.T) {
 	testCases := []struct {
 		name string
-		in   config.Config
+		in   config.Configuration
 		want []string
 	}{
 		{
 			name: "GitHub",
-			in: config.Config{
-				GitHubToken: "gh-123",
+			in: config.Configuration{
+				GithubToken: toPtr("gh-123"),
 			},
 			want: []string{
 				"GIT_CONFIG_KEY_0=url.https://gh-123@github.com/.insteadOf",
@@ -441,8 +441,8 @@ func TestCreateGitEnvVars(t *testing.T) {
 		},
 		{
 			name: "GitLab",
-			in: config.Config{
-				GitLabToken: "gl-456",
+			in: config.Configuration{
+				GitlabToken: toPtr("gl-456"),
 			},
 			want: []string{
 				"GIT_CONFIG_KEY_0=url.https://gitlab-ci-token:gl-456@gitlab.com/.insteadOf",
@@ -452,9 +452,9 @@ func TestCreateGitEnvVars(t *testing.T) {
 		},
 		{
 			name: "GitHub and GitLab",
-			in: config.Config{
-				GitHubToken: "gh-123",
-				GitLabToken: "gl-456",
+			in: config.Configuration{
+				GithubToken: toPtr("gh-123"),
+				GitlabToken: toPtr("gl-456"),
 			},
 			want: []string{
 				"GIT_CONFIG_KEY_0=url.https://gh-123@github.com/.insteadOf",
@@ -474,4 +474,8 @@ func TestCreateGitEnvVars(t *testing.T) {
 			assert.ElementsMatch(t, tc.want, envVars)
 		})
 	}
+}
+
+func toPtr[T any](v T) *T {
+	return &v
 }

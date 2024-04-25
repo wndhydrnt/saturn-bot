@@ -167,8 +167,8 @@ func ExecuteRun(cfgFile string, taskFiles []string) error {
 	}
 
 	sLog.InitLog(cfg.LogFormat, cfg.LogLevel, cfg.GitLogLevel)
-	cache := cache.NewJsonFile(path.Join(cfg.DataDir, cache.DefaultJsonFileName))
-	taskRegistry := task.NewRegistry(cfg.CustomMarshaled())
+	cache := cache.NewJsonFile(path.Join(*cfg.DataDir, cache.DefaultJsonFileName))
+	taskRegistry := task.NewRegistry()
 
 	hosts, err := createHostsFromConfig(cfg)
 	if err != nil {

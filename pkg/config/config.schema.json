@@ -1,7 +1,7 @@
 {
   "$schema": "https://json-schema.org/draft/2020-12/schema",
   "$id": "https://saturn-sync.cloud/config.schema.json",
-  "title": "saturn-sync Configuration",
+  "title": "Configuration",
   "description": "Configuration settings of saturn-sync.",
   "type": "object",
   "properties": {
@@ -41,6 +41,9 @@
     "gitCloneOptions": {
       "default": ["--filter", "blob:none"],
       "description": "Command-line options to pass to `git clone`.",
+      "items": {
+        "type": "string"
+      },
       "type": "array"
     },
     "gitCommitMessage": {
@@ -81,8 +84,5 @@
       "description": "Token to use for authentication at the GitLab API.",
       "type": "string"
     }
-  },
-  "dependentRequired": {
-    "githubAddress": ["githubToken"]
   }
 }

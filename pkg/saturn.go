@@ -7,10 +7,10 @@ import (
 	"github.com/wndhydrnt/saturn-sync/pkg/host"
 )
 
-func createHostsFromConfig(cfg config.Config) ([]host.Host, error) {
+func createHostsFromConfig(cfg config.Configuration) ([]host.Host, error) {
 	var hosts []host.Host
-	if cfg.GitLabToken != "" {
-		gitlab, err := host.NewGitLabHost(cfg.GitLabToken)
+	if cfg.GitlabToken != nil {
+		gitlab, err := host.NewGitLabHost(*cfg.GitlabToken)
 		if err != nil {
 			return nil, fmt.Errorf("create gitlab host: %w", err)
 		}
@@ -18,8 +18,13 @@ func createHostsFromConfig(cfg config.Config) ([]host.Host, error) {
 		hosts = append(hosts, gitlab)
 	}
 
-	if cfg.GitHubToken != "" {
-		github, err := host.NewGitHubHost(cfg.GitHubAddress, cfg.GitHubToken, cfg.GitHubCacheDisabled)
+	if cfg.GithubToken != nil {
+		var addr string
+		if cfg.GithubAddress != nil {
+			addr = *cfg.GithubAddress
+		}
+
+		github, err := host.NewGitHubHost(addr, *cfg.GithubToken, cfg.GithubCacheDisabled)
 		if err != nil {
 			return nil, fmt.Errorf("create github host: %w", err)
 		}

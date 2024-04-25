@@ -243,12 +243,11 @@ func (tw *Wrapper) Stop() {
 
 // Registry contains all tasks.
 type Registry struct {
-	customConfig []byte
-	tasks        []Task
+	tasks []Task
 }
 
-func NewRegistry(customConfig []byte) *Registry {
-	return &Registry{customConfig: customConfig}
+func NewRegistry() *Registry {
+	return &Registry{}
 }
 
 // GetTasks returns all tasks registered with the Registry.

@@ -32,8 +32,13 @@ generate_grpc:
 	protoc-go-inject-tag -input ./pkg/proto/saturnsync.pb.go -remove_tag_comment
 	gofmt -w ./pkg/proto/saturnsync.pb.go
 
+generate_json_schema_config: bin/go-jsonschema/go-jsonschema-${GO_JSONSCHEMA_VERSION}
+	bin/go-jsonschema/go-jsonschema-${GO_JSONSCHEMA_VERSION} --extra-imports -p config -t ./pkg/config/config.schema.json --output ./pkg/config/schema.go
+
 generate_json_schema_task: bin/go-jsonschema/go-jsonschema-${GO_JSONSCHEMA_VERSION}
 	bin/go-jsonschema/go-jsonschema-${GO_JSONSCHEMA_VERSION} --extra-imports -p schema -t ./pkg/task/schema/task.schema.json --output ./pkg/task/schema/schema.go
+
+generate_json_schema: generate_json_schema_config generate_json_schema_task
 
 generate_mocks:
 ifeq (, $(shell which mockgen))

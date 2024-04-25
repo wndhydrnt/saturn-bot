@@ -44,7 +44,7 @@ func NewTryRunner(configPath string, dataDir string, repositoryName string, task
 		return nil, fmt.Errorf("create hosts from config: %w", err)
 	}
 
-	cfg.DataDir = dataDir
+	cfg.DataDir = &dataDir
 	gitClient, err := git.New(cfg)
 	if err != nil {
 		return nil, fmt.Errorf("new git client for try: %w", err)
@@ -55,7 +55,7 @@ func NewTryRunner(configPath string, dataDir string, repositoryName string, task
 		gitc:             gitClient,
 		hosts:            hosts,
 		out:              os.Stdout,
-		registry:         task.NewRegistry(cfg.CustomMarshaled()),
+		registry:         task.NewRegistry(),
 		repositoryName:   repositoryName,
 		taskFile:         taskFile,
 		taskName:         taskName,

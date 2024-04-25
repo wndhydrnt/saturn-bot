@@ -5,6 +5,8 @@ import (
 	"encoding/json"
 	"fmt"
 	"net/mail"
+	"os"
+	"path/filepath"
 	"strings"
 
 	"github.com/knadh/koanf/parsers/yaml"
@@ -24,111 +26,94 @@ var (
 	schemaRaw string
 )
 
-type Config struct {
-	Custom              map[string]string `json:"custom,omitempty" yaml:",omitempty"`
-	customMarshaled     []byte
-	DataDir             string `json:"dataDir,omitempty" yaml:",omitempty"`
-	DryRun              bool   `json:"dryRun,omitempty" yaml:",omitempty"`
-	LogFormat           string `json:"logFormat,omitempty" yaml:",omitempty"`
-	LogLevel            string `json:"logLevel,omitempty" yaml:",omitempty"`
-	GitAuthor           string `json:"gitAuthor,omitempty" yaml:",omitempty"`
-	gitUserEmail        string
-	gitUserName         string
-	GitCloneOptions     []string `json:"gitCloneOptions,omitempty" yaml:",omitempty"`
-	GitCommitMessage    string   `json:"gitCommitMessage,omitempty" yaml:",omitempty"`
-	GitLogLevel         string   `json:"gitLogLevel,omitempty" yaml:",omitempty"`
-	GitPath             string   `json:"gitPath,omitempty" yaml:",omitempty"`
-	GitHubAddress       string   `json:"githubAddress,omitempty" yaml:",omitempty"`
-	GitHubCacheDisabled bool     `json:"githubCacheDisabled,omitempty" yaml:",omitempty"`
-	GitHubToken         string   `json:"githubToken,omitempty" yaml:",omitempty"`
-	GitLabAddress       string   `json:"gitlabAddress,omitempty" yaml:",omitempty"`
-	GitLabToken         string   `json:"gitlabToken,omitempty" yaml:",omitempty"`
-}
-
-func (c Config) CustomMarshaled() []byte {
-	if c.customMarshaled == nil {
-		return []byte("{}")
+func (c Configuration) GitUserEmail() string {
+	mailAddress, err := mail.ParseAddress(c.GitAuthor)
+	if err != nil {
+		return ""
 	}
 
-	return c.customMarshaled
+	return mailAddress.Address
 }
 
-func (c Config) GitUserEmail() string {
-	return c.gitUserEmail
+func (c Configuration) GitUserName() string {
+	mailAddress, err := mail.ParseAddress(c.GitAuthor)
+	if err != nil {
+		return ""
+	}
+
+	return mailAddress.Name
 }
 
-func (c Config) GitUserName() string {
-	return c.gitUserName
-}
-
-func (c Config) toValidation() interface{} {
+func toValidation(c Configuration) interface{} {
 	var data interface{}
-	b, _ := json.Marshal(&c)
+	b, _ := json.Marshal(c)
 	_ = json.Unmarshal(b, &data)
 	return data
 }
 
-func Read(cfgFile string) (Config, error) {
+func Read(cfgFile string) (cfg Configuration, err error) {
 	compiler := jsonschema.NewCompiler()
 	compiler.ExtractAnnotations = true
-	err := compiler.AddResource("config.schema.json", strings.NewReader(schemaRaw))
+	err = compiler.AddResource("config.schema.json", strings.NewReader(schemaRaw))
 	if err != nil {
-		return Config{}, fmt.Errorf("add resource to JSON schema compiler: %w", err)
+		return cfg, fmt.Errorf("add resource to JSON schema compiler: %w", err)
 	}
 
 	schema, err := compiler.Compile("config.schema.json")
 	if err != nil {
-		return Config{}, fmt.Errorf("compile json schema: %w", err)
+		return cfg, fmt.Errorf("compile json schema: %w", err)
 	}
 
 	koanfDefaults := createKoanfDefaults(schema)
 	var k = koanf.New("")
 	// Define defaults first
 	if err := k.Load(confmap.Provider(koanfDefaults, ""), nil); err != nil {
-		return Config{}, fmt.Errorf("load configuration defaults: %w", err)
+		return cfg, fmt.Errorf("load configuration defaults: %w", err)
 	}
 
 	if cfgFile != "" {
 		// If file is defined, load configuration from file
 		if err := k.Load(file.Provider(cfgFile), yaml.Parser()); err != nil {
-			return Config{}, fmt.Errorf("load configuration file: %w", err)
+			return cfg, fmt.Errorf("load configuration file: %w", err)
 		}
 	}
 
 	// Load configuration from env vars last. Env vars overwrite previously set configuration.
 	if err := k.Load(env.Provider(envPrefix, ".", createEnvMapper(schema)), nil); err != nil {
-		return Config{}, fmt.Errorf("load configuration from environment: %w", err)
+		return cfg, fmt.Errorf("load configuration from environment: %w", err)
 	}
 
-	var c Config
-	err = k.Unmarshal("", &c)
+	err = k.Unmarshal("", &cfg)
 	if err != nil {
-		return Config{}, fmt.Errorf("unmarshal config: %w", err)
+		return cfg, fmt.Errorf("unmarshal config: %w", err)
 	}
 
-	if c.Custom == nil {
-		c.Custom = map[string]string{}
+	// Initialize map to prevent nil-pointer errors.
+	if cfg.Custom == nil {
+		cfg.Custom = map[string]string{}
 	}
 
-	err = schema.Validate(c.toValidation())
+	err = schema.Validate(toValidation(cfg))
 	if err != nil {
-		return c, fmt.Errorf("schema validation failed: %w", err)
+		return cfg, fmt.Errorf("schema validation failed: %w", err)
 	}
 
-	c.customMarshaled, err = json.Marshal(c.Custom)
+	_, err = mail.ParseAddress(cfg.GitAuthor)
 	if err != nil {
-		return c, fmt.Errorf("marshal custom configuration into JSON: %w", err)
+		return cfg, fmt.Errorf("failed to parse field `gitAuthor`: %w", err)
 	}
 
-	mailAddress, err := mail.ParseAddress(c.GitAuthor)
-	if err != nil {
-		return c, fmt.Errorf("failed to parse field `gitAuthor`: %w", err)
+	if cfg.DataDir == nil {
+		homeDir, err := os.UserHomeDir()
+		if err != nil {
+			return cfg, fmt.Errorf("get user home dir to set default data dir: %w", err)
+		}
+
+		dir := filepath.Join(homeDir, ".saturn-sync", "data")
+		cfg.DataDir = &dir
 	}
 
-	c.gitUserEmail = mailAddress.Address
-	c.gitUserName = mailAddress.Name
-
-	return c, nil
+	return cfg, nil
 }
 
 func createKoanfDefaults(schema *jsonschema.Schema) map[string]interface{} {
