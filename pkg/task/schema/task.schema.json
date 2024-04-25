@@ -235,20 +235,18 @@
     "plugins": {
       "items": {
         "properties": {
-          "args": {
-            "items": {
+          "configuration": {
+            "additionalProperties": {
               "type": "string"
             },
-            "type": "array"
-          },
-          "command": {
-            "type": "string"
+            "description": "Key/value pairs that hold additional configuration for the plugin. Sent to the plugin once on startup.",
+            "type": "object"
           },
           "path": {
             "type": "string"
           }
         },
-        "required": ["command", "path"],
+        "required": ["path"],
         "type": "object"
       },
       "type": "array"

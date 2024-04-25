@@ -6,6 +6,7 @@ import (
 	"hash"
 	"log/slog"
 	"os/exec"
+	"path/filepath"
 
 	goPlugin "github.com/hashicorp/go-plugin"
 	"github.com/wndhydrnt/saturn-sync-go/plugin"
@@ -16,11 +17,9 @@ import (
 )
 
 type startPluginOptions struct {
-	args         []string
-	hash         hash.Hash
-	customConfig []byte
-	executable   string
-	filePath     string
+	hash     hash.Hash
+	config   map[string]string
+	filePath string
 }
 
 type pluginWrapper struct {
@@ -31,13 +30,24 @@ type pluginWrapper struct {
 }
 
 func newPluginWrapper(opts startPluginOptions) (*pluginWrapper, error) {
+	ext := filepath.Ext(opts.filePath)
+	var args []string
+	var executable string
+	switch ext {
+	case "":
+		executable = opts.filePath
+	case ".py":
+		executable = "python"
+		args = append(args, opts.filePath)
+	}
+
 	client := goPlugin.NewClient(&goPlugin.ClientConfig{
 		HandshakeConfig: plugin.Handshake,
 		Logger:          gsLog.DefaultHclogAdapter(),
 		Plugins: map[string]goPlugin.Plugin{
-			"tasks": &plugin.ProviderPlugin{},
+			plugin.ID: &plugin.ProviderPlugin{},
 		},
-		Cmd:              exec.Command(opts.executable, opts.args...), // #nosec G204 -- arguments are controlled by saturn-sync
+		Cmd:              exec.Command(executable, args...), // #nosec G204 -- arguments are controlled by saturn-sync
 		AllowedProtocols: []goPlugin.Protocol{goPlugin.ProtocolGRPC},
 	})
 
@@ -46,13 +56,13 @@ func newPluginWrapper(opts startPluginOptions) (*pluginWrapper, error) {
 		return nil, fmt.Errorf("get client of plugin: %w", err)
 	}
 
-	raw, err := rpcClient.Dispense("tasks")
+	raw, err := rpcClient.Dispense(plugin.ID)
 	if err != nil {
 		return nil, fmt.Errorf("dispense tasks plugin: %w", err)
 	}
 
 	provider := raw.(plugin.Provider)
-	getPluginResp, err := provider.GetPlugin(&proto.GetPluginRequest{CustomConfig: opts.customConfig})
+	getPluginResp, err := provider.GetPlugin(&proto.GetPluginRequest{Config: opts.config})
 	if err != nil {
 		return nil, fmt.Errorf("get plugin: %w", err)
 	}

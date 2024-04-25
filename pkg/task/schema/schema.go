@@ -607,24 +607,23 @@ func (j *TaskFiltersRepositoryNameElem) UnmarshalYAML(value *yaml.Node) error {
 }
 
 type TaskPluginsElem struct {
-	// Args corresponds to the JSON schema field "args".
-	Args []string `json:"args,omitempty" yaml:"args,omitempty" mapstructure:"args,omitempty"`
-
-	// Command corresponds to the JSON schema field "command".
-	Command string `json:"command" yaml:"command" mapstructure:"command"`
+	// Key/value pairs that hold additional configuration for the plugin. Sent to the
+	// plugin once on startup.
+	Configuration TaskPluginsElemConfiguration `json:"configuration,omitempty" yaml:"configuration,omitempty" mapstructure:"configuration,omitempty"`
 
 	// Path corresponds to the JSON schema field "path".
 	Path string `json:"path" yaml:"path" mapstructure:"path"`
 }
+
+// Key/value pairs that hold additional configuration for the plugin. Sent to the
+// plugin once on startup.
+type TaskPluginsElemConfiguration map[string]string
 
 // UnmarshalJSON implements json.Unmarshaler.
 func (j *TaskPluginsElem) UnmarshalJSON(b []byte) error {
 	var raw map[string]interface{}
 	if err := json.Unmarshal(b, &raw); err != nil {
 		return err
-	}
-	if _, ok := raw["command"]; raw != nil && !ok {
-		return fmt.Errorf("field command in TaskPluginsElem: required")
 	}
 	if _, ok := raw["path"]; raw != nil && !ok {
 		return fmt.Errorf("field path in TaskPluginsElem: required")
@@ -643,9 +642,6 @@ func (j *TaskPluginsElem) UnmarshalYAML(value *yaml.Node) error {
 	var raw map[string]interface{}
 	if err := value.Decode(&raw); err != nil {
 		return err
-	}
-	if _, ok := raw["command"]; raw != nil && !ok {
-		return fmt.Errorf("field command in TaskPluginsElem: required")
 	}
 	if _, ok := raw["path"]; raw != nil && !ok {
 		return fmt.Errorf("field path in TaskPluginsElem: required")

@@ -52,11 +52,9 @@ func readTasksYaml(taskFile string) ([]Task, error) {
 
 		for idx, plugin := range task.Plugins {
 			pw, err := newPluginWrapper(startPluginOptions{
-				args:         plugin.Args,
-				hash:         checksum,
-				customConfig: []byte{},
-				executable:   plugin.Command,
-				filePath:     plugin.Path,
+				hash:     checksum,
+				config:   plugin.Configuration,
+				filePath: plugin.Path,
 			})
 			if err != nil {
 				return nil, fmt.Errorf("initialize plugin #%d: %w", idx, err)
