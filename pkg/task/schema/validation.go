@@ -33,6 +33,6 @@ func Validate(t *Task) error {
 
 	b, _ := json.Marshal(t)
 	var validation interface{}
-	json.Unmarshal(b, &validation)
+	_ = json.Unmarshal(b, &validation)
 	return jsonSchema.Validate(validation)
 }

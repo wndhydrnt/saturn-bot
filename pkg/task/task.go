@@ -262,7 +262,7 @@ func (tr *Registry) ReadAll(taskFiles []string) error {
 	for _, file := range taskFiles {
 		err := tr.readTasks(file)
 		if err != nil {
-			return fmt.Errorf("failed to read tasks from file: %w", err)
+			return fmt.Errorf("failed to read tasks from file %s: %w", file, err)
 		}
 	}
 
@@ -282,10 +282,10 @@ func (tr *Registry) readTasks(taskFile string) error {
 		tr.tasks = append(tr.tasks, tasks...)
 		return nil
 	default:
-		return fmt.Errorf("unsupported file: %s", taskFile)
+		return fmt.Errorf("unsupported extension: %s", ext)
 	}
 
-	return fmt.Errorf("unsupported file: %s", taskFile)
+	return fmt.Errorf("unsupported extension: %s", ext)
 }
 
 // Stop notifies every task that this Registry is being stopped.

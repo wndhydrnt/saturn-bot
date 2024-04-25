@@ -88,7 +88,11 @@ func (r *TryRunner) Run() error {
 		return fmt.Errorf("no host supports the repository")
 	}
 
-	r.registry.ReadAll([]string{r.taskFile})
+	err := r.registry.ReadAll([]string{r.taskFile})
+	if err != nil {
+		return err
+	}
+
 	tasks := r.registry.GetTasks()
 	if len(tasks) == 0 {
 		fmt.Fprintf(r.out, "⛔️ File %s does not contain any tasks\n", r.taskFile)

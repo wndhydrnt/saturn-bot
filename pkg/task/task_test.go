@@ -1,6 +1,7 @@
 package task
 
 import (
+	"fmt"
 	"os"
 	"path/filepath"
 	"testing"
@@ -27,7 +28,8 @@ name: Task Two
 	}()
 
 	tr := &Registry{}
-	tr.ReadAll([]string{f.Name()})
+	err = tr.ReadAll([]string{f.Name()})
+	require.NoError(t, err)
 
 	assert.Len(t, tr.GetTasks(), 2)
 	assert.Equal(t, "Task One", tr.GetTasks()[0].SourceTask().Name)
@@ -52,8 +54,9 @@ name: Task Two
 	}()
 
 	tr := &Registry{}
-	tr.ReadAll([]string{f.Name()})
+	err = tr.ReadAll([]string{f.Name()})
 
+	assert.EqualError(t, err, fmt.Sprintf("failed to read tasks from file %s: unsupported extension: .yamll", f.Name()))
 	assert.Len(t, tr.GetTasks(), 0)
 }
 

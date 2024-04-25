@@ -67,7 +67,11 @@ func (r *executeRunner) run(taskFiles []string) error {
 		since = &ts
 	}
 
-	r.taskRegistry.ReadAll(taskFiles)
+	err = r.taskRegistry.ReadAll(taskFiles)
+	if err != nil {
+		return err
+	}
+
 	tasks := r.taskRegistry.GetTasks()
 	if len(tasks) == 0 {
 		slog.Warn("0 tasks loaded from files - stopping")
