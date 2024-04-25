@@ -31,13 +31,13 @@ func TestFileExists_Do(t *testing.T) {
 	ctx := context.Background()
 	ctx = context.WithValue(ctx, gsContext.RepositoryKey{}, repo)
 
-	f := NewFileExists("test.yaml")
+	f := NewFile("test.yaml")
 	result, err := f.Do(ctx)
 
 	require.NoError(t, err)
 	require.True(t, result)
 
-	f = NewFileExists("test.json")
+	f = NewFile("test.json")
 	result, err = f.Do(ctx)
 
 	require.NoError(t, err)
@@ -53,14 +53,14 @@ ghi
 	ctx := context.Background()
 	ctx = context.WithValue(ctx, gsContext.RepositoryKey{}, repo)
 
-	f, err := NewFileContainsLine("test.txt", "d?f")
+	f, err := NewFileContent("test.txt", "d?f")
 	require.NoError(t, err)
 	result, err := f.Do(ctx)
 
 	require.NoError(t, err)
 	require.True(t, result)
 
-	f, err = NewFileContainsLine("test.txt", "jkl")
+	f, err = NewFileContent("test.txt", "jkl")
 	require.NoError(t, err)
 	result, err = f.Do(ctx)
 
@@ -69,7 +69,7 @@ ghi
 }
 
 func TestRepositoryName_Do(t *testing.T) {
-	f, err := NewRepositoryNames([]string{"https://github.com/wndhydrnt/rcmt.git"})
+	f, err := NewRepositoryName([]string{"https://github.com/wndhydrnt/rcmt.git"})
 	require.NoError(t, err)
 
 	cases := []struct {

@@ -8,7 +8,7 @@ import (
 	"io"
 	"os"
 
-	proto "github.com/wndhydrnt/saturn-sync-go/protocol/v1"
+	"github.com/wndhydrnt/saturn-sync/pkg/task/schema"
 	"gopkg.in/yaml.v3"
 )
 
@@ -19,10 +19,11 @@ func readTasksYaml(taskFile string) ([]Task, error) {
 		return nil, fmt.Errorf("read task file '%s': %w", taskFile, err)
 	}
 
-	checksum := sha256.Sum256(b)
+	checksum := sha256.New()
+	_, _ = checksum.Write(b)
 	dec := yaml.NewDecoder(bytes.NewReader(b))
 	for {
-		task := &proto.Task{}
+		task := &schema.Task{}
 		err := dec.Decode(task)
 		if errors.Is(err, io.EOF) {
 			break
@@ -32,8 +33,12 @@ func readTasksYaml(taskFile string) ([]Task, error) {
 			return nil, fmt.Errorf("decode task file '%s' from YAML: %w", taskFile, err)
 		}
 
+		err = schema.Validate(task)
+		if err != nil {
+			return nil, fmt.Errorf("validation failed: %w", err)
+		}
+
 		wrapper := &Wrapper{}
-		wrapper.checksum = fmt.Sprintf("%x", checksum)
 		wrapper.Task = task
 		wrapper.actions, err = createActionsForTask(wrapper.Task.Actions, taskFile)
 		if err != nil {
@@ -45,6 +50,23 @@ func readTasksYaml(taskFile string) ([]Task, error) {
 			return nil, fmt.Errorf("parse filters of task file '%s': %w", taskFile, err)
 		}
 
+		for idx, plugin := range task.Plugins {
+			pw, err := newPluginWrapper(startPluginOptions{
+				args:         plugin.Args,
+				hash:         checksum,
+				customConfig: []byte{},
+				executable:   plugin.Command,
+				filePath:     plugin.Path,
+			})
+			if err != nil {
+				return nil, fmt.Errorf("initialize plugin #%d: %w", idx, err)
+			}
+
+			wrapper.actions = append(wrapper.actions, pw.action)
+			wrapper.filters = append(wrapper.filters, pw.filter)
+		}
+
+		wrapper.checksum = fmt.Sprintf("%x", checksum.Sum(nil))
 		result = append(result, wrapper)
 	}
 

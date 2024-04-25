@@ -97,7 +97,7 @@ func (r *TryRunner) Run() error {
 
 	processed := false
 	for _, task := range tasks {
-		if r.taskName != "" && task.SourceTask().GetName() != r.taskName {
+		if r.taskName != "" && task.SourceTask().Name != r.taskName {
 			continue
 		}
 
@@ -107,14 +107,14 @@ func (r *TryRunner) Run() error {
 		for _, filter := range task.Filters() {
 			match, err := filter.Do(ctx)
 			if err != nil {
-				fmt.Fprintf(r.out, "⛔️ Filter %s of task %s failed: %s\n", filter.String(), task.SourceTask().GetName(), err)
+				fmt.Fprintf(r.out, "⛔️ Filter %s of task %s failed: %s\n", filter.String(), task.SourceTask().Name, err)
 				continue
 			}
 
 			if match {
-				fmt.Fprintf(r.out, "✅ Filter %s of task %s matches\n", filter.String(), task.SourceTask().GetName())
+				fmt.Fprintf(r.out, "✅ Filter %s of task %s matches\n", filter.String(), task.SourceTask().Name)
 			} else {
-				fmt.Fprintf(r.out, "❌ Filter %s of task %s doesn't match\n", filter.String(), task.SourceTask().GetName())
+				fmt.Fprintf(r.out, "❌ Filter %s of task %s doesn't match\n", filter.String(), task.SourceTask().Name)
 				matched = false
 			}
 		}

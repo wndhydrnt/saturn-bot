@@ -120,7 +120,7 @@ func (r *executeRunner) run(taskFiles []string) error {
 
 				ctx = context.WithValue(ctx, sContext.CheckoutPath{}, workDir)
 				for _, taskToApply := range tasksToApply {
-					logger := slog.With("dryRun", r.dryRun, "repository", repo.FullName(), "task", taskToApply.SourceTask().GetName())
+					logger := slog.With("dryRun", r.dryRun, "repository", repo.FullName(), "task", taskToApply.SourceTask().Name)
 					logger.Info("Task matches repository")
 					_, err := r.applyTaskFunc(ctx, r.dryRun, r.git, logger, repo, taskToApply, workDir)
 					if err != nil {
@@ -191,7 +191,7 @@ func hasUpdatedTasks(cachedTasks []cache.CachedTask, tasks []task.Task) bool {
 	for _, t := range tasks {
 		found := false
 		for _, ct := range cachedTasks {
-			if t.SourceTask().GetName() == ct.Name {
+			if t.SourceTask().Name == ct.Name {
 				found = true
 				if t.Checksum() != ct.Checksum {
 					return true
@@ -212,7 +212,7 @@ func findMatchingTasksForRepository(ctx context.Context, repository host.Reposit
 	for _, t := range tasks {
 		match, err := matchTaskToRepository(ctx, t)
 		if err != nil {
-			slog.Error("Filter of task failed - skipping", "err", err, "task", t.SourceTask().GetName(), "repository", repository.FullName())
+			slog.Error("Filter of task failed - skipping", "err", err, "task", t.SourceTask().Name, "repository", repository.FullName())
 			continue
 		}
 
@@ -239,7 +239,7 @@ func matchTaskToRepository(ctx context.Context, task task.Task) (bool, error) {
 		}
 
 		if !match {
-			slog.Debug("Filter does not match", "filter", filter.String(), "task", task.SourceTask().GetName())
+			slog.Debug("Filter does not match", "filter", filter.String(), "task", task.SourceTask().Name)
 			return false, nil
 		}
 	}
@@ -254,17 +254,17 @@ func applyTaskToRepository(ctx context.Context, dryRun bool, gitc git.GitClient,
 		return ApplyResultUnknown, fmt.Errorf("find pull request: %w", err)
 	}
 
-	if prID != nil && repo.IsPullRequestClosed(prID) && task.SourceTask().GetMergeOnce() {
+	if prID != nil && repo.IsPullRequestClosed(prID) && task.SourceTask().MergeOnce {
 		logger.Info("Existing PR has been closed")
 		return ApplyResultPrClosedBefore, nil
 	}
 
-	if prID != nil && repo.IsPullRequestMerged(prID) && task.SourceTask().GetMergeOnce() {
+	if prID != nil && repo.IsPullRequestMerged(prID) && task.SourceTask().MergeOnce {
 		logger.Info("Existing PR has been merged")
 		return ApplyResultPrMergedBefore, nil
 	}
 
-	if prID != nil && task.SourceTask().GetCreateOnly() {
+	if prID != nil && task.SourceTask().CreateOnly {
 		logger.Info("PR exists and is create only")
 		return ApplyResultPrOpen, nil
 	}
@@ -319,7 +319,7 @@ func applyTaskToRepository(ctx context.Context, dryRun bool, gitc git.GitClient,
 	}
 
 	if hasLocalChanges {
-		commitMsg := task.SourceTask().GetCommitMessage()
+		commitMsg := task.SourceTask().CommitMessage
 		err := gitc.CommitChanges(commitMsg)
 		if err != nil {
 			return ApplyResultUnknown, fmt.Errorf("committing changes failed: %w", err)
@@ -376,21 +376,21 @@ func applyTaskToRepository(ctx context.Context, dryRun bool, gitc git.GitClient,
 
 	autoMergeAfter := task.AutoMergeAfter()
 	prData := host.PullRequestData{
-		AutoMerge:      task.SourceTask().GetAutoMerge(),
+		AutoMerge:      task.SourceTask().AutoMerge,
 		AutoMergeAfter: &autoMergeAfter,
-		Body:           task.SourceTask().GetPrBody(),
-		Labels:         task.SourceTask().GetLabels(),
-		MergeOnce:      task.SourceTask().GetMergeOnce(),
-		TaskName:       task.SourceTask().GetName(),
+		Body:           task.SourceTask().PrBody,
+		Labels:         task.SourceTask().Labels,
+		MergeOnce:      task.SourceTask().MergeOnce,
+		TaskName:       task.SourceTask().Name,
 		TemplateData: map[string]any{
 			"RepositoryFullName": repo.FullName(),
 			"RepositoryHost":     repo.Host(),
 			"RepositoryName":     repo.Name(),
 			"RepositoryOwner":    repo.Owner(),
 			"RepositoryWebUrl":   repo.WebUrl(),
-			"TaskName":           task.SourceTask().GetName(),
+			"TaskName":           task.SourceTask().Name,
 		},
-		Title: task.SourceTask().GetPrTitle(),
+		Title: task.SourceTask().PrTitle,
 	}
 
 	// Always create if branch of task contains changes compared to default branch and no PR has been created yet.
@@ -413,7 +413,7 @@ func applyTaskToRepository(ctx context.Context, dryRun bool, gitc git.GitClient,
 	}
 
 	// Try to merge if auto-merge is enabled, no new changes have been detected and the pull request is open
-	if task.SourceTask().GetAutoMerge() && !hasChanges && prID != nil && repo.IsPullRequestOpen(prID) {
+	if task.SourceTask().AutoMerge && !hasChanges && prID != nil && repo.IsPullRequestOpen(prID) {
 		success, err := repo.HasSuccessfulPullRequestBuild(prID)
 		if err != nil {
 			return ApplyResultUnknown, fmt.Errorf("check for successful pull request build failed: %w", err)
@@ -440,7 +440,7 @@ func applyTaskToRepository(ctx context.Context, dryRun bool, gitc git.GitClient,
 
 		logger.Info("Merging pull request")
 		if !dryRun {
-			err := repo.MergePullRequest(!task.SourceTask().GetKeepBranchAfterMerge(), prID)
+			err := repo.MergePullRequest(!task.SourceTask().KeepBranchAfterMerge, prID)
 			if err != nil {
 				return ApplyResultUnknown, fmt.Errorf("failed to merge pull request: %w", err)
 			}

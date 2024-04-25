@@ -3,6 +3,8 @@ package task
 import (
 	"context"
 	"fmt"
+	"hash"
+	"log/slog"
 	"os/exec"
 
 	goPlugin "github.com/hashicorp/go-plugin"
@@ -15,15 +17,20 @@ import (
 
 type startPluginOptions struct {
 	args         []string
+	hash         hash.Hash
 	customConfig []byte
 	executable   string
 	filePath     string
 }
 
-// startPlugin starts a go-plugin.
-// The protocol to communicate with the plugin is GRPC.
-// It requests all tasks that the plugin provides, initializes them and returns them.
-func startPlugin(opts *startPluginOptions) ([]Task, error) {
+type pluginWrapper struct {
+	action   *PluginAction
+	client   *goPlugin.Client
+	filter   *PluginFilter
+	provider plugin.Provider
+}
+
+func newPluginWrapper(opts startPluginOptions) (*pluginWrapper, error) {
 	client := goPlugin.NewClient(&goPlugin.ClientConfig{
 		HandshakeConfig: plugin.Handshake,
 		Logger:          gsLog.DefaultHclogAdapter(),
@@ -45,128 +52,26 @@ func startPlugin(opts *startPluginOptions) ([]Task, error) {
 	}
 
 	provider := raw.(plugin.Provider)
-	listTasksReply, err := provider.ListTasks(&proto.ListTasksRequest{CustomConfig: opts.customConfig})
+	getPluginResp, err := provider.GetPlugin(&proto.GetPluginRequest{CustomConfig: opts.customConfig})
 	if err != nil {
-		return nil, fmt.Errorf("list tasks of plugin: %w", err)
+		return nil, fmt.Errorf("get plugin: %w", err)
 	}
 
-	var result []Task
-	checksum, err := calculateChecksum(opts.filePath)
+	err = calculateChecksum(opts.filePath, opts.hash)
 	if err != nil {
-		return nil, fmt.Errorf("calculate checksum: %w", err)
+		return nil, fmt.Errorf("calculate checksum of plugin: %w", err)
 	}
 
-	for _, task := range listTasksReply.Tasks {
-		wrapper := &Wrapper{checksum: checksum}
-		wrapper.Task = task
-		wrapper.actions, err = createActionsForTask(wrapper.Task.Actions, opts.filePath)
-		if err != nil {
-			return nil, fmt.Errorf("parse actions of task '%s': %w", task.GetName(), err)
-		}
-
-		wrapper.actions = append(wrapper.actions, &PluginAction{provider: provider, taskName: task.GetName()})
-
-		wrapper.filters, err = createFiltersForTask(wrapper.Task.Filters)
-		if err != nil {
-			return nil, fmt.Errorf("parse filters of task '%s': %w", task.GetName(), err)
-		}
-
-		wrapper.filters = append(wrapper.filters, &PluginFilter{provider: provider, taskName: task.GetName()})
-
-		wrapper.onPrClosedFunc = func(repository host.Repository) error {
-			reply, err := provider.OnPrClosed(&proto.OnPrClosedRequest{
-				TaskName: task.GetName(),
-				Context: &proto.Context{
-					Repository: &proto.Repository{
-						FullName:     repository.FullName(),
-						CloneUrlHttp: repository.CloneUrlHttp(),
-						CloneUrlSsh:  repository.CloneUrlSsh(),
-						WebUrl:       repository.WebUrl(),
-					},
-				},
-			})
-			if err != nil {
-				return fmt.Errorf("send 'PR Closed' event: %w", err)
-			}
-
-			if reply.GetError() != "" {
-				return fmt.Errorf("'PR Closed' event failed: %s", reply.GetError())
-			}
-
-			return nil
-		}
-
-		wrapper.onPrCreatedFunc = func(repository host.Repository) error {
-			reply, err := provider.OnPrCreated(&proto.OnPrCreatedRequest{
-				TaskName: task.GetName(),
-				Context: &proto.Context{
-					Repository: &proto.Repository{
-						FullName:     repository.FullName(),
-						CloneUrlHttp: repository.CloneUrlHttp(),
-						CloneUrlSsh:  repository.CloneUrlSsh(),
-						WebUrl:       repository.WebUrl(),
-					},
-				},
-			})
-			if err != nil {
-				return fmt.Errorf("send 'PR Created' event: %w", err)
-			}
-
-			if reply.GetError() != "" {
-				return fmt.Errorf("'PR Created' event failed: %s", reply.GetError())
-			}
-
-			return nil
-		}
-
-		wrapper.onPrMergedFunc = func(repository host.Repository) error {
-			reply, err := provider.OnPrMerged(&proto.OnPrMergedRequest{
-				TaskName: task.GetName(),
-				Context: &proto.Context{
-					Repository: &proto.Repository{
-						FullName:     repository.FullName(),
-						CloneUrlHttp: repository.CloneUrlHttp(),
-						CloneUrlSsh:  repository.CloneUrlSsh(),
-						WebUrl:       repository.WebUrl(),
-					},
-				},
-			})
-			if err != nil {
-				return fmt.Errorf("send 'PR Merged' event: %w", err)
-			}
-
-			if reply.GetError() != "" {
-				return fmt.Errorf("'PR Merged' event failed: %s", reply.GetError())
-			}
-
-			return nil
-		}
-
-		wrapper.stopFunc = func() error {
-			// It is safe to call Kill() multiple times.
-			client.Kill()
-			return nil
-		}
-
-		result = append(result, wrapper)
-	}
-
-	return result, nil
+	slog.Debug("Registered plugin", "name", getPluginResp.GetName())
+	return &pluginWrapper{
+		action:   &PluginAction{provider: provider},
+		filter:   &PluginFilter{provider: provider},
+		provider: provider,
+	}, nil
 }
 
-// PluginAction wraps remote actions provided by a plugin.
-type PluginAction struct {
-	provider plugin.Provider
-	taskName string
-}
-
-// Apply implements action.Apply().
-func (a *PluginAction) Apply(ctx context.Context) error {
-	path := ctx.Value(gsContext.CheckoutPath{}).(string)
-	repo := ctx.Value(gsContext.RepositoryKey{}).(host.Repository)
-	reply, err := a.provider.ExecuteActions(&proto.ExecuteActionsRequest{
-		TaskName: a.taskName,
-		Path:     path,
+func (pw *pluginWrapper) onPrClosed(repo host.Repository) error {
+	resp, err := pw.provider.OnPrClosed(&proto.OnPrClosedRequest{
 		Context: &proto.Context{
 			Repository: &proto.Repository{
 				FullName:     repo.FullName(),
@@ -177,11 +82,91 @@ func (a *PluginAction) Apply(ctx context.Context) error {
 		},
 	})
 	if err != nil {
-		return fmt.Errorf("execute actions of plugin task: %w", err)
+		return fmt.Errorf("send 'PR Closed' event: %w", err)
+	}
+
+	if resp.GetError() != "" {
+		return fmt.Errorf("'PR Closed' event failed: %s", resp.GetError())
+	}
+
+	return nil
+}
+
+func (pw *pluginWrapper) onPrCreated(repo host.Repository) error {
+	resp, err := pw.provider.OnPrCreated(&proto.OnPrCreatedRequest{
+		Context: &proto.Context{
+			Repository: &proto.Repository{
+				FullName:     repo.FullName(),
+				CloneUrlHttp: repo.CloneUrlHttp(),
+				CloneUrlSsh:  repo.CloneUrlSsh(),
+				WebUrl:       repo.WebUrl(),
+			},
+		},
+	})
+	if err != nil {
+		return fmt.Errorf("send 'PR Created' event: %w", err)
+	}
+
+	if resp.GetError() != "" {
+		return fmt.Errorf("'PR Created' event failed: %s", resp.GetError())
+	}
+
+	return nil
+}
+
+func (pw *pluginWrapper) onPrMerged(repo host.Repository) error {
+	resp, err := pw.provider.OnPrMerged(&proto.OnPrMergedRequest{
+		Context: &proto.Context{
+			Repository: &proto.Repository{
+				FullName:     repo.FullName(),
+				CloneUrlHttp: repo.CloneUrlHttp(),
+				CloneUrlSsh:  repo.CloneUrlSsh(),
+				WebUrl:       repo.WebUrl(),
+			},
+		},
+	})
+	if err != nil {
+		return fmt.Errorf("send 'PR Merged' event: %w", err)
+	}
+
+	if resp.GetError() != "" {
+		return fmt.Errorf("'PR Merged' event failed: %s", resp.GetError())
+	}
+
+	return nil
+}
+
+func (pw *pluginWrapper) stop() {
+	// It is safe to call Kill() multiple times.
+	pw.client.Kill()
+}
+
+// PluginAction wraps remote actions provided by a plugin.
+type PluginAction struct {
+	provider plugin.Provider
+}
+
+// Apply implements action.Apply().
+func (a *PluginAction) Apply(ctx context.Context) error {
+	path := ctx.Value(gsContext.CheckoutPath{}).(string)
+	repo := ctx.Value(gsContext.RepositoryKey{}).(host.Repository)
+	reply, err := a.provider.ExecuteActions(&proto.ExecuteActionsRequest{
+		Path: path,
+		Context: &proto.Context{
+			Repository: &proto.Repository{
+				FullName:     repo.FullName(),
+				CloneUrlHttp: repo.CloneUrlHttp(),
+				CloneUrlSsh:  repo.CloneUrlSsh(),
+				WebUrl:       repo.WebUrl(),
+			},
+		},
+	})
+	if err != nil {
+		return fmt.Errorf("execute actions of plugin: %w", err)
 	}
 
 	if reply.GetError() != "" {
-		return fmt.Errorf("task plugin failed to execute actions: %s", reply.GetError())
+		return fmt.Errorf("plugin failed to execute actions: %s", reply.GetError())
 	}
 
 	return nil
@@ -195,14 +180,12 @@ func (a *PluginAction) String() string {
 // PluginFilter wraps remote filters provided by a plugin.
 type PluginFilter struct {
 	provider plugin.Provider
-	taskName string
 }
 
 // Do implements filter.Do().
 func (f *PluginFilter) Do(ctx context.Context) (bool, error) {
 	repo := ctx.Value(gsContext.RepositoryKey{}).(host.Repository)
 	reply, err := f.provider.ExecuteFilters(&proto.ExecuteFiltersRequest{
-		TaskName: f.taskName,
 		Context: &proto.Context{
 			Repository: &proto.Repository{
 				FullName:     repo.FullName(),
@@ -213,11 +196,11 @@ func (f *PluginFilter) Do(ctx context.Context) (bool, error) {
 		},
 	})
 	if err != nil {
-		return false, fmt.Errorf("execute filters of plugin task: %w", err)
+		return false, fmt.Errorf("execute filters of plugin: %w", err)
 	}
 
 	if reply.GetError() != "" {
-		return false, fmt.Errorf("task plugin failed to execute filters: %s", reply.GetError())
+		return false, fmt.Errorf("plugin failed to execute filters: %s", reply.GetError())
 	}
 
 	return reply.GetMatch(), nil

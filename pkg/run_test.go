@@ -12,12 +12,12 @@ import (
 
 	"github.com/stretchr/testify/assert"
 	"github.com/stretchr/testify/require"
-	proto "github.com/wndhydrnt/saturn-sync-go/protocol/v1"
 	"github.com/wndhydrnt/saturn-sync/pkg/cache"
 	"github.com/wndhydrnt/saturn-sync/pkg/git"
 	"github.com/wndhydrnt/saturn-sync/pkg/host"
 	"github.com/wndhydrnt/saturn-sync/pkg/mock"
 	"github.com/wndhydrnt/saturn-sync/pkg/task"
+	"github.com/wndhydrnt/saturn-sync/pkg/task/schema"
 	"go.uber.org/mock/gomock"
 )
 
@@ -54,7 +54,7 @@ func TestApplyTaskToRepository_CreatePullRequestLocalChanges(t *testing.T) {
 	gitc.EXPECT().HasRemoteChanges("main").Return(false, nil)
 	gitc.EXPECT().HasRemoteChanges("saturn-sync--unittest").Return(true, nil)
 	gitc.EXPECT().Push("saturn-sync--unittest").Return(nil)
-	tw := &task.Wrapper{Task: &proto.Task{CommitMessage: ptr("commit test"), Name: "unittest"}}
+	tw := &task.Wrapper{Task: &schema.Task{CommitMessage: "commit test", Name: "unittest"}}
 
 	result, err := applyTaskToRepository(context.Background(), false, gitc, slog.Default(), repo, tw, tempDir)
 
@@ -84,7 +84,7 @@ func TestApplyTaskToRepository_CreatePullRequestRemoteChanges(t *testing.T) {
 	gitc.EXPECT().CommitChanges("commit test").Return(nil)
 	gitc.EXPECT().HasRemoteChanges("main").Return(true, nil)
 	gitc.EXPECT().HasRemoteChanges("saturn-sync--unittest").Return(false, nil)
-	tw := &task.Wrapper{Task: &proto.Task{CommitMessage: ptr("commit test"), Name: "unittest"}}
+	tw := &task.Wrapper{Task: &schema.Task{CommitMessage: "commit test", Name: "unittest"}}
 
 	result, err := applyTaskToRepository(context.Background(), false, gitc, slog.Default(), repo, tw, tempDir)
 
@@ -99,7 +99,7 @@ func TestApplyTaskToRepository_PullRequestClosedAndMergeOnceActive(t *testing.T)
 	repo.EXPECT().FindPullRequest("saturn-sync--unittest").Return(prID, nil)
 	repo.EXPECT().IsPullRequestClosed(prID).Return(true)
 	gitc := mock.NewMockGitClient(ctrl)
-	tw := &task.Wrapper{Task: &proto.Task{MergeOnce: ptr(true), Name: "unittest"}}
+	tw := &task.Wrapper{Task: &schema.Task{MergeOnce: true, Name: "unittest"}}
 
 	result, err := applyTaskToRepository(context.Background(), false, gitc, slog.Default(), repo, tw, "")
 
@@ -115,7 +115,7 @@ func TestApplyTaskToRepository_PullRequestMergedAndMergeOnceActive(t *testing.T)
 	repo.EXPECT().IsPullRequestClosed(prID).Return(false)
 	repo.EXPECT().IsPullRequestMerged(prID).Return(true)
 	gitc := mock.NewMockGitClient(ctrl)
-	tw := &task.Wrapper{Task: &proto.Task{MergeOnce: ptr(true), Name: "unittest"}}
+	tw := &task.Wrapper{Task: &schema.Task{MergeOnce: true, Name: "unittest"}}
 
 	result, err := applyTaskToRepository(context.Background(), false, gitc, slog.Default(), repo, tw, "")
 
@@ -131,7 +131,7 @@ func TestApplyTaskToRepository_CreateOnly(t *testing.T) {
 	repo.EXPECT().IsPullRequestClosed(prID).Return(false)
 	repo.EXPECT().IsPullRequestMerged(prID).Return(false)
 	gitc := mock.NewMockGitClient(ctrl)
-	tw := &task.Wrapper{Task: &proto.Task{CreateOnly: ptr(true), Name: "unittest"}}
+	tw := &task.Wrapper{Task: &schema.Task{CreateOnly: true, Name: "unittest"}}
 
 	result, err := applyTaskToRepository(context.Background(), false, gitc, slog.Default(), repo, tw, "")
 
@@ -162,7 +162,7 @@ func TestApplyTaskToRepository_ClosePullRequestIfChangesExistInBaseBranch(t *tes
 	gitc.EXPECT().HasLocalChanges().Return(true, nil)
 	gitc.EXPECT().CommitChanges("").Return(nil)
 	gitc.EXPECT().HasRemoteChanges("main").Return(false, nil)
-	tw := &task.Wrapper{Task: &proto.Task{Name: "unittest"}}
+	tw := &task.Wrapper{Task: &schema.Task{Name: "unittest"}}
 
 	result, err := applyTaskToRepository(context.Background(), false, gitc, slog.Default(), repo, tw, tempDir)
 
@@ -195,7 +195,7 @@ func TestApplyTaskToRepository_MergePullRequest(t *testing.T) {
 	gitc.EXPECT().HasLocalChanges().Return(false, nil)
 	gitc.EXPECT().HasRemoteChanges("main").Return(true, nil)
 	gitc.EXPECT().HasRemoteChanges("saturn-sync--unittest").Return(false, nil)
-	tw := &task.Wrapper{Task: &proto.Task{AutoMerge: ptr(true), Name: "unittest"}}
+	tw := &task.Wrapper{Task: &schema.Task{AutoMerge: true, Name: "unittest"}}
 
 	result, err := applyTaskToRepository(context.Background(), false, gitc, slog.Default(), repo, tw, tempDir)
 
@@ -225,7 +225,7 @@ func TestApplyTaskToRepository_MergePullRequest_FailedMergeChecks(t *testing.T) 
 	gitc.EXPECT().HasLocalChanges().Return(false, nil)
 	gitc.EXPECT().HasRemoteChanges("main").Return(true, nil)
 	gitc.EXPECT().HasRemoteChanges("saturn-sync--unittest").Return(false, nil)
-	tw := &task.Wrapper{Task: &proto.Task{AutoMerge: ptr(true), Name: "unittest"}}
+	tw := &task.Wrapper{Task: &schema.Task{AutoMerge: true, Name: "unittest"}}
 
 	result, err := applyTaskToRepository(context.Background(), false, gitc, slog.Default(), repo, tw, tempDir)
 
@@ -256,10 +256,10 @@ func TestApplyTaskToRepository_MergePullRequest_AutoMergeAfter(t *testing.T) {
 	gitc.EXPECT().HasLocalChanges().Return(false, nil)
 	gitc.EXPECT().HasRemoteChanges("main").Return(true, nil)
 	gitc.EXPECT().HasRemoteChanges("saturn-sync--unittest").Return(false, nil)
-	tw := &task.Wrapper{Task: &proto.Task{
-		AutoMerge:             ptr(true),
-		AutoMergeAfterSeconds: ptr(int32(172800)),
-		Name:                  "unittest",
+	tw := &task.Wrapper{Task: &schema.Task{
+		AutoMerge:      true,
+		AutoMergeAfter: "48h",
+		Name:           "unittest",
 	}}
 
 	result, err := applyTaskToRepository(context.Background(), false, gitc, slog.Default(), repo, tw, tempDir)
@@ -292,8 +292,8 @@ func TestApplyTaskToRepository_MergePullRequest_MergeConflict(t *testing.T) {
 	gitc.EXPECT().HasLocalChanges().Return(false, nil)
 	gitc.EXPECT().HasRemoteChanges("main").Return(true, nil)
 	gitc.EXPECT().HasRemoteChanges("saturn-sync--unittest").Return(false, nil)
-	tw := &task.Wrapper{Task: &proto.Task{
-		AutoMerge: ptr(true),
+	tw := &task.Wrapper{Task: &schema.Task{
+		AutoMerge: true,
 		Name:      "unittest",
 	}}
 
@@ -327,7 +327,7 @@ func TestApplyTaskToRepository_UpdatePullRequest(t *testing.T) {
 	gitc.EXPECT().Push("saturn-sync--unittest").Return(nil)
 	gitc.EXPECT().HasRemoteChanges("main").Return(true, nil)
 	gitc.EXPECT().HasRemoteChanges("saturn-sync--unittest").Return(true, nil)
-	tw := &task.Wrapper{Task: &proto.Task{Name: "unittest"}}
+	tw := &task.Wrapper{Task: &schema.Task{Name: "unittest"}}
 
 	result, err := applyTaskToRepository(context.Background(), false, gitc, slog.Default(), repo, tw, tempDir)
 
@@ -356,7 +356,7 @@ func TestApplyTaskToRepository_NoChanges(t *testing.T) {
 	gitc.EXPECT().HasLocalChanges().Return(false, nil)
 	gitc.EXPECT().HasRemoteChanges("main").Return(false, nil)
 	gitc.EXPECT().HasRemoteChanges("saturn-sync--unittest").Return(false, nil)
-	tw := &task.Wrapper{Task: &proto.Task{Name: "unittest"}}
+	tw := &task.Wrapper{Task: &schema.Task{Name: "unittest"}}
 
 	result, err := applyTaskToRepository(context.Background(), false, gitc, slog.Default(), repo, tw, tempDir)
 
@@ -405,7 +405,7 @@ The commit(s) that modified the pull request:
 	gitc.EXPECT().
 		UpdateTaskBranch("saturn-sync--unittest", false, repo).
 		Return(false, &git.BranchModifiedError{Checksums: []string{"abc", "def"}})
-	tw := &task.Wrapper{Task: &proto.Task{Name: "unittest"}}
+	tw := &task.Wrapper{Task: &schema.Task{Name: "unittest"}}
 
 	result, err := applyTaskToRepository(context.Background(), false, gitc, slog.Default(), repo, tw, tempDir)
 
@@ -441,7 +441,7 @@ func TestApplyTaskToRepository_ForceRebaseByUser(t *testing.T) {
 	gitc.EXPECT().CommitChanges("").Return(nil)
 	gitc.EXPECT().HasRemoteChanges("main").Return(true, nil)
 	gitc.EXPECT().HasRemoteChanges("saturn-sync--unittest").Return(false, nil)
-	tw := &task.Wrapper{Task: &proto.Task{Name: "unittest"}}
+	tw := &task.Wrapper{Task: &schema.Task{Name: "unittest"}}
 
 	result, err := applyTaskToRepository(context.Background(), false, gitc, slog.Default(), repo, tw, tempDir)
 
@@ -497,7 +497,7 @@ func createTestCache(taskFilePath string) string {
 func createTestTask(nameFilter string) string {
 	tpl := `name: "Unit Test"
 filters:
-  repositoryNames:
+  repositoryName:
     - names: ["%s"]
 `
 	content := fmt.Sprintf(tpl, nameFilter)
@@ -554,8 +554,4 @@ func TestExecuteRunner_Run(t *testing.T) {
 	err := runner.run([]string{taskFile})
 
 	require.NoError(t, err)
-}
-
-func ptr[T any](t T) *T {
-	return &t
 }

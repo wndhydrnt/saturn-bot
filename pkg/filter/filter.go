@@ -25,15 +25,15 @@ type Filter interface {
 	String() string
 }
 
-type FileExists struct {
+type File struct {
 	fileName string
 }
 
-func NewFileExists(fileName string) *FileExists {
-	return &FileExists{fileName: fileName}
+func NewFile(fileName string) *File {
+	return &File{fileName: fileName}
 }
 
-func (fe *FileExists) Do(ctx context.Context) (bool, error) {
+func (fe *File) Do(ctx context.Context) (bool, error) {
 	repo, ok := ctx.Value(gsContext.RepositoryKey{}).(FilterRepository)
 	if !ok {
 		return false, errors.New("context passed to filter fileExists does not contain a repository")
@@ -42,29 +42,29 @@ func (fe *FileExists) Do(ctx context.Context) (bool, error) {
 	return repo.HasFile(fe.fileName)
 }
 
-func (fe *FileExists) Name() string {
+func (fe *File) Name() string {
 	return "hasFile"
 }
 
-func (fe *FileExists) String() string {
-	return fmt.Sprintf("hasFile(fileName=%s)", fe.fileName)
+func (fe *File) String() string {
+	return fmt.Sprintf("file(path=%s)", fe.fileName)
 }
 
-type FileContainsLine struct {
+type FileContent struct {
 	path   string
 	search *regexp.Regexp
 }
 
-func NewFileContainsLine(path, search string) (*FileContainsLine, error) {
+func NewFileContent(path, search string) (*FileContent, error) {
 	re, err := regexp.Compile(search)
 	if err != nil {
-		return nil, fmt.Errorf("lineInFile: compile search %s to regexp: %w", search, err)
+		return nil, fmt.Errorf("fileContent: compile search %s to regexp: %w", search, err)
 	}
 
-	return &FileContainsLine{path: path, search: re}, nil
+	return &FileContent{path: path, search: re}, nil
 }
 
-func (fcl *FileContainsLine) Do(ctx context.Context) (bool, error) {
+func (fcl *FileContent) Do(ctx context.Context) (bool, error) {
 	repo, ok := ctx.Value(gsContext.RepositoryKey{}).(FilterRepository)
 	if !ok {
 		return false, errors.New("context passed to filter lineInFile does not contain a repository")
@@ -76,7 +76,7 @@ func (fcl *FileContainsLine) Do(ctx context.Context) (bool, error) {
 			return false, nil
 		}
 
-		return false, fmt.Errorf("lineInFile: get file from repository: %w", err)
+		return false, fmt.Errorf("fileContent: get file from repository: %w", err)
 	}
 
 	for _, line := range strings.Split(content, "\n") {
@@ -89,19 +89,19 @@ func (fcl *FileContainsLine) Do(ctx context.Context) (bool, error) {
 	return false, nil
 }
 
-func (fcl *FileContainsLine) Name() string {
-	return "fileContainsLine"
+func (fcl *FileContent) Name() string {
+	return "fileContent"
 }
 
-func (fcl *FileContainsLine) String() string {
-	return fmt.Sprintf("lineInFile(path=%s, search=%s)", fcl.path, fcl.search.String())
+func (fcl *FileContent) String() string {
+	return fmt.Sprintf("fileContent(path=%s,search=%s)", fcl.path, fcl.search.String())
 }
 
-type RepositoryNames struct {
+type RepositoryName struct {
 	matchers []*regexp.Regexp
 }
 
-func NewRepositoryNames(names []string) (*RepositoryNames, error) {
+func NewRepositoryName(names []string) (*RepositoryName, error) {
 	var nameRegexp []*regexp.Regexp
 	for _, name := range names {
 		if strings.HasPrefix(name, "https://") || strings.HasPrefix(name, "http://") {
@@ -130,10 +130,10 @@ func NewRepositoryNames(names []string) (*RepositoryNames, error) {
 		nameRegexp = append(nameRegexp, r)
 	}
 
-	return &RepositoryNames{matchers: nameRegexp}, nil
+	return &RepositoryName{matchers: nameRegexp}, nil
 }
 
-func (r *RepositoryNames) Do(ctx context.Context) (bool, error) {
+func (r *RepositoryName) Do(ctx context.Context) (bool, error) {
 	repo, ok := ctx.Value(gsContext.RepositoryKey{}).(FilterRepository)
 	if !ok {
 		return false, errors.New("context passed to filter repositoryName does not contain a repository")
@@ -149,16 +149,16 @@ func (r *RepositoryNames) Do(ctx context.Context) (bool, error) {
 	return false, nil
 }
 
-func (r *RepositoryNames) Name() string {
-	return "repositoryNames"
+func (r *RepositoryName) Name() string {
+	return "repositoryName"
 }
 
-func (r *RepositoryNames) String() string {
+func (r *RepositoryName) String() string {
 	var matcherStrings []string
 	for _, matcher := range r.matchers {
 		matcherStrings = append(matcherStrings, matcher.String())
 	}
-	return fmt.Sprintf("repositoryNames(names=%s)", strings.Join(matcherStrings, ","))
+	return fmt.Sprintf("repositoryName(names=[%s])", strings.Join(matcherStrings, ","))
 }
 
 // Reverse takes the result of a wrapped filter and returns the opposite.
