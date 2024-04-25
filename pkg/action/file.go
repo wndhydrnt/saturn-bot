@@ -8,37 +8,23 @@ import (
 	"os"
 )
 
-func NewFile(content io.ReadCloser, mode, path, state string, overwrite *bool) (Action, error) {
-	if path == "" {
-		return nil, fmt.Errorf("property 'path' of action 'file' cannot be empty")
+func NewFileCreate(content io.ReadCloser, mode int, overwrite bool, path string) Action {
+	return &fileCreate{
+		content:   content,
+		mode:      mode,
+		overwrite: overwrite,
+		path:      path,
 	}
-
-	switch state {
-	case "absent":
-		return &deleteFile{path: path}, nil
-	case "present":
-		overwriteReal := true
-		if overwrite != nil {
-			overwriteReal = *overwrite
-		}
-
-		return &createFile{
-			content:   content,
-			overwrite: overwriteReal,
-			path:      path,
-		}, nil
-	}
-
-	return nil, fmt.Errorf("unknown value for state - can be one of present,absent was %s", state)
 }
 
-type createFile struct {
+type fileCreate struct {
 	content   io.ReadCloser
+	mode      int
 	overwrite bool
 	path      string
 }
 
-func (a *createFile) Apply(_ context.Context) error {
+func (a *fileCreate) Apply(_ context.Context) error {
 	defer a.content.Close()
 	_, err := os.Stat(a.path)
 	fileExists := true
@@ -70,15 +56,19 @@ func (a *createFile) Apply(_ context.Context) error {
 	return nil
 }
 
-func (a *createFile) String() string {
-	return fmt.Sprintf("file(overwrite=%t,path=%s,state=present)", a.overwrite, a.path)
+func (a *fileCreate) String() string {
+	return fmt.Sprintf("fileCreate(mode=%d,overwrite=%t,path=%s)", a.mode, a.overwrite, a.path)
 }
 
-type deleteFile struct {
+func NewFileDelete(path string) Action {
+	return &fileDelete{path: path}
+}
+
+type fileDelete struct {
 	path string
 }
 
-func (a *deleteFile) Apply(_ context.Context) error {
+func (a *fileDelete) Apply(_ context.Context) error {
 	err := os.Remove(a.path)
 	if err != nil {
 		if errors.Is(err, os.ErrNotExist) {
@@ -92,6 +82,6 @@ func (a *deleteFile) Apply(_ context.Context) error {
 	return nil
 }
 
-func (a *deleteFile) String() string {
-	return fmt.Sprintf("file(path=%s,state=absent)", a.path)
+func (a *fileDelete) String() string {
+	return fmt.Sprintf("fileDelete(path=%s)", a.path)
 }

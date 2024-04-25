@@ -1,0 +1,266 @@
+{
+  "$schema": "https://json-schema.org/draft/2020-12/schema",
+  "$id": "https://saturn-sync.cloud/task.schema.json",
+  "title": "Task",
+  "type": "object",
+  "properties": {
+    "actions": {
+      "properties": {
+        "fileCreate": {
+          "items": {
+            "properties": {
+              "content": {
+                "description": "The content of the file.",
+                "type": "string"
+              },
+              "mode": {
+                "default": 644,
+                "description": "File mode to set when creating the file.",
+                "type": "integer"
+              },
+              "overwrite": {
+                "default": true,
+                "description": "Overwrite the file with new content if it exists.",
+                "type": "boolean"
+              },
+              "path": {
+                "description": "Path to the file to create or delete.",
+                "type": "string"
+              }
+            },
+            "required": ["content", "path"],
+            "type": "object"
+          },
+          "type": "array"
+        },
+        "fileDelete": {
+          "items": {
+            "properties": {
+              "path": {
+                "description": "Path to the file to create or delete.",
+                "type": "string"
+              }
+            },
+            "required": ["path"],
+            "type": "object"
+          },
+          "type": "array"
+        },
+        "lineDelete": {
+          "items": {
+            "properties": {
+              "line": {
+                "type": "string"
+              },
+              "path": {
+                "type": "string"
+              }
+            },
+            "required": ["line", "path"],
+            "type": "object"
+          },
+          "type": "array"
+        },
+        "lineInsert": {
+          "items": {
+            "properties": {
+              "insertAt": {
+                "default": "EOF",
+                "description": "Where to insert the line. BOF = Beginning of file, EOF = End of file.",
+                "enum": ["BOF", "EOF"],
+                "type": "string"
+              },
+              "line": {
+                "description": "Line to insert.",
+                "type": "string"
+              },
+              "path": {
+                "description": "Path to the file to modify.",
+                "type": "string"
+              }
+            },
+            "required": ["line", "path"],
+            "type": "object"
+          },
+          "type": "array"
+        },
+        "lineReplace": {
+          "items": {
+            "properties": {
+              "line": {
+                "type": "string"
+              },
+              "path": {
+                "type": "string"
+              },
+              "search": {
+                "type": "string"
+              }
+            },
+            "required": ["line", "path", "search"],
+            "type": "object"
+          },
+          "type": "array"
+        }
+      },
+      "type": "object"
+    },
+    "autoMerge": {
+      "default": false,
+      "description": "Merge a pull request automatically if all have checks have passed and all approvals have been given.",
+      "type": "boolean"
+    },
+    "autoMergeAfter": {
+      "default": "",
+      "description": "If set, automatically merge the pull request after it has been open for the specified amount of time. Only applied if `autoMerge` is `true`. The value is a Go duration, like 5m or 1h.",
+      "type": "string"
+    },
+    "branchName": {
+      "default": "",
+      "description": "If set, used as th name of the branch to commit changes to. Defaults to an auto-generated name if not set.",
+      "type": "string"
+    },
+    "changeLimit": {
+      "default": 0,
+      "description": "Number of pull requests to create in one run. Useful to reduce strain on a system caused by, for example, many CI/CD jobs created at the same time.",
+      "type": "integer"
+    },
+    "commitMessage": {
+      "default": "",
+      "description": "If set, used as the message when changes get committed. Defaults to an auto-generated message if not set.",
+      "type": "string"
+    },
+    "createOnly": {
+      "default": false,
+      "description": "Create pull requests only. Don't attempt to update a pull request on a subsequent run.",
+      "type": "boolean"
+    },
+    "disabled": {
+      "description": "Disable the task temporarily.",
+      "type": "boolean"
+    },
+    "filters": {
+      "properties": {
+        "file": {
+          "items": {
+            "properties": {
+              "path": {
+                "type": "string"
+              },
+              "priority": {
+                "default": 0,
+                "type": "integer"
+              },
+              "reverse": {
+                "default": false,
+                "type": "boolean"
+              }
+            },
+            "required": ["path"],
+            "type": "object"
+          },
+          "type": "array"
+        },
+        "fileContent": {
+          "items": {
+            "properties": {
+              "path": {
+                "type": "string"
+              },
+              "priority": {
+                "default": 0,
+                "type": "integer"
+              },
+              "reverse": {
+                "default": false,
+                "type": "boolean"
+              },
+              "search": {
+                "type": "string"
+              }
+            },
+            "required": ["path", "search"],
+            "type": "object"
+          },
+          "type": "array"
+        },
+        "repositoryName": {
+          "items": {
+            "properties": {
+              "names": {
+                "items": {
+                  "type": "string"
+                },
+                "type": "array"
+              },
+              "priority": {
+                "default": 0,
+                "type": "integer"
+              },
+              "reverse": {
+                "default": false,
+                "type": "boolean"
+              }
+            },
+            "required": ["names"],
+            "type": "object"
+          },
+          "type": "array"
+        }
+      },
+      "type": "object"
+    },
+    "keepBranchAfterMerge": {
+      "default": false,
+      "description": "If `true`, keep the branch after a pull request has been merged.",
+      "type": "boolean"
+    },
+    "labels": {
+      "description": "List of labels to attach to a pull request.",
+      "items": {
+        "type": "string"
+      },
+      "type": "array",
+      "uniqueItems": true
+    },
+    "mergeOnce": {
+      "default": false,
+      "description": "If `true`, no new pull request is being created if a previous pull request has been merged for this task.",
+      "type": "boolean"
+    },
+    "name": {
+      "description": "The name of the task. Used as an identifier.",
+      "type": "string"
+    },
+    "plugins": {
+      "items": {
+        "properties": {
+          "configuration": {
+            "additionalProperties": {
+              "type": "string"
+            },
+            "description": "Key/value pairs that hold additional configuration for the plugin. Sent to the plugin once on startup.",
+            "type": "object"
+          },
+          "path": {
+            "type": "string"
+          }
+        },
+        "required": ["path"],
+        "type": "object"
+      },
+      "type": "array"
+    },
+    "prBody": {
+      "default": "",
+      "description": "If set, used as the body of the pull request.",
+      "type": "string"
+    },
+    "prTitle": {
+      "default": "",
+      "description": "If set, used as the title of the pull request.",
+      "type": "string"
+    }
+  },
+  "required": ["name"]
+}

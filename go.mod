@@ -1,6 +1,6 @@
 module github.com/wndhydrnt/saturn-sync
 
-go 1.21.6
+go 1.22.0
 
 require (
 	github.com/google/go-github/v59 v59.0.0
@@ -19,7 +19,7 @@ require (
 	github.com/santhosh-tekuri/jsonschema/v5 v5.3.1
 	github.com/spf13/cobra v1.8.0
 	github.com/stretchr/testify v1.8.4
-	github.com/wndhydrnt/saturn-sync-go v0.1.2-0.20240402185329-63106fec7b42
+	github.com/wndhydrnt/saturn-sync-go v0.2.0
 	github.com/xanzy/go-gitlab v0.97.0
 	go.uber.org/mock v0.4.0
 	gopkg.in/yaml.v3 v3.0.1

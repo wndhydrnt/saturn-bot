@@ -1,8 +1,9 @@
 package task
 
 import (
-	"crypto/sha256"
+	"cmp"
 	"fmt"
+	"hash"
 	"io"
 	"log/slog"
 	"os"
@@ -12,48 +13,53 @@ import (
 	"time"
 
 	"github.com/gosimple/slug"
-	proto "github.com/wndhydrnt/saturn-sync-go/protocol/v1"
 	"github.com/wndhydrnt/saturn-sync/pkg/action"
 	"github.com/wndhydrnt/saturn-sync/pkg/filter"
 	"github.com/wndhydrnt/saturn-sync/pkg/host"
+	"github.com/wndhydrnt/saturn-sync/pkg/task/schema"
 )
 
-func createActionsForTask(actionDefs *proto.Actions, taskPath string) ([]action.Action, error) {
+func createActionsForTask(actionDefs *schema.TaskActions, taskPath string) ([]action.Action, error) {
 	var result []action.Action
 	if actionDefs == nil {
 		return result, nil
 	}
 
-	for _, fileAction := range actionDefs.File {
-		contentReader, err := createContentReader(taskPath, fileAction.GetContent())
+	for _, fileCreate := range actionDefs.FileCreate {
+		contentReader, err := createContentReader(taskPath, fileCreate.Content)
 		if err != nil {
-			return nil, fmt.Errorf("create content reader of file action: %w", err)
+			return nil, fmt.Errorf("create content reader of fileCreate action: %w", err)
 		}
-		a, err := action.NewFile(
-			contentReader,
-			fileAction.GetMode(),
-			fileAction.GetPath(),
-			fileAction.GetState(),
-			fileAction.Overwrite,
-		)
+
+		result = append(result, action.NewFileCreate(contentReader, fileCreate.Mode, fileCreate.Overwrite, fileCreate.Path))
+	}
+
+	for _, fileDelete := range actionDefs.FileDelete {
+		result = append(result, action.NewFileDelete(fileDelete.Path))
+	}
+
+	for _, lineDelete := range actionDefs.LineDelete {
+		a, err := action.NewLineDelete(lineDelete.Line, lineDelete.Path)
 		if err != nil {
-			return nil, err
+			return nil, fmt.Errorf("initialize lineDelete action: %w", err)
 		}
 
 		result = append(result, a)
 	}
 
-	for _, lineInFileAction := range actionDefs.LineInFile {
-		a, err := action.NewLineInFile(
-			lineInFileAction.GetInsertAt(),
-			lineInFileAction.GetLine(),
-			lineInFileAction.GetPath(),
-			lineInFileAction.GetRegex(),
-			lineInFileAction.GetState(),
-		)
-
+	for _, lineInsert := range actionDefs.LineInsert {
+		a, err := action.NewLineInsert(string(lineInsert.InsertAt), lineInsert.Line, lineInsert.Path)
 		if err != nil {
-			return nil, err
+			return nil, fmt.Errorf("initialize lineInsert action: %w", err)
+		}
+
+		result = append(result, a)
+	}
+
+	for _, lineReplace := range actionDefs.LineReplace {
+		a, err := action.NewLineReplace(lineReplace.Line, lineReplace.Path, lineReplace.Search)
+		if err != nil {
+			return nil, fmt.Errorf("initialize lineReplace action: %w", err)
 		}
 
 		result = append(result, a)
@@ -88,41 +94,41 @@ func createContentReader(taskPath, value string) (io.ReadCloser, error) {
 	return f, nil
 }
 
-func createFiltersForTask(filterDefs *proto.Filters) ([]filter.Filter, error) {
+func createFiltersForTask(filterDefs *schema.TaskFilters) ([]filter.Filter, error) {
 	var result []filter.Filter
 	if filterDefs == nil {
 		return result, nil
 	}
 
-	for _, rnFilter := range filterDefs.RepositoryNames {
-		f, err := filter.NewRepositoryNames(rnFilter.GetNames())
+	for _, rnFilter := range filterDefs.RepositoryName {
+		f, err := filter.NewRepositoryName(rnFilter.Names)
 		if err != nil {
 			return nil, err
 		}
 
-		if rnFilter.GetReverse() {
+		if rnFilter.Reverse {
 			result = append(result, filter.NewReverse(f))
 		} else {
 			result = append(result, f)
 		}
 	}
 
-	for _, fFilter := range filterDefs.Files {
-		f := filter.NewFileExists(fFilter.GetPath())
-		if fFilter.GetReverse() {
+	for _, fFilter := range filterDefs.File {
+		f := filter.NewFile(fFilter.Path)
+		if fFilter.Reverse {
 			result = append(result, filter.NewReverse(f))
 		} else {
 			result = append(result, f)
 		}
 	}
 
-	for _, fcFilter := range filterDefs.FileContents {
-		f, err := filter.NewFileContainsLine(fcFilter.GetPath(), fcFilter.GetSearch())
+	for _, fcFilter := range filterDefs.FileContent {
+		f, err := filter.NewFileContent(fcFilter.Path, fcFilter.Search)
 		if err != nil {
 			return nil, err
 		}
 
-		if fcFilter.GetReverse() {
+		if fcFilter.Reverse {
 			result = append(result, filter.NewReverse(f))
 		} else {
 			result = append(result, f)
@@ -142,19 +148,17 @@ type Task interface {
 	OnPrCreated(host.Repository) error
 	OnPrMerged(host.Repository) error
 	PrTitle() string
-	SourceTask() *proto.Task
-	Stop() error
+	SourceTask() *schema.Task
+	Stop()
 }
 
 type Wrapper struct {
-	actions         []action.Action
-	checksum        string
-	filters         []filter.Filter
-	Task            *proto.Task
-	onPrClosedFunc  func(host.Repository) error
-	onPrCreatedFunc func(host.Repository) error
-	onPrMergedFunc  func(host.Repository) error
-	stopFunc        func() error
+	actions                []action.Action
+	autoMergeAfterDuration *time.Duration
+	checksum               string
+	filters                []filter.Filter
+	plugins                []pluginWrapper
+	Task                   *schema.Task
 }
 
 func (tw *Wrapper) Actions() []action.Action {
@@ -166,11 +170,7 @@ func (tw *Wrapper) Filters() []filter.Filter {
 }
 
 func (tw *Wrapper) BranchName() string {
-	if tw.Task.GetBranchName() == "" {
-		return "saturn-sync--" + slug.Make(tw.Task.GetName())
-	}
-
-	return tw.Task.GetBranchName()
+	return cmp.Or(tw.Task.BranchName, "saturn-sync--"+slug.Make(tw.Task.Name))
 }
 
 func (tw *Wrapper) Checksum() string {
@@ -178,51 +178,67 @@ func (tw *Wrapper) Checksum() string {
 }
 
 func (tw *Wrapper) AutoMergeAfter() time.Duration {
-	return time.Second * time.Duration(tw.Task.GetAutoMergeAfterSeconds())
+	if tw.Task.AutoMergeAfter == "" {
+		return 0
+	}
+
+	if tw.autoMergeAfterDuration == nil {
+		d, err := time.ParseDuration(tw.Task.AutoMergeAfter)
+		if err != nil {
+			panic(fmt.Sprintf("value of field `autoMergeAfter` of task %s is not a duration: %s", tw.Task.Name, err))
+		}
+
+		tw.autoMergeAfterDuration = &d
+	}
+
+	return *tw.autoMergeAfterDuration
 }
 
 func (tw *Wrapper) PrTitle() string {
-	if tw.Task.GetPrTitle() == "" {
-		return "Apply task " + tw.Task.GetName()
-	}
-
-	return tw.Task.GetPrTitle()
+	return cmp.Or(tw.Task.PrTitle, "Apply task "+tw.Task.Name)
 }
 
-func (tw *Wrapper) SourceTask() *proto.Task {
+func (tw *Wrapper) SourceTask() *schema.Task {
 	return tw.Task
 }
 
 func (tw *Wrapper) OnPrClosed(repository host.Repository) error {
-	if tw.onPrCreatedFunc != nil {
-		return tw.onPrClosedFunc(repository)
+	for _, p := range tw.plugins {
+		err := p.onPrClosed(repository)
+		if err != nil {
+			slog.Error("OnPrClosed event of plugin failed", "err", err)
+		}
 	}
 
 	return nil
 }
 
 func (tw *Wrapper) OnPrCreated(repository host.Repository) error {
-	if tw.onPrCreatedFunc != nil {
-		return tw.onPrCreatedFunc(repository)
+	for _, p := range tw.plugins {
+		err := p.onPrCreated(repository)
+		if err != nil {
+			slog.Error("OnPrCreated event of plugin failed", "err", err)
+		}
 	}
 
 	return nil
 }
 
 func (tw *Wrapper) OnPrMerged(repository host.Repository) error {
-	if tw.onPrMergedFunc != nil {
-		return tw.onPrMergedFunc(repository)
+	for _, p := range tw.plugins {
+		err := p.onPrMerged(repository)
+		if err != nil {
+			slog.Error("OnPrMerged event of plugin failed", "err", err)
+		}
 	}
 
 	return nil
 }
 
-func (tw *Wrapper) Stop() error {
-	if tw.stopFunc != nil {
-		return tw.stopFunc()
+func (tw *Wrapper) Stop() {
+	for _, p := range tw.plugins {
+		p.stop()
 	}
-
-	return nil
 }
 
 // Registry contains all tasks.
@@ -242,43 +258,20 @@ func (tr *Registry) GetTasks() []Task {
 }
 
 // ReadAll takes a list of paths to task files and reads all tasks from thee files.
-func (tr *Registry) ReadAll(taskFiles []string) {
+func (tr *Registry) ReadAll(taskFiles []string) error {
 	for _, file := range taskFiles {
 		err := tr.readTasks(file)
 		if err != nil {
-			slog.Error("Failed to read tasks from file", "err", err, "file", file)
+			return fmt.Errorf("failed to read tasks from file %s: %w", file, err)
 		}
 	}
+
+	return nil
 }
 
 func (tr *Registry) readTasks(taskFile string) error {
 	ext := path.Ext(taskFile)
 	switch ext {
-	case "":
-		tasks, err := startPlugin(&startPluginOptions{
-			customConfig: tr.customConfig,
-			executable:   taskFile,
-			filePath:     taskFile,
-		})
-		if err != nil {
-			return fmt.Errorf("start plugin of file '%s': %w", taskFile, err)
-		}
-
-		tr.tasks = append(tr.tasks, tasks...)
-		return nil
-	case ".py":
-		tasks, err := startPlugin(&startPluginOptions{
-			args:         []string{taskFile},
-			customConfig: tr.customConfig,
-			executable:   "python",
-			filePath:     taskFile,
-		})
-		if err != nil {
-			return fmt.Errorf("start plugin of file '%s': %w", taskFile, err)
-		}
-
-		tr.tasks = append(tr.tasks, tasks...)
-		return nil
 	case ".yml":
 	case ".yaml":
 		tasks, err := readTasksYaml(taskFile)
@@ -289,10 +282,10 @@ func (tr *Registry) readTasks(taskFile string) error {
 		tr.tasks = append(tr.tasks, tasks...)
 		return nil
 	default:
-		return fmt.Errorf("unsupported file: %s", taskFile)
+		return fmt.Errorf("unsupported extension: %s", ext)
 	}
 
-	return fmt.Errorf("unsupported file: %s", taskFile)
+	return fmt.Errorf("unsupported extension: %s", ext)
 }
 
 // Stop notifies every task that this Registry is being stopped.
@@ -300,22 +293,21 @@ func (tr *Registry) readTasks(taskFile string) error {
 // Every task can then execute code to clean itself up.
 func (tr *Registry) Stop() {
 	for _, t := range tr.tasks {
-		_ = t.Stop()
+		t.Stop()
 	}
 }
 
-func calculateChecksum(filePath string) (string, error) {
+func calculateChecksum(filePath string, h hash.Hash) error {
 	f, err := os.Open(filePath)
 	if err != nil {
-		return "", fmt.Errorf("open file to create hash: %w", err)
+		return fmt.Errorf("open file to calculate hash: %w", err)
 	}
 
 	defer f.Close()
-	hash := sha256.New()
-	_, err = io.Copy(hash, f)
+	_, err = io.Copy(h, f)
 	if err != nil {
-		return "", fmt.Errorf("copy content to sha256: %w", err)
+		return fmt.Errorf("copy content to hash: %w", err)
 	}
 
-	return fmt.Sprintf("%x", hash.Sum(nil)), nil
+	return nil
 }

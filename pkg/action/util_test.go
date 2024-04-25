@@ -1,12 +1,25 @@
 package action
 
 import (
+	"context"
 	"fmt"
 	"io/fs"
 	"os"
 	"path/filepath"
 	"strings"
+	"testing"
+
+	"github.com/stretchr/testify/assert"
+	"github.com/stretchr/testify/require"
 )
+
+type testCase struct {
+	name      string
+	files     map[string]string
+	action    func() (Action, error)
+	wantError error
+	wantFiles map[string]string
+}
 
 func collectFilesInDirectory(dir string) (map[string]string, error) {
 	fileMap := map[string]string{}
@@ -49,6 +62,30 @@ func inDirectory(dir string, f func() error) error {
 	}
 
 	return funcErr
+}
+
+func runTestCase(t *testing.T, tc testCase) {
+	t.Run(tc.name, func(t *testing.T) {
+		workDir, err := setupTestFiles(tc.files)
+		require.NoError(t, err)
+
+		a, err := tc.action()
+		if tc.wantError == nil {
+			require.NoError(t, err)
+		} else {
+			require.ErrorContains(t, err, tc.wantError.Error())
+			return
+		}
+
+		err = inDirectory(workDir, func() error {
+			return a.Apply(context.Background())
+		})
+		require.NoError(t, err)
+
+		actualFiles, err := collectFilesInDirectory(workDir)
+		require.NoError(t, err)
+		assert.Equal(t, tc.wantFiles, actualFiles)
+	})
 }
 
 func setupTestFiles(fileMap map[string]string) (string, error) {

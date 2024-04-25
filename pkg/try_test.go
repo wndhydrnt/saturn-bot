@@ -30,7 +30,7 @@ func TestTryRunner_Run_FilesModified(t *testing.T) {
 	out := &bytes.Buffer{}
 	content := `name: Unit Test
 filters:
-  repositoryNames:
+  repositoryName:
     - names: ["git.local/unit/test"]`
 	taskFile := createTempFile(content, "*.yaml")
 
@@ -46,7 +46,7 @@ filters:
 	err := underTest.Run()
 
 	require.NoError(t, err)
-	assert.Contains(t, out.String(), "Filter repositoryNames(names=^git.local/unit/test$) of task Unit Test matches")
+	assert.Contains(t, out.String(), "Filter repositoryName(names=[^git.local/unit/test$]) of task Unit Test matches")
 	assert.Contains(t, out.String(), "Actions modified files")
 }
 
@@ -144,7 +144,7 @@ func TestTryRunner_Run_FilterDoesNotMatch(t *testing.T) {
 	out := &bytes.Buffer{}
 	content := `name: Unit Test
 filters:
-  repositoryNames:
+  repositoryName:
     - names: ["git.local/unit/no-match"]`
 	taskFile := createTempFile(content, "*.yaml")
 
@@ -160,7 +160,7 @@ filters:
 	err := underTest.Run()
 
 	require.NoError(t, err)
-	assert.Contains(t, out.String(), "Filter repositoryNames(names=^git.local/unit/no-match$) of task Unit Test doesn't match")
+	assert.Contains(t, out.String(), "Filter repositoryName(names=[^git.local/unit/no-match$]) of task Unit Test doesn't match")
 }
 
 func TestTryRunner_Run_UnsetRepositoryName(t *testing.T) {

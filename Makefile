@@ -2,6 +2,9 @@ VERSION?=dev
 VERSION_HASH?=$(shell git rev-parse HEAD)
 VERSION_DATETIME?=$(shell date -u +"%Y-%m-%dT%H:%M:%SZ")
 BUILD_FLAGS=-ldflags="-X 'github.com/wndhydrnt/saturn-sync/pkg/version.Version=$(VERSION)' -X 'github.com/wndhydrnt/saturn-sync/pkg/version.Hash=$(VERSION_HASH)' -X 'github.com/wndhydrnt/saturn-sync/pkg/version.DateTime=$(VERSION_DATETIME)'"
+GO_JSONSCHEMA_VERSION=v0.16.0
+OS=$(shell uname -s)
+ARCH=$(shell uname -m)
 
 build:
 	go build $(BUILD_FLAGS) -o saturn-sync
@@ -29,7 +32,13 @@ generate_grpc:
 	protoc-go-inject-tag -input ./pkg/proto/saturnsync.pb.go -remove_tag_comment
 	gofmt -w ./pkg/proto/saturnsync.pb.go
 
+generate_json_schema_task: bin/go-jsonschema/go-jsonschema-${GO_JSONSCHEMA_VERSION}
+	bin/go-jsonschema/go-jsonschema-${GO_JSONSCHEMA_VERSION} --extra-imports -p schema -t ./pkg/task/schema/task.schema.json --output ./pkg/task/schema/schema.go
+
 generate_mocks:
+ifeq (, $(shell which mockgen))
+	go install go.uber.org/mock/mockgen@latest
+endif
 	mkdir -p pkg/mock
 	rm pkg/mock/*.go
 	mockgen -package mock -source pkg/filter/filter.go > pkg/mock/filter.go
@@ -47,3 +56,21 @@ docker_build:
 
 docker_build_full: docker_build
 	docker build --build-arg="BASE=${VERSION}" -t ghcr.io/wndhydrnt/saturn-sync:${VERSION}-full -f full.Dockerfile .
+
+bin/go-jsonschema/go-jsonschema-${GO_JSONSCHEMA_VERSION}:
+	mkdir -p bin/go-jsonschema
+ifeq (${OS}-${ARCH},Darwin-arm64)
+	curl -L --silent --fail -o bin/go-jsonschema/go-jsonschema.tar.gz 'https://github.com/omissis/go-jsonschema/releases/download/${GO_JSONSCHEMA_VERSION}/go-jsonschema_Darwin_arm64.tar.gz'
+endif
+ifeq (${OS}-${ARCH},Darwin-amd64)
+	curl -L --silent --fail -o bin/go-jsonschema/go-jsonschema.tar.gz 'https://github.com/omissis/go-jsonschema/releases/download/${GO_JSONSCHEMA_VERSION}/go-jsonschema_Darwin_amd64.tar.gz'
+endif
+ifeq (${OS}-${ARCH},Linux-aarch64)
+	curl -L --silent --fail -o bin/go-jsonschema/go-jsonschema.tar.gz 'https://github.com/omissis/go-jsonschema/releases/download/${GO_JSONSCHEMA_VERSION}/go-jsonschema_Linux_arm64.tar.gz'
+endif
+ifeq (${OS}-${ARCH},Linux-x86_64)
+	curl -L --silent --fail -o bin/go-jsonschema/go-jsonschema.tar.gz 'https://github.com/omissis/go-jsonschema/releases/download/${GO_JSONSCHEMA_VERSION}/go-jsonschema_Linux_x86_64.tar.gz'
+endif
+	tar -C bin/go-jsonschema/ -xzf bin/go-jsonschema/go-jsonschema.tar.gz
+	mv bin/go-jsonschema/go-jsonschema bin/go-jsonschema/go-jsonschema-${GO_JSONSCHEMA_VERSION}
+	rm bin/go-jsonschema/go-jsonschema.tar.gz

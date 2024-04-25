@@ -13,10 +13,10 @@ import (
 	reflect "reflect"
 	time "time"
 
-	protocolv1 "github.com/wndhydrnt/saturn-sync-go/protocol/v1"
 	action "github.com/wndhydrnt/saturn-sync/pkg/action"
 	filter "github.com/wndhydrnt/saturn-sync/pkg/filter"
 	host "github.com/wndhydrnt/saturn-sync/pkg/host"
+	schema "github.com/wndhydrnt/saturn-sync/pkg/task/schema"
 	gomock "go.uber.org/mock/gomock"
 )
 
@@ -170,10 +170,10 @@ func (mr *MockTaskMockRecorder) PrTitle() *gomock.Call {
 }
 
 // SourceTask mocks base method.
-func (m *MockTask) SourceTask() *protocolv1.Task {
+func (m *MockTask) SourceTask() *schema.Task {
 	m.ctrl.T.Helper()
 	ret := m.ctrl.Call(m, "SourceTask")
-	ret0, _ := ret[0].(*protocolv1.Task)
+	ret0, _ := ret[0].(*schema.Task)
 	return ret0
 }
 
@@ -184,11 +184,9 @@ func (mr *MockTaskMockRecorder) SourceTask() *gomock.Call {
 }
 
 // Stop mocks base method.
-func (m *MockTask) Stop() error {
+func (m *MockTask) Stop() {
 	m.ctrl.T.Helper()
-	ret := m.ctrl.Call(m, "Stop")
-	ret0, _ := ret[0].(error)
-	return ret0
+	m.ctrl.Call(m, "Stop")
 }
 
 // Stop indicates an expected call of Stop.

@@ -7,7 +7,6 @@ import (
 	"os"
 	"path/filepath"
 	"regexp"
-	"slices"
 	"strings"
 )
 
@@ -16,62 +15,24 @@ const (
 	endOfFile       = "EOF"
 )
 
-var (
-	insertAtValues = []string{beginningOfFile, endOfFile}
-)
-
-func NewLineInFile(insertAt, line, path, regex, state string) (Action, error) {
-	switch state {
-	case "delete":
-		regexC, err := regexp.Compile(regex)
-		if err != nil {
-			return nil, fmt.Errorf("compile regex: %w", err)
-		}
-
-		a := &deleteLineInFile{
-			path:  path,
-			regex: regexC,
-		}
-		return a, nil
-	case "insert":
-		if insertAt == "" {
-			insertAt = endOfFile
-		} else {
-			insertAt = strings.ToUpper(insertAt)
-		}
-
-		if !slices.Contains(insertAtValues, insertAt) {
-			return nil, fmt.Errorf("invalid value %s of parameter insertAt - can be one of %s", insertAt, strings.Join(insertAtValues, ","))
-		}
-
-		return &insertLineInFile{
-			insertAt: insertAt,
-			line:     line,
-			path:     path,
-		}, nil
-
-	case "replace":
-		regexC, err := regexp.Compile(regex)
-		if err != nil {
-			return nil, fmt.Errorf("compile regex: %w", err)
-		}
-
-		return &replaceLineInFile{
-			line:  line,
-			path:  path,
-			regex: regexC,
-		}, nil
+func NewLineDelete(path, line string) (Action, error) {
+	regexC, err := regexp.Compile(line)
+	if err != nil {
+		return nil, fmt.Errorf("compile regex: %w", err)
 	}
 
-	return nil, fmt.Errorf("unknown value for state - can be one of delete,insert,replace was %s", state)
+	return &lineDelete{
+		path:  path,
+		regex: regexC,
+	}, nil
 }
 
-type deleteLineInFile struct {
+type lineDelete struct {
 	path  string
 	regex *regexp.Regexp
 }
 
-func (d *deleteLineInFile) Apply(_ context.Context) error {
+func (d *lineDelete) Apply(_ context.Context) error {
 	paths, err := filepath.Glob(d.path)
 	if err != nil {
 		return fmt.Errorf("parse glob pattern: %w", err)
@@ -93,17 +54,26 @@ func (d *deleteLineInFile) Apply(_ context.Context) error {
 	return nil
 }
 
-func (d *deleteLineInFile) String() string {
-	return fmt.Sprintf("lineInFile(path=%s,regex=%s,state=delete)", d.path, d.regex.String())
+func (d *lineDelete) String() string {
+	return fmt.Sprintf("lineDelete(line=%s,path=%s)", d.regex.String(), d.path)
 }
 
-type insertLineInFile struct {
+func NewLineInsert(insertAt, line, path string) (Action, error) {
+	insertAt = strings.ToUpper(insertAt)
+	if insertAt != beginningOfFile && insertAt != endOfFile {
+		return nil, fmt.Errorf("invalid value %s of parameter insertAt - can be one of BOF,EOF", insertAt)
+	}
+
+	return &lineInsert{insertAt: insertAt, line: line, path: path}, nil
+}
+
+type lineInsert struct {
 	insertAt string
 	line     string
 	path     string
 }
 
-func (a *insertLineInFile) Apply(_ context.Context) error {
+func (a *lineInsert) Apply(_ context.Context) error {
 	paths, err := filepath.Glob(a.path)
 	if err != nil {
 		return fmt.Errorf("parse glob pattern to insert line: %w", err)
@@ -193,17 +163,30 @@ func (a *insertLineInFile) Apply(_ context.Context) error {
 	return nil
 }
 
-func (a *insertLineInFile) String() string {
-	return fmt.Sprintf("lineInFile(insertAt=%s,line=%s,path=%s,state=insert)", a.insertAt, a.line, a.path)
+func (a *lineInsert) String() string {
+	return fmt.Sprintf("lineInsert(insertAt=%s,line=%s,path=%s)", a.insertAt, a.line, a.path)
 }
 
-type replaceLineInFile struct {
+func NewLineReplace(line, path, search string) (Action, error) {
+	regexC, err := regexp.Compile(search)
+	if err != nil {
+		return nil, fmt.Errorf("compile regex: %w", err)
+	}
+
+	return &lineReplace{
+		line:  line,
+		path:  path,
+		regex: regexC,
+	}, nil
+}
+
+type lineReplace struct {
 	line  string
 	path  string
 	regex *regexp.Regexp
 }
 
-func (a *replaceLineInFile) Apply(_ context.Context) error {
+func (a *lineReplace) Apply(_ context.Context) error {
 	paths, err := filepath.Glob(a.path)
 	if err != nil {
 		return fmt.Errorf("parse glob pattern to replace line: %w", err)
@@ -226,8 +209,8 @@ func (a *replaceLineInFile) Apply(_ context.Context) error {
 	return nil
 }
 
-func (a *replaceLineInFile) String() string {
-	return fmt.Sprintf("lineInFile(line=%s,path=%s,regex=%s,state=replace)", a.line, a.path, a.regex.String())
+func (a *lineReplace) String() string {
+	return fmt.Sprintf("lineReplace(line=%s,path=%s,search=%s)", a.line, a.path, a.regex.String())
 }
 
 func forEachLine(filePath string, f func(line []byte) ([]byte, error)) error {
