@@ -6,7 +6,31 @@ import (
 	"fmt"
 	"io"
 	"os"
+	"path/filepath"
+	"strings"
+
+	"github.com/wndhydrnt/saturn-sync/pkg/task/schema"
 )
+
+func createContentReader(taskPath, value string) (io.ReadCloser, error) {
+	filePath := strings.TrimSpace(strings.TrimPrefix(value, "$file:"))
+	taskDir := filepath.Dir(taskPath)
+	abs, err := filepath.Abs(filepath.Join(taskDir, filePath))
+	if err != nil {
+		return nil, fmt.Errorf("get absolute path of %s: %w", filePath, err)
+	}
+
+	if !strings.HasPrefix(abs, taskDir) {
+		return nil, fmt.Errorf("path escapes directory of task")
+	}
+
+	f, err := os.Open(abs)
+	if err != nil {
+		return nil, fmt.Errorf("open content reader: %w", err)
+	}
+
+	return f, nil
+}
 
 func NewFileCreate(content io.ReadCloser, mode int, overwrite bool, path string) Action {
 	return &fileCreate{
@@ -15,6 +39,25 @@ func NewFileCreate(content io.ReadCloser, mode int, overwrite bool, path string)
 		overwrite: overwrite,
 		path:      path,
 	}
+}
+
+func NewFileCreateFromTask(in schema.TaskActionsFileCreateElem, taskPath string) (Action, error) {
+	if in.Content == nil && in.ContentFile == nil {
+		return nil, fmt.Errorf("fileCreate action requires either content or contentFile to be defined")
+	}
+
+	var contentReader io.ReadCloser
+	if in.Content != nil {
+		contentReader = io.NopCloser(strings.NewReader(*in.Content))
+	} else {
+		var err error
+		contentReader, err = createContentReader(taskPath, *in.ContentFile)
+		if err != nil {
+			return nil, fmt.Errorf("create content reader of fileCreate action: %w", err)
+		}
+	}
+
+	return NewFileCreate(contentReader, in.Mode, in.Overwrite, in.Path), nil
 }
 
 type fileCreate struct {

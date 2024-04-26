@@ -83,8 +83,13 @@ type TaskActions struct {
 }
 
 type TaskActionsFileCreateElem struct {
-	// The content of the file.
-	Content string `json:"content" yaml:"content" mapstructure:"content"`
+	// Content of the file to create as a string. This and the contentFile property
+	// are mutually exclusive.
+	Content *string `json:"content,omitempty" yaml:"content,omitempty" mapstructure:"content,omitempty"`
+
+	// Path to a file to use as the content of the file. The path is relative to the
+	// task file. This and the content property are mutually exclusive.
+	ContentFile *string `json:"contentFile,omitempty" yaml:"contentFile,omitempty" mapstructure:"contentFile,omitempty"`
 
 	// File mode to set when creating the file.
 	Mode int `json:"mode,omitempty" yaml:"mode,omitempty" mapstructure:"mode,omitempty"`
@@ -101,9 +106,6 @@ func (j *TaskActionsFileCreateElem) UnmarshalJSON(b []byte) error {
 	var raw map[string]interface{}
 	if err := json.Unmarshal(b, &raw); err != nil {
 		return err
-	}
-	if _, ok := raw["content"]; raw != nil && !ok {
-		return fmt.Errorf("field content in TaskActionsFileCreateElem: required")
 	}
 	if _, ok := raw["path"]; raw != nil && !ok {
 		return fmt.Errorf("field path in TaskActionsFileCreateElem: required")
@@ -128,9 +130,6 @@ func (j *TaskActionsFileCreateElem) UnmarshalYAML(value *yaml.Node) error {
 	var raw map[string]interface{}
 	if err := value.Decode(&raw); err != nil {
 		return err
-	}
-	if _, ok := raw["content"]; raw != nil && !ok {
-		return fmt.Errorf("field content in TaskActionsFileCreateElem: required")
 	}
 	if _, ok := raw["path"]; raw != nil && !ok {
 		return fmt.Errorf("field path in TaskActionsFileCreateElem: required")

@@ -8,8 +8,6 @@ import (
 	"log/slog"
 	"os"
 	"path"
-	"path/filepath"
-	"strings"
 	"time"
 
 	"github.com/gosimple/slug"
@@ -25,13 +23,13 @@ func createActionsForTask(actionDefs *schema.TaskActions, taskPath string) ([]ac
 		return result, nil
 	}
 
-	for _, fileCreate := range actionDefs.FileCreate {
-		contentReader, err := createContentReader(taskPath, fileCreate.Content)
+	for idx, fileCreate := range actionDefs.FileCreate {
+		a, err := action.NewFileCreateFromTask(fileCreate, taskPath)
 		if err != nil {
-			return nil, fmt.Errorf("create content reader of fileCreate action: %w", err)
+			return nil, fmt.Errorf("failed to create fileCreate[%d] action: %w", idx, err)
 		}
 
-		result = append(result, action.NewFileCreate(contentReader, fileCreate.Mode, fileCreate.Overwrite, fileCreate.Path))
+		result = append(result, a)
 	}
 
 	for _, fileDelete := range actionDefs.FileDelete {
@@ -66,32 +64,6 @@ func createActionsForTask(actionDefs *schema.TaskActions, taskPath string) ([]ac
 	}
 
 	return result, nil
-}
-
-func createContentReader(taskPath, value string) (io.ReadCloser, error) {
-	if !strings.HasPrefix(value, "$file:") {
-		// Action is not requesting a file.
-		// Return the string and adhere to io.ReadCloser.
-		return io.NopCloser(strings.NewReader(value)), nil
-	}
-
-	filePath := strings.TrimSpace(strings.TrimPrefix(value, "$file:"))
-	taskDir := filepath.Dir(taskPath)
-	abs, err := filepath.Abs(filepath.Join(taskDir, filePath))
-	if err != nil {
-		return nil, fmt.Errorf("get absolute path of %s: %w", filePath, err)
-	}
-
-	if !strings.HasPrefix(abs, taskDir) {
-		return nil, fmt.Errorf("path escapes directory of task")
-	}
-
-	f, err := os.Open(abs)
-	if err != nil {
-		return nil, fmt.Errorf("open content reader: %w", err)
-	}
-
-	return f, nil
 }
 
 func createFiltersForTask(filterDefs *schema.TaskFilters) ([]filter.Filter, error) {

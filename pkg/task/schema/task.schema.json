@@ -10,7 +10,11 @@
           "items": {
             "properties": {
               "content": {
-                "description": "The content of the file.",
+                "description": "Content of the file to create as a string. This and the contentFile property are mutually exclusive.",
+                "type": "string"
+              },
+              "contentFile": {
+                "description": "Path to a file to use as the content of the file. The path is relative to the task file. This and the content property are mutually exclusive.",
                 "type": "string"
               },
               "mode": {
@@ -28,7 +32,7 @@
                 "type": "string"
               }
             },
-            "required": ["content", "path"],
+            "required": ["path"],
             "type": "object"
           },
           "type": "array"
