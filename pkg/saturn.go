@@ -1,11 +1,44 @@
 package pkg
 
 import (
+	"errors"
 	"fmt"
+	"log/slog"
+	"os"
 
 	"github.com/wndhydrnt/saturn-sync/pkg/config"
 	"github.com/wndhydrnt/saturn-sync/pkg/host"
+	sLog "github.com/wndhydrnt/saturn-sync/pkg/log"
 )
+
+// initialize ensures that outside dependencies needed on every execution of saturn-sync are set up.
+// Such dependencies can be logging or directories.
+func initialize(cfg config.Configuration) error {
+	sLog.InitLog(cfg.LogFormat, cfg.LogLevel, cfg.GitLogLevel)
+
+	if cfg.DataDir == nil {
+		return fmt.Errorf("missing dataDir configuration setting")
+	}
+
+	info, err := os.Stat(*cfg.DataDir)
+	if err != nil {
+		if errors.Is(err, os.ErrNotExist) {
+			slog.Info("Creating data directory", "path", *cfg.DataDir)
+			mkdirErr := os.MkdirAll(*cfg.DataDir, 0700)
+			if mkdirErr != nil {
+				return fmt.Errorf("create data directory: %w", err)
+			}
+		} else {
+			return fmt.Errorf("check if data directory exists: %w", err)
+		}
+	}
+
+	if info != nil && !info.IsDir() {
+		return fmt.Errorf("data directory %s is not a directory", *cfg.DataDir)
+	}
+
+	return nil
+}
 
 func createHostsFromConfig(cfg config.Configuration) ([]host.Host, error) {
 	var hosts []host.Host

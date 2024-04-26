@@ -16,7 +16,6 @@ import (
 	sContext "github.com/wndhydrnt/saturn-sync/pkg/context"
 	"github.com/wndhydrnt/saturn-sync/pkg/git"
 	"github.com/wndhydrnt/saturn-sync/pkg/host"
-	sLog "github.com/wndhydrnt/saturn-sync/pkg/log"
 	"github.com/wndhydrnt/saturn-sync/pkg/task"
 	"github.com/wndhydrnt/saturn-sync/pkg/template"
 )
@@ -166,7 +165,11 @@ func ExecuteRun(cfgFile string, taskFiles []string) error {
 		return err
 	}
 
-	sLog.InitLog(cfg.LogFormat, cfg.LogLevel, cfg.GitLogLevel)
+	err = initialize(cfg)
+	if err != nil {
+		return err
+	}
+
 	cache := cache.NewJsonFile(path.Join(*cfg.DataDir, cache.DefaultJsonFileName))
 	taskRegistry := task.NewRegistry()
 

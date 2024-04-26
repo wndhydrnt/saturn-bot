@@ -12,7 +12,6 @@ import (
 	saturnContext "github.com/wndhydrnt/saturn-sync/pkg/context"
 	"github.com/wndhydrnt/saturn-sync/pkg/git"
 	"github.com/wndhydrnt/saturn-sync/pkg/host"
-	saturnLog "github.com/wndhydrnt/saturn-sync/pkg/log"
 	"github.com/wndhydrnt/saturn-sync/pkg/task"
 )
 
@@ -33,10 +32,15 @@ func NewTryRunner(configPath string, dataDir string, repositoryName string, task
 		return nil, err
 	}
 
-	saturnLog.InitLog(cfg.LogFormat, cfg.LogLevel, cfg.GitLogLevel)
-
 	if dataDir == "" {
 		dataDir = path.Join(os.TempDir(), "saturn-sync")
+	}
+
+	// This code sets its own data dir.
+	cfg.DataDir = &dataDir
+	err = initialize(cfg)
+	if err != nil {
+		return nil, err
 	}
 
 	hosts, err := createHostsFromConfig(cfg)
@@ -44,7 +48,6 @@ func NewTryRunner(configPath string, dataDir string, repositoryName string, task
 		return nil, fmt.Errorf("create hosts from config: %w", err)
 	}
 
-	cfg.DataDir = &dataDir
 	gitClient, err := git.New(cfg)
 	if err != nil {
 		return nil, fmt.Errorf("new git client for try: %w", err)

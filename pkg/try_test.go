@@ -4,6 +4,7 @@ import (
 	"bytes"
 	"context"
 	"os"
+	"path/filepath"
 	"testing"
 
 	"github.com/stretchr/testify/assert"
@@ -221,4 +222,5 @@ gitUserName: "unittest"`
 	assert.Equal(t, "git.local/unit/test", runner.repositoryName)
 	assert.Equal(t, "task.yaml", runner.taskFile)
 	assert.Equal(t, "Unit Test", runner.taskName)
+	assert.DirExists(t, filepath.Join(os.TempDir(), "saturn-sync"), "creates data directory because an empty value has been passed to NewTryRunner()")
 }
