@@ -11,7 +11,7 @@ import (
 	"github.com/hashicorp/go-hclog"
 	"github.com/lmittmann/tint"
 	"github.com/mattn/go-isatty"
-	"github.com/wndhydrnt/saturn-sync/pkg/config"
+	"github.com/wndhydrnt/saturn-bot/pkg/config"
 )
 
 var (

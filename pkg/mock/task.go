@@ -13,10 +13,10 @@ import (
 	reflect "reflect"
 	time "time"
 
-	action "github.com/wndhydrnt/saturn-sync/pkg/action"
-	filter "github.com/wndhydrnt/saturn-sync/pkg/filter"
-	host "github.com/wndhydrnt/saturn-sync/pkg/host"
-	schema "github.com/wndhydrnt/saturn-sync/pkg/task/schema"
+	action "github.com/wndhydrnt/saturn-bot/pkg/action"
+	filter "github.com/wndhydrnt/saturn-bot/pkg/filter"
+	host "github.com/wndhydrnt/saturn-bot/pkg/host"
+	schema "github.com/wndhydrnt/saturn-bot/pkg/task/schema"
 	gomock "go.uber.org/mock/gomock"
 )
 

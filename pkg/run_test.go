@@ -12,12 +12,12 @@ import (
 
 	"github.com/stretchr/testify/assert"
 	"github.com/stretchr/testify/require"
-	"github.com/wndhydrnt/saturn-sync/pkg/cache"
-	"github.com/wndhydrnt/saturn-sync/pkg/git"
-	"github.com/wndhydrnt/saturn-sync/pkg/host"
-	"github.com/wndhydrnt/saturn-sync/pkg/mock"
-	"github.com/wndhydrnt/saturn-sync/pkg/task"
-	"github.com/wndhydrnt/saturn-sync/pkg/task/schema"
+	"github.com/wndhydrnt/saturn-bot/pkg/cache"
+	"github.com/wndhydrnt/saturn-bot/pkg/git"
+	"github.com/wndhydrnt/saturn-bot/pkg/host"
+	"github.com/wndhydrnt/saturn-bot/pkg/mock"
+	"github.com/wndhydrnt/saturn-bot/pkg/task"
+	"github.com/wndhydrnt/saturn-bot/pkg/task/schema"
 	"go.uber.org/mock/gomock"
 )
 
@@ -40,20 +40,20 @@ func TestApplyTaskToRepository_CreatePullRequestLocalChanges(t *testing.T) {
 
 	ctrl := gomock.NewController(t)
 	repo := setupRepoMock(ctrl)
-	repo.EXPECT().FindPullRequest("saturn-sync--unittest").Return(nil, nil)
+	repo.EXPECT().FindPullRequest("saturn-bot--unittest").Return(nil, nil)
 	repo.EXPECT().IsPullRequestClosed(nil).Return(false).AnyTimes()
 	repo.EXPECT().IsPullRequestMerged(nil).Return(false).AnyTimes()
 	repo.EXPECT().GetPullRequestBody(nil).Return("").AnyTimes()
 	repo.EXPECT().BaseBranch().Return("main")
 	repo.EXPECT().IsPullRequestOpen(nil).Return(false).AnyTimes()
-	repo.EXPECT().CreatePullRequest("saturn-sync--unittest", gomock.Any()).Return(nil)
+	repo.EXPECT().CreatePullRequest("saturn-bot--unittest", gomock.Any()).Return(nil)
 	gitc := mock.NewMockGitClient(ctrl)
-	gitc.EXPECT().UpdateTaskBranch("saturn-sync--unittest", false, repo)
+	gitc.EXPECT().UpdateTaskBranch("saturn-bot--unittest", false, repo)
 	gitc.EXPECT().HasLocalChanges().Return(true, nil)
 	gitc.EXPECT().CommitChanges("commit test").Return(nil)
 	gitc.EXPECT().HasRemoteChanges("main").Return(false, nil)
-	gitc.EXPECT().HasRemoteChanges("saturn-sync--unittest").Return(true, nil)
-	gitc.EXPECT().Push("saturn-sync--unittest").Return(nil)
+	gitc.EXPECT().HasRemoteChanges("saturn-bot--unittest").Return(true, nil)
+	gitc.EXPECT().Push("saturn-bot--unittest").Return(nil)
 	tw := &task.Wrapper{Task: &schema.Task{CommitMessage: "commit test", Name: "unittest"}}
 
 	result, err := applyTaskToRepository(context.Background(), false, gitc, slog.Default(), repo, tw, tempDir)
@@ -71,19 +71,19 @@ func TestApplyTaskToRepository_CreatePullRequestRemoteChanges(t *testing.T) {
 
 	ctrl := gomock.NewController(t)
 	repo := setupRepoMock(ctrl)
-	repo.EXPECT().FindPullRequest("saturn-sync--unittest").Return(nil, nil)
+	repo.EXPECT().FindPullRequest("saturn-bot--unittest").Return(nil, nil)
 	repo.EXPECT().IsPullRequestClosed(nil).Return(false).AnyTimes()
 	repo.EXPECT().IsPullRequestMerged(nil).Return(false).AnyTimes()
 	repo.EXPECT().GetPullRequestBody(nil).Return("").AnyTimes()
 	repo.EXPECT().BaseBranch().Return("main")
 	repo.EXPECT().IsPullRequestOpen(nil).Return(false).AnyTimes()
-	repo.EXPECT().CreatePullRequest("saturn-sync--unittest", gomock.Any()).Return(nil)
+	repo.EXPECT().CreatePullRequest("saturn-bot--unittest", gomock.Any()).Return(nil)
 	gitc := mock.NewMockGitClient(ctrl)
-	gitc.EXPECT().UpdateTaskBranch("saturn-sync--unittest", false, repo)
+	gitc.EXPECT().UpdateTaskBranch("saturn-bot--unittest", false, repo)
 	gitc.EXPECT().HasLocalChanges().Return(true, nil)
 	gitc.EXPECT().CommitChanges("commit test").Return(nil)
 	gitc.EXPECT().HasRemoteChanges("main").Return(true, nil)
-	gitc.EXPECT().HasRemoteChanges("saturn-sync--unittest").Return(false, nil)
+	gitc.EXPECT().HasRemoteChanges("saturn-bot--unittest").Return(false, nil)
 	tw := &task.Wrapper{Task: &schema.Task{CommitMessage: "commit test", Name: "unittest"}}
 
 	result, err := applyTaskToRepository(context.Background(), false, gitc, slog.Default(), repo, tw, tempDir)
@@ -96,7 +96,7 @@ func TestApplyTaskToRepository_PullRequestClosedAndMergeOnceActive(t *testing.T)
 	prID := "prID"
 	ctrl := gomock.NewController(t)
 	repo := mock.NewMockRepository(ctrl)
-	repo.EXPECT().FindPullRequest("saturn-sync--unittest").Return(prID, nil)
+	repo.EXPECT().FindPullRequest("saturn-bot--unittest").Return(prID, nil)
 	repo.EXPECT().IsPullRequestClosed(prID).Return(true)
 	gitc := mock.NewMockGitClient(ctrl)
 	tw := &task.Wrapper{Task: &schema.Task{MergeOnce: true, Name: "unittest"}}
@@ -111,7 +111,7 @@ func TestApplyTaskToRepository_PullRequestMergedAndMergeOnceActive(t *testing.T)
 	prID := "prID"
 	ctrl := gomock.NewController(t)
 	repo := mock.NewMockRepository(ctrl)
-	repo.EXPECT().FindPullRequest("saturn-sync--unittest").Return(prID, nil)
+	repo.EXPECT().FindPullRequest("saturn-bot--unittest").Return(prID, nil)
 	repo.EXPECT().IsPullRequestClosed(prID).Return(false)
 	repo.EXPECT().IsPullRequestMerged(prID).Return(true)
 	gitc := mock.NewMockGitClient(ctrl)
@@ -127,7 +127,7 @@ func TestApplyTaskToRepository_CreateOnly(t *testing.T) {
 	prID := "prID"
 	ctrl := gomock.NewController(t)
 	repo := mock.NewMockRepository(ctrl)
-	repo.EXPECT().FindPullRequest("saturn-sync--unittest").Return(prID, nil)
+	repo.EXPECT().FindPullRequest("saturn-bot--unittest").Return(prID, nil)
 	repo.EXPECT().IsPullRequestClosed(prID).Return(false)
 	repo.EXPECT().IsPullRequestMerged(prID).Return(false)
 	gitc := mock.NewMockGitClient(ctrl)
@@ -149,7 +149,7 @@ func TestApplyTaskToRepository_ClosePullRequestIfChangesExistInBaseBranch(t *tes
 	prID := "prID"
 	ctrl := gomock.NewController(t)
 	repo := mock.NewMockRepository(ctrl)
-	repo.EXPECT().FindPullRequest("saturn-sync--unittest").Return(prID, nil)
+	repo.EXPECT().FindPullRequest("saturn-bot--unittest").Return(prID, nil)
 	repo.EXPECT().IsPullRequestClosed(prID).Return(false)
 	repo.EXPECT().IsPullRequestMerged(prID).Return(false)
 	repo.EXPECT().GetPullRequestBody(prID).Return("")
@@ -158,7 +158,7 @@ func TestApplyTaskToRepository_ClosePullRequestIfChangesExistInBaseBranch(t *tes
 	repo.EXPECT().ClosePullRequest("Everything up-to-date. Closing.", prID)
 	repo.EXPECT().DeleteBranch(prID).Return(nil)
 	gitc := mock.NewMockGitClient(ctrl)
-	gitc.EXPECT().UpdateTaskBranch("saturn-sync--unittest", false, repo)
+	gitc.EXPECT().UpdateTaskBranch("saturn-bot--unittest", false, repo)
 	gitc.EXPECT().HasLocalChanges().Return(true, nil)
 	gitc.EXPECT().CommitChanges("").Return(nil)
 	gitc.EXPECT().HasRemoteChanges("main").Return(false, nil)
@@ -180,7 +180,7 @@ func TestApplyTaskToRepository_MergePullRequest(t *testing.T) {
 	prID := "prID"
 	ctrl := gomock.NewController(t)
 	repo := setupRepoMock(ctrl)
-	repo.EXPECT().FindPullRequest("saturn-sync--unittest").Return(prID, nil)
+	repo.EXPECT().FindPullRequest("saturn-bot--unittest").Return(prID, nil)
 	repo.EXPECT().IsPullRequestClosed(prID).Return(false)
 	repo.EXPECT().IsPullRequestMerged(prID).Return(false)
 	repo.EXPECT().GetPullRequestBody(prID).Return("")
@@ -191,10 +191,10 @@ func TestApplyTaskToRepository_MergePullRequest(t *testing.T) {
 	repo.EXPECT().CanMergePullRequest(prID).Return(true, nil)
 	repo.EXPECT().MergePullRequest(true, prID).Return(nil)
 	gitc := mock.NewMockGitClient(ctrl)
-	gitc.EXPECT().UpdateTaskBranch("saturn-sync--unittest", false, repo)
+	gitc.EXPECT().UpdateTaskBranch("saturn-bot--unittest", false, repo)
 	gitc.EXPECT().HasLocalChanges().Return(false, nil)
 	gitc.EXPECT().HasRemoteChanges("main").Return(true, nil)
-	gitc.EXPECT().HasRemoteChanges("saturn-sync--unittest").Return(false, nil)
+	gitc.EXPECT().HasRemoteChanges("saturn-bot--unittest").Return(false, nil)
 	tw := &task.Wrapper{Task: &schema.Task{AutoMerge: true, Name: "unittest"}}
 
 	result, err := applyTaskToRepository(context.Background(), false, gitc, slog.Default(), repo, tw, tempDir)
@@ -213,7 +213,7 @@ func TestApplyTaskToRepository_MergePullRequest_FailedMergeChecks(t *testing.T) 
 	prID := "prID"
 	ctrl := gomock.NewController(t)
 	repo := setupRepoMock(ctrl)
-	repo.EXPECT().FindPullRequest("saturn-sync--unittest").Return(prID, nil)
+	repo.EXPECT().FindPullRequest("saturn-bot--unittest").Return(prID, nil)
 	repo.EXPECT().IsPullRequestClosed(prID).Return(false)
 	repo.EXPECT().IsPullRequestMerged(prID).Return(false)
 	repo.EXPECT().GetPullRequestBody(prID).Return("")
@@ -221,10 +221,10 @@ func TestApplyTaskToRepository_MergePullRequest_FailedMergeChecks(t *testing.T) 
 	repo.EXPECT().IsPullRequestOpen(prID).Return(true).AnyTimes()
 	repo.EXPECT().HasSuccessfulPullRequestBuild(prID).Return(false, nil)
 	gitc := mock.NewMockGitClient(ctrl)
-	gitc.EXPECT().UpdateTaskBranch("saturn-sync--unittest", false, repo)
+	gitc.EXPECT().UpdateTaskBranch("saturn-bot--unittest", false, repo)
 	gitc.EXPECT().HasLocalChanges().Return(false, nil)
 	gitc.EXPECT().HasRemoteChanges("main").Return(true, nil)
-	gitc.EXPECT().HasRemoteChanges("saturn-sync--unittest").Return(false, nil)
+	gitc.EXPECT().HasRemoteChanges("saturn-bot--unittest").Return(false, nil)
 	tw := &task.Wrapper{Task: &schema.Task{AutoMerge: true, Name: "unittest"}}
 
 	result, err := applyTaskToRepository(context.Background(), false, gitc, slog.Default(), repo, tw, tempDir)
@@ -243,7 +243,7 @@ func TestApplyTaskToRepository_MergePullRequest_AutoMergeAfter(t *testing.T) {
 	prID := "prID"
 	ctrl := gomock.NewController(t)
 	repo := setupRepoMock(ctrl)
-	repo.EXPECT().FindPullRequest("saturn-sync--unittest").Return(prID, nil)
+	repo.EXPECT().FindPullRequest("saturn-bot--unittest").Return(prID, nil)
 	repo.EXPECT().IsPullRequestClosed(prID).Return(false)
 	repo.EXPECT().IsPullRequestMerged(prID).Return(false)
 	repo.EXPECT().GetPullRequestBody(prID).Return("")
@@ -252,10 +252,10 @@ func TestApplyTaskToRepository_MergePullRequest_AutoMergeAfter(t *testing.T) {
 	repo.EXPECT().HasSuccessfulPullRequestBuild(prID).Return(true, nil)
 	repo.EXPECT().GetPullRequestCreationTime(prID).Return(time.Now().AddDate(0, 0, -1))
 	gitc := mock.NewMockGitClient(ctrl)
-	gitc.EXPECT().UpdateTaskBranch("saturn-sync--unittest", false, repo)
+	gitc.EXPECT().UpdateTaskBranch("saturn-bot--unittest", false, repo)
 	gitc.EXPECT().HasLocalChanges().Return(false, nil)
 	gitc.EXPECT().HasRemoteChanges("main").Return(true, nil)
-	gitc.EXPECT().HasRemoteChanges("saturn-sync--unittest").Return(false, nil)
+	gitc.EXPECT().HasRemoteChanges("saturn-bot--unittest").Return(false, nil)
 	tw := &task.Wrapper{Task: &schema.Task{
 		AutoMerge:      true,
 		AutoMergeAfter: "48h",
@@ -278,7 +278,7 @@ func TestApplyTaskToRepository_MergePullRequest_MergeConflict(t *testing.T) {
 	prID := "prID"
 	ctrl := gomock.NewController(t)
 	repo := setupRepoMock(ctrl)
-	repo.EXPECT().FindPullRequest("saturn-sync--unittest").Return(prID, nil)
+	repo.EXPECT().FindPullRequest("saturn-bot--unittest").Return(prID, nil)
 	repo.EXPECT().IsPullRequestClosed(prID).Return(false)
 	repo.EXPECT().IsPullRequestMerged(prID).Return(false)
 	repo.EXPECT().GetPullRequestBody(prID).Return("")
@@ -288,10 +288,10 @@ func TestApplyTaskToRepository_MergePullRequest_MergeConflict(t *testing.T) {
 	repo.EXPECT().GetPullRequestCreationTime(prID).Return(time.Now().AddDate(0, 0, -1))
 	repo.EXPECT().CanMergePullRequest(prID).Return(false, nil)
 	gitc := mock.NewMockGitClient(ctrl)
-	gitc.EXPECT().UpdateTaskBranch("saturn-sync--unittest", false, repo)
+	gitc.EXPECT().UpdateTaskBranch("saturn-bot--unittest", false, repo)
 	gitc.EXPECT().HasLocalChanges().Return(false, nil)
 	gitc.EXPECT().HasRemoteChanges("main").Return(true, nil)
-	gitc.EXPECT().HasRemoteChanges("saturn-sync--unittest").Return(false, nil)
+	gitc.EXPECT().HasRemoteChanges("saturn-bot--unittest").Return(false, nil)
 	tw := &task.Wrapper{Task: &schema.Task{
 		AutoMerge: true,
 		Name:      "unittest",
@@ -313,7 +313,7 @@ func TestApplyTaskToRepository_UpdatePullRequest(t *testing.T) {
 	prID := "prID"
 	ctrl := gomock.NewController(t)
 	repo := setupRepoMock(ctrl)
-	repo.EXPECT().FindPullRequest("saturn-sync--unittest").Return(prID, nil)
+	repo.EXPECT().FindPullRequest("saturn-bot--unittest").Return(prID, nil)
 	repo.EXPECT().IsPullRequestClosed(prID).Return(false).AnyTimes()
 	repo.EXPECT().IsPullRequestMerged(prID).Return(false).AnyTimes()
 	repo.EXPECT().GetPullRequestBody(prID).Return("")
@@ -321,12 +321,12 @@ func TestApplyTaskToRepository_UpdatePullRequest(t *testing.T) {
 	repo.EXPECT().IsPullRequestOpen(prID).Return(true).AnyTimes()
 	repo.EXPECT().UpdatePullRequest(gomock.AssignableToTypeOf(host.PullRequestData{}), prID).Return(nil)
 	gitc := mock.NewMockGitClient(ctrl)
-	gitc.EXPECT().UpdateTaskBranch("saturn-sync--unittest", false, repo)
+	gitc.EXPECT().UpdateTaskBranch("saturn-bot--unittest", false, repo)
 	gitc.EXPECT().HasLocalChanges().Return(true, nil)
 	gitc.EXPECT().CommitChanges("").Return(nil)
-	gitc.EXPECT().Push("saturn-sync--unittest").Return(nil)
+	gitc.EXPECT().Push("saturn-bot--unittest").Return(nil)
 	gitc.EXPECT().HasRemoteChanges("main").Return(true, nil)
-	gitc.EXPECT().HasRemoteChanges("saturn-sync--unittest").Return(true, nil)
+	gitc.EXPECT().HasRemoteChanges("saturn-bot--unittest").Return(true, nil)
 	tw := &task.Wrapper{Task: &schema.Task{Name: "unittest"}}
 
 	result, err := applyTaskToRepository(context.Background(), false, gitc, slog.Default(), repo, tw, tempDir)
@@ -345,17 +345,17 @@ func TestApplyTaskToRepository_NoChanges(t *testing.T) {
 	prID := "prID"
 	ctrl := gomock.NewController(t)
 	repo := setupRepoMock(ctrl)
-	repo.EXPECT().FindPullRequest("saturn-sync--unittest").Return(prID, nil)
+	repo.EXPECT().FindPullRequest("saturn-bot--unittest").Return(prID, nil)
 	repo.EXPECT().IsPullRequestClosed(prID).Return(false).AnyTimes()
 	repo.EXPECT().IsPullRequestMerged(prID).Return(false).AnyTimes()
 	repo.EXPECT().GetPullRequestBody(prID).Return("")
 	repo.EXPECT().BaseBranch().Return("main")
 	repo.EXPECT().IsPullRequestOpen(prID).Return(false).AnyTimes()
 	gitc := mock.NewMockGitClient(ctrl)
-	gitc.EXPECT().UpdateTaskBranch("saturn-sync--unittest", false, repo)
+	gitc.EXPECT().UpdateTaskBranch("saturn-bot--unittest", false, repo)
 	gitc.EXPECT().HasLocalChanges().Return(false, nil)
 	gitc.EXPECT().HasRemoteChanges("main").Return(false, nil)
-	gitc.EXPECT().HasRemoteChanges("saturn-sync--unittest").Return(false, nil)
+	gitc.EXPECT().HasRemoteChanges("saturn-bot--unittest").Return(false, nil)
 	tw := &task.Wrapper{Task: &schema.Task{Name: "unittest"}}
 
 	result, err := applyTaskToRepository(context.Background(), false, gitc, slog.Default(), repo, tw, tempDir)
@@ -365,15 +365,15 @@ func TestApplyTaskToRepository_NoChanges(t *testing.T) {
 }
 
 func TestApplyTaskToRepository_BranchModified(t *testing.T) {
-	prCommentBody := `<!-- saturn-sync::{branch-modified} -->
+	prCommentBody := `<!-- saturn-bot::{branch-modified} -->
 :warning: **This pull request has been modified.**
 
-This is a safety mechanism to prevent saturn-sync from accidentally overriding custom commits.
+This is a safety mechanism to prevent saturn-bot from accidentally overriding custom commits.
 
-saturn-sync will not be able to resolve merge conflicts with ` + "`main`" + ` automatically.
+saturn-bot will not be able to resolve merge conflicts with ` + "`main`" + ` automatically.
 It will not update this pull request or auto-merge it.
 
-Check the box in the description of this PR to force a rebase. This will remove all commits not made by saturn-sync.
+Check the box in the description of this PR to force a rebase. This will remove all commits not made by saturn-bot.
 
 The commit(s) that modified the pull request:
 
@@ -392,7 +392,7 @@ The commit(s) that modified the pull request:
 	prID := "prID"
 	ctrl := gomock.NewController(t)
 	repo := mock.NewMockRepository(ctrl)
-	repo.EXPECT().FindPullRequest("saturn-sync--unittest").Return(prID, nil)
+	repo.EXPECT().FindPullRequest("saturn-bot--unittest").Return(prID, nil)
 	repo.EXPECT().IsPullRequestClosed(prID).Return(false).AnyTimes()
 	repo.EXPECT().IsPullRequestMerged(prID).Return(false).AnyTimes()
 	repo.EXPECT().GetPullRequestBody(prID).Return("")
@@ -403,7 +403,7 @@ The commit(s) that modified the pull request:
 	repo.EXPECT().CreatePullRequestComment(prCommentBody, prID).Return(nil)
 	gitc := mock.NewMockGitClient(ctrl)
 	gitc.EXPECT().
-		UpdateTaskBranch("saturn-sync--unittest", false, repo).
+		UpdateTaskBranch("saturn-bot--unittest", false, repo).
 		Return(false, &git.BranchModifiedError{Checksums: []string{"abc", "def"}})
 	tw := &task.Wrapper{Task: &schema.Task{Name: "unittest"}}
 
@@ -423,24 +423,24 @@ func TestApplyTaskToRepository_ForceRebaseByUser(t *testing.T) {
 	prID := "prID"
 	ctrl := gomock.NewController(t)
 	repo := setupRepoMock(ctrl)
-	repo.EXPECT().FindPullRequest("saturn-sync--unittest").Return(prID, nil)
+	repo.EXPECT().FindPullRequest("saturn-bot--unittest").Return(prID, nil)
 	repo.EXPECT().IsPullRequestClosed(prID).Return(false).AnyTimes()
 	repo.EXPECT().IsPullRequestMerged(prID).Return(false).AnyTimes()
 	repo.EXPECT().GetPullRequestBody(prID).Return("some text\n[x] If you want to rebase this PR\nsome text")
 	repo.EXPECT().BaseBranch().Return("main")
 	repo.EXPECT().IsPullRequestOpen(prID).Return(true).AnyTimes()
-	prComment := host.PullRequestComment{Body: "<!-- saturn-sync::{branch-modified} -->\nsome text", ID: 123}
+	prComment := host.PullRequestComment{Body: "<!-- saturn-bot::{branch-modified} -->\nsome text", ID: 123}
 	repo.EXPECT().
 		ListPullRequestComments(prID).
 		Return([]host.PullRequestComment{prComment}, nil)
 	repo.EXPECT().DeletePullRequestComment(prComment, prID).Return(nil)
 	repo.EXPECT().UpdatePullRequest(gomock.AssignableToTypeOf(host.PullRequestData{}), prID).Return(nil)
 	gitc := mock.NewMockGitClient(ctrl)
-	gitc.EXPECT().UpdateTaskBranch("saturn-sync--unittest", true, repo).Return(false, nil)
+	gitc.EXPECT().UpdateTaskBranch("saturn-bot--unittest", true, repo).Return(false, nil)
 	gitc.EXPECT().HasLocalChanges().Return(true, nil)
 	gitc.EXPECT().CommitChanges("").Return(nil)
 	gitc.EXPECT().HasRemoteChanges("main").Return(true, nil)
-	gitc.EXPECT().HasRemoteChanges("saturn-sync--unittest").Return(false, nil)
+	gitc.EXPECT().HasRemoteChanges("saturn-bot--unittest").Return(false, nil)
 	tw := &task.Wrapper{Task: &schema.Task{Name: "unittest"}}
 
 	result, err := applyTaskToRepository(context.Background(), false, gitc, slog.Default(), repo, tw, tempDir)

@@ -13,7 +13,7 @@ import (
 	reflect "reflect"
 	time "time"
 
-	host "github.com/wndhydrnt/saturn-sync/pkg/host"
+	host "github.com/wndhydrnt/saturn-bot/pkg/host"
 	gomock "go.uber.org/mock/gomock"
 )
 

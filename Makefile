@@ -1,36 +1,34 @@
 VERSION?=dev
 VERSION_HASH?=$(shell git rev-parse HEAD)
 VERSION_DATETIME?=$(shell date -u +"%Y-%m-%dT%H:%M:%SZ")
-BUILD_FLAGS=-ldflags="-X 'github.com/wndhydrnt/saturn-sync/pkg/version.Version=$(VERSION)' -X 'github.com/wndhydrnt/saturn-sync/pkg/version.Hash=$(VERSION_HASH)' -X 'github.com/wndhydrnt/saturn-sync/pkg/version.DateTime=$(VERSION_DATETIME)'"
+BUILD_FLAGS=-ldflags="-X 'github.com/wndhydrnt/saturn-bot/pkg/version.Version=$(VERSION)' -X 'github.com/wndhydrnt/saturn-bot/pkg/version.Hash=$(VERSION_HASH)' -X 'github.com/wndhydrnt/saturn-bot/pkg/version.DateTime=$(VERSION_DATETIME)'"
 GO_JSONSCHEMA_VERSION=v0.16.0
 OS=$(shell uname -s)
 ARCH=$(shell uname -m)
 
 build:
-	go build $(BUILD_FLAGS) -o saturn-sync
+	go build $(BUILD_FLAGS) -o saturn-bot
 
 build_darwin_amd64:
-	GOARCH=amd64 GOOS=darwin go build $(BUILD_FLAGS) -o saturn-sync-$(VERSION).darwin-amd64
+	GOARCH=amd64 GOOS=darwin go build $(BUILD_FLAGS) -o saturn-bot-$(VERSION).darwin-amd64
 
 build_darwin_arm64:
-	GOARCH=arm64 GOOS=darwin go build $(BUILD_FLAGS) -o saturn-sync-$(VERSION).darwin-arm64
+	GOARCH=arm64 GOOS=darwin go build $(BUILD_FLAGS) -o saturn-bot-$(VERSION).darwin-arm64
 
 build_linux_arm64:
-	GOARCH=arm64 GOOS=linux go build $(BUILD_FLAGS) -o saturn-sync-$(VERSION).linux-arm64
-	cp saturn-sync-$(VERSION).linux-arm64 saturn-sync-$(VERSION).linux-aarch64
+	GOARCH=arm64 GOOS=linux go build $(BUILD_FLAGS) -o saturn-bot-$(VERSION).linux-arm64
+	cp saturn-bot-$(VERSION).linux-arm64 saturn-bot-$(VERSION).linux-aarch64
 
 build_linux_armv7:
-	GOARCH=arm GOOS=linux go build $(BUILD_FLAGS) -o saturn-sync-$(VERSION).linux-armv7
+	GOARCH=arm GOOS=linux go build $(BUILD_FLAGS) -o saturn-bot-$(VERSION).linux-armv7
 
 build_linux_amd64:
-	GOARCH=amd64 GOOS=linux go build $(BUILD_FLAGS) -o saturn-sync-$(VERSION).linux-amd64
+	GOARCH=amd64 GOOS=linux go build $(BUILD_FLAGS) -o saturn-bot-$(VERSION).linux-amd64
 
 build_all: build_darwin_amd64 build_darwin_arm64 build_linux_arm64 build_linux_armv7 build_linux_amd64
 
 generate_grpc:
 	buf generate
-	protoc-go-inject-tag -input ./pkg/proto/saturnsync.pb.go -remove_tag_comment
-	gofmt -w ./pkg/proto/saturnsync.pb.go
 
 generate_json_schema_config: bin/go-jsonschema/go-jsonschema-${GO_JSONSCHEMA_VERSION}
 	bin/go-jsonschema/go-jsonschema-${GO_JSONSCHEMA_VERSION} --extra-imports -p config -t ./pkg/config/config.schema.json --output ./pkg/config/schema.go
@@ -45,7 +43,7 @@ ifeq (, $(shell which mockgen))
 	go install go.uber.org/mock/mockgen@latest
 endif
 	mkdir -p pkg/mock
-	rm pkg/mock/*.go
+	rm -f pkg/mock/*.go
 	mockgen -package mock -source pkg/filter/filter.go > pkg/mock/filter.go
 	mockgen -package mock -source pkg/git/git.go > pkg/mock/git.go
 	mockgen -package mock -source pkg/host/host.go > pkg/mock/host.go
@@ -57,10 +55,10 @@ test_cover:
 	rm cover.out
 
 docker_build:
-	docker build -t ghcr.io/wndhydrnt/saturn-sync:${VERSION} .
+	docker build -t ghcr.io/wndhydrnt/saturn-bot:${VERSION} .
 
 docker_build_full: docker_build
-	docker build --build-arg="BASE=${VERSION}" -t ghcr.io/wndhydrnt/saturn-sync:${VERSION}-full -f full.Dockerfile .
+	docker build --build-arg="BASE=${VERSION}" -t ghcr.io/wndhydrnt/saturn-bot:${VERSION}-full -f full.Dockerfile .
 
 bin/go-jsonschema/go-jsonschema-${GO_JSONSCHEMA_VERSION}:
 	mkdir -p bin/go-jsonschema

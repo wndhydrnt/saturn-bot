@@ -8,7 +8,7 @@ import (
 	"io"
 	"os"
 
-	"github.com/wndhydrnt/saturn-sync/pkg/task/schema"
+	"github.com/wndhydrnt/saturn-bot/pkg/task/schema"
 	"gopkg.in/yaml.v3"
 )
 

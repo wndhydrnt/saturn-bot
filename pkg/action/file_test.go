@@ -6,7 +6,7 @@ import (
 	"testing"
 
 	"github.com/stretchr/testify/require"
-	"github.com/wndhydrnt/saturn-sync/pkg/task/schema"
+	"github.com/wndhydrnt/saturn-bot/pkg/task/schema"
 )
 
 func TestFileCreate_Apply(t *testing.T) {

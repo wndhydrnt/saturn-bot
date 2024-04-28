@@ -9,11 +9,11 @@ import (
 
 	"github.com/stretchr/testify/assert"
 	"github.com/stretchr/testify/require"
-	"github.com/wndhydrnt/saturn-sync/pkg/action"
-	"github.com/wndhydrnt/saturn-sync/pkg/git"
-	"github.com/wndhydrnt/saturn-sync/pkg/host"
-	"github.com/wndhydrnt/saturn-sync/pkg/mock"
-	"github.com/wndhydrnt/saturn-sync/pkg/task"
+	"github.com/wndhydrnt/saturn-bot/pkg/action"
+	"github.com/wndhydrnt/saturn-bot/pkg/git"
+	"github.com/wndhydrnt/saturn-bot/pkg/host"
+	"github.com/wndhydrnt/saturn-bot/pkg/mock"
+	"github.com/wndhydrnt/saturn-bot/pkg/task"
 	"go.uber.org/mock/gomock"
 )
 
@@ -26,7 +26,7 @@ func TestTryRunner_Run_FilesModified(t *testing.T) {
 	registry := task.NewRegistry()
 	gitcMock := mock.NewMockGitClient(ctrl)
 	gitcMock.EXPECT().Prepare(repoMock, false).Return("/checkout", nil)
-	gitcMock.EXPECT().UpdateTaskBranch("saturn-sync--unit-test", false, repoMock).Return(false, nil)
+	gitcMock.EXPECT().UpdateTaskBranch("saturn-bot--unit-test", false, repoMock).Return(false, nil)
 	gitcMock.EXPECT().HasLocalChanges().Return(true, nil)
 	out := &bytes.Buffer{}
 	content := `name: Unit Test
@@ -61,7 +61,7 @@ func TestTryRunner_Run_NoChanges(t *testing.T) {
 	registry := task.NewRegistry()
 	gitcMock := mock.NewMockGitClient(ctrl)
 	gitcMock.EXPECT().Prepare(repoMock, false).Return("/checkout", nil)
-	gitcMock.EXPECT().UpdateTaskBranch("saturn-sync--unit-test", false, repoMock).Return(false, nil)
+	gitcMock.EXPECT().UpdateTaskBranch("saturn-bot--unit-test", false, repoMock).Return(false, nil)
 	gitcMock.EXPECT().HasLocalChanges().Return(false, nil)
 	out := &bytes.Buffer{}
 	taskFile := createTestTask(repoName)
@@ -222,5 +222,5 @@ gitUserName: "unittest"`
 	assert.Equal(t, "git.local/unit/test", runner.repositoryName)
 	assert.Equal(t, "task.yaml", runner.taskFile)
 	assert.Equal(t, "Unit Test", runner.taskName)
-	assert.DirExists(t, filepath.Join(os.TempDir(), "saturn-sync"), "creates data directory because an empty value has been passed to NewTryRunner()")
+	assert.DirExists(t, filepath.Join(os.TempDir(), "saturn-bot"), "creates data directory because an empty value has been passed to NewTryRunner()")
 }

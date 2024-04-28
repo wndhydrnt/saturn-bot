@@ -18,7 +18,7 @@ import (
 )
 
 const (
-	envPrefix = "SATURN_SYNC_"
+	envPrefix = "SATURN_BOT_"
 )
 
 var (
@@ -109,7 +109,7 @@ func Read(cfgFile string) (cfg Configuration, err error) {
 			return cfg, fmt.Errorf("get user home dir to set default data dir: %w", err)
 		}
 
-		dir := filepath.Join(homeDir, ".saturn-sync", "data")
+		dir := filepath.Join(homeDir, ".saturn-bot", "data")
 		cfg.DataDir = &dir
 	}
 

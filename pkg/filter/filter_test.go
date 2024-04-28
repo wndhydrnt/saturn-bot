@@ -5,7 +5,7 @@ import (
 	"testing"
 
 	"github.com/stretchr/testify/require"
-	gsContext "github.com/wndhydrnt/saturn-sync/pkg/context"
+	gsContext "github.com/wndhydrnt/saturn-bot/pkg/context"
 )
 
 type repositoryMock struct {

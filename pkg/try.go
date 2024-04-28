@@ -7,12 +7,12 @@ import (
 	"os"
 	"path"
 
-	"github.com/wndhydrnt/saturn-sync/pkg/action"
-	"github.com/wndhydrnt/saturn-sync/pkg/config"
-	saturnContext "github.com/wndhydrnt/saturn-sync/pkg/context"
-	"github.com/wndhydrnt/saturn-sync/pkg/git"
-	"github.com/wndhydrnt/saturn-sync/pkg/host"
-	"github.com/wndhydrnt/saturn-sync/pkg/task"
+	"github.com/wndhydrnt/saturn-bot/pkg/action"
+	"github.com/wndhydrnt/saturn-bot/pkg/config"
+	saturnContext "github.com/wndhydrnt/saturn-bot/pkg/context"
+	"github.com/wndhydrnt/saturn-bot/pkg/git"
+	"github.com/wndhydrnt/saturn-bot/pkg/host"
+	"github.com/wndhydrnt/saturn-bot/pkg/task"
 )
 
 type TryRunner struct {
@@ -33,7 +33,7 @@ func NewTryRunner(configPath string, dataDir string, repositoryName string, task
 	}
 
 	if dataDir == "" {
-		dataDir = path.Join(os.TempDir(), "saturn-sync")
+		dataDir = path.Join(os.TempDir(), "saturn-bot")
 	}
 
 	// This code sets its own data dir.

@@ -12,4 +12,4 @@
 
 ---
 
-_This pull request has been created by [saturn-sync](https://saturn-sync.cloud/)._
+_This pull request has been created by [saturn-bot](https://saturn-bot.cloud/)._

@@ -6,12 +6,12 @@ import (
 	"log/slog"
 	"os"
 
-	"github.com/wndhydrnt/saturn-sync/pkg/config"
-	"github.com/wndhydrnt/saturn-sync/pkg/host"
-	sLog "github.com/wndhydrnt/saturn-sync/pkg/log"
+	"github.com/wndhydrnt/saturn-bot/pkg/config"
+	"github.com/wndhydrnt/saturn-bot/pkg/host"
+	sLog "github.com/wndhydrnt/saturn-bot/pkg/log"
 )
 
-// initialize ensures that outside dependencies needed on every execution of saturn-sync are set up.
+// initialize ensures that outside dependencies needed on every execution of saturn-bot are set up.
 // Such dependencies can be logging or directories.
 func initialize(cfg config.Configuration) error {
 	sLog.InitLog(cfg.LogFormat, cfg.LogLevel, cfg.GitLogLevel)

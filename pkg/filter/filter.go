@@ -9,8 +9,8 @@ import (
 	"regexp"
 	"strings"
 
-	gsContext "github.com/wndhydrnt/saturn-sync/pkg/context"
-	"github.com/wndhydrnt/saturn-sync/pkg/host"
+	gsContext "github.com/wndhydrnt/saturn-bot/pkg/context"
+	"github.com/wndhydrnt/saturn-bot/pkg/host"
 )
 
 type FilterRepository interface {

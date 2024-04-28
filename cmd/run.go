@@ -2,7 +2,7 @@ package cmd
 
 import (
 	"github.com/spf13/cobra"
-	"github.com/wndhydrnt/saturn-sync/pkg"
+	"github.com/wndhydrnt/saturn-bot/pkg"
 )
 
 func createRunCommand() *cobra.Command {

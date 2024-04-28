@@ -12,7 +12,7 @@ package mock
 import (
 	reflect "reflect"
 
-	host "github.com/wndhydrnt/saturn-sync/pkg/host"
+	host "github.com/wndhydrnt/saturn-bot/pkg/host"
 	gomock "go.uber.org/mock/gomock"
 )
 

@@ -11,10 +11,10 @@ import (
 	"time"
 
 	"github.com/gosimple/slug"
-	"github.com/wndhydrnt/saturn-sync/pkg/action"
-	"github.com/wndhydrnt/saturn-sync/pkg/filter"
-	"github.com/wndhydrnt/saturn-sync/pkg/host"
-	"github.com/wndhydrnt/saturn-sync/pkg/task/schema"
+	"github.com/wndhydrnt/saturn-bot/pkg/action"
+	"github.com/wndhydrnt/saturn-bot/pkg/filter"
+	"github.com/wndhydrnt/saturn-bot/pkg/host"
+	"github.com/wndhydrnt/saturn-bot/pkg/task/schema"
 )
 
 func createActionsForTask(actionDefs *schema.TaskActions, taskPath string) ([]action.Action, error) {
@@ -142,7 +142,7 @@ func (tw *Wrapper) Filters() []filter.Filter {
 }
 
 func (tw *Wrapper) BranchName() string {
-	return cmp.Or(tw.Task.BranchName, "saturn-sync--"+slug.Make(tw.Task.Name))
+	return cmp.Or(tw.Task.BranchName, "saturn-bot--"+slug.Make(tw.Task.Name))
 }
 
 func (tw *Wrapper) Checksum() string {

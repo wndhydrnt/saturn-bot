@@ -10,14 +10,14 @@ import (
 	"strings"
 	"time"
 
-	"github.com/wndhydrnt/saturn-sync/pkg/action"
-	"github.com/wndhydrnt/saturn-sync/pkg/cache"
-	"github.com/wndhydrnt/saturn-sync/pkg/config"
-	sContext "github.com/wndhydrnt/saturn-sync/pkg/context"
-	"github.com/wndhydrnt/saturn-sync/pkg/git"
-	"github.com/wndhydrnt/saturn-sync/pkg/host"
-	"github.com/wndhydrnt/saturn-sync/pkg/task"
-	"github.com/wndhydrnt/saturn-sync/pkg/template"
+	"github.com/wndhydrnt/saturn-bot/pkg/action"
+	"github.com/wndhydrnt/saturn-bot/pkg/cache"
+	"github.com/wndhydrnt/saturn-bot/pkg/config"
+	sContext "github.com/wndhydrnt/saturn-bot/pkg/context"
+	"github.com/wndhydrnt/saturn-bot/pkg/git"
+	"github.com/wndhydrnt/saturn-bot/pkg/host"
+	"github.com/wndhydrnt/saturn-bot/pkg/task"
+	"github.com/wndhydrnt/saturn-bot/pkg/template"
 )
 
 var (
@@ -292,7 +292,7 @@ func applyTaskToRepository(ctx context.Context, dryRun bool, gitc git.GitClient,
 	if err != nil {
 		var branchModifiedErr *git.BranchModifiedError
 		if errors.As(err, &branchModifiedErr) && prID != nil && repo.IsPullRequestOpen(prID) {
-			logger.Warn("Branch contains commits not made by saturn-sync")
+			logger.Warn("Branch contains commits not made by saturn-bot")
 			body, err := template.RenderBranchModified(template.BranchModifiedInput{
 				Checksums:     branchModifiedErr.Checksums,
 				DefaultBranch: repo.BaseBranch(),

@@ -284,7 +284,7 @@ func (g *GitHubRepository) ListPullRequestComments(pr interface{}) ([]PullReques
 
 func (g *GitHubRepository) MergePullRequest(deleteBranch bool, pr interface{}) error {
 	gpr := pr.(*github.PullRequest)
-	_, _, err := g.client.PullRequests.Merge(ctx, g.repo.GetOwner().GetLogin(), g.repo.GetName(), gpr.GetNumber(), "Auto-merge by saturn-sync", &github.PullRequestOptions{})
+	_, _, err := g.client.PullRequests.Merge(ctx, g.repo.GetOwner().GetLogin(), g.repo.GetName(), gpr.GetNumber(), "Auto-merge by saturn-bot", &github.PullRequestOptions{})
 	if err != nil {
 		return fmt.Errorf("merge github pull request %d: %w", gpr.GetNumber(), err)
 	}

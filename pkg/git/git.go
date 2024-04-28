@@ -10,9 +10,9 @@ import (
 	"path"
 	"strings"
 
-	"github.com/wndhydrnt/saturn-sync/pkg/config"
-	"github.com/wndhydrnt/saturn-sync/pkg/host"
-	"github.com/wndhydrnt/saturn-sync/pkg/log"
+	"github.com/wndhydrnt/saturn-bot/pkg/config"
+	"github.com/wndhydrnt/saturn-bot/pkg/host"
+	"github.com/wndhydrnt/saturn-bot/pkg/log"
 )
 
 type BranchModifiedError struct {
@@ -160,7 +160,7 @@ func (g *Git) Prepare(repo host.Repository, retry bool) (string, error) {
 }
 
 func (g *Git) Execute(arg ...string) (string, string, error) {
-	cmd := exec.Command(g.gitPath, arg...) // #nosec G204 -- git executable is checked and arguments are controlled by saturn-sync
+	cmd := exec.Command(g.gitPath, arg...) // #nosec G204 -- git executable is checked and arguments are controlled by saturn-bot
 	cmd.Dir = g.checkoutDir
 	cmd.Env = g.envVars
 	stderr := &bytes.Buffer{}

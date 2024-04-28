@@ -9,7 +9,7 @@ import (
 	"strings"
 	"time"
 
-	gsTemplate "github.com/wndhydrnt/saturn-sync/pkg/template"
+	gsTemplate "github.com/wndhydrnt/saturn-bot/pkg/template"
 )
 
 var (
@@ -17,7 +17,7 @@ var (
 	ErrPullRequestNotFound = errors.New("pull request not found")
 
 	tplPrBodyDefault  = template.Must(template.New("bodyDefault").Parse("Apply changes from task {{.TaskName}}."))
-	tplPrTitleDefault = template.Must(template.New("titleDefault").Parse("saturn-sync: task {{.TaskName}}"))
+	tplPrTitleDefault = template.Must(template.New("titleDefault").Parse("saturn-bot: task {{.TaskName}}"))
 )
 
 type PullRequestComment struct {
@@ -150,7 +150,7 @@ func CreatePullRequestCommentWithIdentifier(body string, identifier string, pr i
 		return err
 	}
 
-	prefix := fmt.Sprintf("<!-- saturn-sync::{%s} -->", identifier)
+	prefix := fmt.Sprintf("<!-- saturn-bot::{%s} -->", identifier)
 	for _, comment := range comments {
 		if strings.HasPrefix(comment.Body, prefix) {
 			return nil
@@ -171,7 +171,7 @@ func DeletePullRequestCommentByIdentifier(identifier string, pr interface{}, rep
 		return err
 	}
 
-	prefix := fmt.Sprintf("<!-- saturn-sync::{%s} -->", identifier)
+	prefix := fmt.Sprintf("<!-- saturn-bot::{%s} -->", identifier)
 	for _, comment := range comments {
 		if strings.HasPrefix(comment.Body, prefix) {
 			slog.Debug("Delete comment on pull request with identifier", "identifier", identifier, "repository", repo.FullName())

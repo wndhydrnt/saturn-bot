@@ -6,7 +6,7 @@ import (
 	"fmt"
 	"os"
 
-	"github.com/wndhydrnt/saturn-sync/pkg/task"
+	"github.com/wndhydrnt/saturn-bot/pkg/task"
 )
 
 const (

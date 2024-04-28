@@ -10,9 +10,9 @@ import (
 
 	"github.com/stretchr/testify/assert"
 	"github.com/stretchr/testify/require"
-	"github.com/wndhydrnt/saturn-sync/pkg/config"
-	"github.com/wndhydrnt/saturn-sync/pkg/log"
-	"github.com/wndhydrnt/saturn-sync/pkg/mock"
+	"github.com/wndhydrnt/saturn-bot/pkg/config"
+	"github.com/wndhydrnt/saturn-bot/pkg/log"
+	"github.com/wndhydrnt/saturn-bot/pkg/mock"
 	"go.uber.org/mock/gomock"
 )
 

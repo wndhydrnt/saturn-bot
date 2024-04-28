@@ -7,7 +7,7 @@ import "fmt"
 import yaml "gopkg.in/yaml.v3"
 import "reflect"
 
-// Configuration settings of saturn-sync.
+// Configuration settings of saturn-bot.
 type Configuration struct {
 	// Key/value pairs to set custom configuration for tasks. The key/value pairs are
 	// passed to each task.
@@ -236,7 +236,7 @@ func (j *Configuration) UnmarshalJSON(b []byte) error {
 		plain.DryRun = false
 	}
 	if v, ok := raw["gitAuthor"]; !ok || v == nil {
-		plain.GitAuthor = "saturn-sync <bot@saturn-sync.localhost>"
+		plain.GitAuthor = "saturn-bot <bot@saturn-bot.localhost>"
 	}
 	if v, ok := raw["gitCloneOptions"]; !ok || v == nil {
 		plain.GitCloneOptions = []string{
@@ -245,7 +245,7 @@ func (j *Configuration) UnmarshalJSON(b []byte) error {
 		}
 	}
 	if v, ok := raw["gitCommitMessage"]; !ok || v == nil {
-		plain.GitCommitMessage = "changes by saturn-sync"
+		plain.GitCommitMessage = "changes by saturn-bot"
 	}
 	if v, ok := raw["gitLogLevel"]; !ok || v == nil {
 		plain.GitLogLevel = "warn"
@@ -284,7 +284,7 @@ func (j *Configuration) UnmarshalYAML(value *yaml.Node) error {
 		plain.DryRun = false
 	}
 	if v, ok := raw["gitAuthor"]; !ok || v == nil {
-		plain.GitAuthor = "saturn-sync <bot@saturn-sync.localhost>"
+		plain.GitAuthor = "saturn-bot <bot@saturn-bot.localhost>"
 	}
 	if v, ok := raw["gitCloneOptions"]; !ok || v == nil {
 		plain.GitCloneOptions = []string{
@@ -293,7 +293,7 @@ func (j *Configuration) UnmarshalYAML(value *yaml.Node) error {
 		}
 	}
 	if v, ok := raw["gitCommitMessage"]; !ok || v == nil {
-		plain.GitCommitMessage = "changes by saturn-sync"
+		plain.GitCommitMessage = "changes by saturn-bot"
 	}
 	if v, ok := raw["gitLogLevel"]; !ok || v == nil {
 		plain.GitLogLevel = "warn"

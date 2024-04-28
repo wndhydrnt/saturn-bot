@@ -11,9 +11,9 @@ import (
 	goPlugin "github.com/hashicorp/go-plugin"
 	"github.com/wndhydrnt/saturn-bot-go/plugin"
 	proto "github.com/wndhydrnt/saturn-bot-go/protocol/v1"
-	gsContext "github.com/wndhydrnt/saturn-sync/pkg/context"
-	"github.com/wndhydrnt/saturn-sync/pkg/host"
-	gsLog "github.com/wndhydrnt/saturn-sync/pkg/log"
+	gsContext "github.com/wndhydrnt/saturn-bot/pkg/context"
+	"github.com/wndhydrnt/saturn-bot/pkg/host"
+	gsLog "github.com/wndhydrnt/saturn-bot/pkg/log"
 )
 
 type startPluginOptions struct {
@@ -47,7 +47,7 @@ func newPluginWrapper(opts startPluginOptions) (*pluginWrapper, error) {
 		Plugins: map[string]goPlugin.Plugin{
 			plugin.ID: &plugin.ProviderPlugin{},
 		},
-		Cmd:              exec.Command(executable, args...), // #nosec G204 -- arguments are controlled by saturn-sync
+		Cmd:              exec.Command(executable, args...), // #nosec G204 -- arguments are controlled by saturn-bot
 		AllowedProtocols: []goPlugin.Protocol{goPlugin.ProtocolGRPC},
 	})
 

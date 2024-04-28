@@ -9,7 +9,7 @@ import (
 	"path/filepath"
 	"strings"
 
-	"github.com/wndhydrnt/saturn-sync/pkg/task/schema"
+	"github.com/wndhydrnt/saturn-bot/pkg/task/schema"
 )
 
 func createContentReader(taskPath, value string) (io.ReadCloser, error) {

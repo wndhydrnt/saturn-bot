@@ -114,8 +114,8 @@ func TestGitLabRepository_CreatePullRequest(t *testing.T) {
 		MatchType("json").
 		JSON(map[string]string{
 			"title":         "Unit Test Title",
-			"description":   "Unit Test Body\n\n---\n\n**Auto-merge:** Disabled. Merge this manually.\n\n**Ignore:** This PR will be recreated if closed.\n\n---\n\n- [ ] If you want to rebase this PR, check this box\n\n---\n\n_This pull request has been created by [saturn-sync](https://saturn-sync.cloud/)._\n",
-			"source_branch": "saturn-sync--unit-test",
+			"description":   "Unit Test Body\n\n---\n\n**Auto-merge:** Disabled. Merge this manually.\n\n**Ignore:** This PR will be recreated if closed.\n\n---\n\n- [ ] If you want to rebase this PR, check this box\n\n---\n\n_This pull request has been created by [saturn-bot](https://saturn-bot.cloud/)._\n",
+			"source_branch": "saturn-bot--unit-test",
 			"target_branch": "main",
 		}).
 		Reply(200).
@@ -124,7 +124,7 @@ func TestGitLabRepository_CreatePullRequest(t *testing.T) {
 	prData := PullRequestData{Body: "Unit Test Body", Title: "Unit Test Title"}
 
 	underTest := &GitLabRepository{client: setupClient(), project: project}
-	err := underTest.CreatePullRequest("saturn-sync--unit-test", prData)
+	err := underTest.CreatePullRequest("saturn-bot--unit-test", prData)
 
 	require.NoError(t, err)
 	require.True(t, gock.IsDone())
@@ -137,9 +137,9 @@ func TestGitLabRepository_CreatePullRequest_WithLabels(t *testing.T) {
 		MatchType("json").
 		JSON(map[string]string{
 			"title":         "Unit Test Title",
-			"description":   "Unit Test Body\n\n---\n\n**Auto-merge:** Disabled. Merge this manually.\n\n**Ignore:** This PR will be recreated if closed.\n\n---\n\n- [ ] If you want to rebase this PR, check this box\n\n---\n\n_This pull request has been created by [saturn-sync](https://saturn-sync.cloud/)._\n",
+			"description":   "Unit Test Body\n\n---\n\n**Auto-merge:** Disabled. Merge this manually.\n\n**Ignore:** This PR will be recreated if closed.\n\n---\n\n- [ ] If you want to rebase this PR, check this box\n\n---\n\n_This pull request has been created by [saturn-bot](https://saturn-bot.cloud/)._\n",
 			"labels":        "unit,test",
-			"source_branch": "saturn-sync--unit-test",
+			"source_branch": "saturn-bot--unit-test",
 			"target_branch": "main",
 		}).
 		Reply(200).
@@ -148,7 +148,7 @@ func TestGitLabRepository_CreatePullRequest_WithLabels(t *testing.T) {
 	prData := PullRequestData{Body: "Unit Test Body", Labels: []string{"unit", "test"}, Title: "Unit Test Title"}
 
 	underTest := &GitLabRepository{client: setupClient(), project: project}
-	err := underTest.CreatePullRequest("saturn-sync--unit-test", prData)
+	err := underTest.CreatePullRequest("saturn-bot--unit-test", prData)
 
 	require.NoError(t, err)
 	require.True(t, gock.IsDone())
@@ -157,10 +157,10 @@ func TestGitLabRepository_CreatePullRequest_WithLabels(t *testing.T) {
 func TestGitLabRepository_DeleteBranch(t *testing.T) {
 	defer gock.Off()
 	gock.New("http://gitlab.local").
-		Delete("/api/v4/projects/123/repository/branches/saturn-sync--unit-test").
+		Delete("/api/v4/projects/123/repository/branches/saturn-bot--unit-test").
 		Reply(200)
 	project := &gitlab.Project{ID: 123}
-	mr := &gitlab.MergeRequest{IID: 987, SourceBranch: "saturn-sync--unit-test"}
+	mr := &gitlab.MergeRequest{IID: 987, SourceBranch: "saturn-bot--unit-test"}
 
 	underTest := &GitLabRepository{client: setupClient(), project: project}
 	err := underTest.DeleteBranch(mr)
@@ -172,7 +172,7 @@ func TestGitLabRepository_DeleteBranch(t *testing.T) {
 func TestGitLabRepository_DeleteBranch_NoDeleteIfGitLabDeletesMR(t *testing.T) {
 	defer gock.Off()
 	project := &gitlab.Project{ID: 123}
-	mr := &gitlab.MergeRequest{IID: 987, SourceBranch: "saturn-sync--unit-test", ShouldRemoveSourceBranch: true}
+	mr := &gitlab.MergeRequest{IID: 987, SourceBranch: "saturn-bot--unit-test", ShouldRemoveSourceBranch: true}
 
 	underTest := &GitLabRepository{client: setupClient(), project: project}
 	err := underTest.DeleteBranch(mr)
@@ -202,15 +202,15 @@ func TestGitLabRepository_FindPullRequest(t *testing.T) {
 	defer gock.Off()
 	gock.New("http://gitlab.local").
 		Get("/api/v4/projects/123/merge_requests").
-		MatchParams(map[string]string{"source_branch": "saturn-sync--unit-test", "state": "all"}).
+		MatchParams(map[string]string{"source_branch": "saturn-bot--unit-test", "state": "all"}).
 		Reply(200).
 		JSON([]*gitlab.MergeRequest{
-			{SourceBranch: "saturn-sync--unit-test"},
+			{SourceBranch: "saturn-bot--unit-test"},
 		})
 	project := &gitlab.Project{ID: 123}
 
 	underTest := &GitLabRepository{client: setupClient(), project: project}
-	result, err := underTest.FindPullRequest("saturn-sync--unit-test")
+	result, err := underTest.FindPullRequest("saturn-bot--unit-test")
 
 	require.NoError(t, err)
 	require.IsType(t, &gitlab.MergeRequest{}, result)
@@ -221,13 +221,13 @@ func TestGitLabRepository_FindPullRequest_NotFound(t *testing.T) {
 	defer gock.Off()
 	gock.New("http://gitlab.local").
 		Get("/api/v4/projects/123/merge_requests").
-		MatchParams(map[string]string{"source_branch": "saturn-sync--unit-test", "state": "all"}).
+		MatchParams(map[string]string{"source_branch": "saturn-bot--unit-test", "state": "all"}).
 		Reply(200).
 		JSON([]*gitlab.MergeRequest{})
 	project := &gitlab.Project{ID: 123}
 
 	underTest := &GitLabRepository{client: setupClient(), project: project}
-	_, err := underTest.FindPullRequest("saturn-sync--unit-test")
+	_, err := underTest.FindPullRequest("saturn-bot--unit-test")
 
 	require.ErrorIs(t, err, ErrPullRequestNotFound)
 	require.True(t, gock.IsDone())
@@ -556,7 +556,7 @@ func TestGitLabRepository_UpdatePullRequest(t *testing.T) {
 		MatchType("json").
 		JSON(map[string]interface{}{
 			"title":       "New PR Title",
-			"description": "New PR Body\n\n---\n\n**Auto-merge:** Disabled. Merge this manually.\n\n**Ignore:** This PR will be recreated if closed.\n\n---\n\n- [ ] If you want to rebase this PR, check this box\n\n---\n\n_This pull request has been created by [saturn-sync](https://saturn-sync.cloud/)._\n",
+			"description": "New PR Body\n\n---\n\n**Auto-merge:** Disabled. Merge this manually.\n\n**Ignore:** This PR will be recreated if closed.\n\n---\n\n- [ ] If you want to rebase this PR, check this box\n\n---\n\n_This pull request has been created by [saturn-bot](https://saturn-bot.cloud/)._\n",
 		}).
 		Reply(200).
 		JSON(map[string]string{})
@@ -582,7 +582,7 @@ func TestGitLabRepository_UpdatePullRequest_NoUpdateRequired(t *testing.T) {
 	}
 	project := &gitlab.Project{ID: 123}
 	mr := &gitlab.MergeRequest{
-		Description: "PR Body\n\n---\n\n**Auto-merge:** Disabled. Merge this manually.\n\n**Ignore:** This PR will be recreated if closed.\n\n---\n\n- [ ] If you want to rebase this PR, check this box\n\n---\n\n_This pull request has been created by [saturn-sync](https://saturn-sync.cloud/)._\n",
+		Description: "PR Body\n\n---\n\n**Auto-merge:** Disabled. Merge this manually.\n\n**Ignore:** This PR will be recreated if closed.\n\n---\n\n- [ ] If you want to rebase this PR, check this box\n\n---\n\n_This pull request has been created by [saturn-bot](https://saturn-bot.cloud/)._\n",
 		IID:         987,
 		Title:       "PR Title",
 	}

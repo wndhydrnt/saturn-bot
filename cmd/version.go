@@ -4,7 +4,7 @@ import (
 	"fmt"
 
 	"github.com/spf13/cobra"
-	"github.com/wndhydrnt/saturn-sync/pkg/version"
+	"github.com/wndhydrnt/saturn-bot/pkg/version"
 )
 
 func createVersionCommand() *cobra.Command {

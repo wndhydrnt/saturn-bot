@@ -16,7 +16,7 @@ var (
 )
 
 var rootCmd = &cobra.Command{
-	Use:   "saturn-sync",
+	Use:   "saturn-bot",
 	Short: "Synchronize code across many repositories",
 	Long:  `Synchronize code across many repositories.`,
 }
