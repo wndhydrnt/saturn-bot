@@ -9,8 +9,8 @@ import (
 	"path/filepath"
 
 	goPlugin "github.com/hashicorp/go-plugin"
-	"github.com/wndhydrnt/saturn-sync-go/plugin"
-	proto "github.com/wndhydrnt/saturn-sync-go/protocol/v1"
+	"github.com/wndhydrnt/saturn-bot-go/plugin"
+	proto "github.com/wndhydrnt/saturn-bot-go/protocol/v1"
 	gsContext "github.com/wndhydrnt/saturn-sync/pkg/context"
 	"github.com/wndhydrnt/saturn-sync/pkg/host"
 	gsLog "github.com/wndhydrnt/saturn-sync/pkg/log"
