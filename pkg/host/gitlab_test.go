@@ -114,7 +114,7 @@ func TestGitLabRepository_CreatePullRequest(t *testing.T) {
 		MatchType("json").
 		JSON(map[string]string{
 			"title":         "Unit Test Title",
-			"description":   "Unit Test Body\n\n---\n\n**Auto-merge:** Disabled. Merge this manually.\n\n**Ignore:** This PR will be recreated if closed.\n\n---\n\n- [ ] If you want to rebase this PR, check this box\n\n---\n\n_This pull request has been created by [saturn-bot](https://saturn-bot.cloud/)._\n",
+			"description":   "Unit Test Body\n\n---\n\n**Auto-merge:** Disabled. Merge this manually.\n\n**Ignore:** This PR will be recreated if closed.\n\n---\n\n- [ ] If you want to rebase this PR, check this box\n\n---\n\n_This pull request has been created by [saturn-bot](https://saturn-bot.cloud/)_ 🪐🤖.\n",
 			"source_branch": "saturn-bot--unit-test",
 			"target_branch": "main",
 		}).
@@ -137,7 +137,7 @@ func TestGitLabRepository_CreatePullRequest_WithLabels(t *testing.T) {
 		MatchType("json").
 		JSON(map[string]string{
 			"title":         "Unit Test Title",
-			"description":   "Unit Test Body\n\n---\n\n**Auto-merge:** Disabled. Merge this manually.\n\n**Ignore:** This PR will be recreated if closed.\n\n---\n\n- [ ] If you want to rebase this PR, check this box\n\n---\n\n_This pull request has been created by [saturn-bot](https://saturn-bot.cloud/)._\n",
+			"description":   "Unit Test Body\n\n---\n\n**Auto-merge:** Disabled. Merge this manually.\n\n**Ignore:** This PR will be recreated if closed.\n\n---\n\n- [ ] If you want to rebase this PR, check this box\n\n---\n\n_This pull request has been created by [saturn-bot](https://saturn-bot.cloud/)_ 🪐🤖.\n",
 			"labels":        "unit,test",
 			"source_branch": "saturn-bot--unit-test",
 			"target_branch": "main",
@@ -556,7 +556,7 @@ func TestGitLabRepository_UpdatePullRequest(t *testing.T) {
 		MatchType("json").
 		JSON(map[string]interface{}{
 			"title":       "New PR Title",
-			"description": "New PR Body\n\n---\n\n**Auto-merge:** Disabled. Merge this manually.\n\n**Ignore:** This PR will be recreated if closed.\n\n---\n\n- [ ] If you want to rebase this PR, check this box\n\n---\n\n_This pull request has been created by [saturn-bot](https://saturn-bot.cloud/)._\n",
+			"description": "New PR Body\n\n---\n\n**Auto-merge:** Disabled. Merge this manually.\n\n**Ignore:** This PR will be recreated if closed.\n\n---\n\n- [ ] If you want to rebase this PR, check this box\n\n---\n\n_This pull request has been created by [saturn-bot](https://saturn-bot.cloud/)_ 🪐🤖.\n",
 		}).
 		Reply(200).
 		JSON(map[string]string{})
@@ -582,7 +582,7 @@ func TestGitLabRepository_UpdatePullRequest_NoUpdateRequired(t *testing.T) {
 	}
 	project := &gitlab.Project{ID: 123}
 	mr := &gitlab.MergeRequest{
-		Description: "PR Body\n\n---\n\n**Auto-merge:** Disabled. Merge this manually.\n\n**Ignore:** This PR will be recreated if closed.\n\n---\n\n- [ ] If you want to rebase this PR, check this box\n\n---\n\n_This pull request has been created by [saturn-bot](https://saturn-bot.cloud/)._\n",
+		Description: "PR Body\n\n---\n\n**Auto-merge:** Disabled. Merge this manually.\n\n**Ignore:** This PR will be recreated if closed.\n\n---\n\n- [ ] If you want to rebase this PR, check this box\n\n---\n\n_This pull request has been created by [saturn-bot](https://saturn-bot.cloud/)_ 🪐🤖.\n",
 		IID:         987,
 		Title:       "PR Title",
 	}

@@ -135,7 +135,7 @@ func TestGitHubRepository_CreatePullRequest(t *testing.T) {
 
 ---
 
-_This pull request has been created by [saturn-bot](https://saturn-bot.cloud/)._
+_This pull request has been created by [saturn-bot](https://saturn-bot.cloud/)_ 🪐🤖.
 `
 	defer gock.Off()
 	gock.New("https://api.github.com").
@@ -582,7 +582,7 @@ func TestGitHubRepository_UpdatePullRequest_Update(t *testing.T) {
 
 ---
 
-_This pull request has been created by [saturn-bot](https://saturn-bot.cloud/)._
+_This pull request has been created by [saturn-bot](https://saturn-bot.cloud/)_ 🪐🤖.
 `
 	defer gock.Off()
 	gock.New("https://api.github.com").
@@ -628,7 +628,7 @@ func TestGitHubRepository_UpdatePullRequest_NoUpdate(t *testing.T) {
 
 ---
 
-_This pull request has been created by [saturn-bot](https://saturn-bot.cloud/)._
+_This pull request has been created by [saturn-bot](https://saturn-bot.cloud/)_ 🪐🤖.
 `
 	defer gock.Off()
 	pr := &github.PullRequest{
