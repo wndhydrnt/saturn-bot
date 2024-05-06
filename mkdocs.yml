@@ -1,4 +1,4 @@
-site_name: saturn-sync
+site_name: saturn-bot
 theme:
   features:
     - content.code.copy
@@ -11,3 +11,5 @@ markdown_extensions:
   - pymdownx.inlinehilite
   - pymdownx.snippets
   - pymdownx.superfences
+hooks:
+  - mkdocs-hooks/json_path.py

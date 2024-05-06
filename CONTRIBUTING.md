@@ -8,7 +8,7 @@ Documentation is written in [Markdown](https://www.markdownguide.org/) and rende
 
 1. Create a Python virtualenv (needs to be done only once):
    ```shell
-   python -m venv --prompt saturn-sync-docs ./venv
+   python -m venv --prompt saturn-bot-docs ./venv
    ```
 2. Activate the virtualenv:
    ```shell

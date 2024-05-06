@@ -6,3 +6,5 @@ saturn-bot-*
 bin/
 sha256sums.txt
 venv/
+site/
+__pycache__/
