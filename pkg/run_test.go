@@ -533,6 +533,9 @@ func TestExecuteRunner_Run(t *testing.T) {
 	}
 	taskFile := createTestTask("git.local/unittest/repo.*")
 	cacheFile := createTestCache(taskFile)
+	cache := cache.NewJsonFile(cacheFile)
+	_ = cache.Read()
+	cacheLastExecutionBefore := cache.GetLastExecutionAt()
 	defer func() {
 		if err := os.Remove(cacheFile); err != nil {
 			panic(err)
@@ -545,7 +548,7 @@ func TestExecuteRunner_Run(t *testing.T) {
 
 	runner := &executeRunner{
 		applyTaskFunc: mockApplyTaskFunc,
-		cache:         cache.NewJsonFile(cacheFile),
+		cache:         cache,
 		dryRun:        false,
 		git:           gitc,
 		hosts:         []host.Host{hostm},
@@ -554,4 +557,45 @@ func TestExecuteRunner_Run(t *testing.T) {
 	err := runner.run([]string{taskFile})
 
 	require.NoError(t, err)
+	assert.NotEqual(t, cacheLastExecutionBefore, cache.GetLastExecutionAt(), "Updates the lat execution time in the cache")
+}
+
+func TestExecuteRunner_Run_DryRun(t *testing.T) {
+	ctrl := gomock.NewController(t)
+	repo := mock.NewMockRepository(ctrl)
+	repo.EXPECT().FullName().Return("git.local/unittest/repo").AnyTimes()
+	gitc := mock.NewMockGitClient(ctrl)
+	gitc.EXPECT().Prepare(repo, false).Return("/work/repo", nil)
+	hostm := &mockHost{
+		repositories: []host.Repository{repo},
+	}
+	taskFile := createTestTask("git.local/unittest/repo.*")
+	cacheFile := createTestCache(taskFile)
+	cache := cache.NewJsonFile(cacheFile)
+	_ = cache.Read()
+	cacheLastExecutionBefore := cache.GetLastExecutionAt()
+	cacheTasks := cache.GetCachedTasks()
+	defer func() {
+		if err := os.Remove(cacheFile); err != nil {
+			panic(err)
+		}
+
+		if err := os.Remove(taskFile); err != nil {
+			panic(err)
+		}
+	}()
+
+	runner := &executeRunner{
+		applyTaskFunc: mockApplyTaskFunc,
+		cache:         cache,
+		dryRun:        true,
+		git:           gitc,
+		hosts:         []host.Host{hostm},
+		taskRegistry:  &task.Registry{},
+	}
+	err := runner.run([]string{taskFile})
+
+	require.NoError(t, err)
+	assert.Equal(t, cacheLastExecutionBefore, cache.GetLastExecutionAt(), "Does not update the last execution time because dryRun is true")
+	assert.Equal(t, cacheTasks, cache.GetCachedTasks(), "Does not update the cached tasks because dryRun is true")
 }

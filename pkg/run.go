@@ -144,11 +144,15 @@ func (r *executeRunner) run(taskFiles []string) error {
 		}
 	}
 
-	r.cache.SetLastExecutionAt(time.Now().UnixMicro())
-	r.cache.UpdateCachedTasks(tasks)
-	err = r.cache.Write()
-	if err != nil {
-		return err
+	if !r.dryRun {
+		// Only update cache if this is not a dry run.
+		// Without this guard, subsequent non dry runs would not recognize that they need to do anything.
+		r.cache.SetLastExecutionAt(time.Now().UnixMicro())
+		r.cache.UpdateCachedTasks(tasks)
+		err = r.cache.Write()
+		if err != nil {
+			return err
+		}
 	}
 
 	r.taskRegistry.Stop()
