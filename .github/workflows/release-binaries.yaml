@@ -1,8 +1,9 @@
 name: Release Binaries
 
 on:
-  release:
-    types: [published]
+  push:
+    tags:
+      - "*"
 
 jobs:
   upload:
@@ -16,9 +17,9 @@ jobs:
           go-version: "1.22.x"
       - name: Build binaries
         env:
-          VERSION: ${{ github.ref }}
+          VERSION: ${{ github.ref_name }}
         run: make build_all
       - name: Upload binaries
         env:
           GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
-        run: gh release upload ${{ github.ref }} saturn-bot-${{ github.ref }}.*
+        run: gh release upload ${{ github.ref_name }} saturn-bot-${{ github.ref_name }}.*
