@@ -45,7 +45,7 @@ func TestFileCreate_Apply(t *testing.T) {
 			wantFiles: map[string]string{"test.txt": "abc\n"},
 		},
 		{
-			name:  "When the file exists and overwrite=false then it does not update the file",
+			name:  "When overwrite=false and the file exists then it does not update the file",
 			files: map[string]string{"test.txt": "abc\n"},
 			action: func() (Action, error) {
 				content := "def\n"
@@ -58,7 +58,7 @@ func TestFileCreate_Apply(t *testing.T) {
 			wantFiles: map[string]string{"test.txt": "abc\n"},
 		},
 		{
-			name:  "When state=present and overwrite=true and the file exists then it updates the file",
+			name:  "When overwrite=true and the file exists then it updates the file",
 			files: map[string]string{"test.txt": "abc\n"},
 			action: func() (Action, error) {
 				content := "def\n"
@@ -82,6 +82,19 @@ func TestFileCreate_Apply(t *testing.T) {
 				}, "")
 			},
 			wantFiles: map[string]string{"test.txt": "def\n"},
+		},
+		{
+			name:  "When the path to the file is a directory and that directory does not exist then it creates the directory and the file",
+			files: map[string]string{},
+			action: func() (Action, error) {
+				content := "abc\n"
+				return NewFileCreateFromTask(schema.TaskActionsFileCreateElem{
+					Content:   &content,
+					Overwrite: true,
+					Path:      "unit/test/test.txt",
+				}, "")
+			},
+			wantFiles: map[string]string{"unit/test/test.txt": "abc\n"},
 		},
 	}
 

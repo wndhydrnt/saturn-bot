@@ -79,6 +79,14 @@ func (a *fileCreate) Apply(_ context.Context) error {
 		}
 	}
 
+	if !fileExists {
+		d := filepath.Dir(a.path)
+		err := os.MkdirAll(d, 0755)
+		if err != nil {
+			return fmt.Errorf("create directory because it does not exist: %w", err)
+		}
+	}
+
 	if a.overwrite || !fileExists {
 		file, err := os.Create(a.path)
 		if err != nil {
