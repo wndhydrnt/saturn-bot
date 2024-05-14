@@ -164,6 +164,11 @@ func (r *executeRunner) run(taskFiles []string) error {
 }
 
 func ExecuteRun(opts options.Opts, taskFiles []string) error {
+	err := options.Initialize(opts)
+	if err != nil {
+		return fmt.Errorf("initialize options: %w", err)
+	}
+
 	cache := cache.NewJsonFile(path.Join(*opts.Config.DataDir, cache.DefaultJsonFileName))
 	taskRegistry := task.NewRegistry(opts)
 

@@ -53,11 +53,6 @@ func ToOptions(c config.Configuration) (Opts, error) {
 		FilterFactories: filter.BuiltInFactories,
 	}
 
-	err := initialize(c)
-	if err != nil {
-		return opts, fmt.Errorf("init: %w", err)
-	}
-
 	hosts, err := createHostsFromConfig(c)
 	if err != nil {
 		return opts, fmt.Errorf("create hosts from configuration: %w", err)
@@ -99,20 +94,20 @@ func createHostsFromConfig(cfg config.Configuration) ([]host.Host, error) {
 	return hosts, nil
 }
 
-// initialize ensures that outside dependencies needed on every execution of saturn-bot are set up.
+// Initialize ensures that outside dependencies needed on every execution of saturn-bot are set up.
 // Such dependencies can be logging or directories.
-func initialize(cfg config.Configuration) error {
-	sLog.InitLog(cfg.LogFormat, cfg.LogLevel, cfg.GitLogLevel)
+func Initialize(opts Opts) error {
+	sLog.InitLog(opts.Config.LogFormat, opts.Config.LogLevel, opts.Config.GitLogLevel)
 
-	if cfg.DataDir == nil {
+	if opts.Config.DataDir == nil {
 		return fmt.Errorf("missing dataDir configuration setting")
 	}
 
-	info, err := os.Stat(*cfg.DataDir)
+	info, err := os.Stat(*opts.Config.DataDir)
 	if err != nil {
 		if errors.Is(err, os.ErrNotExist) {
-			slog.Info("Creating data directory", "path", *cfg.DataDir)
-			mkdirErr := os.MkdirAll(*cfg.DataDir, 0700)
+			slog.Info("Creating data directory", "path", *opts.Config.DataDir)
+			mkdirErr := os.MkdirAll(*opts.Config.DataDir, 0700)
 			if mkdirErr != nil {
 				return fmt.Errorf("create data directory: %w", err)
 			}
@@ -122,7 +117,7 @@ func initialize(cfg config.Configuration) error {
 	}
 
 	if info != nil && !info.IsDir() {
-		return fmt.Errorf("data directory %s is not a directory", *cfg.DataDir)
+		return fmt.Errorf("data directory %s is not a directory", *opts.Config.DataDir)
 	}
 
 	return nil
