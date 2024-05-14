@@ -8,6 +8,8 @@ import (
 	"path/filepath"
 	"regexp"
 	"strings"
+
+	"github.com/wndhydrnt/saturn-bot/pkg/str"
 )
 
 const (
@@ -15,21 +17,48 @@ const (
 	endOfFile       = "EOF"
 )
 
-func NewLineDelete(path, line string) (Action, error) {
-	regexC, err := regexp.Compile(line)
-	if err != nil {
-		return nil, fmt.Errorf("compile regex: %w", err)
+type LineDeleteFactory struct{}
+
+func (f LineDeleteFactory) Create(params map[string]string, _ string) (Action, error) {
+	path := params["path"]
+	if path == "" {
+		return nil, fmt.Errorf("required parameter `path` not set")
+	}
+
+	search := params["search"]
+	regexpRaw := params["regexp"]
+	if search == "" && regexpRaw == "" {
+		return nil, fmt.Errorf("either parameter `regexp` or `search` must be set")
+	}
+
+	if search != "" && regexpRaw != "" {
+		return nil, fmt.Errorf("parameters `regexp` and `search` cannot bet set both")
+	}
+
+	var re *regexp.Regexp
+	if regexpRaw != "" {
+		var err error
+		re, err = regexp.Compile(str.EncloseRegex(regexpRaw))
+		if err != nil {
+			return nil, fmt.Errorf("compile parameter `regexp` to regular expression: %w", err)
+		}
 	}
 
 	return &lineDelete{
-		path:  path,
-		regex: regexC,
+		path:   path,
+		regex:  re,
+		search: search,
 	}, nil
 }
 
+func (f LineDeleteFactory) Name() string {
+	return "lineDelete"
+}
+
 type lineDelete struct {
-	path  string
-	regex *regexp.Regexp
+	path   string
+	regex  *regexp.Regexp
+	search string
 }
 
 func (d *lineDelete) Apply(_ context.Context) error {
@@ -40,7 +69,11 @@ func (d *lineDelete) Apply(_ context.Context) error {
 
 	for _, path := range paths {
 		err := forEachLine(path, func(line []byte) ([]byte, error) {
-			if d.regex.Match(line) {
+			if d.search != "" && string(line) == d.search {
+				return nil, nil
+			}
+
+			if d.regex != nil && d.regex.Match(line) {
 				return nil, nil
 			}
 
@@ -55,16 +88,45 @@ func (d *lineDelete) Apply(_ context.Context) error {
 }
 
 func (d *lineDelete) String() string {
-	return fmt.Sprintf("lineDelete(line=%s,path=%s)", d.regex.String(), d.path)
-}
-
-func NewLineInsert(insertAt, line, path string) (Action, error) {
-	insertAt = strings.ToUpper(insertAt)
-	if insertAt != beginningOfFile && insertAt != endOfFile {
-		return nil, fmt.Errorf("invalid value %s of parameter insertAt - can be one of BOF,EOF", insertAt)
+	if d.search != "" {
+		return fmt.Sprintf("lineDelete(path=%s,search=%s)", d.path, d.search)
 	}
 
-	return &lineInsert{insertAt: insertAt, line: line, path: path}, nil
+	return fmt.Sprintf("lineDelete(path=%s,regexp=%s)", d.path, d.regex.String())
+}
+
+type LineInsertFactory struct{}
+
+func (f LineInsertFactory) Create(params map[string]string, _ string) (Action, error) {
+	insertAt := params["insertAt"]
+	if insertAt == "" {
+		insertAt = "EOF"
+	}
+
+	insertAt = strings.ToUpper(insertAt)
+	if insertAt != beginningOfFile && insertAt != endOfFile {
+		return nil, fmt.Errorf("invalid value of parameter `insertAt` - can be one of BOF,EOF")
+	}
+
+	path := params["path"]
+	if path == "" {
+		return nil, fmt.Errorf("required parameter `path` not set")
+	}
+
+	line := params["line"]
+	if line == "" {
+		return nil, fmt.Errorf("required parameter `line` not set")
+	}
+
+	return &lineInsert{
+		insertAt: insertAt,
+		line:     line,
+		path:     path,
+	}, nil
+}
+
+func (f LineInsertFactory) Name() string {
+	return "lineInsert"
 }
 
 type lineInsert struct {
@@ -167,23 +229,55 @@ func (a *lineInsert) String() string {
 	return fmt.Sprintf("lineInsert(insertAt=%s,line=%s,path=%s)", a.insertAt, a.line, a.path)
 }
 
-func NewLineReplace(line, path, search string) (Action, error) {
-	regexC, err := regexp.Compile(search)
-	if err != nil {
-		return nil, fmt.Errorf("compile regex: %w", err)
+type LineReplaceFactory struct{}
+
+func (f LineReplaceFactory) Create(params map[string]string, _ string) (Action, error) {
+	path := params["path"]
+	if path == "" {
+		return nil, fmt.Errorf("required parameter `path` not set")
+	}
+
+	line := params["line"]
+	if line == "" {
+		return nil, fmt.Errorf("required parameter `line` not set")
+	}
+
+	regexpRaw := params["regexp"]
+	search := params["search"]
+	if search == "" && regexpRaw == "" {
+		return nil, fmt.Errorf("either parameter `regexp` or `search` must be set")
+	}
+
+	if search != "" && regexpRaw != "" {
+		return nil, fmt.Errorf("parameters `regexp` and `search` cannot be set both")
+	}
+
+	var re *regexp.Regexp
+	if regexpRaw != "" {
+		var err error
+		re, err = regexp.Compile(str.EncloseRegex(regexpRaw))
+		if err != nil {
+			return nil, fmt.Errorf("compile parameter `regexp` to regular expression: %w", err)
+		}
 	}
 
 	return &lineReplace{
-		line:  line,
-		path:  path,
-		regex: regexC,
+		line:   line,
+		path:   path,
+		regexp: re,
+		search: search,
 	}, nil
 }
 
+func (f LineReplaceFactory) Name() string {
+	return "lineReplace"
+}
+
 type lineReplace struct {
-	line  string
-	path  string
-	regex *regexp.Regexp
+	line   string
+	path   string
+	regexp *regexp.Regexp
+	search string
 }
 
 func (a *lineReplace) Apply(_ context.Context) error {
@@ -194,8 +288,12 @@ func (a *lineReplace) Apply(_ context.Context) error {
 
 	for _, path := range paths {
 		err := forEachLine(path, func(line []byte) ([]byte, error) {
-			if a.regex.Match(line) {
-				new := a.regex.ReplaceAll(line, []byte(a.line))
+			if a.search != "" && a.search == string(line) {
+				return []byte(a.line), nil
+			}
+
+			if a.regexp != nil && a.regexp.Match(line) {
+				new := a.regexp.ReplaceAll(line, []byte(a.line))
 				return new, nil
 			}
 
@@ -210,7 +308,11 @@ func (a *lineReplace) Apply(_ context.Context) error {
 }
 
 func (a *lineReplace) String() string {
-	return fmt.Sprintf("lineReplace(line=%s,path=%s,search=%s)", a.line, a.path, a.regex.String())
+	if a.search != "" {
+		return fmt.Sprintf("lineReplace(line=%s,path=%s,search=%s)", a.line, a.path, a.search)
+	}
+
+	return fmt.Sprintf("lineReplace(line=%s,path=%s,regexp=%s)", a.line, a.path, a.regexp.String())
 }
 
 func forEachLine(filePath string, f func(line []byte) ([]byte, error)) error {

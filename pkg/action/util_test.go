@@ -15,8 +15,10 @@ import (
 
 type testCase struct {
 	name      string
+	bootstrap func() string
 	files     map[string]string
-	action    func() (Action, error)
+	factory   Factory
+	params    map[string]string
 	wantError error
 	wantFiles map[string]string
 }
@@ -69,7 +71,12 @@ func runTestCase(t *testing.T, tc testCase) {
 		workDir, err := setupTestFiles(tc.files)
 		require.NoError(t, err)
 
-		a, err := tc.action()
+		taskPath := ""
+		if tc.bootstrap != nil {
+			taskPath = tc.bootstrap()
+		}
+
+		a, err := tc.factory.Create(tc.params, taskPath)
 		if tc.wantError == nil {
 			require.NoError(t, err)
 		} else {

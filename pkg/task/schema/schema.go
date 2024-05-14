@@ -5,11 +5,10 @@ package schema
 import "encoding/json"
 import "fmt"
 import yaml "gopkg.in/yaml.v3"
-import "reflect"
 
 type Task struct {
-	// Actions corresponds to the JSON schema field "actions".
-	Actions *TaskActions `json:"actions,omitempty" yaml:"actions,omitempty" mapstructure:"actions,omitempty"`
+	// List of actions that modify a repository.
+	Actions []TaskActionsElem `json:"actions,omitempty" yaml:"actions,omitempty" mapstructure:"actions,omitempty"`
 
 	// Merge a pull request automatically if all have checks have passed and all
 	// approvals have been given.
@@ -39,8 +38,8 @@ type Task struct {
 	// Disable the task temporarily.
 	Disabled *bool `json:"disabled,omitempty" yaml:"disabled,omitempty" mapstructure:"disabled,omitempty"`
 
-	// Filters corresponds to the JSON schema field "filters".
-	Filters *TaskFilters `json:"filters,omitempty" yaml:"filters,omitempty" mapstructure:"filters,omitempty"`
+	// Filters allow targeting a specific repositories.
+	Filters []TaskFiltersElem `json:"filters,omitempty" yaml:"filters,omitempty" mapstructure:"filters,omitempty"`
 
 	// If `true`, keep the branch after a pull request has been merged.
 	KeepBranchAfterMerge bool `json:"keepBranchAfterMerge,omitempty" yaml:"keepBranchAfterMerge,omitempty" mapstructure:"keepBranchAfterMerge,omitempty"`
@@ -65,543 +64,106 @@ type Task struct {
 	PrTitle string `json:"prTitle,omitempty" yaml:"prTitle,omitempty" mapstructure:"prTitle,omitempty"`
 }
 
-type TaskActions struct {
-	// FileCreate corresponds to the JSON schema field "fileCreate".
-	FileCreate []TaskActionsFileCreateElem `json:"fileCreate,omitempty" yaml:"fileCreate,omitempty" mapstructure:"fileCreate,omitempty"`
+type TaskActionsElem struct {
+	// Identifier of the action.
+	Action string `json:"action" yaml:"action" mapstructure:"action"`
 
-	// FileDelete corresponds to the JSON schema field "fileDelete".
-	FileDelete []TaskActionsFileDeleteElem `json:"fileDelete,omitempty" yaml:"fileDelete,omitempty" mapstructure:"fileDelete,omitempty"`
-
-	// LineDelete corresponds to the JSON schema field "lineDelete".
-	LineDelete []TaskActionsLineDeleteElem `json:"lineDelete,omitempty" yaml:"lineDelete,omitempty" mapstructure:"lineDelete,omitempty"`
-
-	// LineInsert corresponds to the JSON schema field "lineInsert".
-	LineInsert []TaskActionsLineInsertElem `json:"lineInsert,omitempty" yaml:"lineInsert,omitempty" mapstructure:"lineInsert,omitempty"`
-
-	// LineReplace corresponds to the JSON schema field "lineReplace".
-	LineReplace []TaskActionsLineReplaceElem `json:"lineReplace,omitempty" yaml:"lineReplace,omitempty" mapstructure:"lineReplace,omitempty"`
+	// Key/value pairs passed as parameters to the action.
+	Params TaskActionsElemParams `json:"params,omitempty" yaml:"params,omitempty" mapstructure:"params,omitempty"`
 }
 
-type TaskActionsFileCreateElem struct {
-	// Content of the file to create as a string. This and the contentFile property
-	// are mutually exclusive.
-	Content *string `json:"content,omitempty" yaml:"content,omitempty" mapstructure:"content,omitempty"`
-
-	// Path to a file to use as the content of the file. The path is relative to the
-	// task file. This and the content property are mutually exclusive.
-	ContentFile *string `json:"contentFile,omitempty" yaml:"contentFile,omitempty" mapstructure:"contentFile,omitempty"`
-
-	// File mode to set when creating the file.
-	Mode int `json:"mode,omitempty" yaml:"mode,omitempty" mapstructure:"mode,omitempty"`
-
-	// Overwrite the file with new content if it exists.
-	Overwrite bool `json:"overwrite,omitempty" yaml:"overwrite,omitempty" mapstructure:"overwrite,omitempty"`
-
-	// Path to the file to create or delete.
-	Path string `json:"path" yaml:"path" mapstructure:"path"`
-}
+// Key/value pairs passed as parameters to the action.
+type TaskActionsElemParams map[string]string
 
 // UnmarshalJSON implements json.Unmarshaler.
-func (j *TaskActionsFileCreateElem) UnmarshalJSON(b []byte) error {
+func (j *TaskActionsElem) UnmarshalJSON(b []byte) error {
 	var raw map[string]interface{}
 	if err := json.Unmarshal(b, &raw); err != nil {
 		return err
 	}
-	if _, ok := raw["path"]; raw != nil && !ok {
-		return fmt.Errorf("field path in TaskActionsFileCreateElem: required")
+	if _, ok := raw["action"]; raw != nil && !ok {
+		return fmt.Errorf("field action in TaskActionsElem: required")
 	}
-	type Plain TaskActionsFileCreateElem
+	type Plain TaskActionsElem
 	var plain Plain
 	if err := json.Unmarshal(b, &plain); err != nil {
 		return err
 	}
-	if v, ok := raw["mode"]; !ok || v == nil {
-		plain.Mode = 644.0
-	}
-	if v, ok := raw["overwrite"]; !ok || v == nil {
-		plain.Overwrite = true
-	}
-	*j = TaskActionsFileCreateElem(plain)
+	*j = TaskActionsElem(plain)
 	return nil
 }
 
 // UnmarshalYAML implements yaml.Unmarshaler.
-func (j *TaskActionsFileCreateElem) UnmarshalYAML(value *yaml.Node) error {
+func (j *TaskActionsElem) UnmarshalYAML(value *yaml.Node) error {
 	var raw map[string]interface{}
 	if err := value.Decode(&raw); err != nil {
 		return err
 	}
-	if _, ok := raw["path"]; raw != nil && !ok {
-		return fmt.Errorf("field path in TaskActionsFileCreateElem: required")
+	if _, ok := raw["action"]; raw != nil && !ok {
+		return fmt.Errorf("field action in TaskActionsElem: required")
 	}
-	type Plain TaskActionsFileCreateElem
+	type Plain TaskActionsElem
 	var plain Plain
 	if err := value.Decode(&plain); err != nil {
 		return err
 	}
-	if v, ok := raw["mode"]; !ok || v == nil {
-		plain.Mode = 644.0
-	}
-	if v, ok := raw["overwrite"]; !ok || v == nil {
-		plain.Overwrite = true
-	}
-	*j = TaskActionsFileCreateElem(plain)
+	*j = TaskActionsElem(plain)
 	return nil
 }
 
-type TaskActionsFileDeleteElem struct {
-	// Path to the file to create or delete.
-	Path string `json:"path" yaml:"path" mapstructure:"path"`
-}
+type TaskFiltersElem struct {
+	// Identifier of the filter.
+	Filter string `json:"filter" yaml:"filter" mapstructure:"filter"`
 
-// UnmarshalJSON implements json.Unmarshaler.
-func (j *TaskActionsFileDeleteElem) UnmarshalJSON(b []byte) error {
-	var raw map[string]interface{}
-	if err := json.Unmarshal(b, &raw); err != nil {
-		return err
-	}
-	if _, ok := raw["path"]; raw != nil && !ok {
-		return fmt.Errorf("field path in TaskActionsFileDeleteElem: required")
-	}
-	type Plain TaskActionsFileDeleteElem
-	var plain Plain
-	if err := json.Unmarshal(b, &plain); err != nil {
-		return err
-	}
-	*j = TaskActionsFileDeleteElem(plain)
-	return nil
-}
+	// Key/value pairs passed as parameters to the filter.
+	Params TaskFiltersElemParams `json:"params,omitempty" yaml:"params,omitempty" mapstructure:"params,omitempty"`
 
-// UnmarshalYAML implements yaml.Unmarshaler.
-func (j *TaskActionsFileDeleteElem) UnmarshalYAML(value *yaml.Node) error {
-	var raw map[string]interface{}
-	if err := value.Decode(&raw); err != nil {
-		return err
-	}
-	if _, ok := raw["path"]; raw != nil && !ok {
-		return fmt.Errorf("field path in TaskActionsFileDeleteElem: required")
-	}
-	type Plain TaskActionsFileDeleteElem
-	var plain Plain
-	if err := value.Decode(&plain); err != nil {
-		return err
-	}
-	*j = TaskActionsFileDeleteElem(plain)
-	return nil
-}
-
-type TaskActionsLineDeleteElem struct {
-	// Line corresponds to the JSON schema field "line".
-	Line string `json:"line" yaml:"line" mapstructure:"line"`
-
-	// Path corresponds to the JSON schema field "path".
-	Path string `json:"path" yaml:"path" mapstructure:"path"`
-}
-
-// UnmarshalJSON implements json.Unmarshaler.
-func (j *TaskActionsLineDeleteElem) UnmarshalJSON(b []byte) error {
-	var raw map[string]interface{}
-	if err := json.Unmarshal(b, &raw); err != nil {
-		return err
-	}
-	if _, ok := raw["line"]; raw != nil && !ok {
-		return fmt.Errorf("field line in TaskActionsLineDeleteElem: required")
-	}
-	if _, ok := raw["path"]; raw != nil && !ok {
-		return fmt.Errorf("field path in TaskActionsLineDeleteElem: required")
-	}
-	type Plain TaskActionsLineDeleteElem
-	var plain Plain
-	if err := json.Unmarshal(b, &plain); err != nil {
-		return err
-	}
-	*j = TaskActionsLineDeleteElem(plain)
-	return nil
-}
-
-// UnmarshalYAML implements yaml.Unmarshaler.
-func (j *TaskActionsLineDeleteElem) UnmarshalYAML(value *yaml.Node) error {
-	var raw map[string]interface{}
-	if err := value.Decode(&raw); err != nil {
-		return err
-	}
-	if _, ok := raw["line"]; raw != nil && !ok {
-		return fmt.Errorf("field line in TaskActionsLineDeleteElem: required")
-	}
-	if _, ok := raw["path"]; raw != nil && !ok {
-		return fmt.Errorf("field path in TaskActionsLineDeleteElem: required")
-	}
-	type Plain TaskActionsLineDeleteElem
-	var plain Plain
-	if err := value.Decode(&plain); err != nil {
-		return err
-	}
-	*j = TaskActionsLineDeleteElem(plain)
-	return nil
-}
-
-type TaskActionsLineInsertElem struct {
-	// Where to insert the line. BOF = Beginning of file, EOF = End of file.
-	InsertAt TaskActionsLineInsertElemInsertAt `json:"insertAt,omitempty" yaml:"insertAt,omitempty" mapstructure:"insertAt,omitempty"`
-
-	// Line to insert.
-	Line string `json:"line" yaml:"line" mapstructure:"line"`
-
-	// Path to the file to modify.
-	Path string `json:"path" yaml:"path" mapstructure:"path"`
-}
-
-type TaskActionsLineInsertElemInsertAt string
-
-const TaskActionsLineInsertElemInsertAtBOF TaskActionsLineInsertElemInsertAt = "BOF"
-const TaskActionsLineInsertElemInsertAtEOF TaskActionsLineInsertElemInsertAt = "EOF"
-
-var enumValues_TaskActionsLineInsertElemInsertAt = []interface{}{
-	"BOF",
-	"EOF",
-}
-
-// UnmarshalYAML implements yaml.Unmarshaler.
-func (j *TaskActionsLineInsertElemInsertAt) UnmarshalYAML(value *yaml.Node) error {
-	var v string
-	if err := value.Decode(&v); err != nil {
-		return err
-	}
-	var ok bool
-	for _, expected := range enumValues_TaskActionsLineInsertElemInsertAt {
-		if reflect.DeepEqual(v, expected) {
-			ok = true
-			break
-		}
-	}
-	if !ok {
-		return fmt.Errorf("invalid value (expected one of %#v): %#v", enumValues_TaskActionsLineInsertElemInsertAt, v)
-	}
-	*j = TaskActionsLineInsertElemInsertAt(v)
-	return nil
-}
-
-// UnmarshalJSON implements json.Unmarshaler.
-func (j *TaskActionsLineInsertElemInsertAt) UnmarshalJSON(b []byte) error {
-	var v string
-	if err := json.Unmarshal(b, &v); err != nil {
-		return err
-	}
-	var ok bool
-	for _, expected := range enumValues_TaskActionsLineInsertElemInsertAt {
-		if reflect.DeepEqual(v, expected) {
-			ok = true
-			break
-		}
-	}
-	if !ok {
-		return fmt.Errorf("invalid value (expected one of %#v): %#v", enumValues_TaskActionsLineInsertElemInsertAt, v)
-	}
-	*j = TaskActionsLineInsertElemInsertAt(v)
-	return nil
-}
-
-// UnmarshalJSON implements json.Unmarshaler.
-func (j *TaskActionsLineInsertElem) UnmarshalJSON(b []byte) error {
-	var raw map[string]interface{}
-	if err := json.Unmarshal(b, &raw); err != nil {
-		return err
-	}
-	if _, ok := raw["line"]; raw != nil && !ok {
-		return fmt.Errorf("field line in TaskActionsLineInsertElem: required")
-	}
-	if _, ok := raw["path"]; raw != nil && !ok {
-		return fmt.Errorf("field path in TaskActionsLineInsertElem: required")
-	}
-	type Plain TaskActionsLineInsertElem
-	var plain Plain
-	if err := json.Unmarshal(b, &plain); err != nil {
-		return err
-	}
-	if v, ok := raw["insertAt"]; !ok || v == nil {
-		plain.InsertAt = "EOF"
-	}
-	*j = TaskActionsLineInsertElem(plain)
-	return nil
-}
-
-// UnmarshalYAML implements yaml.Unmarshaler.
-func (j *TaskActionsLineInsertElem) UnmarshalYAML(value *yaml.Node) error {
-	var raw map[string]interface{}
-	if err := value.Decode(&raw); err != nil {
-		return err
-	}
-	if _, ok := raw["line"]; raw != nil && !ok {
-		return fmt.Errorf("field line in TaskActionsLineInsertElem: required")
-	}
-	if _, ok := raw["path"]; raw != nil && !ok {
-		return fmt.Errorf("field path in TaskActionsLineInsertElem: required")
-	}
-	type Plain TaskActionsLineInsertElem
-	var plain Plain
-	if err := value.Decode(&plain); err != nil {
-		return err
-	}
-	if v, ok := raw["insertAt"]; !ok || v == nil {
-		plain.InsertAt = "EOF"
-	}
-	*j = TaskActionsLineInsertElem(plain)
-	return nil
-}
-
-type TaskActionsLineReplaceElem struct {
-	// Line corresponds to the JSON schema field "line".
-	Line string `json:"line" yaml:"line" mapstructure:"line"`
-
-	// Path corresponds to the JSON schema field "path".
-	Path string `json:"path" yaml:"path" mapstructure:"path"`
-
-	// Search corresponds to the JSON schema field "search".
-	Search string `json:"search" yaml:"search" mapstructure:"search"`
-}
-
-// UnmarshalYAML implements yaml.Unmarshaler.
-func (j *TaskActionsLineReplaceElem) UnmarshalYAML(value *yaml.Node) error {
-	var raw map[string]interface{}
-	if err := value.Decode(&raw); err != nil {
-		return err
-	}
-	if _, ok := raw["line"]; raw != nil && !ok {
-		return fmt.Errorf("field line in TaskActionsLineReplaceElem: required")
-	}
-	if _, ok := raw["path"]; raw != nil && !ok {
-		return fmt.Errorf("field path in TaskActionsLineReplaceElem: required")
-	}
-	if _, ok := raw["search"]; raw != nil && !ok {
-		return fmt.Errorf("field search in TaskActionsLineReplaceElem: required")
-	}
-	type Plain TaskActionsLineReplaceElem
-	var plain Plain
-	if err := value.Decode(&plain); err != nil {
-		return err
-	}
-	*j = TaskActionsLineReplaceElem(plain)
-	return nil
-}
-
-// UnmarshalJSON implements json.Unmarshaler.
-func (j *TaskActionsLineReplaceElem) UnmarshalJSON(b []byte) error {
-	var raw map[string]interface{}
-	if err := json.Unmarshal(b, &raw); err != nil {
-		return err
-	}
-	if _, ok := raw["line"]; raw != nil && !ok {
-		return fmt.Errorf("field line in TaskActionsLineReplaceElem: required")
-	}
-	if _, ok := raw["path"]; raw != nil && !ok {
-		return fmt.Errorf("field path in TaskActionsLineReplaceElem: required")
-	}
-	if _, ok := raw["search"]; raw != nil && !ok {
-		return fmt.Errorf("field search in TaskActionsLineReplaceElem: required")
-	}
-	type Plain TaskActionsLineReplaceElem
-	var plain Plain
-	if err := json.Unmarshal(b, &plain); err != nil {
-		return err
-	}
-	*j = TaskActionsLineReplaceElem(plain)
-	return nil
-}
-
-type TaskFilters struct {
-	// File corresponds to the JSON schema field "file".
-	File []TaskFiltersFileElem `json:"file,omitempty" yaml:"file,omitempty" mapstructure:"file,omitempty"`
-
-	// FileContent corresponds to the JSON schema field "fileContent".
-	FileContent []TaskFiltersFileContentElem `json:"fileContent,omitempty" yaml:"fileContent,omitempty" mapstructure:"fileContent,omitempty"`
-
-	// RepositoryName corresponds to the JSON schema field "repositoryName".
-	RepositoryName []TaskFiltersRepositoryNameElem `json:"repositoryName,omitempty" yaml:"repositoryName,omitempty" mapstructure:"repositoryName,omitempty"`
-}
-
-type TaskFiltersFileContentElem struct {
-	// Path corresponds to the JSON schema field "path".
-	Path string `json:"path" yaml:"path" mapstructure:"path"`
-
-	// Priority corresponds to the JSON schema field "priority".
-	Priority int `json:"priority,omitempty" yaml:"priority,omitempty" mapstructure:"priority,omitempty"`
-
-	// Reverse corresponds to the JSON schema field "reverse".
-	Reverse bool `json:"reverse,omitempty" yaml:"reverse,omitempty" mapstructure:"reverse,omitempty"`
-
-	// Search corresponds to the JSON schema field "search".
-	Search string `json:"search" yaml:"search" mapstructure:"search"`
-}
-
-// UnmarshalJSON implements json.Unmarshaler.
-func (j *TaskFiltersFileContentElem) UnmarshalJSON(b []byte) error {
-	var raw map[string]interface{}
-	if err := json.Unmarshal(b, &raw); err != nil {
-		return err
-	}
-	if _, ok := raw["path"]; raw != nil && !ok {
-		return fmt.Errorf("field path in TaskFiltersFileContentElem: required")
-	}
-	if _, ok := raw["search"]; raw != nil && !ok {
-		return fmt.Errorf("field search in TaskFiltersFileContentElem: required")
-	}
-	type Plain TaskFiltersFileContentElem
-	var plain Plain
-	if err := json.Unmarshal(b, &plain); err != nil {
-		return err
-	}
-	if v, ok := raw["priority"]; !ok || v == nil {
-		plain.Priority = 0.0
-	}
-	if v, ok := raw["reverse"]; !ok || v == nil {
-		plain.Reverse = false
-	}
-	*j = TaskFiltersFileContentElem(plain)
-	return nil
-}
-
-// UnmarshalYAML implements yaml.Unmarshaler.
-func (j *TaskFiltersFileContentElem) UnmarshalYAML(value *yaml.Node) error {
-	var raw map[string]interface{}
-	if err := value.Decode(&raw); err != nil {
-		return err
-	}
-	if _, ok := raw["path"]; raw != nil && !ok {
-		return fmt.Errorf("field path in TaskFiltersFileContentElem: required")
-	}
-	if _, ok := raw["search"]; raw != nil && !ok {
-		return fmt.Errorf("field search in TaskFiltersFileContentElem: required")
-	}
-	type Plain TaskFiltersFileContentElem
-	var plain Plain
-	if err := value.Decode(&plain); err != nil {
-		return err
-	}
-	if v, ok := raw["priority"]; !ok || v == nil {
-		plain.Priority = 0.0
-	}
-	if v, ok := raw["reverse"]; !ok || v == nil {
-		plain.Reverse = false
-	}
-	*j = TaskFiltersFileContentElem(plain)
-	return nil
-}
-
-type TaskFiltersFileElem struct {
-	// Path corresponds to the JSON schema field "path".
-	Path string `json:"path" yaml:"path" mapstructure:"path"`
-
-	// Priority corresponds to the JSON schema field "priority".
-	Priority int `json:"priority,omitempty" yaml:"priority,omitempty" mapstructure:"priority,omitempty"`
-
-	// Reverse corresponds to the JSON schema field "reverse".
+	// Reverse the result of the filter, i.e. negate it.
 	Reverse bool `json:"reverse,omitempty" yaml:"reverse,omitempty" mapstructure:"reverse,omitempty"`
 }
 
+// Key/value pairs passed as parameters to the filter.
+type TaskFiltersElemParams map[string]string
+
 // UnmarshalJSON implements json.Unmarshaler.
-func (j *TaskFiltersFileElem) UnmarshalJSON(b []byte) error {
+func (j *TaskFiltersElem) UnmarshalJSON(b []byte) error {
 	var raw map[string]interface{}
 	if err := json.Unmarshal(b, &raw); err != nil {
 		return err
 	}
-	if _, ok := raw["path"]; raw != nil && !ok {
-		return fmt.Errorf("field path in TaskFiltersFileElem: required")
+	if _, ok := raw["filter"]; raw != nil && !ok {
+		return fmt.Errorf("field filter in TaskFiltersElem: required")
 	}
-	type Plain TaskFiltersFileElem
+	type Plain TaskFiltersElem
 	var plain Plain
 	if err := json.Unmarshal(b, &plain); err != nil {
 		return err
 	}
-	if v, ok := raw["priority"]; !ok || v == nil {
-		plain.Priority = 0.0
-	}
 	if v, ok := raw["reverse"]; !ok || v == nil {
 		plain.Reverse = false
 	}
-	*j = TaskFiltersFileElem(plain)
+	*j = TaskFiltersElem(plain)
 	return nil
 }
 
 // UnmarshalYAML implements yaml.Unmarshaler.
-func (j *TaskFiltersFileElem) UnmarshalYAML(value *yaml.Node) error {
+func (j *TaskFiltersElem) UnmarshalYAML(value *yaml.Node) error {
 	var raw map[string]interface{}
 	if err := value.Decode(&raw); err != nil {
 		return err
 	}
-	if _, ok := raw["path"]; raw != nil && !ok {
-		return fmt.Errorf("field path in TaskFiltersFileElem: required")
+	if _, ok := raw["filter"]; raw != nil && !ok {
+		return fmt.Errorf("field filter in TaskFiltersElem: required")
 	}
-	type Plain TaskFiltersFileElem
+	type Plain TaskFiltersElem
 	var plain Plain
 	if err := value.Decode(&plain); err != nil {
 		return err
 	}
-	if v, ok := raw["priority"]; !ok || v == nil {
-		plain.Priority = 0.0
-	}
 	if v, ok := raw["reverse"]; !ok || v == nil {
 		plain.Reverse = false
 	}
-	*j = TaskFiltersFileElem(plain)
-	return nil
-}
-
-type TaskFiltersRepositoryNameElem struct {
-	// Names corresponds to the JSON schema field "names".
-	Names []string `json:"names" yaml:"names" mapstructure:"names"`
-
-	// Priority corresponds to the JSON schema field "priority".
-	Priority int `json:"priority,omitempty" yaml:"priority,omitempty" mapstructure:"priority,omitempty"`
-
-	// Reverse corresponds to the JSON schema field "reverse".
-	Reverse bool `json:"reverse,omitempty" yaml:"reverse,omitempty" mapstructure:"reverse,omitempty"`
-}
-
-// UnmarshalJSON implements json.Unmarshaler.
-func (j *TaskFiltersRepositoryNameElem) UnmarshalJSON(b []byte) error {
-	var raw map[string]interface{}
-	if err := json.Unmarshal(b, &raw); err != nil {
-		return err
-	}
-	if _, ok := raw["names"]; raw != nil && !ok {
-		return fmt.Errorf("field names in TaskFiltersRepositoryNameElem: required")
-	}
-	type Plain TaskFiltersRepositoryNameElem
-	var plain Plain
-	if err := json.Unmarshal(b, &plain); err != nil {
-		return err
-	}
-	if v, ok := raw["priority"]; !ok || v == nil {
-		plain.Priority = 0.0
-	}
-	if v, ok := raw["reverse"]; !ok || v == nil {
-		plain.Reverse = false
-	}
-	*j = TaskFiltersRepositoryNameElem(plain)
-	return nil
-}
-
-// UnmarshalYAML implements yaml.Unmarshaler.
-func (j *TaskFiltersRepositoryNameElem) UnmarshalYAML(value *yaml.Node) error {
-	var raw map[string]interface{}
-	if err := value.Decode(&raw); err != nil {
-		return err
-	}
-	if _, ok := raw["names"]; raw != nil && !ok {
-		return fmt.Errorf("field names in TaskFiltersRepositoryNameElem: required")
-	}
-	type Plain TaskFiltersRepositoryNameElem
-	var plain Plain
-	if err := value.Decode(&plain); err != nil {
-		return err
-	}
-	if v, ok := raw["priority"]; !ok || v == nil {
-		plain.Priority = 0.0
-	}
-	if v, ok := raw["reverse"]; !ok || v == nil {
-		plain.Reverse = false
-	}
-	*j = TaskFiltersRepositoryNameElem(plain)
+	*j = TaskFiltersElem(plain)
 	return nil
 }
 

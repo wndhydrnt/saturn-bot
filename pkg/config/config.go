@@ -88,11 +88,6 @@ func Read(cfgFile string) (cfg Configuration, err error) {
 		return cfg, fmt.Errorf("unmarshal config: %w", err)
 	}
 
-	// Initialize map to prevent nil-pointer errors.
-	if cfg.Custom == nil {
-		cfg.Custom = map[string]string{}
-	}
-
 	err = schema.Validate(toValidation(cfg))
 	if err != nil {
 		return cfg, fmt.Errorf("schema validation failed: %w", err)

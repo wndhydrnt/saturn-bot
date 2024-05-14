@@ -4,33 +4,57 @@ import (
 	"context"
 	"errors"
 	"fmt"
-	"net/url"
-	"path"
 	"regexp"
 	"strings"
 
 	gsContext "github.com/wndhydrnt/saturn-bot/pkg/context"
 	"github.com/wndhydrnt/saturn-bot/pkg/host"
+	"github.com/wndhydrnt/saturn-bot/pkg/str"
+)
+
+var (
+	BuiltInFactories = []Factory{
+		FileContentFactory{},
+		FileFactory{},
+		RepositoryFactory{},
+	}
 )
 
 type FilterRepository interface {
 	GetFile(fileName string) (string, error)
-	FullName() string
 	HasFile(path string) (bool, error)
+	Host() string
+	Name() string
+	Owner() string
 }
 
 type Filter interface {
 	Do(context.Context) (bool, error)
-	Name() string
 	String() string
 }
 
-type File struct {
-	fileName string
+type Factory interface {
+	Create(params map[string]string) (Filter, error)
+	Name() string
 }
 
-func NewFile(fileName string) *File {
-	return &File{fileName: fileName}
+type FileFactory struct{}
+
+func (f FileFactory) Name() string {
+	return "file"
+}
+
+func (f FileFactory) Create(params map[string]string) (Filter, error) {
+	path := params["path"]
+	if path == "" {
+		return nil, fmt.Errorf("required parameter `path` not set")
+	}
+
+	return &File{Path: path}, nil
+}
+
+type File struct {
+	Path string
 }
 
 func (fe *File) Do(ctx context.Context) (bool, error) {
@@ -39,29 +63,41 @@ func (fe *File) Do(ctx context.Context) (bool, error) {
 		return false, errors.New("context passed to filter fileExists does not contain a repository")
 	}
 
-	return repo.HasFile(fe.fileName)
-}
-
-func (fe *File) Name() string {
-	return "hasFile"
+	return repo.HasFile(fe.Path)
 }
 
 func (fe *File) String() string {
-	return fmt.Sprintf("file(path=%s)", fe.fileName)
+	return fmt.Sprintf("file(path=%s)", fe.Path)
+}
+
+type FileContentFactory struct{}
+
+func (f FileContentFactory) Name() string {
+	return "fileContent"
+}
+
+func (f FileContentFactory) Create(params map[string]string) (Filter, error) {
+	path := params["path"]
+	if path == "" {
+		return nil, fmt.Errorf("required parameter `path` not set")
+	}
+
+	reRaw := params["regexp"]
+	if reRaw == "" {
+		return nil, fmt.Errorf("required parameter `regexp` not set")
+	}
+
+	re, err := regexp.Compile(reRaw)
+	if err != nil {
+		return nil, fmt.Errorf("compile parameter `regexp` to regular expression: %w", err)
+	}
+
+	return &FileContent{Path: path, Regexp: re}, nil
 }
 
 type FileContent struct {
-	path   string
-	search *regexp.Regexp
-}
-
-func NewFileContent(path, search string) (*FileContent, error) {
-	re, err := regexp.Compile(search)
-	if err != nil {
-		return nil, fmt.Errorf("fileContent: compile search %s to regexp: %w", search, err)
-	}
-
-	return &FileContent{path: path, search: re}, nil
+	Path   string
+	Regexp *regexp.Regexp
 }
 
 func (fcl *FileContent) Do(ctx context.Context) (bool, error) {
@@ -70,7 +106,7 @@ func (fcl *FileContent) Do(ctx context.Context) (bool, error) {
 		return false, errors.New("context passed to filter lineInFile does not contain a repository")
 	}
 
-	content, err := repo.GetFile(fcl.path)
+	content, err := repo.GetFile(fcl.Path)
 	if err != nil {
 		if errors.Is(err, host.ErrFileNotFound) {
 			return false, nil
@@ -80,7 +116,7 @@ func (fcl *FileContent) Do(ctx context.Context) (bool, error) {
 	}
 
 	for _, line := range strings.Split(content, "\n") {
-		match := fcl.search.MatchString(line)
+		match := fcl.Regexp.MatchString(line)
 		if match {
 			return true, nil
 		}
@@ -89,76 +125,79 @@ func (fcl *FileContent) Do(ctx context.Context) (bool, error) {
 	return false, nil
 }
 
-func (fcl *FileContent) Name() string {
-	return "fileContent"
-}
-
 func (fcl *FileContent) String() string {
-	return fmt.Sprintf("fileContent(path=%s,search=%s)", fcl.path, fcl.search.String())
+	return fmt.Sprintf("fileContent(path=%s,regexp=%s)", fcl.Path, fcl.Regexp.String())
 }
 
-type RepositoryName struct {
-	matchers []*regexp.Regexp
+type Repository struct {
+	Host  *regexp.Regexp
+	Owner *regexp.Regexp
+	Repo  *regexp.Regexp
 }
 
-func NewRepositoryName(names []string) (*RepositoryName, error) {
-	var nameRegexp []*regexp.Regexp
-	for _, name := range names {
-		if strings.HasPrefix(name, "https://") || strings.HasPrefix(name, "http://") {
-			u, err := url.Parse(name)
-			if err != nil {
-				return nil, fmt.Errorf("name looks like a url but could ne be parsed %s: %w", name, err)
-			}
+type RepositoryFactory struct{}
 
-			path := strings.TrimSuffix(u.Path, path.Ext(u.Path))
-			name = fmt.Sprintf("%s%s", u.Host, path)
-		}
+func (f RepositoryFactory) Name() string {
+	return "repository"
+}
 
-		if !strings.HasPrefix(name, "^") {
-			name = "^" + name
-		}
-
-		if !strings.HasSuffix(name, "$") {
-			name = name + "$"
-		}
-
-		r, err := regexp.Compile(name)
-		if err != nil {
-			return nil, fmt.Errorf("compile regex of repository name: %w", err)
-		}
-
-		nameRegexp = append(nameRegexp, r)
+func (f RepositoryFactory) Create(params map[string]string) (Filter, error) {
+	host := params["host"]
+	if host == "" {
+		return nil, fmt.Errorf("required parameter `host` not set")
 	}
 
-	return &RepositoryName{matchers: nameRegexp}, nil
+	hostRe, err := regexp.Compile(str.EncloseRegex(host))
+	if err != nil {
+		return nil, fmt.Errorf("compile parameter `host` to regular expression: %w", err)
+	}
+
+	owner := params["owner"]
+	if owner == "" {
+		return nil, fmt.Errorf("required parameter `owner` not set")
+	}
+
+	ownerRe, err := regexp.Compile(str.EncloseRegex(owner))
+	if err != nil {
+		return nil, fmt.Errorf("compile parameter `owner` to regular expression: %w", err)
+	}
+
+	name := params["name"]
+	if name == "" {
+		return nil, fmt.Errorf("required parameter `name` not set")
+	}
+
+	nameRe, err := regexp.Compile(str.EncloseRegex(name))
+	if err != nil {
+		return nil, fmt.Errorf("compile parameter `name` to regular expression: %w", err)
+	}
+
+	return &Repository{Host: hostRe, Owner: ownerRe, Repo: nameRe}, nil
 }
 
-func (r *RepositoryName) Do(ctx context.Context) (bool, error) {
+func (r *Repository) Do(ctx context.Context) (bool, error) {
 	repo, ok := ctx.Value(gsContext.RepositoryKey{}).(FilterRepository)
 	if !ok {
 		return false, errors.New("context passed to filter repositoryName does not contain a repository")
 	}
 
-	for _, matcher := range r.matchers {
-		match := matcher.MatchString(repo.FullName())
-		if match {
-			return true, nil
-		}
+	if !r.Host.MatchString(repo.Host()) {
+		return false, nil
 	}
 
-	return false, nil
-}
-
-func (r *RepositoryName) Name() string {
-	return "repositoryName"
-}
-
-func (r *RepositoryName) String() string {
-	var matcherStrings []string
-	for _, matcher := range r.matchers {
-		matcherStrings = append(matcherStrings, matcher.String())
+	if !r.Owner.MatchString(repo.Owner()) {
+		return false, nil
 	}
-	return fmt.Sprintf("repositoryName(names=[%s])", strings.Join(matcherStrings, ","))
+
+	if !r.Repo.MatchString(repo.Name()) {
+		return false, nil
+	}
+
+	return true, nil
+}
+
+func (r *Repository) String() string {
+	return fmt.Sprintf("repository(host=%s,owner=%s,name=%s)", r.Host.String(), r.Owner.String(), r.Repo.String())
 }
 
 // Reverse takes the result of a wrapped filter and returns the opposite.
@@ -181,12 +220,7 @@ func (r *Reverse) Do(ctx context.Context) (bool, error) {
 	return !result, nil
 }
 
-// Name implements Filter
-func (r *Reverse) Name() string {
-	return fmt.Sprintf("reverse(%s)", r.wrapped.Name())
-}
-
 // String implements Filter
 func (r *Reverse) String() string {
-	return fmt.Sprintf("reverse(%s)", r.wrapped.String())
+	return fmt.Sprintf("!%s", r.wrapped.String())
 }

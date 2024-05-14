@@ -8,11 +8,12 @@ import (
 	"io"
 	"os"
 
+	"github.com/wndhydrnt/saturn-bot/pkg/options"
 	"github.com/wndhydrnt/saturn-bot/pkg/task/schema"
 	"gopkg.in/yaml.v3"
 )
 
-func readTasksYaml(taskFile string) ([]Task, error) {
+func readTasksYaml(actionFactories options.ActionFactories, filterFactories options.FilterFactories, taskFile string) ([]Task, error) {
 	var result []Task
 	b, err := os.ReadFile(taskFile)
 	if err != nil {
@@ -40,12 +41,12 @@ func readTasksYaml(taskFile string) ([]Task, error) {
 
 		wrapper := &Wrapper{}
 		wrapper.Task = task
-		wrapper.actions, err = createActionsForTask(wrapper.Task.Actions, taskFile)
+		wrapper.actions, err = createActionsForTask(wrapper.Task.Actions, actionFactories, taskFile)
 		if err != nil {
 			return nil, fmt.Errorf("parse actions of task file '%s': %w", taskFile, err)
 		}
 
-		wrapper.filters, err = createFiltersForTask(wrapper.Task.Filters)
+		wrapper.filters, err = createFiltersForTask(wrapper.Task.Filters, filterFactories)
 		if err != nil {
 			return nil, fmt.Errorf("parse filters of task file '%s': %w", taskFile, err)
 		}

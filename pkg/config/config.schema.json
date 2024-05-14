@@ -5,13 +5,6 @@
   "description": "Configuration settings of saturn-bot.",
   "type": "object",
   "properties": {
-    "custom": {
-      "description": "Key/value pairs to set custom configuration for tasks. The key/value pairs are passed to each task.",
-      "type": "object",
-      "additionalProperties": {
-        "type": "string"
-      }
-    },
     "dataDir": {
       "description": "Path to directory to store files and repository clones.",
       "type": "string"

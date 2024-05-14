@@ -12,10 +12,10 @@ import (
 
 	"github.com/wndhydrnt/saturn-bot/pkg/action"
 	"github.com/wndhydrnt/saturn-bot/pkg/cache"
-	"github.com/wndhydrnt/saturn-bot/pkg/config"
 	sContext "github.com/wndhydrnt/saturn-bot/pkg/context"
 	"github.com/wndhydrnt/saturn-bot/pkg/git"
 	"github.com/wndhydrnt/saturn-bot/pkg/host"
+	"github.com/wndhydrnt/saturn-bot/pkg/options"
 	"github.com/wndhydrnt/saturn-bot/pkg/task"
 	"github.com/wndhydrnt/saturn-bot/pkg/template"
 )
@@ -163,26 +163,11 @@ func (r *executeRunner) run(taskFiles []string) error {
 	return nil
 }
 
-func ExecuteRun(cfgFile string, taskFiles []string) error {
-	cfg, err := config.Read(cfgFile)
-	if err != nil {
-		return err
-	}
+func ExecuteRun(opts options.Opts, taskFiles []string) error {
+	cache := cache.NewJsonFile(path.Join(*opts.Config.DataDir, cache.DefaultJsonFileName))
+	taskRegistry := task.NewRegistry(opts)
 
-	err = initialize(cfg)
-	if err != nil {
-		return err
-	}
-
-	cache := cache.NewJsonFile(path.Join(*cfg.DataDir, cache.DefaultJsonFileName))
-	taskRegistry := task.NewRegistry()
-
-	hosts, err := createHostsFromConfig(cfg)
-	if err != nil {
-		return err
-	}
-
-	gitClient, err := git.New(cfg)
+	gitClient, err := git.New(opts.Config)
 	if err != nil {
 		return fmt.Errorf("new git client for run: %w", err)
 	}
@@ -190,9 +175,9 @@ func ExecuteRun(cfgFile string, taskFiles []string) error {
 	e := &executeRunner{
 		applyTaskFunc: applyTaskToRepository,
 		cache:         cache,
-		dryRun:        cfg.DryRun,
+		dryRun:        opts.Config.DryRun,
 		git:           gitClient,
-		hosts:         hosts,
+		hosts:         opts.Hosts,
 		taskRegistry:  taskRegistry,
 	}
 	return e.run(taskFiles)

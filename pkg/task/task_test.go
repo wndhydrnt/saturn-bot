@@ -8,6 +8,8 @@ import (
 
 	"github.com/stretchr/testify/assert"
 	"github.com/stretchr/testify/require"
+	"github.com/wndhydrnt/saturn-bot/pkg/action"
+	"github.com/wndhydrnt/saturn-bot/pkg/filter"
 )
 
 func TestRegistry_ReadAll(t *testing.T) {
@@ -60,27 +62,34 @@ name: Task Two
 	assert.Len(t, tr.GetTasks(), 0)
 }
 
-func TestRegistry_ReadAll_AllSupportedActions(t *testing.T) {
+func TestRegistry_ReadAll_AllBuiltInActions(t *testing.T) {
 	tasksRaw := `
 name: Task
 actions:
-  fileCreate:
-  - content: "Unit Test"
-    path: unit-test.txt
-  - content: "$file: content.txt"
-    path: unit-test-content.txt
-  fileDelete:
-  - path: delete.txt
-  lineDelete:
-  - path: example.txt
-    line: "to delete"
-  lineInsert:
-  - path: example.txt
-    line: "Unit Test"
-  lineReplace:
-  - path: example.txt
-    line: "to replace"
-    search: "to find"
+  - action: fileCreate
+    params:
+      content: "Unit Test"
+      path: unit-test.txt
+  - action: fileCreate
+    params:
+      contentFromFile: content.txt
+      path: unit-test-content.txt
+  - action: fileDelete
+    params:
+      path: delete.txt
+  - action: lineDelete
+    params:
+      search: "to delete"
+      path: example.txt
+  - action: lineInsert
+    params:
+      line: "Unit Test"
+      path: example.txt
+  - action: lineReplace
+    params:
+      path: example.txt
+      line: "to replace"
+      search: "to find"
 `
 
 	tempDir, err := os.MkdirTemp("", "")
@@ -104,7 +113,7 @@ actions:
 		require.NoError(t, err)
 	}()
 
-	tr := &Registry{}
+	tr := &Registry{actionFactories: action.BuiltInFactories}
 	err = tr.ReadAll([]string{taskPath})
 	require.NoError(t, err)
 
@@ -115,7 +124,7 @@ actions:
 		"fileCreate(mode=644,overwrite=true,path=unit-test.txt)",
 		"fileCreate(mode=644,overwrite=true,path=unit-test-content.txt)",
 		"fileDelete(path=delete.txt)",
-		"lineDelete(line=example.txt,path=to delete)",
+		"lineDelete(path=example.txt,search=to delete)",
 		"lineInsert(insertAt=EOF,line=Unit Test,path=example.txt)",
 		"lineReplace(line=to replace,path=example.txt,search=to find)",
 	}
@@ -127,17 +136,26 @@ actions:
 	assert.Equal(t, wantActions, actualActions)
 }
 
-func TestRegistry_ReadAll_AllSupportedFilters(t *testing.T) {
+func TestRegistry_ReadAll_AllBuiltInFilters(t *testing.T) {
 	tasksRaw := `
   name: Task
   filters:
-    repositoryName:
-      - names: ["git.localhost/unit/test", "git.localhost/unit/test2"]
-    file:
-      - path: unit-test.txt
-    fileContent:
-      - path: hello-world.txt
-        search: Hello World
+    - filter: repository
+      params:
+        host: git.localhost
+        owner: unit
+        name: test|test2
+    - filter: file
+      params:
+        path: unit-test.txt
+    - filter: fileContent
+      params:
+        path: hello-world.txt
+        regexp: Hello World
+    - filter: file
+      params:
+        path: test.txt
+      reverse: true
 `
 	tempDir, err := os.MkdirTemp("", "")
 	require.NoError(t, err)
@@ -153,7 +171,7 @@ func TestRegistry_ReadAll_AllSupportedFilters(t *testing.T) {
 		require.NoError(t, err)
 	}()
 
-	tr := &Registry{}
+	tr := &Registry{filterFactories: filter.BuiltInFactories}
 	err = tr.ReadAll([]string{taskPath})
 	require.NoError(t, err)
 
@@ -161,9 +179,10 @@ func TestRegistry_ReadAll_AllSupportedFilters(t *testing.T) {
 	task := tr.GetTasks()[0]
 	assert.Equal(t, "Task", task.SourceTask().Name)
 	wantFilters := []string{
-		"repositoryName(names=[^git.localhost/unit/test$,^git.localhost/unit/test2$])",
+		"repository(host=^git.localhost$,owner=^unit$,name=^test|test2$)",
 		"file(path=unit-test.txt)",
-		"fileContent(path=hello-world.txt,search=Hello World)",
+		"fileContent(path=hello-world.txt,regexp=Hello World)",
+		"!file(path=test.txt)",
 	}
 	var actualFilters []string
 	for _, a := range task.Filters() {

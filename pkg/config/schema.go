@@ -9,10 +9,6 @@ import "reflect"
 
 // Configuration settings of saturn-bot.
 type Configuration struct {
-	// Key/value pairs to set custom configuration for tasks. The key/value pairs are
-	// passed to each task.
-	Custom ConfigurationCustom `json:"custom,omitempty" yaml:"custom,omitempty" mapstructure:"custom,omitempty"`
-
 	// Path to directory to store files and repository clones.
 	DataDir *string `json:"dataDir,omitempty" yaml:"dataDir,omitempty" mapstructure:"dataDir,omitempty"`
 
@@ -56,10 +52,6 @@ type Configuration struct {
 	// Log level of the application.
 	LogLevel ConfigurationLogLevel `json:"logLevel,omitempty" yaml:"logLevel,omitempty" mapstructure:"logLevel,omitempty"`
 }
-
-// Key/value pairs to set custom configuration for tasks. The key/value pairs are
-// passed to each task.
-type ConfigurationCustom map[string]string
 
 type ConfigurationGitLogLevel string
 
@@ -127,10 +119,10 @@ var enumValues_ConfigurationLogFormat = []interface{}{
 	"json",
 }
 
-// UnmarshalYAML implements yaml.Unmarshaler.
-func (j *ConfigurationLogFormat) UnmarshalYAML(value *yaml.Node) error {
+// UnmarshalJSON implements json.Unmarshaler.
+func (j *ConfigurationLogFormat) UnmarshalJSON(b []byte) error {
 	var v string
-	if err := value.Decode(&v); err != nil {
+	if err := json.Unmarshal(b, &v); err != nil {
 		return err
 	}
 	var ok bool
@@ -147,10 +139,10 @@ func (j *ConfigurationLogFormat) UnmarshalYAML(value *yaml.Node) error {
 	return nil
 }
 
-// UnmarshalJSON implements json.Unmarshaler.
-func (j *ConfigurationLogFormat) UnmarshalJSON(b []byte) error {
+// UnmarshalYAML implements yaml.Unmarshaler.
+func (j *ConfigurationLogFormat) UnmarshalYAML(value *yaml.Node) error {
 	var v string
-	if err := json.Unmarshal(b, &v); err != nil {
+	if err := value.Decode(&v); err != nil {
 		return err
 	}
 	var ok bool
@@ -181,10 +173,10 @@ var enumValues_ConfigurationLogLevel = []interface{}{
 	"warn",
 }
 
-// UnmarshalJSON implements json.Unmarshaler.
-func (j *ConfigurationLogLevel) UnmarshalJSON(b []byte) error {
+// UnmarshalYAML implements yaml.Unmarshaler.
+func (j *ConfigurationLogLevel) UnmarshalYAML(value *yaml.Node) error {
 	var v string
-	if err := json.Unmarshal(b, &v); err != nil {
+	if err := value.Decode(&v); err != nil {
 		return err
 	}
 	var ok bool
@@ -201,10 +193,10 @@ func (j *ConfigurationLogLevel) UnmarshalJSON(b []byte) error {
 	return nil
 }
 
-// UnmarshalYAML implements yaml.Unmarshaler.
-func (j *ConfigurationLogLevel) UnmarshalYAML(value *yaml.Node) error {
+// UnmarshalJSON implements json.Unmarshaler.
+func (j *ConfigurationLogLevel) UnmarshalJSON(b []byte) error {
 	var v string
-	if err := value.Decode(&v); err != nil {
+	if err := json.Unmarshal(b, &v); err != nil {
 		return err
 	}
 	var ok bool

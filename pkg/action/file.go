@@ -7,9 +7,8 @@ import (
 	"io"
 	"os"
 	"path/filepath"
+	"strconv"
 	"strings"
-
-	"github.com/wndhydrnt/saturn-bot/pkg/task/schema"
 )
 
 func createContentReader(taskPath, value string) (io.ReadCloser, error) {
@@ -32,32 +31,64 @@ func createContentReader(taskPath, value string) (io.ReadCloser, error) {
 	return f, nil
 }
 
-func NewFileCreate(content io.ReadCloser, mode int, overwrite bool, path string) Action {
-	return &fileCreate{
-		content:   content,
-		mode:      mode,
-		overwrite: overwrite,
-		path:      path,
-	}
-}
+type FileCreateFactory struct{}
 
-func NewFileCreateFromTask(in schema.TaskActionsFileCreateElem, taskPath string) (Action, error) {
-	if in.Content == nil && in.ContentFile == nil {
-		return nil, fmt.Errorf("fileCreate action requires either content or contentFile to be defined")
+func (f FileCreateFactory) Create(params map[string]string, taskPath string) (Action, error) {
+	content := params["content"]
+	contentFromFile := params["contentFromFile"]
+
+	if content == "" && contentFromFile == "" {
+		return nil, fmt.Errorf("either parameter `content` or `contentFromFile` is required")
+	}
+
+	if content != "" && contentFromFile != "" {
+		return nil, fmt.Errorf("parameters `content` and `contentFromFile` cannot be set at the same time")
 	}
 
 	var contentReader io.ReadCloser
-	if in.Content != nil {
-		contentReader = io.NopCloser(strings.NewReader(*in.Content))
+	if content != "" {
+		contentReader = io.NopCloser(strings.NewReader(content))
 	} else {
 		var err error
-		contentReader, err = createContentReader(taskPath, *in.ContentFile)
+		contentReader, err = createContentReader(taskPath, contentFromFile)
 		if err != nil {
-			return nil, fmt.Errorf("create content reader of fileCreate action: %w", err)
+			return nil, fmt.Errorf("read source of `contentFromFile`: %w", err)
 		}
 	}
 
-	return NewFileCreate(contentReader, in.Mode, in.Overwrite, in.Path), nil
+	path := params["path"]
+	if path == "" {
+		return nil, fmt.Errorf("required parameter `path` not set")
+	}
+
+	modeRaw := params["mode"]
+	var mode int
+	if modeRaw == "" {
+		mode = 644
+	} else {
+		var err error
+		mode, err = strconv.Atoi(modeRaw)
+		if err != nil {
+			return nil, fmt.Errorf("parse value of parameter `mode`: %w", err)
+		}
+	}
+
+	overwriteRaw := params["overwrite"]
+	overwrite := true
+	if overwriteRaw == "false" {
+		overwrite = false
+	}
+
+	return &fileCreate{
+		content:   contentReader,
+		mode:      mode,
+		overwrite: overwrite,
+		path:      path,
+	}, nil
+}
+
+func (f FileCreateFactory) Name() string {
+	return "fileCreate"
 }
 
 type fileCreate struct {
@@ -111,8 +142,21 @@ func (a *fileCreate) String() string {
 	return fmt.Sprintf("fileCreate(mode=%d,overwrite=%t,path=%s)", a.mode, a.overwrite, a.path)
 }
 
-func NewFileDelete(path string) Action {
-	return &fileDelete{path: path}
+type FileDeleteFactory struct{}
+
+func (f FileDeleteFactory) Create(params map[string]string, _ string) (Action, error) {
+	path := params["path"]
+	if path == "" {
+		return nil, fmt.Errorf("required parameter `path` not set")
+	}
+
+	return &fileDelete{
+		path: path,
+	}, nil
+}
+
+func (f FileDeleteFactory) Name() string {
+	return "fileDelete"
 }
 
 type fileDelete struct {

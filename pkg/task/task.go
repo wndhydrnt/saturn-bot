@@ -15,97 +15,55 @@ import (
 	"github.com/wndhydrnt/saturn-bot/pkg/action"
 	"github.com/wndhydrnt/saturn-bot/pkg/filter"
 	"github.com/wndhydrnt/saturn-bot/pkg/host"
+	"github.com/wndhydrnt/saturn-bot/pkg/options"
 	"github.com/wndhydrnt/saturn-bot/pkg/task/schema"
 )
 
-func createActionsForTask(actionDefs *schema.TaskActions, taskPath string) ([]action.Action, error) {
+func createActionsForTask(actionDefs []schema.TaskActionsElem, factories options.ActionFactories, taskPath string) ([]action.Action, error) {
 	var result []action.Action
 	if actionDefs == nil {
 		return result, nil
 	}
 
-	for idx, fileCreate := range actionDefs.FileCreate {
-		a, err := action.NewFileCreateFromTask(fileCreate, taskPath)
-		if err != nil {
-			return nil, fmt.Errorf("failed to create fileCreate[%d] action: %w", idx, err)
+	for idx, def := range actionDefs {
+		factory := factories.Find(def.Action)
+		if factory == nil {
+			return nil, fmt.Errorf("no action registered for identifier %s", def.Action)
 		}
 
-		result = append(result, a)
-	}
-
-	for _, fileDelete := range actionDefs.FileDelete {
-		result = append(result, action.NewFileDelete(fileDelete.Path))
-	}
-
-	for _, lineDelete := range actionDefs.LineDelete {
-		a, err := action.NewLineDelete(lineDelete.Line, lineDelete.Path)
+		action, err := factory.Create(def.Params, taskPath)
 		if err != nil {
-			return nil, fmt.Errorf("initialize lineDelete action: %w", err)
+			return nil, fmt.Errorf("failed to initialize action %s at %d: %w", def.Action, idx, err)
 		}
 
-		result = append(result, a)
-	}
-
-	for _, lineInsert := range actionDefs.LineInsert {
-		a, err := action.NewLineInsert(string(lineInsert.InsertAt), lineInsert.Line, lineInsert.Path)
-		if err != nil {
-			return nil, fmt.Errorf("initialize lineInsert action: %w", err)
-		}
-
-		result = append(result, a)
-	}
-
-	for _, lineReplace := range actionDefs.LineReplace {
-		a, err := action.NewLineReplace(lineReplace.Line, lineReplace.Path, lineReplace.Search)
-		if err != nil {
-			return nil, fmt.Errorf("initialize lineReplace action: %w", err)
-		}
-
-		result = append(result, a)
+		result = append(result, action)
 	}
 
 	return result, nil
 }
 
-func createFiltersForTask(filterDefs *schema.TaskFilters) ([]filter.Filter, error) {
+func createFiltersForTask(filterDefs []schema.TaskFiltersElem, factories options.FilterFactories) ([]filter.Filter, error) {
 	var result []filter.Filter
 	if filterDefs == nil {
 		return result, nil
 	}
 
-	for _, rnFilter := range filterDefs.RepositoryName {
-		f, err := filter.NewRepositoryName(rnFilter.Names)
+	for idx, def := range filterDefs {
+		factory := factories.Find(def.Filter)
+		if factory == nil {
+			return nil, fmt.Errorf("no filter registered for identifier %s", def.Filter)
+		}
+
+		fl, err := factory.Create(def.Params)
 		if err != nil {
-			return nil, err
+			return nil, fmt.Errorf("failed to initialize filter %s at %d: %w", def.Filter, idx, err)
 		}
 
-		if rnFilter.Reverse {
-			result = append(result, filter.NewReverse(f))
-		} else {
-			result = append(result, f)
-		}
-	}
-
-	for _, fFilter := range filterDefs.File {
-		f := filter.NewFile(fFilter.Path)
-		if fFilter.Reverse {
-			result = append(result, filter.NewReverse(f))
-		} else {
-			result = append(result, f)
-		}
-	}
-
-	for _, fcFilter := range filterDefs.FileContent {
-		f, err := filter.NewFileContent(fcFilter.Path, fcFilter.Search)
-		if err != nil {
-			return nil, err
+		if def.Reverse {
+			fl = filter.NewReverse(fl)
 		}
 
-		if fcFilter.Reverse {
-			result = append(result, filter.NewReverse(f))
-		} else {
-			result = append(result, f)
-		}
+		result = append(result, fl)
 	}
 
 	return result, nil
@@ -216,11 +174,16 @@ func (tw *Wrapper) Stop() {
 
 // Registry contains all tasks.
 type Registry struct {
-	tasks []Task
+	actionFactories options.ActionFactories
+	filterFactories options.FilterFactories
+	tasks           []Task
 }
 
-func NewRegistry() *Registry {
-	return &Registry{}
+func NewRegistry(opts options.Opts) *Registry {
+	return &Registry{
+		actionFactories: opts.ActionFactories,
+		filterFactories: opts.FilterFactories,
+	}
 }
 
 // GetTasks returns all tasks registered with the Registry.
@@ -251,7 +214,7 @@ func (tr *Registry) readTasks(taskFile string) error {
 	switch ext {
 	case ".yml":
 	case ".yaml":
-		tasks, err := readTasksYaml(taskFile)
+		tasks, err := readTasksYaml(tr.actionFactories, tr.filterFactories, taskFile)
 		if err != nil {
 			return err
 		}

@@ -30,25 +30,6 @@ func TestReadConfig(t *testing.T) {
 			name: "default and required values",
 			in:   Configuration{},
 			out: Configuration{
-				Custom:           map[string]string{},
-				DataDir:          defaultDataDir(),
-				GitAuthor:        "saturn-bot <bot@saturn-bot.localhost>",
-				GitCloneOptions:  []string{"--filter", "blob:none"},
-				GitCommitMessage: "changes by saturn-bot",
-				GitlabAddress:    "https://gitlab.com",
-				GitLogLevel:      "warn",
-				GitPath:          "git",
-				LogFormat:        "auto",
-				LogLevel:         "info",
-			},
-		},
-		{
-			name: "keys in custom configuration keep their casing",
-			in: Configuration{
-				Custom: map[string]string{"customKey": "customValue"},
-			},
-			out: Configuration{
-				Custom:           map[string]string{"customKey": "customValue"},
 				DataDir:          defaultDataDir(),
 				GitAuthor:        "saturn-bot <bot@saturn-bot.localhost>",
 				GitCloneOptions:  []string{"--filter", "blob:none"},

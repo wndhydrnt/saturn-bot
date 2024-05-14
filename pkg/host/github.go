@@ -232,6 +232,10 @@ func (g *GitHubRepository) HasSuccessfulPullRequestBuild(pr interface{}) (bool, 
 }
 
 func (g *GitHubRepository) Host() string {
+	if g.client.BaseURL.Host == "api.github.com" {
+		return "github.com"
+	}
+
 	return g.client.BaseURL.Host
 }
 

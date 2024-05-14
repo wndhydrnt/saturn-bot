@@ -7,18 +7,29 @@ import (
 	"io"
 	"log/slog"
 	"os"
+	"strings"
 	"testing"
 	"time"
 
 	"github.com/stretchr/testify/assert"
 	"github.com/stretchr/testify/require"
+	"github.com/wndhydrnt/saturn-bot/pkg/action"
 	"github.com/wndhydrnt/saturn-bot/pkg/cache"
+	"github.com/wndhydrnt/saturn-bot/pkg/filter"
 	"github.com/wndhydrnt/saturn-bot/pkg/git"
 	"github.com/wndhydrnt/saturn-bot/pkg/host"
 	"github.com/wndhydrnt/saturn-bot/pkg/mock"
+	"github.com/wndhydrnt/saturn-bot/pkg/options"
 	"github.com/wndhydrnt/saturn-bot/pkg/task"
 	"github.com/wndhydrnt/saturn-bot/pkg/task/schema"
 	"go.uber.org/mock/gomock"
+)
+
+var (
+	runTestOpts = options.Opts{
+		ActionFactories: action.BuiltInFactories,
+		FilterFactories: filter.BuiltInFactories,
+	}
 )
 
 func setupRepoMock(ctrl *gomock.Controller) *mock.MockRepository {
@@ -495,12 +506,16 @@ func createTestCache(taskFilePath string) string {
 }
 
 func createTestTask(nameFilter string) string {
+	parts := strings.Split(nameFilter, "/")
 	tpl := `name: "Unit Test"
 filters:
-  repositoryName:
-    - names: ["%s"]
+  - filter: repository
+    params:
+      host: %s
+      owner: %s
+      name: %s
 `
-	content := fmt.Sprintf(tpl, nameFilter)
+	content := fmt.Sprintf(tpl, parts[0], parts[1], parts[2])
 	return createTempFile(content, "*.yaml")
 }
 
@@ -522,8 +537,14 @@ func TestExecuteRunner_Run(t *testing.T) {
 	ctrl := gomock.NewController(t)
 	repo := mock.NewMockRepository(ctrl)
 	repo.EXPECT().FullName().Return("git.local/unittest/repo").AnyTimes()
+	repo.EXPECT().Host().Return("git.local").AnyTimes()
+	repo.EXPECT().Owner().Return("unittest").AnyTimes()
+	repo.EXPECT().Name().Return("repo").AnyTimes()
 	repoWithPr := mock.NewMockRepository(ctrl)
 	repoWithPr.EXPECT().FullName().Return("git.local/unittest/repoWithPr").AnyTimes()
+	repoWithPr.EXPECT().Host().Return("git.local").AnyTimes()
+	repoWithPr.EXPECT().Owner().Return("unittest").AnyTimes()
+	repoWithPr.EXPECT().Name().Return("repoWithPr").AnyTimes()
 	gitc := mock.NewMockGitClient(ctrl)
 	gitc.EXPECT().Prepare(repo, false).Return("/work/repo", nil)
 	gitc.EXPECT().Prepare(repoWithPr, false).Return("/work/repoWithPr", nil)
@@ -552,7 +573,7 @@ func TestExecuteRunner_Run(t *testing.T) {
 		dryRun:        false,
 		git:           gitc,
 		hosts:         []host.Host{hostm},
-		taskRegistry:  &task.Registry{},
+		taskRegistry:  task.NewRegistry(runTestOpts),
 	}
 	err := runner.run([]string{taskFile})
 
@@ -564,6 +585,9 @@ func TestExecuteRunner_Run_DryRun(t *testing.T) {
 	ctrl := gomock.NewController(t)
 	repo := mock.NewMockRepository(ctrl)
 	repo.EXPECT().FullName().Return("git.local/unittest/repo").AnyTimes()
+	repo.EXPECT().Host().Return("git.local").AnyTimes()
+	repo.EXPECT().Owner().Return("unittest").AnyTimes()
+	repo.EXPECT().Name().Return("repo").AnyTimes()
 	gitc := mock.NewMockGitClient(ctrl)
 	gitc.EXPECT().Prepare(repo, false).Return("/work/repo", nil)
 	hostm := &mockHost{
@@ -591,7 +615,7 @@ func TestExecuteRunner_Run_DryRun(t *testing.T) {
 		dryRun:        true,
 		git:           gitc,
 		hosts:         []host.Host{hostm},
-		taskRegistry:  &task.Registry{},
+		taskRegistry:  task.NewRegistry(runTestOpts),
 	}
 	err := runner.run([]string{taskFile})
 

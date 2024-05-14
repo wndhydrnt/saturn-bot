@@ -13,6 +13,7 @@ import (
 	context "context"
 	reflect "reflect"
 
+	filter "github.com/wndhydrnt/saturn-bot/pkg/filter"
 	gomock "go.uber.org/mock/gomock"
 )
 
@@ -37,20 +38,6 @@ func NewMockFilterRepository(ctrl *gomock.Controller) *MockFilterRepository {
 // EXPECT returns an object that allows the caller to indicate expected use.
 func (m *MockFilterRepository) EXPECT() *MockFilterRepositoryMockRecorder {
 	return m.recorder
-}
-
-// FullName mocks base method.
-func (m *MockFilterRepository) FullName() string {
-	m.ctrl.T.Helper()
-	ret := m.ctrl.Call(m, "FullName")
-	ret0, _ := ret[0].(string)
-	return ret0
-}
-
-// FullName indicates an expected call of FullName.
-func (mr *MockFilterRepositoryMockRecorder) FullName() *gomock.Call {
-	mr.mock.ctrl.T.Helper()
-	return mr.mock.ctrl.RecordCallWithMethodType(mr.mock, "FullName", reflect.TypeOf((*MockFilterRepository)(nil).FullName))
 }
 
 // GetFile mocks base method.
@@ -81,6 +68,48 @@ func (m *MockFilterRepository) HasFile(path string) (bool, error) {
 func (mr *MockFilterRepositoryMockRecorder) HasFile(path any) *gomock.Call {
 	mr.mock.ctrl.T.Helper()
 	return mr.mock.ctrl.RecordCallWithMethodType(mr.mock, "HasFile", reflect.TypeOf((*MockFilterRepository)(nil).HasFile), path)
+}
+
+// Host mocks base method.
+func (m *MockFilterRepository) Host() string {
+	m.ctrl.T.Helper()
+	ret := m.ctrl.Call(m, "Host")
+	ret0, _ := ret[0].(string)
+	return ret0
+}
+
+// Host indicates an expected call of Host.
+func (mr *MockFilterRepositoryMockRecorder) Host() *gomock.Call {
+	mr.mock.ctrl.T.Helper()
+	return mr.mock.ctrl.RecordCallWithMethodType(mr.mock, "Host", reflect.TypeOf((*MockFilterRepository)(nil).Host))
+}
+
+// Name mocks base method.
+func (m *MockFilterRepository) Name() string {
+	m.ctrl.T.Helper()
+	ret := m.ctrl.Call(m, "Name")
+	ret0, _ := ret[0].(string)
+	return ret0
+}
+
+// Name indicates an expected call of Name.
+func (mr *MockFilterRepositoryMockRecorder) Name() *gomock.Call {
+	mr.mock.ctrl.T.Helper()
+	return mr.mock.ctrl.RecordCallWithMethodType(mr.mock, "Name", reflect.TypeOf((*MockFilterRepository)(nil).Name))
+}
+
+// Owner mocks base method.
+func (m *MockFilterRepository) Owner() string {
+	m.ctrl.T.Helper()
+	ret := m.ctrl.Call(m, "Owner")
+	ret0, _ := ret[0].(string)
+	return ret0
+}
+
+// Owner indicates an expected call of Owner.
+func (mr *MockFilterRepositoryMockRecorder) Owner() *gomock.Call {
+	mr.mock.ctrl.T.Helper()
+	return mr.mock.ctrl.RecordCallWithMethodType(mr.mock, "Owner", reflect.TypeOf((*MockFilterRepository)(nil).Owner))
 }
 
 // MockFilter is a mock of Filter interface.
@@ -121,20 +150,6 @@ func (mr *MockFilterMockRecorder) Do(arg0 any) *gomock.Call {
 	return mr.mock.ctrl.RecordCallWithMethodType(mr.mock, "Do", reflect.TypeOf((*MockFilter)(nil).Do), arg0)
 }
 
-// Name mocks base method.
-func (m *MockFilter) Name() string {
-	m.ctrl.T.Helper()
-	ret := m.ctrl.Call(m, "Name")
-	ret0, _ := ret[0].(string)
-	return ret0
-}
-
-// Name indicates an expected call of Name.
-func (mr *MockFilterMockRecorder) Name() *gomock.Call {
-	mr.mock.ctrl.T.Helper()
-	return mr.mock.ctrl.RecordCallWithMethodType(mr.mock, "Name", reflect.TypeOf((*MockFilter)(nil).Name))
-}
-
 // String mocks base method.
 func (m *MockFilter) String() string {
 	m.ctrl.T.Helper()
@@ -147,4 +162,56 @@ func (m *MockFilter) String() string {
 func (mr *MockFilterMockRecorder) String() *gomock.Call {
 	mr.mock.ctrl.T.Helper()
 	return mr.mock.ctrl.RecordCallWithMethodType(mr.mock, "String", reflect.TypeOf((*MockFilter)(nil).String))
+}
+
+// MockFactory is a mock of Factory interface.
+type MockFactory struct {
+	ctrl     *gomock.Controller
+	recorder *MockFactoryMockRecorder
+}
+
+// MockFactoryMockRecorder is the mock recorder for MockFactory.
+type MockFactoryMockRecorder struct {
+	mock *MockFactory
+}
+
+// NewMockFactory creates a new mock instance.
+func NewMockFactory(ctrl *gomock.Controller) *MockFactory {
+	mock := &MockFactory{ctrl: ctrl}
+	mock.recorder = &MockFactoryMockRecorder{mock}
+	return mock
+}
+
+// EXPECT returns an object that allows the caller to indicate expected use.
+func (m *MockFactory) EXPECT() *MockFactoryMockRecorder {
+	return m.recorder
+}
+
+// Create mocks base method.
+func (m *MockFactory) Create(params map[string]string) (filter.Filter, error) {
+	m.ctrl.T.Helper()
+	ret := m.ctrl.Call(m, "Create", params)
+	ret0, _ := ret[0].(filter.Filter)
+	ret1, _ := ret[1].(error)
+	return ret0, ret1
+}
+
+// Create indicates an expected call of Create.
+func (mr *MockFactoryMockRecorder) Create(params any) *gomock.Call {
+	mr.mock.ctrl.T.Helper()
+	return mr.mock.ctrl.RecordCallWithMethodType(mr.mock, "Create", reflect.TypeOf((*MockFactory)(nil).Create), params)
+}
+
+// Name mocks base method.
+func (m *MockFactory) Name() string {
+	m.ctrl.T.Helper()
+	ret := m.ctrl.Call(m, "Name")
+	ret0, _ := ret[0].(string)
+	return ret0
+}
+
+// Name indicates an expected call of Name.
+func (mr *MockFactoryMockRecorder) Name() *gomock.Call {
+	mr.mock.ctrl.T.Helper()
+	return mr.mock.ctrl.RecordCallWithMethodType(mr.mock, "Name", reflect.TypeOf((*MockFactory)(nil).Name))
 }

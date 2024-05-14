@@ -2,6 +2,7 @@ package filter
 
 import (
 	"context"
+	"fmt"
 	"testing"
 
 	"github.com/stretchr/testify/require"
@@ -9,42 +10,74 @@ import (
 )
 
 type repositoryMock struct {
-	getFileResult     map[string]string
-	getFullNameResult string
-	hasFileResult     map[string]bool
+	getFileResult map[string]string
+	hasFileResult map[string]bool
+	host          string
+	name          string
+	owner         string
 }
 
 func (r *repositoryMock) GetFile(fileName string) (string, error) {
 	return r.getFileResult[fileName], nil
 }
 
-func (r *repositoryMock) FullName() string {
-	return r.getFullNameResult
-}
-
 func (r *repositoryMock) HasFile(path string) (bool, error) {
 	return r.hasFileResult[path], nil
 }
 
-func TestFileExists_Do(t *testing.T) {
+func (r *repositoryMock) Host() string {
+	return r.host
+}
+
+func (r *repositoryMock) Name() string {
+	return r.name
+}
+
+func (r *repositoryMock) Owner() string {
+	return r.owner
+}
+
+func TestFileFactory_Create(t *testing.T) {
+	fac := FileFactory{}
+	_, err := fac.Create(map[string]string{})
+	require.ErrorContains(t, err, "required parameter `path` not set")
+}
+
+func TestFile_Do(t *testing.T) {
 	repo := &repositoryMock{hasFileResult: map[string]bool{"test.yaml": true, "test.json": false}}
 	ctx := context.Background()
 	ctx = context.WithValue(ctx, gsContext.RepositoryKey{}, repo)
 
-	f := NewFile("test.yaml")
+	fac := FileFactory{}
+
+	f, err := fac.Create(map[string]string{"path": "test.yaml"})
+	require.NoError(t, err)
 	result, err := f.Do(ctx)
 
 	require.NoError(t, err)
 	require.True(t, result)
 
-	f = NewFile("test.json")
+	f, err = fac.Create(map[string]string{"path": "test.json"})
+	require.NoError(t, err)
 	result, err = f.Do(ctx)
 
 	require.NoError(t, err)
 	require.False(t, result)
 }
 
-func TestFileContainsLine_Do(t *testing.T) {
+func TestFileContentFactory_Create(t *testing.T) {
+	fac := FileContentFactory{}
+	_, err := fac.Create(map[string]string{})
+	require.ErrorContains(t, err, "required parameter `path` not set")
+
+	_, err = fac.Create(map[string]string{"path": "path.txt"})
+	require.ErrorContains(t, err, "required parameter `regexp` not set")
+
+	_, err = fac.Create(map[string]string{"path": "path.txt", "regexp": "[a-z"})
+	require.ErrorContains(t, err, "compile parameter `regexp` to regular expression: error parsing regexp: missing closing ]: `[a-z`")
+}
+
+func TestFileContent_Do(t *testing.T) {
 	content := `abc
 def
 ghi
@@ -53,14 +86,16 @@ ghi
 	ctx := context.Background()
 	ctx = context.WithValue(ctx, gsContext.RepositoryKey{}, repo)
 
-	f, err := NewFileContent("test.txt", "d?f")
+	fac := FileContentFactory{}
+
+	f, err := fac.Create(map[string]string{"path": "test.txt", "regexp": "d?f"})
 	require.NoError(t, err)
 	result, err := f.Do(ctx)
 
 	require.NoError(t, err)
 	require.True(t, result)
 
-	f, err = NewFileContent("test.txt", "jkl")
+	f, err = fac.Create(map[string]string{"path": "test.txt", "regexp": "jkl"})
 	require.NoError(t, err)
 	result, err = f.Do(ctx)
 
@@ -68,32 +103,87 @@ ghi
 	require.False(t, result)
 }
 
-func TestRepositoryName_Do(t *testing.T) {
-	f, err := NewRepositoryName([]string{"https://github.com/wndhydrnt/rcmt.git"})
+func TestRepositoryFactory_Create(t *testing.T) {
+	fac := RepositoryFactory{}
+	_, err := fac.Create(map[string]string{})
+	require.ErrorContains(t, err, "required parameter `host` not set")
+
+	_, err = fac.Create(map[string]string{"host": "github.com"})
+	require.ErrorContains(t, err, "required parameter `owner` not set")
+
+	_, err = fac.Create(map[string]string{
+		"host":  "github.com",
+		"owner": "wndhydrnt",
+	})
+	require.ErrorContains(t, err, "required parameter `name` not set")
+
+	_, err = fac.Create(map[string]string{
+		"host":  "github.com",
+		"owner": "wndhydrnt",
+	})
+	require.ErrorContains(t, err, "required parameter `name` not set")
+
+	_, err = fac.Create(map[string]string{
+		"host": "(github.com",
+	})
+	require.ErrorContains(t, err, "compile parameter `host` to regular expression: error parsing regexp: missing closing ): `^(github.com$`")
+
+	_, err = fac.Create(map[string]string{
+		"host":  "github.com",
+		"owner": "(wndhydrnt",
+	})
+	require.ErrorContains(t, err, "compile parameter `owner` to regular expression: error parsing regexp: missing closing ): `^(wndhydrnt$`")
+
+	_, err = fac.Create(map[string]string{
+		"host":  "github.com",
+		"owner": "wndhydrnt",
+		"name":  "(saturn-bot",
+	})
+	require.ErrorContains(t, err, "compile parameter `name` to regular expression: error parsing regexp: missing closing ): `^(saturn-bot$`")
+}
+
+func TestRepository_Do(t *testing.T) {
+	fac := RepositoryFactory{}
+
+	f, err := fac.Create(map[string]string{"host": "github.com", "owner": "wndhydrnt", "name": "rcmt"})
 	require.NoError(t, err)
 
 	cases := []struct {
-		toMatch string
-		want    bool
+		host  string
+		name  string
+		owner string
+		want  bool
 	}{
 		{
-			toMatch: "github.com/wndhydrnt/rcmt",
-			want:    true,
+			host:  "github.com",
+			owner: "wndhydrnt",
+			name:  "rcmt",
+			want:  true,
 		},
 		{
-			toMatch: "github.com/prometheus/node_exporter",
-			want:    false,
+			host:  "github.com",
+			owner: "prometheus",
+			name:  "node_exporter",
+			want:  false,
 		},
 		{
-			toMatch: "github.com/wndhydrnt/rcmt-test",
-			want:    false,
+			host:  "github.com",
+			owner: "wndhydrnt",
+			name:  "rcmt-test",
+			want:  false,
 		},
 	}
 
 	for _, tc := range cases {
-		t.Run(tc.toMatch, func(t *testing.T) {
+		testName := fmt.Sprintf("%s/%s/%s", tc.host, tc.owner, tc.name)
+		t.Run(testName, func(t *testing.T) {
 			ctx := context.Background()
-			ctx = context.WithValue(ctx, gsContext.RepositoryKey{}, &repositoryMock{getFullNameResult: tc.toMatch})
+			repoMock := &repositoryMock{
+				host:  tc.host,
+				name:  tc.name,
+				owner: tc.owner,
+			}
+			ctx = context.WithValue(ctx, gsContext.RepositoryKey{}, repoMock)
 			result, err := f.Do(ctx)
 			require.NoError(t, err)
 			require.Equal(t, tc.want, result)

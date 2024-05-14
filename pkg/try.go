@@ -8,10 +8,10 @@ import (
 	"path"
 
 	"github.com/wndhydrnt/saturn-bot/pkg/action"
-	"github.com/wndhydrnt/saturn-bot/pkg/config"
 	saturnContext "github.com/wndhydrnt/saturn-bot/pkg/context"
 	"github.com/wndhydrnt/saturn-bot/pkg/git"
 	"github.com/wndhydrnt/saturn-bot/pkg/host"
+	"github.com/wndhydrnt/saturn-bot/pkg/options"
 	"github.com/wndhydrnt/saturn-bot/pkg/task"
 )
 
@@ -26,29 +26,14 @@ type TryRunner struct {
 	taskName         string
 }
 
-func NewTryRunner(configPath string, dataDir string, repositoryName string, taskFile string, taskName string) (*TryRunner, error) {
-	cfg, err := config.Read(configPath)
-	if err != nil {
-		return nil, err
-	}
-
+func NewTryRunner(opts options.Opts, dataDir string, repositoryName string, taskFile string, taskName string) (*TryRunner, error) {
 	if dataDir == "" {
 		dataDir = path.Join(os.TempDir(), "saturn-bot")
 	}
 
 	// This code sets its own data dir.
-	cfg.DataDir = &dataDir
-	err = initialize(cfg)
-	if err != nil {
-		return nil, err
-	}
-
-	hosts, err := createHostsFromConfig(cfg)
-	if err != nil {
-		return nil, fmt.Errorf("create hosts from config: %w", err)
-	}
-
-	gitClient, err := git.New(cfg)
+	opts.Config.DataDir = &dataDir
+	gitClient, err := git.New(opts.Config)
 	if err != nil {
 		return nil, fmt.Errorf("new git client for try: %w", err)
 	}
@@ -56,9 +41,9 @@ func NewTryRunner(configPath string, dataDir string, repositoryName string, task
 	return &TryRunner{
 		applyActionsFunc: applyActionsInDirectory,
 		gitc:             gitClient,
-		hosts:            hosts,
+		hosts:            opts.Hosts,
 		out:              os.Stdout,
-		registry:         task.NewRegistry(),
+		registry:         task.NewRegistry(opts),
 		repositoryName:   repositoryName,
 		taskFile:         taskFile,
 		taskName:         taskName,
