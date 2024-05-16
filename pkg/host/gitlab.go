@@ -369,7 +369,7 @@ func (g *GitLabRepository) Name() string {
 }
 
 func (g *GitLabRepository) Owner() string {
-	return g.project.Namespace.Name
+	return g.project.Namespace.FullPath
 }
 
 func (g *GitLabRepository) UpdatePullRequest(data PullRequestData, pr interface{}) error {
