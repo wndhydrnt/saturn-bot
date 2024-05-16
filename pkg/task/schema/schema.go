@@ -10,6 +10,9 @@ type Task struct {
 	// List of actions that modify a repository.
 	Actions []TaskActionsElem `json:"actions,omitempty" yaml:"actions,omitempty" mapstructure:"actions,omitempty"`
 
+	// A list of usernames to set as assignees of a pull request.
+	Assignees []string `json:"assignees,omitempty" yaml:"assignees,omitempty" mapstructure:"assignees,omitempty"`
+
 	// Merge a pull request automatically if all have checks have passed and all
 	// approvals have been given.
 	AutoMerge bool `json:"autoMerge,omitempty" yaml:"autoMerge,omitempty" mapstructure:"autoMerge,omitempty"`

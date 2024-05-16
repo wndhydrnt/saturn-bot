@@ -6,6 +6,7 @@ import (
 	"net/http"
 	"net/url"
 	"path"
+	"slices"
 	"strings"
 	"time"
 
@@ -89,9 +90,16 @@ func (g *GitHubRepository) CreatePullRequest(branch string, data PullRequestData
 		MaintainerCanModify: github.Bool(true),
 		Title:               github.String(title),
 	}
-	_, _, err = g.client.PullRequests.Create(ctx, g.repo.GetOwner().GetLogin(), g.repo.GetName(), gpr)
+	pr, _, err := g.client.PullRequests.Create(ctx, g.repo.GetOwner().GetLogin(), g.repo.GetName(), gpr)
 	if err != nil {
 		return fmt.Errorf("create github pull request: %w", err)
+	}
+
+	if len(data.Assignees) > 0 {
+		_, _, err := g.client.Issues.AddAssignees(ctx, g.repo.GetOwner().GetLogin(), g.repo.GetName(), int(pr.GetID()), data.Assignees)
+		if err != nil {
+			return fmt.Errorf("add assignees to pull request: %w", err)
+		}
 	}
 
 	return nil
@@ -331,13 +339,41 @@ func (g *GitHubRepository) UpdatePullRequest(data PullRequestData, pr interface{
 		gpr.Body = github.String(body)
 	}
 
-	if !needsUpdate {
-		return nil
+	if needsUpdate {
+		_, _, err = g.client.PullRequests.Edit(ctx, g.repo.GetOwner().GetLogin(), g.repo.GetName(), gpr.GetNumber(), gpr)
+		if err != nil {
+			return fmt.Errorf("edit github pull request %d: %w", gpr.GetNumber(), err)
+		}
 	}
 
-	_, _, err = g.client.PullRequests.Edit(ctx, g.repo.GetOwner().GetLogin(), g.repo.GetName(), gpr.GetNumber(), gpr)
-	if err != nil {
-		return fmt.Errorf("edit github pull request %d: %w", gpr.GetNumber(), err)
+	var assigneesToDelete []string
+	var currentAssignees []string
+	for _, user := range gpr.Assignees {
+		currentAssignees = append(currentAssignees, user.GetLogin())
+		if !slices.Contains(data.Assignees, user.GetLogin()) {
+			assigneesToDelete = append(assigneesToDelete, user.GetLogin())
+		}
+	}
+
+	if len(assigneesToDelete) > 0 {
+		_, _, err = g.client.Issues.RemoveAssignees(ctx, g.repo.GetOwner().GetLogin(), g.repo.GetName(), gpr.GetNumber(), assigneesToDelete)
+		if err != nil {
+			return fmt.Errorf("remove assignees from updated pull request %d: %w", gpr.GetNumber(), err)
+		}
+	}
+
+	var assigneesToAdd []string
+	for _, assignee := range data.Assignees {
+		if !slices.Contains(currentAssignees, assignee) {
+			assigneesToAdd = append(assigneesToAdd, assignee)
+		}
+	}
+
+	if len(assigneesToAdd) > 0 {
+		_, _, err = g.client.Issues.AddAssignees(ctx, g.repo.GetOwner().GetLogin(), g.repo.GetName(), gpr.GetNumber(), assigneesToAdd)
+		if err != nil {
+			return fmt.Errorf("add assignees to updated pull request %d: %w", gpr.GetNumber(), err)
+		}
 	}
 
 	return nil

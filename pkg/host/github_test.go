@@ -12,6 +12,25 @@ import (
 	"github.com/stretchr/testify/require"
 )
 
+const (
+	githubPullRequestBody = `pull request body
+
+---
+
+**Auto-merge:** Disabled. Merge this manually.
+
+**Ignore:** This PR will be recreated if closed.
+
+---
+
+- [ ] If you want to rebase this PR, check this box
+
+---
+
+_This pull request has been created by [saturn-bot](https://github.com/wndhydrnt/saturn-bot)_ 🪐🤖.
+`
+)
+
 func TestGitHubRepository_BaseBranch(t *testing.T) {
 	repo := &GitHubRepository{
 		repo: &github.Repository{
@@ -121,29 +140,13 @@ func TestGitHubRepository_CreatePullRequestComment(t *testing.T) {
 }
 
 func TestGitHubRepository_CreatePullRequest(t *testing.T) {
-	body := `pull request body
-
----
-
-**Auto-merge:** Disabled. Merge this manually.
-
-**Ignore:** This PR will be recreated if closed.
-
----
-
-- [ ] If you want to rebase this PR, check this box
-
----
-
-_This pull request has been created by [saturn-bot](https://github.com/wndhydrnt/saturn-bot)_ 🪐🤖.
-`
 	defer gock.Off()
 	gock.New("https://api.github.com").
 		Post("/repos/unit/test/pulls").
 		MatchType("json").
 		JSON(&github.NewPullRequest{
 			Base:                github.String("main"),
-			Body:                github.String(body),
+			Body:                github.String(githubPullRequestBody),
 			Head:                github.String("unittest"),
 			MaintainerCanModify: github.Bool(true),
 			Title:               github.String("pull request title"),
@@ -154,6 +157,46 @@ _This pull request has been created by [saturn-bot](https://github.com/wndhydrnt
 		Body:     "pull request body",
 		TaskName: "Unit Test",
 		Title:    "pull request title",
+	}
+
+	repo := &GitHubRepository{
+		client: setupGitHubTestClient(),
+		repo:   setupGitHubRepository(),
+	}
+	err := repo.CreatePullRequest("unittest", prData)
+
+	require.NoError(t, err)
+	require.True(t, gock.IsDone())
+}
+
+func TestGitHubRepository_CreatePullRequest_WithAssignees(t *testing.T) {
+	defer gock.Off()
+	gock.New("https://api.github.com").
+		Post("/repos/unit/test/pulls").
+		MatchType("json").
+		JSON(&github.NewPullRequest{
+			Base:                github.String("main"),
+			Body:                github.String(githubPullRequestBody),
+			Head:                github.String("unittest"),
+			MaintainerCanModify: github.Bool(true),
+			Title:               github.String("pull request title"),
+		}).
+		Reply(200).
+		JSON(&github.PullRequest{
+			ID: github.Int64(1),
+		})
+	gock.New("https://api.github.com").
+		Post("/repos/unit/test/issues/1/assignees").
+		MatchType("json").
+		JSON(map[string]any{
+			"assignees": []string{"jane", "joe"},
+		}).
+		Reply(200)
+	prData := PullRequestData{
+		Assignees: []string{"jane", "joe"},
+		Body:      "pull request body",
+		TaskName:  "Unit Test",
+		Title:     "pull request title",
 	}
 
 	repo := &GitHubRepository{
@@ -640,6 +683,63 @@ _This pull request has been created by [saturn-bot](https://github.com/wndhydrnt
 		Body:     "old body",
 		TaskName: "Unit Test",
 		Title:    "old title",
+	}
+
+	repo := &GitHubRepository{
+		client: setupGitHubTestClient(),
+		repo:   setupGitHubRepository(),
+	}
+	err := repo.UpdatePullRequest(prData, pr)
+
+	require.NoError(t, err)
+	assert.True(t, gock.IsDone())
+}
+
+func TestGitHubRepository_UpdatePullRequest_UpdatedAssignees(t *testing.T) {
+	body := `PR body
+
+---
+
+**Auto-merge:** Disabled. Merge this manually.
+
+**Ignore:** This PR will be recreated if closed.
+
+---
+
+- [ ] If you want to rebase this PR, check this box
+
+---
+
+_This pull request has been created by [saturn-bot](https://github.com/wndhydrnt/saturn-bot)_ 🪐🤖.
+`
+	defer gock.Off()
+	gock.New("https://api.github.com").
+		Delete("/repos/unit/test/issues/987/assignees").
+		JSON(map[string]any{
+			"assignees": []string{"b", "c"},
+		}).
+		Reply(200)
+	gock.New("https://api.github.com").
+		Post("/repos/unit/test/issues/987/assignees").
+		JSON(map[string]any{
+			"assignees": []string{"y", "z"},
+		}).
+		Reply(200)
+	pr := &github.PullRequest{
+		Assignees: []*github.User{
+			{Login: github.String("a")},
+			{Login: github.String("b")},
+			{Login: github.String("c")},
+		},
+		Body:   github.String(body),
+		Number: github.Int(987),
+		Title:  github.String("PR title"),
+	}
+	prData := PullRequestData{
+		Assignees: []string{"y", "z", "a"},
+		Body:      "PR body",
+		TaskName:  "Unit Test",
+		Title:     "PR title",
 	}
 
 	repo := &GitHubRepository{
