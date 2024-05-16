@@ -25,7 +25,10 @@ build_linux_armv7:
 build_linux_amd64:
 	GOARCH=amd64 GOOS=linux go build $(BUILD_FLAGS) -o saturn-bot-$(VERSION).linux-amd64
 
-build_all: build_darwin_amd64 build_darwin_arm64 build_linux_arm64 build_linux_armv7 build_linux_amd64
+build_all: build_darwin_amd64 build_darwin_arm64 build_linux_arm64 build_linux_armv7 build_linux_amd64 checksums
+
+checksums:
+	sha256sum saturn-bot-$(VERSION).* > sha256sums.txt
 
 generate_grpc:
 	buf generate
