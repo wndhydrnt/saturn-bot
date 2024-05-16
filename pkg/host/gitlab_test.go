@@ -600,7 +600,6 @@ func TestGitLabRepository_MergePullRequest(t *testing.T) {
 
 func TestGitLabRepository_UpdatePullRequest(t *testing.T) {
 	defer gock.Off()
-	gock.Observe(gock.DumpRequest)
 	gock.New("http://gitlab.local").
 		Put("/api/v4/projects/123/merge_requests/987").
 		MatchType("json").

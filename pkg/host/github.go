@@ -96,7 +96,7 @@ func (g *GitHubRepository) CreatePullRequest(branch string, data PullRequestData
 	}
 
 	if len(data.Assignees) > 0 {
-		_, _, err := g.client.Issues.AddAssignees(ctx, g.repo.GetOwner().GetLogin(), g.repo.GetName(), int(pr.GetID()), data.Assignees)
+		_, _, err := g.client.Issues.AddAssignees(ctx, g.repo.GetOwner().GetLogin(), g.repo.GetName(), pr.GetNumber(), data.Assignees)
 		if err != nil {
 			return fmt.Errorf("add assignees to pull request: %w", err)
 		}

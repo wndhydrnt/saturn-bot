@@ -183,7 +183,7 @@ func TestGitHubRepository_CreatePullRequest_WithAssignees(t *testing.T) {
 		}).
 		Reply(200).
 		JSON(&github.PullRequest{
-			ID: github.Int64(1),
+			Number: github.Int(1),
 		})
 	gock.New("https://api.github.com").
 		Post("/repos/unit/test/issues/1/assignees").
