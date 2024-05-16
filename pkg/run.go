@@ -377,6 +377,7 @@ func applyTaskToRepository(ctx context.Context, dryRun bool, gitc git.GitClient,
 
 	autoMergeAfter := task.AutoMergeAfter()
 	prData := host.PullRequestData{
+		Assignees:      task.SourceTask().Assignees,
 		AutoMerge:      task.SourceTask().AutoMerge,
 		AutoMergeAfter: &autoMergeAfter,
 		Body:           task.SourceTask().PrBody,

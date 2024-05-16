@@ -26,6 +26,7 @@ type PullRequestComment struct {
 }
 
 type PullRequestData struct {
+	Assignees      []string
 	AutoMerge      bool
 	AutoMergeAfter *time.Duration
 	Body           string

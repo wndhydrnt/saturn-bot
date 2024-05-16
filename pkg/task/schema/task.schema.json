@@ -25,6 +25,13 @@
         "required": ["action"]
       }
     },
+    "assignees": {
+      "description": "A list of usernames to set as assignees of a pull request.",
+      "type": "array",
+      "items": {
+        "type": "string"
+      }
+    },
     "autoMerge": {
       "default": false,
       "description": "Merge a pull request automatically if all have checks have passed and all approvals have been given.",

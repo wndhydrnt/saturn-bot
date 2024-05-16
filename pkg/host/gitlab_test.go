@@ -14,6 +14,10 @@ import (
 	"github.com/xanzy/go-gitlab"
 )
 
+const (
+	gitlabMergeRequestBody = "Unit Test Body\n\n---\n\n**Auto-merge:** Disabled. Merge this manually.\n\n**Ignore:** This PR will be recreated if closed.\n\n---\n\n- [ ] If you want to rebase this PR, check this box\n\n---\n\n_This pull request has been created by [saturn-bot](https://github.com/wndhydrnt/saturn-bot)_ 🪐🤖.\n"
+)
+
 func TestGitLabRepository_GetBaseBranch(t *testing.T) {
 	project := &gitlab.Project{DefaultBranch: "main"}
 
@@ -112,11 +116,12 @@ func TestGitLabRepository_CreatePullRequest(t *testing.T) {
 	gock.New("http://gitlab.local").
 		Post("/api/v4/projects/123/merge_requests").
 		MatchType("json").
-		JSON(map[string]string{
+		JSON(map[string]any{
 			"title":         "Unit Test Title",
 			"description":   "Unit Test Body\n\n---\n\n**Auto-merge:** Disabled. Merge this manually.\n\n**Ignore:** This PR will be recreated if closed.\n\n---\n\n- [ ] If you want to rebase this PR, check this box\n\n---\n\n_This pull request has been created by [saturn-bot](https://github.com/wndhydrnt/saturn-bot)_ 🪐🤖.\n",
 			"source_branch": "saturn-bot--unit-test",
 			"target_branch": "main",
+			"assignee_ids":  nil,
 		}).
 		Reply(200).
 		JSON(map[string]string{})
@@ -130,17 +135,61 @@ func TestGitLabRepository_CreatePullRequest(t *testing.T) {
 	require.True(t, gock.IsDone())
 }
 
+func TestGitLabRepository_CreatePullRequest_WithAssignees(t *testing.T) {
+	defer gock.Off()
+	gock.New("http://gitlab.local").
+		Get("/api/v4/users").
+		MatchParam("username", "jane").
+		Reply(200).
+		JSON([]*gitlab.User{
+			{ID: 975},
+		})
+	gock.New("http://gitlab.local").
+		Get("/api/v4/users").
+		MatchParam("username", "joe").
+		Reply(200).
+		JSON([]*gitlab.User{
+			{ID: 357},
+		})
+	gock.New("http://gitlab.local").
+		Post("/api/v4/projects/123/merge_requests").
+		MatchType("json").
+		JSON(map[string]any{
+			"title":         "Unit Test Title",
+			"description":   "Unit Test Body\n\n---\n\n**Auto-merge:** Disabled. Merge this manually.\n\n**Ignore:** This PR will be recreated if closed.\n\n---\n\n- [ ] If you want to rebase this PR, check this box\n\n---\n\n_This pull request has been created by [saturn-bot](https://github.com/wndhydrnt/saturn-bot)_ 🪐🤖.\n",
+			"source_branch": "saturn-bot--unit-test",
+			"target_branch": "main",
+			"assignee_ids":  []int{975, 357},
+		}).
+		Reply(200).
+		JSON(map[string]string{})
+	project := &gitlab.Project{DefaultBranch: "main", ID: 123}
+	prData := PullRequestData{Assignees: []string{"jane", "joe"}, Body: "Unit Test Body", Title: "Unit Test Title"}
+
+	client := setupClient()
+	uc := &userCache{
+		client: client,
+		data:   map[string]*gitlab.User{},
+	}
+	underTest := &GitLabRepository{client: client, project: project, userCache: uc}
+	err := underTest.CreatePullRequest("saturn-bot--unit-test", prData)
+
+	require.NoError(t, err)
+	require.True(t, gock.IsDone())
+}
+
 func TestGitLabRepository_CreatePullRequest_WithLabels(t *testing.T) {
 	defer gock.Off()
 	gock.New("http://gitlab.local").
 		Post("/api/v4/projects/123/merge_requests").
 		MatchType("json").
-		JSON(map[string]string{
+		JSON(map[string]any{
 			"title":         "Unit Test Title",
 			"description":   "Unit Test Body\n\n---\n\n**Auto-merge:** Disabled. Merge this manually.\n\n**Ignore:** This PR will be recreated if closed.\n\n---\n\n- [ ] If you want to rebase this PR, check this box\n\n---\n\n_This pull request has been created by [saturn-bot](https://github.com/wndhydrnt/saturn-bot)_ 🪐🤖.\n",
 			"labels":        "unit,test",
 			"source_branch": "saturn-bot--unit-test",
 			"target_branch": "main",
+			"assignee_ids":  nil,
 		}).
 		Reply(200).
 		JSON(map[string]string{})
@@ -554,9 +603,10 @@ func TestGitLabRepository_UpdatePullRequest(t *testing.T) {
 	gock.New("http://gitlab.local").
 		Put("/api/v4/projects/123/merge_requests/987").
 		MatchType("json").
-		JSON(map[string]interface{}{
-			"title":       "New PR Title",
-			"description": "New PR Body\n\n---\n\n**Auto-merge:** Disabled. Merge this manually.\n\n**Ignore:** This PR will be recreated if closed.\n\n---\n\n- [ ] If you want to rebase this PR, check this box\n\n---\n\n_This pull request has been created by [saturn-bot](https://github.com/wndhydrnt/saturn-bot)_ 🪐🤖.\n",
+		JSON(map[string]any{
+			"title":        "New PR Title",
+			"description":  "New PR Body\n\n---\n\n**Auto-merge:** Disabled. Merge this manually.\n\n**Ignore:** This PR will be recreated if closed.\n\n---\n\n- [ ] If you want to rebase this PR, check this box\n\n---\n\n_This pull request has been created by [saturn-bot](https://github.com/wndhydrnt/saturn-bot)_ 🪐🤖.\n",
+			"assignee_ids": nil,
 		}).
 		Reply(200).
 		JSON(map[string]string{})
@@ -588,6 +638,61 @@ func TestGitLabRepository_UpdatePullRequest_NoUpdateRequired(t *testing.T) {
 	}
 
 	underTest := &GitLabRepository{client: setupClient(), project: project}
+	err := underTest.UpdatePullRequest(prData, mr)
+
+	require.NoError(t, err)
+	require.True(t, gock.IsDone())
+}
+
+func TestGitLabRepository_UpdatePullRequest_UpdatedAssignees(t *testing.T) {
+	defer gock.Off()
+	gock.New("http://gitlab.local").
+		Get("/api/v4/users").
+		MatchParam("username", "y").
+		Reply(200).
+		JSON([]*gitlab.User{
+			{ID: 25},
+		})
+	gock.New("http://gitlab.local").
+		Get("/api/v4/users").
+		MatchParam("username", "z").
+		Reply(200).
+		JSON([]*gitlab.User{
+			{ID: 26},
+		})
+	gock.New("http://gitlab.local").
+		Put("/api/v4/projects/123/merge_requests/987").
+		MatchType("json").
+		JSON(map[string]any{
+			"title":        "PR Title",
+			"description":  gitlabMergeRequestBody,
+			"assignee_ids": []int{25, 26, 1},
+		}).
+		Reply(200).
+		JSON(map[string]string{})
+	prData := PullRequestData{
+		Assignees: []string{"y", "z", "a"},
+		Body:      "Unit Test Body",
+		Title:     "PR Title",
+	}
+	project := &gitlab.Project{ID: 123}
+	mr := &gitlab.MergeRequest{
+		Assignees: []*gitlab.BasicUser{
+			{ID: 1, Username: "a"},
+			{ID: 2, Username: "b"},
+			{ID: 3, Username: "c"},
+		},
+		Description: gitlabMergeRequestBody,
+		IID:         987,
+		Title:       "PR Title",
+	}
+	client := setupClient()
+	uc := &userCache{
+		client: client,
+		data:   map[string]*gitlab.User{},
+	}
+
+	underTest := &GitLabRepository{client: setupClient(), project: project, userCache: uc}
 	err := underTest.UpdatePullRequest(prData, mr)
 
 	require.NoError(t, err)

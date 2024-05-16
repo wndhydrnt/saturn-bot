@@ -9,15 +9,46 @@ import (
 	"net/url"
 	"path"
 	"strings"
+	"sync"
 	"time"
 
 	"github.com/xanzy/go-gitlab"
 )
 
+// userCache caches GitLab users.
+// The cache prevents frequent requests for users, for example when finding assignees, from triggering rate limits.
+type userCache struct {
+	client *gitlab.Client
+	data   map[string]*gitlab.User
+	dataMu sync.RWMutex
+}
+
+func (u *userCache) get(name string) (*gitlab.User, error) {
+	u.dataMu.RLock()
+	user, ok := u.data[name]
+	u.dataMu.RUnlock()
+	if ok {
+		return user, nil
+	}
+
+	users, _, err := u.client.Users.ListUsers(&gitlab.ListUsersOptions{
+		Username: gitlab.Ptr(name),
+	})
+	if err != nil {
+		return nil, fmt.Errorf("get user from GitLab: %w", err)
+	}
+
+	u.dataMu.Lock()
+	u.data[name] = users[0]
+	u.dataMu.Unlock()
+	return users[0], nil
+}
+
 type GitLabRepository struct {
-	client   *gitlab.Client
-	fullName string
-	project  *gitlab.Project
+	client    *gitlab.Client
+	fullName  string
+	project   *gitlab.Project
+	userCache *userCache
 }
 
 func (g *GitLabRepository) BaseBranch() string {
@@ -113,6 +144,17 @@ func (g *GitLabRepository) CreatePullRequest(branch string, data PullRequestData
 		return fmt.Errorf("create merge request for gitlab: %w", err)
 	}
 
+	var assigneeIDs []int
+	for _, assignee := range data.Assignees {
+		user, err := g.userCache.get(assignee)
+		if err != nil {
+			slog.Warn("Cannot find assignee in GitLab to add to new merge request", "assignee", assignee, "err", err)
+			continue
+		}
+
+		assigneeIDs = append(assigneeIDs, user.ID)
+	}
+
 	var labels *gitlab.LabelOptions
 	if len(data.Labels) > 0 {
 		labels = gitlab.Ptr(gitlab.LabelOptions(data.Labels))
@@ -120,6 +162,7 @@ func (g *GitLabRepository) CreatePullRequest(branch string, data PullRequestData
 	_, _, err = g.client.MergeRequests.CreateMergeRequest(
 		g.project.ID,
 		&gitlab.CreateMergeRequestOptions{
+			AssigneeIDs:  &assigneeIDs,
 			Description:  gitlab.Ptr(description),
 			Labels:       labels,
 			SourceBranch: gitlab.Ptr(branch),
@@ -393,11 +436,34 @@ func (g *GitLabRepository) UpdatePullRequest(data PullRequestData, pr interface{
 		needsUpdate = true
 	}
 
+	assignedAssignees := map[string]*gitlab.BasicUser{}
+	for _, user := range mr.Assignees {
+		assignedAssignees[user.Username] = user
+	}
+
+	var assigneeIDs []int
+	for _, assignee := range data.Assignees {
+		assignedAssignee, ok := assignedAssignees[assignee]
+		if ok {
+			assigneeIDs = append(assigneeIDs, assignedAssignee.ID)
+		} else {
+			user, err := g.userCache.get(assignee)
+			if err != nil {
+				slog.Warn("Cannot find assignee in GitLab to update merge request", "assignee", assignee, "err", err)
+				continue
+			}
+
+			needsUpdate = true
+			assigneeIDs = append(assigneeIDs, user.ID)
+		}
+	}
+
 	if needsUpdate {
 		_, _, err = g.client.MergeRequests.UpdateMergeRequest(
 			g.project.ID,
 			mr.IID,
 			&gitlab.UpdateMergeRequestOptions{
+				AssigneeIDs: gitlab.Ptr(assigneeIDs),
 				Description: gitlab.Ptr(body),
 				Title:       gitlab.Ptr(title),
 			},
@@ -411,7 +477,8 @@ func (g *GitLabRepository) UpdatePullRequest(data PullRequestData, pr interface{
 }
 
 type GitLabHost struct {
-	client *gitlab.Client
+	client    *gitlab.Client
+	userCache *userCache
 }
 
 func NewGitLabHost(token string) (*GitLabHost, error) {
@@ -420,7 +487,13 @@ func NewGitLabHost(token string) (*GitLabHost, error) {
 		return nil, fmt.Errorf("initialize gitlab client: %w", err)
 	}
 
-	return &GitLabHost{client: client}, nil
+	return &GitLabHost{
+		client: client,
+		userCache: &userCache{
+			client: client,
+			data:   map[string]*gitlab.User{},
+		},
+	}, nil
 }
 
 func (g *GitLabHost) CreateFromName(name string) (Repository, error) {
@@ -448,7 +521,7 @@ func (g *GitLabHost) CreateFromName(name string) (Repository, error) {
 		return nil, fmt.Errorf("get gitlab project: %w", err)
 	}
 
-	return &GitLabRepository{client: g.client, project: project}, nil
+	return &GitLabRepository{client: g.client, project: project, userCache: g.userCache}, nil
 }
 
 func (g *GitLabHost) ListRepositories(since *time.Time, result chan []Repository, errChan chan error) {
@@ -470,7 +543,7 @@ func (g *GitLabHost) ListRepositories(since *time.Time, result chan []Repository
 
 		var batch []Repository
 		for _, project := range projects {
-			batch = append(batch, &GitLabRepository{client: g.client, project: project})
+			batch = append(batch, &GitLabRepository{client: g.client, project: project, userCache: g.userCache})
 		}
 
 		result <- batch
@@ -524,7 +597,7 @@ func (g *GitLabHost) ListRepositoriesWithOpenPullRequests(result chan []Reposito
 				continue
 			}
 
-			batch = append(batch, &GitLabRepository{client: g.client, project: project})
+			batch = append(batch, &GitLabRepository{client: g.client, project: project, userCache: g.userCache})
 		}
 
 		result <- batch
