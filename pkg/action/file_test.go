@@ -124,7 +124,7 @@ func TestFileCreate_Apply(t *testing.T) {
 				"mode":    "75r",
 				"path":    "test.txt",
 			},
-			wantError: errors.New("parse value of parameter `mode`: strconv.Atoi: parsing \"75r\": invalid syntax"),
+			wantError: errors.New("parse value of parameter `mode`: strconv.ParseUint: parsing \"75r\": invalid syntax"),
 		},
 	}
 

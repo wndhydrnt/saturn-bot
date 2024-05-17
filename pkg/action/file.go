@@ -146,7 +146,7 @@ func (a *fileCreate) Apply(_ context.Context) error {
 }
 
 func (a *fileCreate) String() string {
-	return fmt.Sprintf("fileCreate(mode=%d,overwrite=%t,path=%s)", a.mode, a.overwrite, a.path)
+	return fmt.Sprintf("fileCreate(mode=%o,overwrite=%t,path=%s)", a.mode, a.overwrite, a.path)
 }
 
 type FileDeleteFactory struct{}
