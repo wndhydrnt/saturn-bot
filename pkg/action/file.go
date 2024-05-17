@@ -126,19 +126,20 @@ func (a *fileCreate) Apply(_ context.Context) error {
 			return fmt.Errorf("create or truncate file: %w", err)
 		}
 
+		defer file.Close()
 		_, err = io.Copy(file, a.content)
 		if err != nil {
 			return fmt.Errorf("write content to file %s: %w", a.path, err)
 		}
 
-		err = file.Sync()
-		if err != nil {
-			return fmt.Errorf("sync content to file %s: %w", a.path, err)
-		}
-
 		err = file.Chmod(a.mode)
 		if err != nil {
 			return fmt.Errorf("change mode of file: %w", err)
+		}
+
+		err = file.Close()
+		if err != nil {
+			return fmt.Errorf("close file %s: %w", a.path, err)
 		}
 	}
 

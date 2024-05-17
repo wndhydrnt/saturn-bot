@@ -362,8 +362,16 @@ func forEachLine(filePath string, f func(line []byte) ([]byte, error)) error {
 		return fmt.Errorf("chmod target file: %w", err)
 	}
 
-	_ = source.Close()
-	_ = target.Close()
+	err = source.Close()
+	if err != nil {
+		return fmt.Errorf("close source file: %w", err)
+	}
+
+	err = target.Close()
+	if err != nil {
+		return fmt.Errorf("close target file: %w", err)
+	}
+
 	err = os.Rename(target.Name(), source.Name())
 	if err != nil {
 		return fmt.Errorf("move target file to source file: %w", err)
