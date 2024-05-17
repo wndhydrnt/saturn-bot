@@ -5,6 +5,7 @@ import (
 	"errors"
 	"fmt"
 	"io"
+	"io/fs"
 	"os"
 	"path/filepath"
 	"strconv"
@@ -62,15 +63,16 @@ func (f FileCreateFactory) Create(params map[string]string, taskPath string) (Ac
 	}
 
 	modeRaw := params["mode"]
-	var mode int
+	var mode fs.FileMode
 	if modeRaw == "" {
-		mode = 644
+		mode = 0644
 	} else {
-		var err error
-		mode, err = strconv.Atoi(modeRaw)
+		modeConv, err := strconv.ParseUint(modeRaw, 8, 32)
 		if err != nil {
 			return nil, fmt.Errorf("parse value of parameter `mode`: %w", err)
 		}
+
+		mode = fs.FileMode(modeConv)
 	}
 
 	overwriteRaw := params["overwrite"]
@@ -93,7 +95,7 @@ func (f FileCreateFactory) Name() string {
 
 type fileCreate struct {
 	content   io.ReadCloser
-	mode      int
+	mode      fs.FileMode
 	overwrite bool
 	path      string
 }
@@ -121,7 +123,7 @@ func (a *fileCreate) Apply(_ context.Context) error {
 	if a.overwrite || !fileExists {
 		file, err := os.Create(a.path)
 		if err != nil {
-			return err
+			return fmt.Errorf("create or truncate file: %w", err)
 		}
 
 		_, err = io.Copy(file, a.content)
@@ -132,6 +134,11 @@ func (a *fileCreate) Apply(_ context.Context) error {
 		err = file.Sync()
 		if err != nil {
 			return fmt.Errorf("sync content to file %s: %w", a.path, err)
+		}
+
+		err = file.Chmod(a.mode)
+		if err != nil {
+			return fmt.Errorf("change mode of file: %w", err)
 		}
 	}
 

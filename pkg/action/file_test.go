@@ -1,11 +1,14 @@
 package action
 
 import (
+	"context"
 	"errors"
+	"io/fs"
 	"os"
 	"path/filepath"
 	"testing"
 
+	"github.com/stretchr/testify/assert"
 	"github.com/stretchr/testify/require"
 )
 
@@ -128,6 +131,27 @@ func TestFileCreate_Apply(t *testing.T) {
 	for _, tc := range testCases {
 		runTestCase(t, tc)
 	}
+}
+
+func TestFileCreate_Apply_FileMode(t *testing.T) {
+	workDir, err := os.MkdirTemp("", "")
+	require.NoError(t, err)
+
+	fac := FileCreateFactory{}
+	a, err := fac.Create(map[string]string{
+		"content": "echo Unit Test",
+		"mode":    "755",
+		"path":    "test.sh",
+	}, "")
+	require.NoError(t, err)
+	err = inDirectory(workDir, func() error {
+		return a.Apply(context.Background())
+	})
+	require.NoError(t, err)
+
+	fi, err := os.Stat(filepath.Join(workDir, "test.sh"))
+	require.NoError(t, err)
+	assert.Equal(t, fs.FileMode(0755), fi.Mode())
 }
 
 func TestFileDelete_Apply(t *testing.T) {
