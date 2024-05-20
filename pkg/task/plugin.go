@@ -163,6 +163,7 @@ func (a *PluginAction) Apply(ctx context.Context) error {
 	reply, err := a.provider.ExecuteActions(&proto.ExecuteActionsRequest{
 		Path: path,
 		Context: &proto.Context{
+			PullRequest: newPullRequestPayload(ctx.Value(gsContext.PullRequestKey{})),
 			Repository: &proto.Repository{
 				FullName:     repo.FullName(),
 				CloneUrlHttp: repo.CloneUrlHttp(),
@@ -197,11 +198,12 @@ func (f *PluginFilter) Do(ctx context.Context) (bool, error) {
 	repo := ctx.Value(gsContext.RepositoryKey{}).(host.Repository)
 	reply, err := f.provider.ExecuteFilters(&proto.ExecuteFiltersRequest{
 		Context: &proto.Context{
+			PullRequest: newPullRequestPayload(ctx.Value(gsContext.PullRequestKey{})),
 			Repository: &proto.Repository{
 				FullName:     repo.FullName(),
 				CloneUrlHttp: repo.CloneUrlHttp(),
-				CloneUrlSsh:  repo.CloneUrlHttp(),
-				WebUrl:       repo.BaseBranch(),
+				CloneUrlSsh:  repo.CloneUrlSsh(),
+				WebUrl:       repo.WebUrl(),
 			},
 		},
 	})
@@ -224,4 +226,16 @@ func (f *PluginFilter) Name() string {
 // String implements filter.String().
 func (f *PluginFilter) String() string {
 	return "pluginFilter"
+}
+
+func newPullRequestPayload(value any) *proto.PullRequest {
+	pr, ok := value.(host.PullRequest)
+	if !ok {
+		return nil
+	}
+
+	return &proto.PullRequest{
+		Number: pr.Number,
+		WebUrl: pr.WebURL,
+	}
 }

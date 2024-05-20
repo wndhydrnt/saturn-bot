@@ -415,6 +415,18 @@ func (g *GitLabRepository) Owner() string {
 	return g.project.Namespace.FullPath
 }
 
+func (g *GitLabRepository) PullRequest(pr any) *PullRequest {
+	mr, ok := pr.(*gitlab.MergeRequest)
+	if !ok {
+		return nil
+	}
+
+	return &PullRequest{
+		Number: int64(mr.IID),
+		WebURL: mr.WebURL,
+	}
+}
+
 func (g *GitLabRepository) UpdatePullRequest(data PullRequestData, pr interface{}) error {
 	needsUpdate := false
 	mr := pr.(*gitlab.MergeRequest)

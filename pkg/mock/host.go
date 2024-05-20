@@ -382,6 +382,20 @@ func (mr *MockRepositoryMockRecorder) Owner() *gomock.Call {
 	return mr.mock.ctrl.RecordCallWithMethodType(mr.mock, "Owner", reflect.TypeOf((*MockRepository)(nil).Owner))
 }
 
+// PullRequest mocks base method.
+func (m *MockRepository) PullRequest(pr any) *host.PullRequest {
+	m.ctrl.T.Helper()
+	ret := m.ctrl.Call(m, "PullRequest", pr)
+	ret0, _ := ret[0].(*host.PullRequest)
+	return ret0
+}
+
+// PullRequest indicates an expected call of PullRequest.
+func (mr *MockRepositoryMockRecorder) PullRequest(pr any) *gomock.Call {
+	mr.mock.ctrl.T.Helper()
+	return mr.mock.ctrl.RecordCallWithMethodType(mr.mock, "PullRequest", reflect.TypeOf((*MockRepository)(nil).PullRequest), pr)
+}
+
 // UpdatePullRequest mocks base method.
 func (m *MockRepository) UpdatePullRequest(data host.PullRequestData, pr any) error {
 	m.ctrl.T.Helper()
