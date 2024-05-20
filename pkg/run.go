@@ -111,6 +111,7 @@ func (r *executeRunner) run(taskFiles []string) error {
 				slog.Debug("Processing repository", "repository", repo.FullName())
 				ctx := context.WithValue(context.Background(), sContext.RepositoryKey{}, repo)
 				ctx = context.WithValue(ctx, sContext.TemplateVarsKey{}, make(map[string]string))
+				ctx = context.WithValue(ctx, sContext.PluginDataKey{}, make(map[string]string))
 				tasksToApply := findMatchingTasksForRepository(ctx, repo, tasks)
 				if len(tasksToApply) < 1 {
 					slog.Debug("No task matches the repository", "repository", repo.FullName())
