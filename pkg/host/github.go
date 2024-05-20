@@ -316,6 +316,18 @@ func (g *GitHubRepository) Owner() string {
 	return g.repo.GetOwner().GetLogin()
 }
 
+func (g *GitHubRepository) PullRequest(pr any) *PullRequest {
+	gpr, ok := pr.(*github.PullRequest)
+	if !ok {
+		return nil
+	}
+
+	return &PullRequest{
+		Number: int64(gpr.GetNumber()),
+		WebURL: gpr.GetHTMLURL(),
+	}
+}
+
 func (g *GitHubRepository) UpdatePullRequest(data PullRequestData, pr interface{}) error {
 	gpr := pr.(*github.PullRequest)
 	needsUpdate := false

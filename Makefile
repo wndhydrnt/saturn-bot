@@ -51,6 +51,7 @@ endif
 	mockgen -package mock -source pkg/git/git.go > pkg/mock/git.go
 	mockgen -package mock -source pkg/host/host.go > pkg/mock/host.go
 	mockgen -package mock -source pkg/task/task.go > pkg/mock/task.go
+	mockgen -package mock github.com/wndhydrnt/saturn-bot-go/plugin Provider > pkg/mock/plugin.go
 
 test_cover:
 	go test -coverprofile cover.out ./...

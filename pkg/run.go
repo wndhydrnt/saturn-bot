@@ -270,6 +270,13 @@ func applyTaskToRepository(ctx context.Context, dryRun bool, gitc git.GitClient,
 		return ApplyResultPrOpen, nil
 	}
 
+	if prID != nil && repo.IsPullRequestOpen(prID) {
+		prInfo := repo.PullRequest(prID)
+		if prInfo != nil {
+			ctx = context.WithValue(ctx, sContext.PullRequestKey{}, *prInfo)
+		}
+	}
+
 	forceRebase := prID != nil && needsRebaseByUser(repo, prID)
 	if forceRebase {
 		// Do not keep the comment around when the user wants to rebase

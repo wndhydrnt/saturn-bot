@@ -20,6 +20,14 @@ var (
 	tplPrTitleDefault = template.Must(template.New("titleDefault").Parse("saturn-bot: task {{.TaskName}}"))
 )
 
+// PullRequest holds data on an existing pull request.
+type PullRequest struct {
+	// Number is the identifier of the pull request.
+	Number int64
+	// WebURL is the URL humans visit to view the pull request.
+	WebURL string
+}
+
 type PullRequestComment struct {
 	Body string
 	ID   int64
@@ -130,6 +138,7 @@ type Repository interface {
 	ListPullRequestComments(pr interface{}) ([]PullRequestComment, error)
 	MergePullRequest(deleteBranch bool, pr interface{}) error
 	Name() string
+	PullRequest(pr any) *PullRequest
 	Owner() string
 	UpdatePullRequest(data PullRequestData, pr interface{}) error
 	WebUrl() string
