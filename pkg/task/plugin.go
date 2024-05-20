@@ -180,6 +180,7 @@ func (a *PluginAction) Apply(ctx context.Context) error {
 		return fmt.Errorf("plugin failed to execute actions: %s", reply.GetError())
 	}
 
+	updateTemplateVars(ctx, reply.TemplateVars)
 	return nil
 }
 
@@ -215,6 +216,7 @@ func (f *PluginFilter) Do(ctx context.Context) (bool, error) {
 		return false, fmt.Errorf("plugin failed to execute filters: %s", reply.GetError())
 	}
 
+	updateTemplateVars(ctx, reply.TemplateVars)
 	return reply.GetMatch(), nil
 }
 
@@ -237,5 +239,20 @@ func newPullRequestPayload(value any) *proto.PullRequest {
 	return &proto.PullRequest{
 		Number: pr.Number,
 		WebUrl: pr.WebURL,
+	}
+}
+
+func updateTemplateVars(ctx context.Context, templateVarsReply map[string]string) {
+	templateVars, ok := ctx.Value(gsContext.TemplateVarsKey{}).(map[string]string)
+	if !ok {
+		templateVars = make(map[string]string)
+	}
+
+	for k, v := range templateVarsReply {
+		_, exists := templateVars[k]
+		// Plugin should not update existing keys to avoid confusion.
+		if !exists {
+			templateVars[k] = v
+		}
 	}
 }
