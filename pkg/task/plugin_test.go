@@ -37,15 +37,23 @@ func TestPluginAction_Apply(t *testing.T) {
 			Repository: payload,
 		},
 		Path: "/tmp",
-	})
+	}).Return(&proto.ExecuteActionsResponse{
+		TemplateVars: map[string]string{
+			"a": "2", // Should not be updated because key "a" already exists.
+			"b": "2", // Should be added to template variables because key "b" does not exist.
+		},
+	}, nil)
 	ctx := context.Background()
 	ctx = context.WithValue(ctx, gsContext.CheckoutPath{}, "/tmp")
 	ctx = context.WithValue(ctx, gsContext.RepositoryKey{}, repo)
+	templateVars := map[string]string{"a": "1"}
+	ctx = context.WithValue(ctx, gsContext.TemplateVarsKey{}, templateVars)
 
 	pa := &PluginAction{provider: provider}
 	err := pa.Apply(ctx)
 
 	require.NoError(t, err)
+	require.Equal(t, map[string]string{"a": "1", "b": "2"}, templateVars)
 }
 
 func TestPluginAction_Apply_WithPullRequest(t *testing.T) {
@@ -58,7 +66,7 @@ func TestPluginAction_Apply_WithPullRequest(t *testing.T) {
 			Repository:  payload,
 		},
 		Path: "/tmp",
-	})
+	}).Return(&proto.ExecuteActionsResponse{}, nil)
 	ctx := context.Background()
 	ctx = context.WithValue(ctx, gsContext.CheckoutPath{}, "/tmp")
 	ctx = context.WithValue(ctx, gsContext.PullRequestKey{}, host.PullRequest{
@@ -83,16 +91,23 @@ func TestPluginFilter_Do(t *testing.T) {
 		},
 	}).Return(&proto.ExecuteFiltersResponse{
 		Match: true,
+		TemplateVars: map[string]string{
+			"a": "2", // Should not be updated because key "a" already exists.
+			"b": "2", // Should be added to template variables because key "b" does not exist.
+		},
 	}, nil)
 	ctx := context.Background()
 	ctx = context.WithValue(ctx, gsContext.CheckoutPath{}, "/tmp")
 	ctx = context.WithValue(ctx, gsContext.RepositoryKey{}, repo)
+	templateVars := map[string]string{"a": "1"}
+	ctx = context.WithValue(ctx, gsContext.TemplateVarsKey{}, templateVars)
 
 	pf := &PluginFilter{provider: provider}
 	match, err := pf.Do(ctx)
 
 	require.NoError(t, err)
 	require.True(t, match)
+	require.Equal(t, map[string]string{"a": "1", "b": "2"}, templateVars)
 }
 
 func TestPluginFilter_Do_WithPullRequest(t *testing.T) {

@@ -15,6 +15,7 @@ import (
 	"github.com/stretchr/testify/require"
 	"github.com/wndhydrnt/saturn-bot/pkg/action"
 	"github.com/wndhydrnt/saturn-bot/pkg/cache"
+	sContext "github.com/wndhydrnt/saturn-bot/pkg/context"
 	"github.com/wndhydrnt/saturn-bot/pkg/filter"
 	"github.com/wndhydrnt/saturn-bot/pkg/git"
 	"github.com/wndhydrnt/saturn-bot/pkg/host"
@@ -336,7 +337,21 @@ func TestApplyTaskToRepository_UpdatePullRequest(t *testing.T) {
 	repo.EXPECT().GetPullRequestBody(prID).Return("")
 	repo.EXPECT().BaseBranch().Return("main")
 	repo.EXPECT().IsPullRequestOpen(prID).Return(true).AnyTimes()
-	repo.EXPECT().UpdatePullRequest(gomock.AssignableToTypeOf(host.PullRequestData{}), prID).Return(nil)
+	autoMergeAfter := time.Duration(0)
+	prData := host.PullRequestData{
+		AutoMergeAfter: &autoMergeAfter,
+		TaskName:       "unittest",
+		TemplateData: map[string]any{
+			"RepositoryFullName": "git.local/unit/test",
+			"RepositoryHost":     "git.local",
+			"RepositoryName":     "test",
+			"RepositoryOwner":    "unit",
+			"RepositoryWebUrl":   "http://git.local/unit/test",
+			"TaskName":           "unittest",
+			"Greeting":           "Hello",
+		},
+	}
+	repo.EXPECT().UpdatePullRequest(prData, prID).Return(nil)
 	repo.EXPECT().PullRequest(prID).Return(nil)
 	gitc := mock.NewMockGitClient(ctrl)
 	gitc.EXPECT().UpdateTaskBranch("saturn-bot--unittest", false, repo)
@@ -346,8 +361,10 @@ func TestApplyTaskToRepository_UpdatePullRequest(t *testing.T) {
 	gitc.EXPECT().HasRemoteChanges("main").Return(true, nil)
 	gitc.EXPECT().HasRemoteChanges("saturn-bot--unittest").Return(true, nil)
 	tw := &task.Wrapper{Task: &schema.Task{Name: "unittest"}}
+	ctx := context.Background()
+	ctx = context.WithValue(ctx, sContext.TemplateVarsKey{}, map[string]string{"Greeting": "Hello", "TaskName": "other"})
 
-	result, err := applyTaskToRepository(context.Background(), false, gitc, slog.Default(), repo, tw, tempDir)
+	result, err := applyTaskToRepository(ctx, false, gitc, slog.Default(), repo, tw, tempDir)
 
 	require.NoError(t, err)
 	assert.Equal(t, ApplyResultPrOpen, result)

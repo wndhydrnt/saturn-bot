@@ -110,6 +110,7 @@ func (r *executeRunner) run(taskFiles []string) error {
 				visitedRepositories[repo.FullName()] = struct{}{}
 				slog.Debug("Processing repository", "repository", repo.FullName())
 				ctx := context.WithValue(context.Background(), sContext.RepositoryKey{}, repo)
+				ctx = context.WithValue(ctx, sContext.TemplateVarsKey{}, make(map[string]string))
 				tasksToApply := findMatchingTasksForRepository(ctx, repo, tasks)
 				if len(tasksToApply) < 1 {
 					slog.Debug("No task matches the repository", "repository", repo.FullName())
@@ -391,15 +392,8 @@ func applyTaskToRepository(ctx context.Context, dryRun bool, gitc git.GitClient,
 		Labels:         task.SourceTask().Labels,
 		MergeOnce:      task.SourceTask().MergeOnce,
 		TaskName:       task.SourceTask().Name,
-		TemplateData: map[string]any{
-			"RepositoryFullName": repo.FullName(),
-			"RepositoryHost":     repo.Host(),
-			"RepositoryName":     repo.Name(),
-			"RepositoryOwner":    repo.Owner(),
-			"RepositoryWebUrl":   repo.WebUrl(),
-			"TaskName":           task.SourceTask().Name,
-		},
-		Title: task.SourceTask().PrTitle,
+		TemplateData:   newTemplateVars(ctx, repo, task),
+		Title:          task.SourceTask().PrTitle,
 	}
 
 	// Always create if branch of task contains changes compared to default branch and no PR has been created yet.
@@ -520,4 +514,22 @@ func inDirectory(dir string, f func() error) error {
 	}
 
 	return funcErr
+}
+
+func newTemplateVars(ctx context.Context, repo host.Repository, tk task.Task) map[string]any {
+	vars := make(map[string]any)
+	tplVars, inCtx := ctx.Value(sContext.TemplateVarsKey{}).(map[string]string)
+	if inCtx {
+		for k, v := range tplVars {
+			vars[k] = v
+		}
+	}
+
+	vars["RepositoryFullName"] = repo.FullName()
+	vars["RepositoryHost"] = repo.Host()
+	vars["RepositoryName"] = repo.Name()
+	vars["RepositoryOwner"] = repo.Owner()
+	vars["RepositoryWebUrl"] = repo.WebUrl()
+	vars["TaskName"] = tk.SourceTask().Name
+	return vars
 }
