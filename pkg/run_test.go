@@ -321,6 +321,52 @@ func TestApplyTaskToRepository_MergePullRequest_MergeConflict(t *testing.T) {
 	assert.Equal(t, ApplyResultConflict, result)
 }
 
+func TestApplyTaskToRepository_MergePullRequest_IsDraft(t *testing.T) {
+	tempDir, err := os.MkdirTemp("", "")
+	require.NoError(t, err)
+	defer func() {
+		_ = os.RemoveAll(tempDir)
+	}()
+
+	prID := "prID"
+	ctrl := gomock.NewController(t)
+	repo := setupRepoMock(ctrl)
+	repo.EXPECT().FindPullRequest("saturn-bot--unittest").Return(prID, nil)
+	repo.EXPECT().IsPullRequestClosed(prID).Return(false)
+	repo.EXPECT().IsPullRequestMerged(prID).Return(false)
+	repo.EXPECT().GetPullRequestBody(prID).Return("")
+	repo.EXPECT().BaseBranch().Return("main")
+	repo.EXPECT().IsPullRequestOpen(prID).Return(true).AnyTimes()
+	repo.EXPECT().PullRequest(prID).Return(nil)
+	autoMergeAfter := time.Duration(0)
+	prData := host.PullRequestData{
+		AutoMerge:      true,
+		AutoMergeAfter: &autoMergeAfter,
+		Draft:          true,
+		TaskName:       "unittest",
+		TemplateData: map[string]any{
+			"RepositoryFullName": "git.local/unit/test",
+			"RepositoryHost":     "git.local",
+			"RepositoryName":     "test",
+			"RepositoryOwner":    "unit",
+			"RepositoryWebUrl":   "http://git.local/unit/test",
+			"TaskName":           "unittest",
+		},
+	}
+	repo.EXPECT().UpdatePullRequest(prData, prID).Return(nil)
+	gitc := mock.NewMockGitClient(ctrl)
+	gitc.EXPECT().UpdateTaskBranch("saturn-bot--unittest", false, repo)
+	gitc.EXPECT().HasLocalChanges().Return(false, nil)
+	gitc.EXPECT().HasRemoteChanges("main").Return(true, nil)
+	gitc.EXPECT().HasRemoteChanges("saturn-bot--unittest").Return(false, nil)
+	tw := &task.Wrapper{Task: &schema.Task{AutoMerge: true, Draft: true, Name: "unittest"}}
+
+	result, err := applyTaskToRepository(context.Background(), false, gitc, slog.Default(), repo, tw, tempDir)
+
+	require.NoError(t, err)
+	assert.Equal(t, ApplyResultPrOpen, result)
+}
+
 func TestApplyTaskToRepository_UpdatePullRequest(t *testing.T) {
 	tempDir, err := os.MkdirTemp("", "")
 	require.NoError(t, err)

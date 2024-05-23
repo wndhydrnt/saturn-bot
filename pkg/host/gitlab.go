@@ -144,6 +144,10 @@ func (g *GitLabRepository) CreatePullRequest(branch string, data PullRequestData
 		return fmt.Errorf("create merge request for gitlab: %w", err)
 	}
 
+	if data.Draft {
+		title = "Draft: " + title
+	}
+
 	var assigneeIDs []int
 	for _, assignee := range data.Assignees {
 		user, err := g.userCache.get(assignee)
@@ -433,6 +437,10 @@ func (g *GitLabRepository) UpdatePullRequest(data PullRequestData, pr interface{
 	title, err := data.GetTitle()
 	if err != nil {
 		return fmt.Errorf("get title to update gitlab merge request: %w", err)
+	}
+
+	if data.Draft {
+		title = "Draft: " + title
 	}
 
 	if mr.Title != title {

@@ -41,6 +41,10 @@ type Task struct {
 	// Disable the task temporarily.
 	Disabled *bool `json:"disabled,omitempty" yaml:"disabled,omitempty" mapstructure:"disabled,omitempty"`
 
+	// If `true`, mark the pull request as a draft. If `true` and `autoMerge` is
+	// `true`, a pull request will not be automatically merged.
+	Draft bool `json:"draft,omitempty" yaml:"draft,omitempty" mapstructure:"draft,omitempty"`
+
 	// Filters allow targeting a specific repositories.
 	Filters []TaskFiltersElem `json:"filters,omitempty" yaml:"filters,omitempty" mapstructure:"filters,omitempty"`
 
@@ -251,6 +255,9 @@ func (j *Task) UnmarshalJSON(b []byte) error {
 	if v, ok := raw["createOnly"]; !ok || v == nil {
 		plain.CreateOnly = false
 	}
+	if v, ok := raw["draft"]; !ok || v == nil {
+		plain.Draft = false
+	}
 	if v, ok := raw["keepBranchAfterMerge"]; !ok || v == nil {
 		plain.KeepBranchAfterMerge = false
 	}
@@ -298,6 +305,9 @@ func (j *Task) UnmarshalYAML(value *yaml.Node) error {
 	}
 	if v, ok := raw["createOnly"]; !ok || v == nil {
 		plain.CreateOnly = false
+	}
+	if v, ok := raw["draft"]; !ok || v == nil {
+		plain.Draft = false
 	}
 	if v, ok := raw["keepBranchAfterMerge"]; !ok || v == nil {
 		plain.KeepBranchAfterMerge = false
