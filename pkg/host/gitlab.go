@@ -493,8 +493,8 @@ type GitLabHost struct {
 	userCache *userCache
 }
 
-func NewGitLabHost(token string) (*GitLabHost, error) {
-	client, err := gitlab.NewClient(token)
+func NewGitLabHost(addr, token string) (*GitLabHost, error) {
+	client, err := gitlab.NewClient(token, gitlab.WithBaseURL(addr))
 	if err != nil {
 		return nil, fmt.Errorf("initialize gitlab client: %w", err)
 	}

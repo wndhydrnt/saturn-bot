@@ -65,7 +65,7 @@ func ToOptions(c config.Configuration) (Opts, error) {
 func createHostsFromConfig(cfg config.Configuration) ([]host.Host, error) {
 	var hosts []host.Host
 	if cfg.GitlabToken != nil {
-		gitlab, err := host.NewGitLabHost(*cfg.GitlabToken)
+		gitlab, err := host.NewGitLabHost(cfg.GitlabAddress, *cfg.GitlabToken)
 		if err != nil {
 			return nil, fmt.Errorf("create gitlab host: %w", err)
 		}
