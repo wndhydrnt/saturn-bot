@@ -40,6 +40,7 @@ type PullRequestData struct {
 	Body           string
 	Labels         []string
 	MergeOnce      bool
+	Reviewers      []string
 	TaskName       string
 	TemplateData   map[string]any
 	Title          string
