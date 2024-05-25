@@ -209,6 +209,47 @@ func TestGitHubRepository_CreatePullRequest_WithAssignees(t *testing.T) {
 	require.True(t, gock.IsDone())
 }
 
+func TestGitHubRepository_CreatePullRequest_WithReviewers(t *testing.T) {
+	defer gock.Off()
+	gock.New("https://api.github.com").
+		Post("/repos/unit/test/pulls").
+		MatchType("json").
+		JSON(&github.NewPullRequest{
+			Base:                github.String("main"),
+			Body:                github.String(githubPullRequestBody),
+			Head:                github.String("unittest"),
+			MaintainerCanModify: github.Bool(true),
+			Title:               github.String("pull request title"),
+		}).
+		Reply(200).
+		JSON(&github.PullRequest{
+			Number: github.Int(1),
+		})
+	gock.New("https://api.github.com").
+		Post("/repos/unit/test/pulls/1/requested_reviewers").
+		MatchType("json").
+		JSON(github.ReviewersRequest{Reviewers: []string{"abby", "owen"}}).
+		Reply(200).
+		JSON(&github.PullRequest{
+			Number: github.Int(1),
+		})
+	prData := PullRequestData{
+		Body:      "pull request body",
+		Reviewers: []string{"abby", "owen"},
+		TaskName:  "Unit Test",
+		Title:     "pull request title",
+	}
+
+	repo := &GitHubRepository{
+		client: setupGitHubTestClient(),
+		repo:   setupGitHubRepository(),
+	}
+	err := repo.CreatePullRequest("unittest", prData)
+
+	require.NoError(t, err)
+	require.True(t, gock.IsDone())
+}
+
 func TestGitHubRepository_FindPullRequest(t *testing.T) {
 	defer gock.Off()
 	gock.New("https://api.github.com").
@@ -635,6 +676,14 @@ _This pull request has been created by [saturn-bot](https://github.com/wndhydrnt
 			"body":  body,
 		}).
 		Reply(200)
+	gock.New("https://api.github.com").
+		Get("/repos/unit/test/pulls/987/reviews").
+		MatchParams(map[string]string{
+			"page":     "1",
+			"per_page": "20",
+		}).
+		Reply(200).
+		JSON([]*github.PullRequestReview{})
 	pr := &github.PullRequest{
 		Body:   github.String("old body"),
 		Number: github.Int(987),
@@ -674,6 +723,14 @@ func TestGitHubRepository_UpdatePullRequest_NoUpdate(t *testing.T) {
 _This pull request has been created by [saturn-bot](https://github.com/wndhydrnt/saturn-bot)_ 🪐🤖.
 `
 	defer gock.Off()
+	gock.New("https://api.github.com").
+		Get("/repos/unit/test/pulls/987/reviews").
+		MatchParams(map[string]string{
+			"page":     "1",
+			"per_page": "20",
+		}).
+		Reply(200).
+		JSON([]*github.PullRequestReview{})
 	pr := &github.PullRequest{
 		Body:   github.String(body),
 		Number: github.Int(987),
@@ -725,6 +782,14 @@ _This pull request has been created by [saturn-bot](https://github.com/wndhydrnt
 			"assignees": []string{"y", "z"},
 		}).
 		Reply(200)
+	gock.New("https://api.github.com").
+		Get("/repos/unit/test/pulls/987/reviews").
+		MatchParams(map[string]string{
+			"page":     "1",
+			"per_page": "20",
+		}).
+		Reply(200).
+		JSON([]*github.PullRequestReview{})
 	pr := &github.PullRequest{
 		Assignees: []*github.User{
 			{Login: github.String("a")},
@@ -738,6 +803,70 @@ _This pull request has been created by [saturn-bot](https://github.com/wndhydrnt
 	prData := PullRequestData{
 		Assignees: []string{"y", "z", "a"},
 		Body:      "PR body",
+		TaskName:  "Unit Test",
+		Title:     "PR title",
+	}
+
+	repo := &GitHubRepository{
+		client: setupGitHubTestClient(),
+		repo:   setupGitHubRepository(),
+	}
+	err := repo.UpdatePullRequest(prData, pr)
+
+	require.NoError(t, err)
+	assert.True(t, gock.IsDone())
+}
+
+func TestGitHubRepository_UpdatePullRequest_UpdatedReviewers(t *testing.T) {
+	body := `PR body
+
+---
+
+**Auto-merge:** Disabled. Merge this manually.
+
+**Ignore:** This PR will be recreated if closed.
+
+---
+
+- [ ] If you want to rebase this PR, check this box
+
+---
+
+_This pull request has been created by [saturn-bot](https://github.com/wndhydrnt/saturn-bot)_ 🪐🤖.
+`
+	defer gock.Off()
+	gock.New("https://api.github.com").
+		Get("/repos/unit/test/pulls/987/reviews").
+		MatchParams(map[string]string{
+			"page":     "1",
+			"per_page": "20",
+		}).
+		Reply(200).
+		JSON([]*github.PullRequestReview{
+			{User: &github.User{Login: github.String("ellie")}},
+			{User: &github.User{Login: github.String("jesse")}},
+			{User: &github.User{Login: github.String("ellie")}}, // user ellie approved twice for some reason
+		})
+	gock.New("https://api.github.com").
+		Post("/repos/unit/test/pulls/987/requested_reviewers").
+		JSON(github.ReviewersRequest{Reviewers: []string{"dina"}}).
+		Reply(200)
+	gock.New("https://api.github.com").
+		Delete("/repos/unit/test/pulls/987/requested_reviewers").
+		JSON(github.ReviewersRequest{Reviewers: []string{"tommy"}}).
+		Reply(200)
+	pr := &github.PullRequest{
+		Body:   github.String(body),
+		Number: github.Int(987),
+		RequestedReviewers: []*github.User{
+			{Login: github.String("tommy")},
+			{Login: github.String("joel")},
+		},
+		Title: github.String("PR title"),
+	}
+	prData := PullRequestData{
+		Body:      "PR body",
+		Reviewers: []string{"ellie", "joel", "dina"},
 		TaskName:  "Unit Test",
 		Title:     "PR title",
 	}
