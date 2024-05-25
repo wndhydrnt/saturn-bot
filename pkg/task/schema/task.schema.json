@@ -142,6 +142,13 @@
       "default": "",
       "description": "If set, used as the title of the pull request.",
       "type": "string"
+    },
+    "reviewers": {
+      "description": "A list of usernames to set as reviewers of the pull request.",
+      "type": "array",
+      "items": {
+        "type": "string"
+      }
     }
   },
   "required": ["name"]
