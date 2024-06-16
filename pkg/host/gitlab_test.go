@@ -138,21 +138,21 @@ func TestGitLabRepository_CreatePullRequest_WithAssigneesReviewers(t *testing.T)
 	defer gock.Off()
 	gock.New("http://gitlab.local").
 		Get("/api/v4/users").
-		MatchParam("username", "jane").
+		MatchParam("username", "abby").
 		Reply(200).
 		JSON([]*gitlab.User{
 			{ID: 975},
 		})
 	gock.New("http://gitlab.local").
 		Get("/api/v4/users").
-		MatchParam("username", "joe").
+		MatchParam("username", "joel").
 		Reply(200).
 		JSON([]*gitlab.User{
 			{ID: 357},
 		})
 	gock.New("http://gitlab.local").
 		Get("/api/v4/users").
-		MatchParam("username", "jill").
+		MatchParam("username", "ellie").
 		Reply(200).
 		JSON([]*gitlab.User{
 			{ID: 642},
@@ -172,9 +172,9 @@ func TestGitLabRepository_CreatePullRequest_WithAssigneesReviewers(t *testing.T)
 		JSON(map[string]string{})
 	project := &gitlab.Project{DefaultBranch: "main", ID: 123}
 	prData := PullRequestData{
-		Assignees: []string{"jane"},
+		Assignees: []string{"abby"},
 		Body:      "Unit Test Body",
-		Reviewers: []string{"joe", "jill"},
+		Reviewers: []string{"joel", "ellie"},
 		Title:     "Unit Test Title",
 	}
 
@@ -660,21 +660,21 @@ func TestGitLabRepository_UpdatePullRequest_UpdatedAssigneesReviewers(t *testing
 	defer gock.Off()
 	gock.New("http://gitlab.local").
 		Get("/api/v4/users").
-		MatchParam("username", "x").
+		MatchParam("username", "ellie").
 		Reply(200).
 		JSON([]*gitlab.User{
 			{ID: 24},
 		})
 	gock.New("http://gitlab.local").
 		Get("/api/v4/users").
-		MatchParam("username", "y").
+		MatchParam("username", "lev").
 		Reply(200).
 		JSON([]*gitlab.User{
 			{ID: 25},
 		})
 	gock.New("http://gitlab.local").
 		Get("/api/v4/users").
-		MatchParam("username", "z").
+		MatchParam("username", "manny").
 		Reply(200).
 		JSON([]*gitlab.User{
 			{ID: 26},
@@ -691,23 +691,23 @@ func TestGitLabRepository_UpdatePullRequest_UpdatedAssigneesReviewers(t *testing
 		Reply(200).
 		JSON(map[string]string{})
 	prData := PullRequestData{
-		Assignees: []string{"y", "z", "a"},
+		Assignees: []string{"lev", "manny", "abby"},
 		Body:      "Unit Test Body",
-		Reviewers: []string{"e", "x"},
+		Reviewers: []string{"joel", "ellie"},
 		Title:     "PR Title",
 	}
 	project := &gitlab.Project{ID: 123}
 	mr := &gitlab.MergeRequest{
 		Assignees: []*gitlab.BasicUser{
-			{ID: 1, Username: "a"},
-			{ID: 2, Username: "b"},
-			{ID: 3, Username: "c"},
+			{ID: 1, Username: "abby"},
+			{ID: 2, Username: "owen"},
+			{ID: 3, Username: "mel"},
 		},
 		Description: gitlabMergeRequestBody,
 		IID:         987,
 		Reviewers: []*gitlab.BasicUser{
-			{ID: 4, Username: "d"},
-			{ID: 5, Username: "e"},
+			{ID: 4, Username: "tommy"},
+			{ID: 5, Username: "joel"},
 		},
 		Title: "PR Title",
 	}

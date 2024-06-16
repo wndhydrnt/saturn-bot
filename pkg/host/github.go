@@ -430,6 +430,10 @@ func (g *GitHubRepository) WebUrl() string {
 	return g.repo.GetHTMLURL()
 }
 
+// listAllReviews lists all reviews done for a pull request.
+// The function is necessary because the GitHub API removes a user from the list of "requested reviewers"
+// and adds the user to the list of reviews.
+// The function is used as part of the feature to set reviewers of a pull request.
 func (g *GitHubRepository) listAllReviews(prNumber int) ([]*github.PullRequestReview, error) {
 	opts := &github.ListOptions{
 		Page:    1,
@@ -480,6 +484,9 @@ func diffAssignees(current []*github.User, want []string) (toAdd, toRemove []str
 }
 
 func diffReviewers(requested, submitted []*github.User, want []string) (toAdd, toRemove []string) {
+	// Normalize the list of requested reviewers by adding the users that have already
+	// submitted a review.
+	// This is done to not request a review from users again if they have submitted one already.
 	for _, user := range submitted {
 		if slices.Contains(want, user.GetLogin()) {
 			requested = append(requested, user)
