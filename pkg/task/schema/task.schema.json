@@ -66,6 +66,11 @@
       "description": "Disable the task temporarily.",
       "type": "boolean"
     },
+    "draft": {
+      "default": false,
+      "description": "If `true`, mark the pull request as a draft. If `true` and `autoMerge` is `true`, a pull request will not be automatically merged.",
+      "type": "boolean"
+    },
     "filters": {
       "type": "array",
       "description": "Filters allow targeting a specific repositories.",

@@ -147,6 +147,7 @@ func TestGitHubRepository_CreatePullRequest(t *testing.T) {
 		JSON(&github.NewPullRequest{
 			Base:                github.String("main"),
 			Body:                github.String(githubPullRequestBody),
+			Draft:               github.Bool(false),
 			Head:                github.String("unittest"),
 			MaintainerCanModify: github.Bool(true),
 			Title:               github.String("pull request title"),
@@ -177,6 +178,7 @@ func TestGitHubRepository_CreatePullRequest_WithAssignees(t *testing.T) {
 		JSON(&github.NewPullRequest{
 			Base:                github.String("main"),
 			Body:                github.String(githubPullRequestBody),
+			Draft:               github.Bool(false),
 			Head:                github.String("unittest"),
 			MaintainerCanModify: github.Bool(true),
 			Title:               github.String("pull request title"),
@@ -197,6 +199,38 @@ func TestGitHubRepository_CreatePullRequest_WithAssignees(t *testing.T) {
 		Body:      "pull request body",
 		TaskName:  "Unit Test",
 		Title:     "pull request title",
+	}
+
+	repo := &GitHubRepository{
+		client: setupGitHubTestClient(),
+		repo:   setupGitHubRepository(),
+	}
+	err := repo.CreatePullRequest("unittest", prData)
+
+	require.NoError(t, err)
+	require.True(t, gock.IsDone())
+}
+
+func TestGitHubRepository_CreatePullRequest_Draft(t *testing.T) {
+	defer gock.Off()
+	gock.New("https://api.github.com").
+		Post("/repos/unit/test/pulls").
+		MatchType("json").
+		JSON(&github.NewPullRequest{
+			Base:                github.String("main"),
+			Body:                github.String(githubPullRequestBody),
+			Draft:               github.Bool(true),
+			Head:                github.String("unittest"),
+			MaintainerCanModify: github.Bool(true),
+			Title:               github.String("pull request title"),
+		}).
+		Reply(200).
+		JSON(map[string]string{})
+	prData := PullRequestData{
+		Body:     "pull request body",
+		Draft:    true,
+		TaskName: "Unit Test",
+		Title:    "pull request title",
 	}
 
 	repo := &GitHubRepository{
@@ -637,11 +671,13 @@ _This pull request has been created by [saturn-bot](https://github.com/wndhydrnt
 		Reply(200)
 	pr := &github.PullRequest{
 		Body:   github.String("old body"),
+		Draft:  github.Bool(true),
 		Number: github.Int(987),
 		Title:  github.String("old title"),
 	}
 	prData := PullRequestData{
 		Body:     "new body",
+		Draft:    false,
 		TaskName: "Unit Test",
 		Title:    "new title",
 	}

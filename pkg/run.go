@@ -389,6 +389,7 @@ func applyTaskToRepository(ctx context.Context, dryRun bool, gitc git.GitClient,
 		Assignees:      task.SourceTask().Assignees,
 		AutoMerge:      task.SourceTask().AutoMerge,
 		AutoMergeAfter: &autoMergeAfter,
+		Draft:          task.SourceTask().Draft,
 		Body:           task.SourceTask().PrBody,
 		Labels:         task.SourceTask().Labels,
 		MergeOnce:      task.SourceTask().MergeOnce,
@@ -416,8 +417,9 @@ func applyTaskToRepository(ctx context.Context, dryRun bool, gitc git.GitClient,
 		return ApplyResultPrCreated, nil
 	}
 
-	// Try to merge if auto-merge is enabled, no new changes have been detected and the pull request is open
-	if task.SourceTask().AutoMerge && !hasChanges && prID != nil && repo.IsPullRequestOpen(prID) {
+	// Try to merge if auto-merge is enabled, the pull request isn't a draft,
+	// no new changes have been detected and the pull request is open
+	if task.SourceTask().AutoMerge && !task.SourceTask().Draft && !hasChanges && prID != nil && repo.IsPullRequestOpen(prID) {
 		success, err := repo.HasSuccessfulPullRequestBuild(prID)
 		if err != nil {
 			return ApplyResultUnknown, fmt.Errorf("check for successful pull request build failed: %w", err)

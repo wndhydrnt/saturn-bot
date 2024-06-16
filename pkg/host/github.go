@@ -86,6 +86,7 @@ func (g *GitHubRepository) CreatePullRequest(branch string, data PullRequestData
 	gpr := &github.NewPullRequest{
 		Base:                g.repo.DefaultBranch,
 		Body:                github.String(body),
+		Draft:               github.Bool(data.Draft),
 		Head:                github.String(branch),
 		MaintainerCanModify: github.Bool(true),
 		Title:               github.String(title),
@@ -349,6 +350,11 @@ func (g *GitHubRepository) UpdatePullRequest(data PullRequestData, pr interface{
 	if gpr.GetBody() != body {
 		needsUpdate = true
 		gpr.Body = github.String(body)
+	}
+
+	if gpr.GetDraft() != data.Draft {
+		needsUpdate = true
+		gpr.Draft = github.Bool(data.Draft)
 	}
 
 	if needsUpdate {

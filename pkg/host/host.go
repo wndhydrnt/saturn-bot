@@ -38,6 +38,7 @@ type PullRequestData struct {
 	AutoMerge      bool
 	AutoMergeAfter *time.Duration
 	Body           string
+	Draft          bool
 	Labels         []string
 	MergeOnce      bool
 	TaskName       string
