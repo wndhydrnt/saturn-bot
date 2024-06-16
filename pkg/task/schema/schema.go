@@ -65,6 +65,9 @@ type Task struct {
 
 	// If set, used as the title of the pull request.
 	PrTitle string `json:"prTitle,omitempty" yaml:"prTitle,omitempty" mapstructure:"prTitle,omitempty"`
+
+	// A list of usernames to set as reviewers of the pull request.
+	Reviewers []string `json:"reviewers,omitempty" yaml:"reviewers,omitempty" mapstructure:"reviewers,omitempty"`
 }
 
 type TaskActionsElem struct {

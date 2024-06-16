@@ -121,7 +121,6 @@ func TestGitLabRepository_CreatePullRequest(t *testing.T) {
 			"description":   "Unit Test Body\n\n---\n\n**Auto-merge:** Disabled. Merge this manually.\n\n**Ignore:** This PR will be recreated if closed.\n\n---\n\n- [ ] If you want to rebase this PR, check this box\n\n---\n\n_This pull request has been created by [saturn-bot](https://github.com/wndhydrnt/saturn-bot)_ 🪐🤖.\n",
 			"source_branch": "saturn-bot--unit-test",
 			"target_branch": "main",
-			"assignee_ids":  nil,
 		}).
 		Reply(200).
 		JSON(map[string]string{})
@@ -135,21 +134,28 @@ func TestGitLabRepository_CreatePullRequest(t *testing.T) {
 	require.True(t, gock.IsDone())
 }
 
-func TestGitLabRepository_CreatePullRequest_WithAssignees(t *testing.T) {
+func TestGitLabRepository_CreatePullRequest_WithAssigneesReviewers(t *testing.T) {
 	defer gock.Off()
 	gock.New("http://gitlab.local").
 		Get("/api/v4/users").
-		MatchParam("username", "jane").
+		MatchParam("username", "abby").
 		Reply(200).
 		JSON([]*gitlab.User{
 			{ID: 975},
 		})
 	gock.New("http://gitlab.local").
 		Get("/api/v4/users").
-		MatchParam("username", "joe").
+		MatchParam("username", "joel").
 		Reply(200).
 		JSON([]*gitlab.User{
 			{ID: 357},
+		})
+	gock.New("http://gitlab.local").
+		Get("/api/v4/users").
+		MatchParam("username", "ellie").
+		Reply(200).
+		JSON([]*gitlab.User{
+			{ID: 642},
 		})
 	gock.New("http://gitlab.local").
 		Post("/api/v4/projects/123/merge_requests").
@@ -159,12 +165,18 @@ func TestGitLabRepository_CreatePullRequest_WithAssignees(t *testing.T) {
 			"description":   "Unit Test Body\n\n---\n\n**Auto-merge:** Disabled. Merge this manually.\n\n**Ignore:** This PR will be recreated if closed.\n\n---\n\n- [ ] If you want to rebase this PR, check this box\n\n---\n\n_This pull request has been created by [saturn-bot](https://github.com/wndhydrnt/saturn-bot)_ 🪐🤖.\n",
 			"source_branch": "saturn-bot--unit-test",
 			"target_branch": "main",
-			"assignee_ids":  []int{975, 357},
+			"assignee_ids":  []int{975},
+			"reviewer_ids":  []int{357, 642},
 		}).
 		Reply(200).
 		JSON(map[string]string{})
 	project := &gitlab.Project{DefaultBranch: "main", ID: 123}
-	prData := PullRequestData{Assignees: []string{"jane", "joe"}, Body: "Unit Test Body", Title: "Unit Test Title"}
+	prData := PullRequestData{
+		Assignees: []string{"abby"},
+		Body:      "Unit Test Body",
+		Reviewers: []string{"joel", "ellie"},
+		Title:     "Unit Test Title",
+	}
 
 	client := setupClient()
 	uc := &userCache{
@@ -189,7 +201,6 @@ func TestGitLabRepository_CreatePullRequest_WithLabels(t *testing.T) {
 			"labels":        "unit,test",
 			"source_branch": "saturn-bot--unit-test",
 			"target_branch": "main",
-			"assignee_ids":  nil,
 		}).
 		Reply(200).
 		JSON(map[string]string{})
@@ -607,6 +618,7 @@ func TestGitLabRepository_UpdatePullRequest(t *testing.T) {
 			"title":        "New PR Title",
 			"description":  "New PR Body\n\n---\n\n**Auto-merge:** Disabled. Merge this manually.\n\n**Ignore:** This PR will be recreated if closed.\n\n---\n\n- [ ] If you want to rebase this PR, check this box\n\n---\n\n_This pull request has been created by [saturn-bot](https://github.com/wndhydrnt/saturn-bot)_ 🪐🤖.\n",
 			"assignee_ids": nil,
+			"reviewer_ids": nil,
 		}).
 		Reply(200).
 		JSON(map[string]string{})
@@ -644,18 +656,25 @@ func TestGitLabRepository_UpdatePullRequest_NoUpdateRequired(t *testing.T) {
 	require.True(t, gock.IsDone())
 }
 
-func TestGitLabRepository_UpdatePullRequest_UpdatedAssignees(t *testing.T) {
+func TestGitLabRepository_UpdatePullRequest_UpdatedAssigneesReviewers(t *testing.T) {
 	defer gock.Off()
 	gock.New("http://gitlab.local").
 		Get("/api/v4/users").
-		MatchParam("username", "y").
+		MatchParam("username", "ellie").
+		Reply(200).
+		JSON([]*gitlab.User{
+			{ID: 24},
+		})
+	gock.New("http://gitlab.local").
+		Get("/api/v4/users").
+		MatchParam("username", "lev").
 		Reply(200).
 		JSON([]*gitlab.User{
 			{ID: 25},
 		})
 	gock.New("http://gitlab.local").
 		Get("/api/v4/users").
-		MatchParam("username", "z").
+		MatchParam("username", "manny").
 		Reply(200).
 		JSON([]*gitlab.User{
 			{ID: 26},
@@ -667,24 +686,30 @@ func TestGitLabRepository_UpdatePullRequest_UpdatedAssignees(t *testing.T) {
 			"title":        "PR Title",
 			"description":  gitlabMergeRequestBody,
 			"assignee_ids": []int{25, 26, 1},
+			"reviewer_ids": []int{5, 24},
 		}).
 		Reply(200).
 		JSON(map[string]string{})
 	prData := PullRequestData{
-		Assignees: []string{"y", "z", "a"},
+		Assignees: []string{"lev", "manny", "abby"},
 		Body:      "Unit Test Body",
+		Reviewers: []string{"joel", "ellie"},
 		Title:     "PR Title",
 	}
 	project := &gitlab.Project{ID: 123}
 	mr := &gitlab.MergeRequest{
 		Assignees: []*gitlab.BasicUser{
-			{ID: 1, Username: "a"},
-			{ID: 2, Username: "b"},
-			{ID: 3, Username: "c"},
+			{ID: 1, Username: "abby"},
+			{ID: 2, Username: "owen"},
+			{ID: 3, Username: "mel"},
 		},
 		Description: gitlabMergeRequestBody,
 		IID:         987,
-		Title:       "PR Title",
+		Reviewers: []*gitlab.BasicUser{
+			{ID: 4, Username: "tommy"},
+			{ID: 5, Username: "joel"},
+		},
+		Title: "PR Title",
 	}
 	client := setupClient()
 	uc := &userCache{

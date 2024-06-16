@@ -134,42 +134,58 @@ func (g *GitLabRepository) CreatePullRequestComment(body string, pr interface{})
 }
 
 func (g *GitLabRepository) CreatePullRequest(branch string, data PullRequestData) error {
+	opts := &gitlab.CreateMergeRequestOptions{
+		SourceBranch: gitlab.Ptr(branch),
+		TargetBranch: gitlab.Ptr(g.project.DefaultBranch),
+	}
+
 	description, err := data.GetBody()
 	if err != nil {
 		return fmt.Errorf("create merge request for gitlab: %w", err)
 	}
+	opts.Description = gitlab.Ptr(description)
 
 	title, err := data.GetTitle()
 	if err != nil {
 		return fmt.Errorf("create merge request for gitlab: %w", err)
 	}
+	opts.Title = gitlab.Ptr(title)
 
-	var assigneeIDs []int
-	for _, assignee := range data.Assignees {
-		user, err := g.userCache.get(assignee)
-		if err != nil {
-			slog.Warn("Cannot find assignee in GitLab to add to new merge request", "assignee", assignee, "err", err)
-			continue
+	if len(data.Assignees) > 0 {
+		var assigneeIDs []int
+		for _, assignee := range data.Assignees {
+			user, err := g.userCache.get(assignee)
+			if err != nil {
+				slog.Warn("Cannot find assignee in GitLab to add to new merge request", "assignee", assignee, "err", err)
+				continue
+			}
+
+			assigneeIDs = append(assigneeIDs, user.ID)
 		}
 
-		assigneeIDs = append(assigneeIDs, user.ID)
+		opts.AssigneeIDs = gitlab.Ptr(assigneeIDs)
 	}
 
-	var labels *gitlab.LabelOptions
-	if len(data.Labels) > 0 {
-		labels = gitlab.Ptr(gitlab.LabelOptions(data.Labels))
+	if len(data.Reviewers) > 0 {
+		var reviewerIDs []int
+		for _, reviewer := range data.Reviewers {
+			user, err := g.userCache.get(reviewer)
+			if err != nil {
+				slog.Warn("Cannot find reviewer in GitLab to add to new merge request", "reviewer", reviewer, "err", err)
+				continue
+			}
+
+			reviewerIDs = append(reviewerIDs, user.ID)
+		}
+
+		opts.ReviewerIDs = gitlab.Ptr(reviewerIDs)
 	}
-	_, _, err = g.client.MergeRequests.CreateMergeRequest(
-		g.project.ID,
-		&gitlab.CreateMergeRequestOptions{
-			AssigneeIDs:  &assigneeIDs,
-			Description:  gitlab.Ptr(description),
-			Labels:       labels,
-			SourceBranch: gitlab.Ptr(branch),
-			TargetBranch: gitlab.Ptr(g.project.DefaultBranch),
-			Title:        gitlab.Ptr(title),
-		},
-	)
+
+	if len(data.Labels) > 0 {
+		opts.Labels = gitlab.Ptr(gitlab.LabelOptions(data.Labels))
+	}
+
+	_, _, err = g.client.MergeRequests.CreateMergeRequest(g.project.ID, opts)
 	if err != nil {
 		return fmt.Errorf("create merge request for project %d: %w", g.project.ID, err)
 	}
@@ -448,26 +464,14 @@ func (g *GitLabRepository) UpdatePullRequest(data PullRequestData, pr interface{
 		needsUpdate = true
 	}
 
-	assignedAssignees := map[string]*gitlab.BasicUser{}
-	for _, user := range mr.Assignees {
-		assignedAssignees[user.Username] = user
+	assigneeIDs, hasChanges := g.diffUsers(mr.Assignees, data.Assignees)
+	if hasChanges {
+		needsUpdate = true
 	}
 
-	var assigneeIDs []int
-	for _, assignee := range data.Assignees {
-		assignedAssignee, ok := assignedAssignees[assignee]
-		if ok {
-			assigneeIDs = append(assigneeIDs, assignedAssignee.ID)
-		} else {
-			user, err := g.userCache.get(assignee)
-			if err != nil {
-				slog.Warn("Cannot find assignee in GitLab to update merge request", "assignee", assignee, "err", err)
-				continue
-			}
-
-			needsUpdate = true
-			assigneeIDs = append(assigneeIDs, user.ID)
-		}
+	reviewerIDs, hasChanges := g.diffUsers(mr.Reviewers, data.Reviewers)
+	if hasChanges {
+		needsUpdate = true
 	}
 
 	if needsUpdate {
@@ -477,6 +481,7 @@ func (g *GitLabRepository) UpdatePullRequest(data PullRequestData, pr interface{
 			&gitlab.UpdateMergeRequestOptions{
 				AssigneeIDs: gitlab.Ptr(assigneeIDs),
 				Description: gitlab.Ptr(body),
+				ReviewerIDs: gitlab.Ptr(reviewerIDs),
 				Title:       gitlab.Ptr(title),
 			},
 		)
@@ -486,6 +491,33 @@ func (g *GitLabRepository) UpdatePullRequest(data PullRequestData, pr interface{
 	}
 
 	return nil
+}
+
+func (g *GitLabRepository) diffUsers(assigned []*gitlab.BasicUser, in []string) ([]int, bool) {
+	nameToAssignedUser := map[string]*gitlab.BasicUser{}
+	for _, user := range assigned {
+		nameToAssignedUser[user.Username] = user
+	}
+
+	var ids []int
+	var needsUpdate bool
+	for _, name := range in {
+		assignedUser, ok := nameToAssignedUser[name]
+		if ok {
+			ids = append(ids, assignedUser.ID)
+		} else {
+			user, err := g.userCache.get(name)
+			if err != nil {
+				slog.Warn("Cannot find user in GitLab", "user", name, "err", err)
+				continue
+			}
+
+			needsUpdate = true
+			ids = append(ids, user.ID)
+		}
+	}
+
+	return ids, needsUpdate
 }
 
 type GitLabHost struct {

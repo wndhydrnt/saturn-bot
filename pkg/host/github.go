@@ -102,6 +102,19 @@ func (g *GitHubRepository) CreatePullRequest(branch string, data PullRequestData
 		}
 	}
 
+	if len(data.Reviewers) > 0 {
+		_, _, err := g.client.PullRequests.RequestReviewers(
+			ctx,
+			g.repo.GetOwner().GetLogin(),
+			g.repo.GetName(),
+			pr.GetNumber(),
+			github.ReviewersRequest{Reviewers: data.Reviewers},
+		)
+		if err != nil {
+			return fmt.Errorf("request review for pull request: %w", err)
+		}
+	}
+
 	return nil
 }
 
@@ -358,26 +371,11 @@ func (g *GitHubRepository) UpdatePullRequest(data PullRequestData, pr interface{
 		}
 	}
 
-	var assigneesToDelete []string
-	var currentAssignees []string
-	for _, user := range gpr.Assignees {
-		currentAssignees = append(currentAssignees, user.GetLogin())
-		if !slices.Contains(data.Assignees, user.GetLogin()) {
-			assigneesToDelete = append(assigneesToDelete, user.GetLogin())
-		}
-	}
-
-	if len(assigneesToDelete) > 0 {
-		_, _, err = g.client.Issues.RemoveAssignees(ctx, g.repo.GetOwner().GetLogin(), g.repo.GetName(), gpr.GetNumber(), assigneesToDelete)
+	assigneesToAdd, assigneesToRemove := diffAssignees(gpr.Assignees, data.Assignees)
+	if len(assigneesToRemove) > 0 {
+		_, _, err = g.client.Issues.RemoveAssignees(ctx, g.repo.GetOwner().GetLogin(), g.repo.GetName(), gpr.GetNumber(), assigneesToRemove)
 		if err != nil {
 			return fmt.Errorf("remove assignees from updated pull request %d: %w", gpr.GetNumber(), err)
-		}
-	}
-
-	var assigneesToAdd []string
-	for _, assignee := range data.Assignees {
-		if !slices.Contains(currentAssignees, assignee) {
-			assigneesToAdd = append(assigneesToAdd, assignee)
 		}
 	}
 
@@ -388,11 +386,114 @@ func (g *GitHubRepository) UpdatePullRequest(data PullRequestData, pr interface{
 		}
 	}
 
+	reviews, err := g.listAllReviews(gpr.GetNumber())
+	if err != nil {
+		return err
+	}
+
+	var submittedReviewers []*github.User
+	for _, review := range reviews {
+		submittedReviewers = append(submittedReviewers, review.User)
+	}
+
+	reviewersToAdd, reviewersToRemove := diffReviewers(gpr.RequestedReviewers, submittedReviewers, data.Reviewers)
+	if len(reviewersToAdd) > 0 {
+		_, _, err := g.client.PullRequests.RequestReviewers(
+			ctx,
+			g.repo.GetOwner().GetLogin(),
+			g.repo.GetName(),
+			gpr.GetNumber(),
+			github.ReviewersRequest{Reviewers: reviewersToAdd},
+		)
+		if err != nil {
+			return fmt.Errorf("update to add requested reviewers on pull request %d: %w", gpr.GetNumber(), err)
+		}
+	}
+
+	if len(reviewersToRemove) > 0 {
+		_, err := g.client.PullRequests.RemoveReviewers(
+			ctx,
+			g.repo.GetOwner().GetLogin(),
+			g.repo.GetName(),
+			gpr.GetNumber(),
+			github.ReviewersRequest{Reviewers: reviewersToRemove},
+		)
+		if err != nil {
+			return fmt.Errorf("update to remove requested reviewers from pull request %d: %w", gpr.GetNumber(), err)
+		}
+	}
+
 	return nil
 }
 
 func (g *GitHubRepository) WebUrl() string {
 	return g.repo.GetHTMLURL()
+}
+
+// listAllReviews lists all reviews done for a pull request.
+// The function is necessary because the GitHub API removes a user from the list of "requested reviewers"
+// and adds the user to the list of reviews.
+// The function is used as part of the feature to set reviewers of a pull request.
+func (g *GitHubRepository) listAllReviews(prNumber int) ([]*github.PullRequestReview, error) {
+	opts := &github.ListOptions{
+		Page:    1,
+		PerPage: 20,
+	}
+	var reviews []*github.PullRequestReview
+	for {
+		batch, resp, err := g.client.PullRequests.ListReviews(
+			ctx,
+			g.repo.GetOwner().GetLogin(),
+			g.repo.GetName(),
+			prNumber,
+			opts,
+		)
+		if err != nil {
+			return nil, fmt.Errorf("list reviews of pull request %d: %w", prNumber, err)
+		}
+
+		reviews = append(reviews, batch...)
+
+		if resp.NextPage == 0 {
+			return reviews, nil
+		}
+
+		opts.Page = resp.NextPage
+	}
+}
+
+func diffAssignees(current []*github.User, want []string) (toAdd, toRemove []string) {
+	var currentLogins []string
+	for _, user := range current {
+		currentLogins = append(currentLogins, user.GetLogin())
+		if !slices.Contains(want, user.GetLogin()) {
+			toRemove = append(toRemove, user.GetLogin())
+		}
+	}
+
+	for _, assignee := range want {
+		if !slices.Contains(currentLogins, assignee) {
+			toAdd = append(toAdd, assignee)
+		}
+	}
+
+	// sort to ensure that slices.Compact() catches all duplicates
+	slices.Sort(toAdd)
+	slices.Sort(toRemove)
+	return slices.Compact(toAdd), slices.Compact(toRemove)
+}
+
+func diffReviewers(requested, submitted []*github.User, want []string) (toAdd, toRemove []string) {
+	// Normalize the list of requested reviewers by adding the users that have already
+	// submitted a review.
+	// This is done to not request a review from users again if they have submitted one already.
+	for _, user := range submitted {
+		if slices.Contains(want, user.GetLogin()) {
+			requested = append(requested, user)
+		}
+	}
+
+	return diffAssignees(requested, want)
 }
 
 type GitHubHost struct {
