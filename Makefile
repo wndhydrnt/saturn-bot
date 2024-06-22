@@ -30,6 +30,10 @@ build_all: build_darwin_amd64 build_darwin_arm64 build_linux_arm64 build_linux_a
 checksums:
 	sha256sum saturn-bot-$(VERSION).* > sha256sums.txt
 
+generate_openapi_server:
+	rm -f ./pkg/server/handler/api/*.go
+	docker run --rm -v "$(PWD):/work" --workdir "/work/pkg/server/handler/api" openapitools/openapi-generator-cli:v7.6.0 generate -i openapi.yaml -g go-server --additional-properties=router=chi,outputAsLibrary=true,sourceFolder=.,packageName=api
+
 generate_go:
 ifeq (, $(shell which mockgen))
 	go install go.uber.org/mock/mockgen@latest
