@@ -34,6 +34,10 @@ generate_openapi_server:
 	rm -f ./pkg/server/handler/api/*.go
 	docker run --rm -v "$(PWD):/work" --workdir "/work/pkg/server/handler/api" openapitools/openapi-generator-cli:v7.6.0 generate -i openapi.yaml -g go-server --additional-properties=router=chi,outputAsLibrary=true,sourceFolder=.,packageName=api
 
+generate_openapi_worker:
+	rm -f ./pkg/worker/client/*.go
+	docker run --rm -v "$(PWD):/work" --workdir "/work/pkg/worker/client" openapitools/openapi-generator-cli:v7.6.0 generate -i ../../server/handler/api/openapi.yaml -g go --additional-properties=packageName=client,withGoMod=false,generateInterfaces=true
+
 generate_go:
 ifeq (, $(shell which mockgen))
 	go install go.uber.org/mock/mockgen@latest

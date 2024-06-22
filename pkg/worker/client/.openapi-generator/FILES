@@ -1,0 +1,10 @@
+.gitignore
+api_worker.go
+client.go
+configuration.go
+model_get_work_v1_200_response.go
+model_report_work_v1_201_response.go
+model_report_work_v1_request.go
+model_report_work_v1_request_repository_results_inner.go
+response.go
+utils.go
