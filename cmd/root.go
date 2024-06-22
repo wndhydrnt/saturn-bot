@@ -23,8 +23,10 @@ var rootCmd = &cobra.Command{
 
 func Execute() {
 	rootCmd.AddCommand(createRunCommand())
+	rootCmd.AddCommand(createServerCommand())
 	rootCmd.AddCommand(createTryCommand())
 	rootCmd.AddCommand(createVersionCommand())
+	rootCmd.AddCommand(createWorkerCommand())
 	if err := rootCmd.Execute(); err != nil {
 		os.Exit(1)
 	}
@@ -40,7 +42,7 @@ func handleError(err error, out io.Writer) {
 		slog.Error("Configuration file contains errors:")
 		fmt.Fprintf(out, "%s\n", validationError.Error())
 	} else {
-		slog.Error("run command failed", "err", err)
+		slog.Error("command failed", "err", err)
 	}
 
 	os.Exit(1)
