@@ -13,12 +13,12 @@ Create, modify or delete files in many repositories in parallel.
 
 ## Features
 
-- [Create]() or [delete]() files.
-- [Insert](), [replace]() or [delete]() lines in files.
-- [Filter]() which repositories to modify.
-- Support for [GitHub]() and [GitLab]().
-- Write [plugins](./plugins/index.md) in [Go](./plugins/go.md) or [Python](./plugins/python.md) to implement custom logic and complex changes.
-- [Automatically merge pull requests]() if all checks have passed and all approvals have been given.
+- Create or delete files.
+- Insert, replace or delete lines in files.
+- [Filter](task/filters/index.md) which repositories to modify.
+- Support for GitHub and GitLab.
+- Write plugins in Go or Python to implement custom logic and complex changes.
+- Automatically merge pull requests if all checks have passed and all approvals have been given.
 
 ## Quickstart
 

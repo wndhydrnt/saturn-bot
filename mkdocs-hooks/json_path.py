@@ -29,6 +29,10 @@ def on_page_markdown(
         with open(schema_path) as f:
             data = json.load(f)
 
+        json_path_result = JSONPath(json_path).parse(data)
+        if len(json_path_result) == 0:
+            raise RuntimeError(f"JSON path '{json_path}' not found in document")
+
         content = JSONPath(json_path).parse(data)[0]
         result.append(before + content + after)
 
