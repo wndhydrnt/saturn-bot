@@ -30,6 +30,6 @@ Regular expression to match against the content of the file.
 filters:
   - filter: fileContent
     params:
-      - path: "hello-world.txt"
-        regexp: "Hello"
+      path: "hello-world.txt"
+      regexp: "Hello"
 ```

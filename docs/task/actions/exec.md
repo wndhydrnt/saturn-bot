@@ -2,7 +2,7 @@
 
 Execute a command.
 
-saturn-bot sets the current working dir of the command to the checkout of the repository.
+saturn-bot sets the current working directory of the command to the checkout of a repository.
 
 ## Parameters
 

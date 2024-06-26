@@ -20,5 +20,5 @@ Path of the file to create in the repository.
 actions:
   - action: fileDelete
     params:
-      - path: "hello-world.txt"
+      path: "hello-world.txt"
 ```

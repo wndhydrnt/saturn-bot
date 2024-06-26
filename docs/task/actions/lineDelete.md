@@ -40,8 +40,8 @@ Search string that gets matched against each line in the file. If the line equal
 actions:
   - action: lineDelete
     params:
-      - path: "hello-world.txt"
-        search: "Hello World"
+      path: "hello-world.txt"
+      search: "Hello World"
 ```
 
 ```yaml
@@ -49,6 +49,6 @@ actions:
 actions:
   - action: lineDelete
     params:
-      - path: "hello-world.txt"
-        regexp: "Hello.+"
+      path: "hello-world.txt"
+      regexp: "Hello.+"
 ```
