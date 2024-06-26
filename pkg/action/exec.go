@@ -84,7 +84,7 @@ type execAction struct {
 
 func (a *execAction) Apply(_ context.Context) error {
 	la := &logAdapter{name: filepath.Base(a.name)}
-	cmd := exec.Command(a.name, a.args...)
+	cmd := exec.Command(a.name, a.args...) // #nosec G204 -- users can pass arbitrary values here
 	cmd.Stdout = la
 	cmd.Stderr = la
 	errChan := make(chan error)
