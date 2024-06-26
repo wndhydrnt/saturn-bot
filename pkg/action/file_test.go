@@ -18,7 +18,7 @@ func TestFileCreate_Apply(t *testing.T) {
 			name:    "When parameter `content` is set and the file does not exist then it creates the file",
 			files:   map[string]string{},
 			factory: FileCreateFactory{},
-			params: map[string]string{
+			params: map[string]any{
 				"content": "abc\n",
 				"path":    "test.txt",
 			},
@@ -40,7 +40,7 @@ func TestFileCreate_Apply(t *testing.T) {
 				return filepath.Join(tmpDir, "task.yaml")
 			},
 			factory: FileCreateFactory{},
-			params: map[string]string{
+			params: map[string]any{
 				"contentFromFile": "content.txt",
 				"path":            "test.txt",
 			},
@@ -51,9 +51,9 @@ func TestFileCreate_Apply(t *testing.T) {
 			name:    "When `overwrite=false` and the file exists then it does not update the file",
 			files:   map[string]string{"test.txt": "abc\n"},
 			factory: FileCreateFactory{},
-			params: map[string]string{
+			params: map[string]any{
 				"content":   "def\n",
-				"overwrite": "false",
+				"overwrite": false,
 				"path":      "test.txt",
 			},
 			wantFiles: map[string]string{"test.txt": "abc\n"},
@@ -62,9 +62,9 @@ func TestFileCreate_Apply(t *testing.T) {
 			name:    "When `overwrite=true` and the file exists then it updates the file",
 			files:   map[string]string{"test.txt": "abc\n"},
 			factory: FileCreateFactory{},
-			params: map[string]string{
+			params: map[string]any{
 				"content":   "def\n",
-				"overwrite": "true",
+				"overwrite": true,
 				"path":      "test.txt",
 			},
 			wantFiles: map[string]string{"test.txt": "def\n"},
@@ -73,9 +73,9 @@ func TestFileCreate_Apply(t *testing.T) {
 			name:    "When `overwrite=true` and the file does not exist then it creates the file",
 			files:   map[string]string{},
 			factory: FileCreateFactory{},
-			params: map[string]string{
+			params: map[string]any{
 				"content":   "def\n",
-				"overwrite": "true",
+				"overwrite": true,
 				"path":      "test.txt",
 			},
 			wantFiles: map[string]string{"test.txt": "def\n"},
@@ -84,7 +84,7 @@ func TestFileCreate_Apply(t *testing.T) {
 			name:    "When `path` contains directories and those directories do not exist then it creates the directories and the file",
 			files:   map[string]string{},
 			factory: FileCreateFactory{},
-			params: map[string]string{
+			params: map[string]any{
 				"content": "abc\n",
 				"path":    "unit/test/test.txt",
 			},
@@ -93,7 +93,7 @@ func TestFileCreate_Apply(t *testing.T) {
 		{
 			name:    "When parameter `path` is not set then it errors",
 			factory: FileCreateFactory{},
-			params: map[string]string{
+			params: map[string]any{
 				"content": "abc\n",
 			},
 			wantError: errors.New("required parameter `path` not set"),
@@ -101,7 +101,7 @@ func TestFileCreate_Apply(t *testing.T) {
 		{
 			name:    "When parameters `content` and `contentFromFile` are not set then it errors",
 			factory: FileCreateFactory{},
-			params: map[string]string{
+			params: map[string]any{
 				"path": "test.txt",
 			},
 			wantError: errors.New("either parameter `content` or `contentFromFile` is required"),
@@ -109,7 +109,7 @@ func TestFileCreate_Apply(t *testing.T) {
 		{
 			name:    "When parameters `content` and `contentFromFile` are both set then it errors",
 			factory: FileCreateFactory{},
-			params: map[string]string{
+			params: map[string]any{
 				"content":         "abc\n",
 				"contentFromFile": "content.txt",
 				"path":            "test.txt",
@@ -117,14 +117,14 @@ func TestFileCreate_Apply(t *testing.T) {
 			wantError: errors.New("parameters `content` and `contentFromFile` cannot be set at the same time"),
 		},
 		{
-			name:    "When parameter `mode` is invalid then it errors",
+			name:    "When parameter `mode` is not an integer then it errors",
 			factory: FileCreateFactory{},
-			params: map[string]string{
+			params: map[string]any{
 				"content": "abc\n",
 				"mode":    "75r",
 				"path":    "test.txt",
 			},
-			wantError: errors.New("parse value of parameter `mode`: strconv.ParseUint: parsing \"75r\": invalid syntax"),
+			wantError: errors.New("parameter `mode` is of type string not int"),
 		},
 	}
 
@@ -138,9 +138,9 @@ func TestFileCreate_Apply_FileMode(t *testing.T) {
 	require.NoError(t, err)
 
 	fac := FileCreateFactory{}
-	a, err := fac.Create(map[string]string{
+	a, err := fac.Create(map[string]any{
 		"content": "echo Unit Test",
-		"mode":    "755",
+		"mode":    493, // 755 in octal
 		"path":    "test.sh",
 	}, "")
 	require.NoError(t, err)
@@ -160,7 +160,7 @@ func TestFileDelete_Apply(t *testing.T) {
 			name:    "When the file exists then it deletes the file",
 			files:   map[string]string{"test.txt": "abc\n"},
 			factory: FileDeleteFactory{},
-			params: map[string]string{
+			params: map[string]any{
 				"path": "test.txt",
 			},
 			wantFiles: map[string]string{},
@@ -169,7 +169,7 @@ func TestFileDelete_Apply(t *testing.T) {
 			name:    "When the file does not exist then it does nothing",
 			files:   map[string]string{},
 			factory: FileDeleteFactory{},
-			params: map[string]string{
+			params: map[string]any{
 				"path": "test.txt",
 			},
 			wantFiles: map[string]string{},
@@ -178,7 +178,7 @@ func TestFileDelete_Apply(t *testing.T) {
 			name:      "When parameter `path` is not set then it errors",
 			files:     map[string]string{},
 			factory:   FileDeleteFactory{},
-			params:    map[string]string{},
+			params:    map[string]any{},
 			wantError: errors.New("required parameter `path` not set"),
 		},
 	}

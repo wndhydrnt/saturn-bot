@@ -19,14 +19,33 @@ const (
 
 type LineDeleteFactory struct{}
 
-func (f LineDeleteFactory) Create(params map[string]string, _ string) (Action, error) {
-	path := params["path"]
-	if path == "" {
+func (f LineDeleteFactory) Create(params map[string]any, _ string) (Action, error) {
+	if params["path"] == nil {
 		return nil, fmt.Errorf("required parameter `path` not set")
 	}
+	path, ok := params["path"].(string)
+	if !ok {
+		return nil, fmt.Errorf("parameter `path` is of type %T not string", params["path"])
+	}
 
-	search := params["search"]
-	regexpRaw := params["regexp"]
+	var search string
+	if params["search"] != nil {
+		searchCast, ok := params["search"].(string)
+		if !ok {
+			return nil, fmt.Errorf("parameter `search` is of type %T not string", params["search"])
+		}
+		search = searchCast
+	}
+
+	var regexpRaw string
+	if params["regexp"] != nil {
+		regexpCast, ok := params["regexp"].(string)
+		if !ok {
+			return nil, fmt.Errorf("parameter `regexp` is of type %T not string", params["regexp"])
+		}
+		regexpRaw = regexpCast
+	}
+
 	if search == "" && regexpRaw == "" {
 		return nil, fmt.Errorf("either parameter `regexp` or `search` must be set")
 	}
@@ -97,10 +116,15 @@ func (d *lineDelete) String() string {
 
 type LineInsertFactory struct{}
 
-func (f LineInsertFactory) Create(params map[string]string, _ string) (Action, error) {
-	insertAt := params["insertAt"]
-	if insertAt == "" {
-		insertAt = "EOF"
+func (f LineInsertFactory) Create(params map[string]any, _ string) (Action, error) {
+	insertAt := "EOF"
+	if params["insertAt"] != nil {
+		insertAtCast, ok := params["insertAt"].(string)
+		if !ok {
+			return nil, fmt.Errorf("parameter `insertAt` is of type %T not string", params["insertAt"])
+		}
+
+		insertAt = insertAtCast
 	}
 
 	insertAt = strings.ToUpper(insertAt)
@@ -108,14 +132,20 @@ func (f LineInsertFactory) Create(params map[string]string, _ string) (Action, e
 		return nil, fmt.Errorf("invalid value of parameter `insertAt` - can be one of BOF,EOF")
 	}
 
-	path := params["path"]
-	if path == "" {
+	if params["path"] == nil {
 		return nil, fmt.Errorf("required parameter `path` not set")
 	}
+	path, ok := params["path"].(string)
+	if !ok {
+		return nil, fmt.Errorf("parameter `path` is of type %T not string", params["path"])
+	}
 
-	line := params["line"]
-	if line == "" {
+	if params["line"] == nil {
 		return nil, fmt.Errorf("required parameter `line` not set")
+	}
+	line, ok := params["line"].(string)
+	if !ok {
+		return nil, fmt.Errorf("parameter `path` is of type %T not string", params["line"])
 	}
 
 	return &lineInsert{
@@ -231,19 +261,41 @@ func (a *lineInsert) String() string {
 
 type LineReplaceFactory struct{}
 
-func (f LineReplaceFactory) Create(params map[string]string, _ string) (Action, error) {
-	path := params["path"]
-	if path == "" {
+func (f LineReplaceFactory) Create(params map[string]any, _ string) (Action, error) {
+	if params["path"] == nil {
 		return nil, fmt.Errorf("required parameter `path` not set")
 	}
-
-	line := params["line"]
-	if line == "" {
-		return nil, fmt.Errorf("required parameter `line` not set")
+	path, ok := params["path"].(string)
+	if !ok {
+		return nil, fmt.Errorf("parameter `path` is of type %T not string", params["path"])
 	}
 
-	regexpRaw := params["regexp"]
-	search := params["search"]
+	if params["line"] == nil {
+		return nil, fmt.Errorf("required parameter `line` not set")
+	}
+	line, ok := params["line"].(string)
+	if !ok {
+		return nil, fmt.Errorf("parameter `path` is of type %T not string", params["line"])
+	}
+
+	var search string
+	if params["search"] != nil {
+		searchCast, ok := params["search"].(string)
+		if !ok {
+			return nil, fmt.Errorf("parameter `search` is of type %T not string", params["search"])
+		}
+		search = searchCast
+	}
+
+	var regexpRaw string
+	if params["regexp"] != nil {
+		regexpCast, ok := params["regexp"].(string)
+		if !ok {
+			return nil, fmt.Errorf("parameter `regexp` is of type %T not string", params["regexp"])
+		}
+		regexpRaw = regexpCast
+	}
+
 	if search == "" && regexpRaw == "" {
 		return nil, fmt.Errorf("either parameter `regexp` or `search` must be set")
 	}

@@ -43,7 +43,7 @@ func readTasksYaml(actionFactories options.ActionFactories, filterFactories opti
 		wrapper.Task = task
 		wrapper.actions, err = createActionsForTask(wrapper.Task.Actions, actionFactories, taskFile)
 		if err != nil {
-			return nil, fmt.Errorf("parse actions of task file '%s': %w", taskFile, err)
+			return nil, fmt.Errorf("parse actions of task: %w", err)
 		}
 
 		wrapper.filters, err = createFiltersForTask(wrapper.Task.Filters, filterFactories)

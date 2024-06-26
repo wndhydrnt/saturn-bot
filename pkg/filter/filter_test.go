@@ -39,7 +39,7 @@ func (r *repositoryMock) Owner() string {
 
 func TestFileFactory_Create(t *testing.T) {
 	fac := FileFactory{}
-	_, err := fac.Create(map[string]string{})
+	_, err := fac.Create(map[string]any{})
 	require.ErrorContains(t, err, "required parameter `path` not set")
 }
 
@@ -50,14 +50,14 @@ func TestFile_Do(t *testing.T) {
 
 	fac := FileFactory{}
 
-	f, err := fac.Create(map[string]string{"path": "test.yaml"})
+	f, err := fac.Create(map[string]any{"path": "test.yaml"})
 	require.NoError(t, err)
 	result, err := f.Do(ctx)
 
 	require.NoError(t, err)
 	require.True(t, result)
 
-	f, err = fac.Create(map[string]string{"path": "test.json"})
+	f, err = fac.Create(map[string]any{"path": "test.json"})
 	require.NoError(t, err)
 	result, err = f.Do(ctx)
 
@@ -67,13 +67,13 @@ func TestFile_Do(t *testing.T) {
 
 func TestFileContentFactory_Create(t *testing.T) {
 	fac := FileContentFactory{}
-	_, err := fac.Create(map[string]string{})
+	_, err := fac.Create(map[string]any{})
 	require.ErrorContains(t, err, "required parameter `path` not set")
 
-	_, err = fac.Create(map[string]string{"path": "path.txt"})
+	_, err = fac.Create(map[string]any{"path": "path.txt"})
 	require.ErrorContains(t, err, "required parameter `regexp` not set")
 
-	_, err = fac.Create(map[string]string{"path": "path.txt", "regexp": "[a-z"})
+	_, err = fac.Create(map[string]any{"path": "path.txt", "regexp": "[a-z"})
 	require.ErrorContains(t, err, "compile parameter `regexp` to regular expression: error parsing regexp: missing closing ]: `[a-z`")
 }
 
@@ -88,14 +88,14 @@ ghi
 
 	fac := FileContentFactory{}
 
-	f, err := fac.Create(map[string]string{"path": "test.txt", "regexp": "d?f"})
+	f, err := fac.Create(map[string]any{"path": "test.txt", "regexp": "d?f"})
 	require.NoError(t, err)
 	result, err := f.Do(ctx)
 
 	require.NoError(t, err)
 	require.True(t, result)
 
-	f, err = fac.Create(map[string]string{"path": "test.txt", "regexp": "jkl"})
+	f, err = fac.Create(map[string]any{"path": "test.txt", "regexp": "jkl"})
 	require.NoError(t, err)
 	result, err = f.Do(ctx)
 
@@ -105,36 +105,36 @@ ghi
 
 func TestRepositoryFactory_Create(t *testing.T) {
 	fac := RepositoryFactory{}
-	_, err := fac.Create(map[string]string{})
+	_, err := fac.Create(map[string]any{})
 	require.ErrorContains(t, err, "required parameter `host` not set")
 
-	_, err = fac.Create(map[string]string{"host": "github.com"})
+	_, err = fac.Create(map[string]any{"host": "github.com"})
 	require.ErrorContains(t, err, "required parameter `owner` not set")
 
-	_, err = fac.Create(map[string]string{
+	_, err = fac.Create(map[string]any{
 		"host":  "github.com",
 		"owner": "wndhydrnt",
 	})
 	require.ErrorContains(t, err, "required parameter `name` not set")
 
-	_, err = fac.Create(map[string]string{
+	_, err = fac.Create(map[string]any{
 		"host":  "github.com",
 		"owner": "wndhydrnt",
 	})
 	require.ErrorContains(t, err, "required parameter `name` not set")
 
-	_, err = fac.Create(map[string]string{
+	_, err = fac.Create(map[string]any{
 		"host": "(github.com",
 	})
 	require.ErrorContains(t, err, "compile parameter `host` to regular expression: error parsing regexp: missing closing ): `^(github.com$`")
 
-	_, err = fac.Create(map[string]string{
+	_, err = fac.Create(map[string]any{
 		"host":  "github.com",
 		"owner": "(wndhydrnt",
 	})
 	require.ErrorContains(t, err, "compile parameter `owner` to regular expression: error parsing regexp: missing closing ): `^(wndhydrnt$`")
 
-	_, err = fac.Create(map[string]string{
+	_, err = fac.Create(map[string]any{
 		"host":  "github.com",
 		"owner": "wndhydrnt",
 		"name":  "(saturn-bot",
@@ -145,7 +145,7 @@ func TestRepositoryFactory_Create(t *testing.T) {
 func TestRepository_Do(t *testing.T) {
 	fac := RepositoryFactory{}
 
-	f, err := fac.Create(map[string]string{"host": "github.com", "owner": "wndhydrnt", "name": "rcmt"})
+	f, err := fac.Create(map[string]any{"host": "github.com", "owner": "wndhydrnt", "name": "rcmt"})
 	require.NoError(t, err)
 
 	cases := []struct {

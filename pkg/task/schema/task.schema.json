@@ -16,10 +16,7 @@
           },
           "params": {
             "type": "object",
-            "description": "Key/value pairs passed as parameters to the action.",
-            "additionalProperties": {
-              "type": "string"
-            }
+            "description": "Key/value pairs passed as parameters to the action."
           }
         },
         "required": ["action"]
@@ -78,10 +75,7 @@
           },
           "params": {
             "type": "object",
-            "description": "Key/value pairs passed as parameters to the filter.",
-            "additionalProperties": {
-              "type": "string"
-            }
+            "description": "Key/value pairs passed as parameters to the filter."
           },
           "reverse": {
             "type": "boolean",

@@ -15,7 +15,7 @@ func TestLineDelete_Apply(t *testing.T) {
 			name:    "When regexp matches a line then it deletes the line",
 			files:   map[string]string{"test.txt": testContent},
 			factory: LineDeleteFactory{},
-			params: map[string]string{
+			params: map[string]any{
 				"path":   "test.txt",
 				"regexp": "^ghi$",
 			},
@@ -25,7 +25,7 @@ func TestLineDelete_Apply(t *testing.T) {
 			name:    "When regexp matches multiple lines then it deletes each line",
 			files:   map[string]string{"test.txt": "abc\nghi\ndef\n\nghi\njkl"},
 			factory: LineDeleteFactory{},
-			params: map[string]string{
+			params: map[string]any{
 				"path":   "test.txt",
 				"regexp": "^ghi$",
 			},
@@ -35,7 +35,7 @@ func TestLineDelete_Apply(t *testing.T) {
 			name:    "When regexp does not match a line then it leaves the file as-is",
 			files:   map[string]string{"test.txt": testContent},
 			factory: LineDeleteFactory{},
-			params: map[string]string{
+			params: map[string]any{
 				"path":   "test.txt",
 				"regexp": "^xyz$",
 			},
@@ -45,7 +45,7 @@ func TestLineDelete_Apply(t *testing.T) {
 			name:    "When parameter `path` contains a glob pattern then it deletes the line from each matching file",
 			files:   map[string]string{"test1.txt": testContent, "test2.txt": testContent},
 			factory: LineDeleteFactory{},
-			params: map[string]string{
+			params: map[string]any{
 				"path":   "*.txt",
 				"regexp": "^ghi$",
 			},
@@ -55,7 +55,7 @@ func TestLineDelete_Apply(t *testing.T) {
 			name:    "When parameter `path` is not set then it errors",
 			files:   map[string]string{},
 			factory: LineDeleteFactory{},
-			params: map[string]string{
+			params: map[string]any{
 				"regexp": "^ghi$",
 			},
 			wantError: errors.New("required parameter `path` not set"),
@@ -64,7 +64,7 @@ func TestLineDelete_Apply(t *testing.T) {
 			name:    "When parameters `regexp` and `search` are not set then it errors",
 			files:   map[string]string{},
 			factory: LineDeleteFactory{},
-			params: map[string]string{
+			params: map[string]any{
 				"path": "test.txt",
 			},
 			wantError: errors.New("either parameter `regexp` or `search` must be set"),
@@ -73,7 +73,7 @@ func TestLineDelete_Apply(t *testing.T) {
 			name:    "When parameters `regexp` and `search` are both set then it errors",
 			files:   map[string]string{},
 			factory: LineDeleteFactory{},
-			params: map[string]string{
+			params: map[string]any{
 				"path":   "test.txt",
 				"regexp": "^ghi$",
 				"search": "ghi",
@@ -84,7 +84,7 @@ func TestLineDelete_Apply(t *testing.T) {
 			name:    "When parameter `regexp` is invalid then it errors",
 			files:   map[string]string{},
 			factory: LineDeleteFactory{},
-			params: map[string]string{
+			params: map[string]any{
 				"path":   "test.txt",
 				"regexp": "[a-z",
 			},
@@ -103,7 +103,7 @@ func TestLineInsert_Apply(t *testing.T) {
 			name:    "When `line` and `path` are set then it adds the line at the end of the file",
 			files:   map[string]string{"test.txt": testContent},
 			factory: LineInsertFactory{},
-			params: map[string]string{
+			params: map[string]any{
 				"line": "ttt",
 				"path": "test.txt",
 			},
@@ -113,7 +113,7 @@ func TestLineInsert_Apply(t *testing.T) {
 			name:    "When `path` is a glob pattern then it adds the line at the end of each matching file",
 			files:   map[string]string{"test1.txt": testContent, "test2.txt": testContent},
 			factory: LineInsertFactory{},
-			params: map[string]string{
+			params: map[string]any{
 				"line": "ttt",
 				"path": "*.txt",
 			},
@@ -126,7 +126,7 @@ func TestLineInsert_Apply(t *testing.T) {
 			name:    "When parameter `insertAt=BOF` then it adds the line at the beginning of the file",
 			files:   map[string]string{"test.txt": testContent},
 			factory: LineInsertFactory{},
-			params: map[string]string{
+			params: map[string]any{
 				"insertAt": "BOF",
 				"line":     "ttt",
 				"path":     "test.txt",
@@ -137,7 +137,7 @@ func TestLineInsert_Apply(t *testing.T) {
 			name:    "When the value of `insertAt` is invalid then it errors",
 			files:   map[string]string{"test.txt": testContent},
 			factory: LineInsertFactory{},
-			params: map[string]string{
+			params: map[string]any{
 				"insertAt": "EXO",
 				"line":     "ttt",
 				"path":     "test.txt",
@@ -148,7 +148,7 @@ func TestLineInsert_Apply(t *testing.T) {
 			name:    "When the value of `insertAt` is not in upper-case then it still works",
 			files:   map[string]string{"test.txt": testContent},
 			factory: LineInsertFactory{},
-			params: map[string]string{
+			params: map[string]any{
 				"insertAt": "bOf",
 				"line":     "ttt",
 				"path":     "test.txt",
@@ -159,7 +159,7 @@ func TestLineInsert_Apply(t *testing.T) {
 			name:    "When `insertAt=BOF` and the line is already present then there is no change",
 			files:   map[string]string{"test.txt": testContent},
 			factory: LineInsertFactory{},
-			params: map[string]string{
+			params: map[string]any{
 				"insertAt": "BOF",
 				"line":     "abc",
 				"path":     "test.txt",
@@ -169,7 +169,7 @@ func TestLineInsert_Apply(t *testing.T) {
 		{
 			name:    "When `path` is not set then it errors",
 			factory: LineInsertFactory{},
-			params: map[string]string{
+			params: map[string]any{
 				"line": "jkl",
 			},
 			wantError: errors.New("required parameter `path` not set"),
@@ -177,7 +177,7 @@ func TestLineInsert_Apply(t *testing.T) {
 		{
 			name:    "When `line` is not set then it errors",
 			factory: LineInsertFactory{},
-			params: map[string]string{
+			params: map[string]any{
 				"path": "test.txt",
 			},
 			wantError: errors.New("required parameter `line` not set"),
@@ -195,7 +195,7 @@ func TestLineReplace_Apply(t *testing.T) {
 			name:    "When `regexp` matches a line then it replaces the line",
 			files:   map[string]string{"test.txt": testContent},
 			factory: LineReplaceFactory{},
-			params: map[string]string{
+			params: map[string]any{
 				"line":   "ttt",
 				"path":   "test.txt",
 				"regexp": "^def$",
@@ -206,7 +206,7 @@ func TestLineReplace_Apply(t *testing.T) {
 			name:    "When `search` matches a line then it replaces the line",
 			files:   map[string]string{"test.txt": testContent},
 			factory: LineReplaceFactory{},
-			params: map[string]string{
+			params: map[string]any{
 				"line":   "ttt",
 				"path":   "test.txt",
 				"search": "def",
@@ -217,7 +217,7 @@ func TestLineReplace_Apply(t *testing.T) {
 			name:    "When `path` contains a glob pattern then it replaces the line in each matching file",
 			files:   map[string]string{"test1.txt": testContent, "test2.txt": testContent},
 			factory: LineReplaceFactory{},
-			params: map[string]string{
+			params: map[string]any{
 				"line":   "ttt",
 				"path":   "*.txt",
 				"search": "def",
@@ -228,7 +228,7 @@ func TestLineReplace_Apply(t *testing.T) {
 			name:    "When `regexp` matches multiple lines then it replaces each line",
 			files:   map[string]string{"test.txt": testContent},
 			factory: LineReplaceFactory{},
-			params: map[string]string{
+			params: map[string]any{
 				"line":   "ttt",
 				"path":   "test.txt",
 				"regexp": "def|ghi",
@@ -239,7 +239,7 @@ func TestLineReplace_Apply(t *testing.T) {
 			name:    "When `regexp` contains match groups then it allows its usage",
 			files:   map[string]string{"test.txt": testContent},
 			factory: LineReplaceFactory{},
-			params: map[string]string{
+			params: map[string]any{
 				"line":   "${1}T${2}",
 				"path":   "test.txt",
 				"regexp": "(.+)h(.+)",
@@ -249,7 +249,7 @@ func TestLineReplace_Apply(t *testing.T) {
 		{
 			name:    "When `path` is not set then it errors",
 			factory: LineReplaceFactory{},
-			params: map[string]string{
+			params: map[string]any{
 				"line":   "ttt",
 				"search": "def",
 			},
@@ -258,7 +258,7 @@ func TestLineReplace_Apply(t *testing.T) {
 		{
 			name:    "When `regexp` and `search` are not set then it errors",
 			factory: LineReplaceFactory{},
-			params: map[string]string{
+			params: map[string]any{
 				"line": "ttt",
 				"path": "test.txt",
 			},
@@ -267,7 +267,7 @@ func TestLineReplace_Apply(t *testing.T) {
 		{
 			name:    "When `regexp` and `search` are both set then it errors",
 			factory: LineReplaceFactory{},
-			params: map[string]string{
+			params: map[string]any{
 				"line":   "ttt",
 				"path":   "test.txt",
 				"regexp": "^jkl$",
@@ -278,7 +278,7 @@ func TestLineReplace_Apply(t *testing.T) {
 		{
 			name:    "When `line` is not set then it errors",
 			factory: LineReplaceFactory{},
-			params: map[string]string{
+			params: map[string]any{
 				"path":   "test.txt",
 				"search": "def",
 			},
@@ -287,7 +287,7 @@ func TestLineReplace_Apply(t *testing.T) {
 		{
 			name:    "When the value of `regexp` is invalid then it errors",
 			factory: LineReplaceFactory{},
-			params: map[string]string{
+			params: map[string]any{
 				"line":   "ttt",
 				"path":   "test.txt",
 				"regexp": "[a-z",

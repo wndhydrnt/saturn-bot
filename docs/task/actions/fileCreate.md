@@ -41,7 +41,7 @@ Mode of the file to create. If the file exists, the file mode gets updated.
 | -------- | --------- |
 | Type     | `integer` |
 | Required | No        |
-| Default  | `644`     |
+| Default  | `0644`    |
 
 ### `overwrite`
 
@@ -97,5 +97,5 @@ actions:
       - content: |
           echo "Updating..."
         path: "update.sh"
-        mode: 755
+        mode: 0755
 ```

@@ -18,7 +18,7 @@ type testCase struct {
 	bootstrap func() string
 	files     map[string]string
 	factory   Factory
-	params    map[string]string
+	params    map[string]any
 	wantError error
 	wantFiles map[string]string
 }
