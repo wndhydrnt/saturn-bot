@@ -50,7 +50,7 @@ func (f FileFactory) Create(params map[string]any) (Filter, error) {
 	}
 	path, ok := params["path"].(string)
 	if !ok {
-		return nil, fmt.Errorf("required parameter `path` is of type %T not string", path)
+		return nil, fmt.Errorf("required parameter `path` is of type %T not string", params["path"])
 	}
 
 	return &File{Path: path}, nil
