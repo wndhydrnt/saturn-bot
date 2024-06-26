@@ -4,6 +4,7 @@ import "context"
 
 var (
 	BuiltInFactories = []Factory{
+		ExecFactory{},
 		FileCreateFactory{},
 		FileDeleteFactory{},
 		LineDeleteFactory{},
