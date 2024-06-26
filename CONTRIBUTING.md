@@ -16,7 +16,7 @@ Documentation is written in [Markdown](https://www.markdownguide.org/) and rende
    ```
 3. Install dependencies:
    ```shell
-   pip install -r mkdocs-requirements.txt
+   pip install -r docs/requirements.txt
    ```
 4. Start the server:
    ```shell
@@ -37,5 +37,5 @@ Open [http://localhost:8000](http://localhost:8000) in a browser.
    ```
 3. Update the requirements file:
    ```shell
-   pip freeze -l > mkdocs-requirements.txt
+   pip freeze -l > docs/requirements.txt
    ```
