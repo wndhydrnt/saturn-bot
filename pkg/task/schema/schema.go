@@ -13,8 +13,8 @@ type Task struct {
 	// A list of usernames to set as assignees of a pull request.
 	Assignees []string `json:"assignees,omitempty" yaml:"assignees,omitempty" mapstructure:"assignees,omitempty"`
 
-	// Merge a pull request automatically if all have checks have passed and all
-	// approvals have been given.
+	// Merge a pull request automatically if all checks have passed and all approvals
+	// have been given.
 	AutoMerge bool `json:"autoMerge,omitempty" yaml:"autoMerge,omitempty" mapstructure:"autoMerge,omitempty"`
 
 	// If set, automatically merge the pull request after it has been open for the

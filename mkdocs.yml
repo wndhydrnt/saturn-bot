@@ -1,0 +1,24 @@
+site_name: saturn-bot
+nav:
+  - index.md
+  - installation.md
+  - configuration.md
+  - ...
+theme:
+  features:
+    - content.code.copy
+    - navigation.indexes
+  name: material
+markdown_extensions:
+  - pymdownx.highlight:
+      anchor_linenums: true
+      line_spans: __span
+      pygments_lang_class: true
+  - pymdownx.inlinehilite
+  - pymdownx.snippets
+  - pymdownx.superfences
+hooks:
+  - mkdocs-hooks/json_path.py
+plugins:
+  - awesome-pages
+  - search

@@ -34,7 +34,7 @@
     },
     "autoMerge": {
       "default": false,
-      "description": "Merge a pull request automatically if all have checks have passed and all approvals have been given.",
+      "description": "Merge a pull request automatically if all checks have passed and all approvals have been given.",
       "type": "boolean"
     },
     "autoMergeAfter": {
