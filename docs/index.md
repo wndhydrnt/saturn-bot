@@ -39,14 +39,17 @@ prBody: |
 
 # Filters tell saturn-bot which repositories to modify.
 filters:
-  repositoryName:
-    # Replace the name of the repository with your repository.
-    - names: ["github.com/wndhydrnt/saturn-bot-example"]
+  - filter: repository
+    params:
+      host: github.com
+      owner: wndhydrnt # Replace with your owner
+      name: saturn-bot-example # Replace with your repository
 
 # Actions tell saturn-bot how to modify each repository.
 actions:
-  fileCreate:
-    - content: "Hello World"
+  - action: fileCreate
+    params:
+      content: "Hello World"
       path: "hello-world.txt"
 ```
 
