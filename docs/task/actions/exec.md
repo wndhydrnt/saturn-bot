@@ -8,7 +8,7 @@ saturn-bot sets the current working dir of the command to the checkout of the re
 
 ### `args`
 
-Arguments of the command.
+Arguments to pass to the command.
 
 | Name     | Value    |
 | -------- | -------- |
@@ -21,7 +21,7 @@ Arguments of the command.
 
 The command to execute.
 
-The value can be a absolute path to a binary. If the path is relative, it is interpreted as relative to the Task file.
+The value can be an absolute path to a binary. If the path is relative, it is interpreted as relative to the Task file.
 
 | Name     | Value    |
 | -------- | -------- |
