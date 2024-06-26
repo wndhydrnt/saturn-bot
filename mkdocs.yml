@@ -1,4 +1,9 @@
 site_name: saturn-bot
+nav:
+  - index.md
+  - installation.md
+  - configuration.md
+  - ...
 theme:
   features:
     - content.code.copy
@@ -14,3 +19,6 @@ markdown_extensions:
   - pymdownx.superfences
 hooks:
   - mkdocs-hooks/json_path.py
+plugins:
+  - awesome-pages
+  - search
