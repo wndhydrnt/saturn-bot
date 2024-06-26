@@ -50,9 +50,9 @@ Search string that gets matched against each line in the file. If the line equal
 actions:
   - action: lineReplace
     params:
-      - line: "Hello World"
-        path: "hello-world.txt"
-        search: "Hello Everyone"
+      line: "Hello World"
+      path: "hello-world.txt"
+      search: "Hello Everyone"
 ```
 
 ```yaml
@@ -61,7 +61,7 @@ actions:
 actions:
   - action: lineReplace
     params:
-      - line: "${2} ${1}"
-        path: "hello-world.txt"
-        regexp: "(Hello)\s(World)"
+      line: "${2} ${1}"
+      path: "hello-world.txt"
+      regexp: "(Hello)\s(World)"
 ```

@@ -39,8 +39,8 @@ Path of the file.
 actions:
   - action: lineInsert
     params:
-      - line: "Hello End"
-        path: "hello-world.txt"
+      line: "Hello End"
+      path: "hello-world.txt"
 ```
 
 ```yaml
@@ -48,7 +48,7 @@ actions:
 actions:
   - action: lineInsert
     params:
-      - insertAt: "BOF"
-        line: "Hello Beginning"
-        path: "hello-world.txt"
+      insertAt: "BOF"
+      line: "Hello Beginning"
+      path: "hello-world.txt"
 ```

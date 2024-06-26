@@ -48,9 +48,9 @@ Value can be a regular expression.
 filters:
   - filter: repository
     params:
-      - host: "github.com"
-        owner: "wndhydrnt"
-        name: "saturn-bot"
+      host: "github.com"
+      owner: "wndhydrnt"
+      name: "saturn-bot"
 ```
 
 ```yaml
@@ -58,7 +58,7 @@ filters:
 filters:
   - filter: repository
     params:
-      - host: "gitlab.com"
-        owner: "gitlab-org/ci-cd/tests"
-        name: ".+"
+      host: "gitlab.com"
+      owner: "gitlab-org/ci-cd/tests"
+      name: ".+"
 ```

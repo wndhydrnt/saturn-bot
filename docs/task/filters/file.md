@@ -20,7 +20,7 @@ Path of the file in the repository.
 filters:
   - filter: file
     params:
-      - path: "hello-world.txt"
+      path: "hello-world.txt"
 ```
 
 ```yaml
@@ -29,5 +29,5 @@ filters:
 filters:
   - filter: file
     params:
-      - path: "config/*.yaml"
+      path: "config/*.yaml"
 ```

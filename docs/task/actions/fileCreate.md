@@ -61,8 +61,8 @@ If `true`, overwrite the file if it already exists.
 actions:
   - action: fileCreate
     params:
-      - content: "Hello World"
-        path: "hello-world.txt"
+      content: "Hello World"
+      path: "hello-world.txt"
 ```
 
 ```yaml
@@ -72,9 +72,9 @@ actions:
 actions:
   - action: fileCreate
     params:
-      - content: "Hello World"
-        path: "hello-world.txt"
-        overwrite: false
+      content: "Hello World"
+      path: "hello-world.txt"
+      overwrite: false
 ```
 
 ```yaml
@@ -84,8 +84,8 @@ actions:
 actions:
   - action: fileCreate
     params:
-      - contentFromFile: "./content.txt"
-        path: "hello-world.txt"
+      contentFromFile: "./content.txt"
+      path: "hello-world.txt"
 ```
 
 ```yaml
@@ -94,8 +94,8 @@ actions:
 actions:
   - action: fileCreate
     params:
-      - content: |
-          echo "Updating..."
-        path: "update.sh"
-        mode: 0755
+      content: |
+        echo "Updating..."
+      path: "update.sh"
+      mode: 0755
 ```
