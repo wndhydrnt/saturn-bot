@@ -18,6 +18,6 @@ type Action interface {
 }
 
 type Factory interface {
-	Create(params map[string]string, taskPath string) (Action, error)
+	Create(params map[string]any, taskPath string) (Action, error)
 	Name() string
 }

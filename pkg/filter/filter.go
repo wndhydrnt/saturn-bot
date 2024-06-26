@@ -34,7 +34,7 @@ type Filter interface {
 }
 
 type Factory interface {
-	Create(params map[string]string) (Filter, error)
+	Create(params map[string]any) (Filter, error)
 	Name() string
 }
 
@@ -44,10 +44,13 @@ func (f FileFactory) Name() string {
 	return "file"
 }
 
-func (f FileFactory) Create(params map[string]string) (Filter, error) {
-	path := params["path"]
-	if path == "" {
+func (f FileFactory) Create(params map[string]any) (Filter, error) {
+	if params["path"] == nil {
 		return nil, fmt.Errorf("required parameter `path` not set")
+	}
+	path, ok := params["path"].(string)
+	if !ok {
+		return nil, fmt.Errorf("required parameter `path` is of type %T not string", params["path"])
 	}
 
 	return &File{Path: path}, nil
@@ -76,15 +79,21 @@ func (f FileContentFactory) Name() string {
 	return "fileContent"
 }
 
-func (f FileContentFactory) Create(params map[string]string) (Filter, error) {
-	path := params["path"]
-	if path == "" {
+func (f FileContentFactory) Create(params map[string]any) (Filter, error) {
+	if params["path"] == nil {
 		return nil, fmt.Errorf("required parameter `path` not set")
 	}
+	path, ok := params["path"].(string)
+	if !ok {
+		return nil, fmt.Errorf("required parameter `path` is of type %T not string", params["path"])
+	}
 
-	reRaw := params["regexp"]
-	if reRaw == "" {
+	if params["regexp"] == nil {
 		return nil, fmt.Errorf("required parameter `regexp` not set")
+	}
+	reRaw, ok := params["regexp"].(string)
+	if !ok {
+		return nil, fmt.Errorf("required parameter `regexp` is of type %T not string", params["regexp"])
 	}
 
 	re, err := regexp.Compile(reRaw)
@@ -141,10 +150,13 @@ func (f RepositoryFactory) Name() string {
 	return "repository"
 }
 
-func (f RepositoryFactory) Create(params map[string]string) (Filter, error) {
-	host := params["host"]
-	if host == "" {
+func (f RepositoryFactory) Create(params map[string]any) (Filter, error) {
+	if params["host"] == nil {
 		return nil, fmt.Errorf("required parameter `host` not set")
+	}
+	host, ok := params["host"].(string)
+	if !ok {
+		return nil, fmt.Errorf("parameter `host` is of type %T not string", params["host"])
 	}
 
 	hostRe, err := regexp.Compile(str.EncloseRegex(host))
@@ -152,9 +164,12 @@ func (f RepositoryFactory) Create(params map[string]string) (Filter, error) {
 		return nil, fmt.Errorf("compile parameter `host` to regular expression: %w", err)
 	}
 
-	owner := params["owner"]
-	if owner == "" {
+	if params["owner"] == nil {
 		return nil, fmt.Errorf("required parameter `owner` not set")
+	}
+	owner, ok := params["owner"].(string)
+	if !ok {
+		return nil, fmt.Errorf("parameter `owner` is of type %T not string", params["owner"])
 	}
 
 	ownerRe, err := regexp.Compile(str.EncloseRegex(owner))
@@ -162,9 +177,12 @@ func (f RepositoryFactory) Create(params map[string]string) (Filter, error) {
 		return nil, fmt.Errorf("compile parameter `owner` to regular expression: %w", err)
 	}
 
-	name := params["name"]
-	if name == "" {
+	if params["name"] == nil {
 		return nil, fmt.Errorf("required parameter `name` not set")
+	}
+	name, ok := params["name"].(string)
+	if !ok {
+		return nil, fmt.Errorf("required parameter `name` is of type %T not string", params["name"])
 	}
 
 	nameRe, err := regexp.Compile(str.EncloseRegex(name))

@@ -8,7 +8,6 @@ import (
 	"io/fs"
 	"os"
 	"path/filepath"
-	"strconv"
 	"strings"
 )
 
@@ -34,9 +33,26 @@ func createContentReader(taskPath, value string) (io.ReadCloser, error) {
 
 type FileCreateFactory struct{}
 
-func (f FileCreateFactory) Create(params map[string]string, taskPath string) (Action, error) {
-	content := params["content"]
-	contentFromFile := params["contentFromFile"]
+func (f FileCreateFactory) Create(params map[string]any, taskPath string) (Action, error) {
+	var content string
+	if params["content"] != nil {
+		contentCast, ok := params["content"].(string)
+		if !ok {
+			return nil, fmt.Errorf("parameter `content` is of type %T not string", params["content"])
+		}
+
+		content = contentCast
+	}
+
+	var contentFromFile string
+	if params["contentFromFile"] != nil {
+		contentFromFileCast, ok := params["contentFromFile"].(string)
+		if !ok {
+			return nil, fmt.Errorf("parameter `contentFromFile` is of type %T not string", params["contentFromFile"])
+		}
+
+		contentFromFile = contentFromFileCast
+	}
 
 	if content == "" && contentFromFile == "" {
 		return nil, fmt.Errorf("either parameter `content` or `contentFromFile` is required")
@@ -57,28 +73,35 @@ func (f FileCreateFactory) Create(params map[string]string, taskPath string) (Ac
 		}
 	}
 
-	path := params["path"]
-	if path == "" {
+	if params["path"] == nil {
 		return nil, fmt.Errorf("required parameter `path` not set")
 	}
-
-	modeRaw := params["mode"]
-	var mode fs.FileMode
-	if modeRaw == "" {
-		mode = 0644
-	} else {
-		modeConv, err := strconv.ParseUint(modeRaw, 8, 32)
-		if err != nil {
-			return nil, fmt.Errorf("parse value of parameter `mode`: %w", err)
-		}
-
-		mode = fs.FileMode(modeConv)
+	path, ok := params["path"].(string)
+	if !ok {
+		return nil, fmt.Errorf("parameter `path` is of type %T not string", params["path"])
 	}
 
-	overwriteRaw := params["overwrite"]
-	overwrite := true
-	if overwriteRaw == "false" {
-		overwrite = false
+	var mode fs.FileMode
+	if params["mode"] == nil {
+		mode = 0644
+	} else {
+		modeInt, ok := params["mode"].(int)
+		if !ok {
+			return nil, fmt.Errorf("parameter `mode` is of type %T not int", params["mode"])
+		}
+
+		mode = fs.FileMode(modeInt)
+	}
+
+	var overwrite bool
+	if params["overwrite"] == nil {
+		overwrite = true
+	} else {
+		overwriteRaw, ok := params["overwrite"].(bool)
+		if !ok {
+			return nil, fmt.Errorf("parameter `overwrite` is of type %T not bool", params["overwrite"])
+		}
+		overwrite = overwriteRaw
 	}
 
 	return &fileCreate{
@@ -152,10 +175,13 @@ func (a *fileCreate) String() string {
 
 type FileDeleteFactory struct{}
 
-func (f FileDeleteFactory) Create(params map[string]string, _ string) (Action, error) {
-	path := params["path"]
-	if path == "" {
+func (f FileDeleteFactory) Create(params map[string]any, _ string) (Action, error) {
+	if params["path"] == nil {
 		return nil, fmt.Errorf("required parameter `path` not set")
+	}
+	path, ok := params["path"].(string)
+	if !ok {
+		return nil, fmt.Errorf("parameter `path` is of type %T not string", params["path"])
 	}
 
 	return &fileDelete{

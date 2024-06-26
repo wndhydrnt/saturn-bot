@@ -79,7 +79,7 @@ type TaskActionsElem struct {
 }
 
 // Key/value pairs passed as parameters to the action.
-type TaskActionsElemParams map[string]string
+type TaskActionsElemParams map[string]interface{}
 
 // UnmarshalJSON implements json.Unmarshaler.
 func (j *TaskActionsElem) UnmarshalJSON(b []byte) error {
@@ -129,7 +129,7 @@ type TaskFiltersElem struct {
 }
 
 // Key/value pairs passed as parameters to the filter.
-type TaskFiltersElemParams map[string]string
+type TaskFiltersElemParams map[string]interface{}
 
 // UnmarshalJSON implements json.Unmarshaler.
 func (j *TaskFiltersElem) UnmarshalJSON(b []byte) error {
