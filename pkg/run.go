@@ -50,7 +50,7 @@ type executeRunner struct {
 	taskRegistry  *task.Registry
 }
 
-func (r *executeRunner) run(taskFiles []string) error {
+func (r *executeRunner) run(repositoryNames, taskFiles []string) error {
 	if len(r.hosts) == 0 {
 		return ErrNoHostsConfigured
 	}
@@ -84,15 +84,11 @@ func (r *executeRunner) run(taskFiles []string) error {
 
 	repos := make(chan []host.Repository)
 	errChan := make(chan error)
-	expectedFinishes := len(r.hosts)
-	for _, host := range r.hosts {
-		slog.Info("Listing repositories", "updated_since", fmt.Sprintf("%v", since))
-		go host.ListRepositories(since, repos, errChan)
-		if since != nil {
-			expectedFinishes += 1
-			slog.Info("Listing repositories with open pull requests")
-			go host.ListRepositoriesWithOpenPullRequests(repos, errChan)
-		}
+	var expectedFinishes int
+	if len(repositoryNames) > 0 {
+		expectedFinishes = discoverRepositoriesFromCLI(r.hosts, repositoryNames, repos, errChan)
+	} else {
+		expectedFinishes = discoverRepositoriesFromHosts(r.hosts, since, repos, errChan)
 	}
 	finishes := 0
 	visitedRepositories := map[string]struct{}{}
@@ -112,10 +108,17 @@ func (r *executeRunner) run(taskFiles []string) error {
 				ctx := context.WithValue(context.Background(), sContext.RepositoryKey{}, repo)
 				ctx = context.WithValue(ctx, sContext.TemplateVarsKey{}, make(map[string]string))
 				ctx = context.WithValue(ctx, sContext.PluginDataKey{}, make(map[string]string))
-				tasksToApply := findMatchingTasksForRepository(ctx, repo, tasks)
-				if len(tasksToApply) < 1 {
-					slog.Debug("No task matches the repository", "repository", repo.FullName())
-					continue
+				var tasksToApply []task.Task
+				if len(repositoryNames) > 0 {
+					slog.Info("Applying all Tasks to repository because it has been supplied via CLI")
+					tasksToApply = tasks
+				} else {
+					slog.Info("Filtering repositories")
+					tasksToApply = findMatchingTasksForRepository(ctx, repo, tasks)
+					if len(tasksToApply) < 1 {
+						slog.Debug("No task matches the repository", "repository", repo.FullName())
+						continue
+					}
 				}
 
 				workDir, err := r.git.Prepare(repo, false)
@@ -165,7 +168,7 @@ func (r *executeRunner) run(taskFiles []string) error {
 	return nil
 }
 
-func ExecuteRun(opts options.Opts, taskFiles []string) error {
+func ExecuteRun(opts options.Opts, repositoryNames, taskFiles []string) error {
 	err := options.Initialize(opts)
 	if err != nil {
 		return fmt.Errorf("initialize options: %w", err)
@@ -187,7 +190,7 @@ func ExecuteRun(opts options.Opts, taskFiles []string) error {
 		hosts:         opts.Hosts,
 		taskRegistry:  taskRegistry,
 	}
-	return e.run(taskFiles)
+	return e.run(repositoryNames, taskFiles)
 }
 
 func hasUpdatedTasks(cachedTasks []cache.CachedTask, tasks []task.Task) bool {
@@ -534,4 +537,65 @@ func newTemplateVars(ctx context.Context, repo host.Repository, tk task.Task) ma
 	vars["RepositoryWebUrl"] = repo.WebUrl()
 	vars["TaskName"] = tk.SourceTask().Name
 	return vars
+}
+
+// discoverRepositoriesFromHosts queries all hosts for available repositories.
+func discoverRepositoriesFromHosts(
+	hosts []host.Host,
+	since *time.Time,
+	repoChan chan []host.Repository,
+	errChan chan error,
+) int {
+	expectedFinishes := len(hosts)
+	for _, host := range hosts {
+		slog.Info("Listing repositories", "updated_since", fmt.Sprintf("%v", since))
+		go host.ListRepositories(since, repoChan, errChan)
+		if since != nil {
+			expectedFinishes += 1
+			slog.Info("Listing repositories with open pull requests")
+			go host.ListRepositoriesWithOpenPullRequests(repoChan, errChan)
+		}
+	}
+
+	return expectedFinishes
+}
+
+// discoverRepositoriesFromCLI takes a list of repository names and turns them into repositories.
+func discoverRepositoriesFromCLI(
+	hosts []host.Host,
+	repositoryNames []string,
+	repoChan chan []host.Repository,
+	errChan chan error,
+) int {
+	slog.Info("Discovering repositories from CLI")
+	go func() {
+		for _, repoName := range repositoryNames {
+			repo, err := findRepositoryInHosts(hosts, repoName)
+			if err != nil {
+				errChan <- err
+				return
+			}
+
+			repoChan <- []host.Repository{repo}
+		}
+
+		errChan <- nil
+	}()
+	return 1
+}
+
+// findRepositoryInHosts queries all hosts to find the given repository, identified by its name.
+func findRepositoryInHosts(hosts []host.Host, repositoryName string) (host.Repository, error) {
+	for _, h := range hosts {
+		repo, err := h.CreateFromName(repositoryName)
+		if err != nil {
+			return nil, err
+		}
+
+		if repo != nil {
+			return repo, nil
+		}
+	}
+
+	return nil, fmt.Errorf("no host found for repository '%s'", repositoryName)
 }
