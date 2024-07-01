@@ -8,6 +8,7 @@ import (
 )
 
 func createRunCommand() *cobra.Command {
+	var repositories []string
 	var taskFiles []string
 
 	var cmd = &cobra.Command{
@@ -19,11 +20,12 @@ func createRunCommand() *cobra.Command {
 			handleError(err, cmd.ErrOrStderr())
 			opts, err := options.ToOptions(cfg)
 			handleError(err, cmd.ErrOrStderr())
-			err = pkg.ExecuteRun(opts, taskFiles)
+			err = pkg.ExecuteRun(opts, repositories, taskFiles)
 			handleError(err, cmd.ErrOrStderr())
 		},
 	}
 	cmd.Flags().StringVar(&cfgFile, "config", "", "Path to config file")
-	cmd.Flags().StringArrayVar(&taskFiles, "task", []string{}, "")
+	cmd.Flags().StringArrayVar(&repositories, "repository", []string{}, "Name of a repository to apply the tasks to. Can be supplied multiple times.")
+	cmd.Flags().StringArrayVar(&taskFiles, "task", []string{}, "Path to a file to read Tasks from. Can be supplied multiple times.")
 	return cmd
 }

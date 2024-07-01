@@ -492,7 +492,13 @@ type mockHost struct {
 }
 
 func (m *mockHost) CreateFromName(name string) (host.Repository, error) {
-	return nil, fmt.Errorf("Not Implemented")
+	for _, repo := range m.repositories {
+		if repo.FullName() == name {
+			return repo, nil
+		}
+	}
+
+	return nil, fmt.Errorf("Repository not found")
 }
 
 func (m *mockHost) ListRepositories(_ *time.Time, result chan []host.Repository, errChan chan error) {
@@ -601,7 +607,7 @@ func TestExecuteRunner_Run(t *testing.T) {
 		hosts:         []host.Host{hostm},
 		taskRegistry:  task.NewRegistry(runTestOpts),
 	}
-	err := runner.run([]string{taskFile})
+	err := runner.run([]string{}, []string{taskFile})
 
 	require.NoError(t, err)
 	assert.NotEqual(t, cacheLastExecutionBefore, cache.GetLastExecutionAt(), "Updates the lat execution time in the cache")
@@ -643,9 +649,50 @@ func TestExecuteRunner_Run_DryRun(t *testing.T) {
 		hosts:         []host.Host{hostm},
 		taskRegistry:  task.NewRegistry(runTestOpts),
 	}
-	err := runner.run([]string{taskFile})
+	err := runner.run([]string{}, []string{taskFile})
 
 	require.NoError(t, err)
 	assert.Equal(t, cacheLastExecutionBefore, cache.GetLastExecutionAt(), "Does not update the last execution time because dryRun is true")
 	assert.Equal(t, cacheTasks, cache.GetCachedTasks(), "Does not update the cached tasks because dryRun is true")
+}
+
+func TestExecuteRunner_Run_RepositoriesCLI(t *testing.T) {
+	ctrl := gomock.NewController(t)
+	repo := mock.NewMockRepository(ctrl)
+	repo.EXPECT().FullName().Return("git.local/unittest/repo").AnyTimes()
+	repo.EXPECT().Host().Return("git.local").AnyTimes()
+	repo.EXPECT().Owner().Return("unittest").AnyTimes()
+	repo.EXPECT().Name().Return("repo").AnyTimes()
+	gitc := mock.NewMockGitClient(ctrl)
+	gitc.EXPECT().Prepare(repo, false).Return("/work/repo", nil)
+	hostm := &mockHost{
+		repositories: []host.Repository{repo},
+	}
+	taskFile := createTestTask("git.local/unittest/repo.*")
+	cacheFile := createTestCache(taskFile)
+	cache := cache.NewJsonFile(cacheFile)
+	_ = cache.Read()
+	cacheLastExecutionBefore := cache.GetLastExecutionAt()
+	defer func() {
+		if err := os.Remove(cacheFile); err != nil {
+			panic(err)
+		}
+
+		if err := os.Remove(taskFile); err != nil {
+			panic(err)
+		}
+	}()
+
+	runner := &executeRunner{
+		applyTaskFunc: mockApplyTaskFunc,
+		cache:         cache,
+		dryRun:        false,
+		git:           gitc,
+		hosts:         []host.Host{hostm},
+		taskRegistry:  task.NewRegistry(runTestOpts),
+	}
+	err := runner.run([]string{"git.local/unittest/repo"}, []string{taskFile})
+
+	require.NoError(t, err)
+	assert.NotEqual(t, cacheLastExecutionBefore, cache.GetLastExecutionAt(), "Updates the lat execution time in the cache")
 }
