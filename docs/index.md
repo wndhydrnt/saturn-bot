@@ -30,6 +30,7 @@ Requirements:
 Create the file `hello-world.yaml`:
 
 ```yaml title="hello-world.yaml"
+# yaml-language-server: $schema=https://saturn-bot.readthedocs.io/en/latest/schemas/task.schema.json
 name: "saturn-bot Hello World"
 prTitle: "saturn-bot Hello World"
 prBody: |
