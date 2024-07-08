@@ -9,7 +9,7 @@ build:
   tools:
     python: "3.12"
   jobs:
-    post_build:
+    pre_build:
       - mkdir -p docs/schemas
       - cp pkg/config/config.schema.json docs/schemas/
       - cp pkg/task/schema/task.schema.json docs/schemas/
