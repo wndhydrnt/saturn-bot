@@ -1,6 +1,6 @@
 {
   "$schema": "https://json-schema.org/draft/2020-12/schema",
-  "$id": "https://saturn-bot.cloud/config.schema.json",
+  "$id": "https://saturn-bot.readthedocs.io/en/latest/schemas/config.schema.json",
   "title": "Configuration",
   "description": "Configuration settings of saturn-bot.",
   "type": "object",

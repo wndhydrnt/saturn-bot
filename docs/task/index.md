@@ -1,5 +1,30 @@
 # Task
 
+```yaml title="Example"
+# yaml-language-server: $schema=https://saturn-bot.readthedocs.io/en/latest/schemas/task.schema.json
+name: "saturn-bot Hello World"
+prTitle: "saturn-bot Hello World"
+prBody: |
+  saturn-bot Quickstart.
+
+  This pull request creates the file `hello-world.txt`.
+
+# Filters tell saturn-bot which repositories to modify.
+filters:
+  - filter: repository
+    params:
+      host: github.com
+      owner: wndhydrnt # Replace with your owner
+      name: saturn-bot-example # Replace with your repository
+
+# Actions tell saturn-bot how to modify each repository.
+actions:
+  - action: fileCreate
+    params:
+      content: "Hello World"
+      path: "hello-world.txt"
+```
+
 ## autoMerge
 
 [json-path:../../pkg/task/schema/task.schema.json:$.properties.autoMerge.description]

@@ -3,6 +3,7 @@
 Configuration is stored in the YAML format.
 
 ```yaml title="Example"
+# yaml-language-server: $schema=https://saturn-bot.readthedocs.io/en/latest/schemas/config.schema.json
 dataDir: /tmp/saturn-bot
 logFormat: console
 githubToken: xxxxx
