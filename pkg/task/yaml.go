@@ -63,6 +63,7 @@ func readTasksYaml(actionFactories options.ActionFactories, filterFactories opti
 
 			wrapper.actions = append(wrapper.actions, pw.action)
 			wrapper.filters = append(wrapper.filters, pw.filter)
+			wrapper.plugins = append(wrapper.plugins, pw)
 		}
 
 		wrapper.checksum = fmt.Sprintf("%x", checksum.Sum(nil))

@@ -36,6 +36,9 @@ func newPluginWrapper(opts startPluginOptions) (*pluginWrapper, error) {
 	switch ext {
 	case "":
 		executable = opts.filePath
+	case ".jar":
+		executable = "java"
+		args = append(args, "-jar", opts.filePath)
 	case ".py":
 		executable = "python"
 		args = append(args, opts.filePath)
@@ -75,6 +78,7 @@ func newPluginWrapper(opts startPluginOptions) (*pluginWrapper, error) {
 	slog.Debug("Registered plugin", "name", getPluginResp.GetName())
 	return &pluginWrapper{
 		action:   &PluginAction{provider: provider},
+		client:   client,
 		filter:   &PluginFilter{provider: provider},
 		provider: provider,
 	}, nil

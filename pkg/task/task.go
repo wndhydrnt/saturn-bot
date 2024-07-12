@@ -88,7 +88,7 @@ type Wrapper struct {
 	autoMergeAfterDuration *time.Duration
 	checksum               string
 	filters                []filter.Filter
-	plugins                []pluginWrapper
+	plugins                []*pluginWrapper
 	Task                   *schema.Task
 }
 

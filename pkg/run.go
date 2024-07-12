@@ -165,6 +165,7 @@ func (r *executeRunner) run(repositoryNames, taskFiles []string) error {
 	if !success {
 		return fmt.Errorf("errors occurred, check previous log messages")
 	}
+	slog.Info("Run finished")
 	return nil
 }
 
