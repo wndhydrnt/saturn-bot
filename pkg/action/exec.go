@@ -39,7 +39,9 @@ func (f ExecFactory) Create(params map[string]any, taskPath string) (Action, err
 		return nil, fmt.Errorf("parameter `command` is of type %T not string", params["command"])
 	}
 
-	if !filepath.IsAbs(command) {
+	// Try to resolve relative path if command is not a name like "terraform"
+	// or not an absolute path like "/usr/bin/terraform".
+	if command != filepath.Base(command) && !filepath.IsAbs(command) {
 		taskDir := filepath.Dir(taskPath)
 		commandAbs, err := filepath.Abs(filepath.Join(taskDir, command))
 		if err != nil {

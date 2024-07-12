@@ -43,6 +43,38 @@ func TestExec_Apply(t *testing.T) {
 			wantFiles: map[string]string{"exec.txt": "exec test\n"},
 		},
 		{
+			name: "When the command points to a name then it executes the command",
+			bootstrap: func() string {
+				tmpDir, err := os.MkdirTemp("", "*")
+				require.NoError(t, err)
+				return filepath.Join(tmpDir, "task.yaml")
+			},
+			factory: ExecFactory{},
+			params: map[string]any{
+				"args":    []any{"-c", "echo 'name test' >> name.txt"},
+				"command": "sh",
+				"timeout": "1m",
+			},
+			wantError: nil,
+			wantFiles: map[string]string{"name.txt": "name test\n"},
+		},
+		{
+			name: "When the command point to an absolute path then it executes the command",
+			bootstrap: func() string {
+				tmpDir, err := os.MkdirTemp("", "*")
+				require.NoError(t, err)
+				return filepath.Join(tmpDir, "task.yaml")
+			},
+			factory: ExecFactory{},
+			params: map[string]any{
+				"args":    []any{"-c", "echo 'abs test' >> abs.txt"},
+				"command": "/bin/sh",
+				"timeout": "1m",
+			},
+			wantError: nil,
+			wantFiles: map[string]string{"abs.txt": "abs test\n"},
+		},
+		{
 			name:    "When parameter args not a list then it errors",
 			factory: ExecFactory{},
 			params: map[string]any{
