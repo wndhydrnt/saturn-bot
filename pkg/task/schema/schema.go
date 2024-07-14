@@ -50,6 +50,10 @@ type Task struct {
 	// List of labels to attach to a pull request.
 	Labels []string `json:"labels,omitempty" yaml:"labels,omitempty" mapstructure:"labels,omitempty"`
 
+	// The number of pull requests that can be open at the same time. 0 disables the
+	// feature.
+	MaxOpenPRs int `json:"maxOpenPRs,omitempty" yaml:"maxOpenPRs,omitempty" mapstructure:"maxOpenPRs,omitempty"`
+
 	// If `true`, no new pull request is being created if a previous pull request has
 	// been merged for this task.
 	MergeOnce bool `json:"mergeOnce,omitempty" yaml:"mergeOnce,omitempty" mapstructure:"mergeOnce,omitempty"`
@@ -257,6 +261,9 @@ func (j *Task) UnmarshalJSON(b []byte) error {
 	if v, ok := raw["keepBranchAfterMerge"]; !ok || v == nil {
 		plain.KeepBranchAfterMerge = false
 	}
+	if v, ok := raw["maxOpenPRs"]; !ok || v == nil {
+		plain.MaxOpenPRs = 0.0
+	}
 	if v, ok := raw["mergeOnce"]; !ok || v == nil {
 		plain.MergeOnce = false
 	}
@@ -304,6 +311,9 @@ func (j *Task) UnmarshalYAML(value *yaml.Node) error {
 	}
 	if v, ok := raw["keepBranchAfterMerge"]; !ok || v == nil {
 		plain.KeepBranchAfterMerge = false
+	}
+	if v, ok := raw["maxOpenPRs"]; !ok || v == nil {
+		plain.MaxOpenPRs = 0.0
 	}
 	if v, ok := raw["mergeOnce"]; !ok || v == nil {
 		plain.MergeOnce = false

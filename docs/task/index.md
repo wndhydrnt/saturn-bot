@@ -92,6 +92,18 @@ branchName: "feature/hello-world"
 
 [json-path:../../pkg/task/schema/task.schema.json:$.properties.labels.description]
 
+## maxOpenPRs
+
+[json-path:../../pkg/task/schema/task.schema.json:$.properties.maxOpenPRs.description]
+
+```yaml title="Allow 5 pull requests to be open at the same time"
+maxOpenPRs: 5
+```
+
+```yaml title="Disable the feature"
+maxOpenPRs: 0
+```
+
 ## mergeOnce
 
 [json-path:../../pkg/task/schema/task.schema.json:$.properties.mergeOnce.description]

@@ -130,10 +130,14 @@ func (r *executeRunner) run(repositoryNames, taskFiles []string) error {
 				for _, taskToApply := range tasksToApply {
 					logger := slog.With("dryRun", r.dryRun, "repository", repo.FullName(), "task", taskToApply.SourceTask().Name)
 					logger.Info("Task matches repository")
-					_, err := r.applyTaskFunc(ctx, r.dryRun, r.git, logger, repo, taskToApply, workDir)
+					applyResult, err := r.applyTaskFunc(ctx, r.dryRun, r.git, logger, repo, taskToApply, workDir)
 					if err != nil {
 						success = false
 						logger.Error("Task failed", "err", err)
+					}
+
+					if taskToApply.SourceTask().MaxOpenPRs > 0 && (applyResult == ApplyResultPrCreated || applyResult == ApplyResultPrOpen) {
+						taskToApply.IncOpenPRsCount()
 					}
 				}
 			}
@@ -217,6 +221,11 @@ func hasUpdatedTasks(cachedTasks []cache.CachedTask, tasks []task.Task) bool {
 func findMatchingTasksForRepository(ctx context.Context, repository host.Repository, tasks []task.Task) []task.Task {
 	var matchingTasks []task.Task
 	for _, t := range tasks {
+		if t.SourceTask().MaxOpenPRs > 0 && t.OpenPRsCount() >= t.SourceTask().MaxOpenPRs {
+			slog.Debug("Skipping task because Max Open PRs have been reached", "task", t.SourceTask().Name)
+			continue
+		}
+
 		match, err := matchTaskToRepository(ctx, t)
 		if err != nil {
 			slog.Error("Filter of task failed - skipping", "err", err, "task", t.SourceTask().Name, "repository", repository.FullName())

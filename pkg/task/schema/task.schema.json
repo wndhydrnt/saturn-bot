@@ -99,6 +99,11 @@
       "type": "array",
       "uniqueItems": true
     },
+    "maxOpenPRs": {
+      "default": 0,
+      "description": "The number of pull requests that can be open at the same time. 0 disables the feature.",
+      "type": "integer"
+    },
     "mergeOnce": {
       "default": false,
       "description": "If `true`, no new pull request is being created if a previous pull request has been merged for this task.",

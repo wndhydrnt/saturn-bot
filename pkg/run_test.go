@@ -1,6 +1,7 @@
 package pkg
 
 import (
+	"bytes"
 	"context"
 	"crypto/sha256"
 	"fmt"
@@ -24,6 +25,7 @@ import (
 	"github.com/wndhydrnt/saturn-bot/pkg/task"
 	"github.com/wndhydrnt/saturn-bot/pkg/task/schema"
 	"go.uber.org/mock/gomock"
+	"gopkg.in/yaml.v3"
 )
 
 var (
@@ -537,18 +539,32 @@ func createTestCache(taskFilePath string) string {
 	return createTempFile(content, "*.json")
 }
 
-func createTestTask(nameFilter string) string {
+func createTestTask(nameFilter string) schema.Task {
 	parts := strings.Split(nameFilter, "/")
-	tpl := `name: "Unit Test"
-filters:
-  - filter: repository
-    params:
-      host: %s
-      owner: %s
-      name: %s
-`
-	content := fmt.Sprintf(tpl, parts[0], parts[1], parts[2])
-	return createTempFile(content, "*.yaml")
+	return schema.Task{
+		Name: "Unit Test",
+		Filters: []schema.TaskFiltersElem{
+			{
+				Filter: "repository",
+				Params: schema.TaskFiltersElemParams{
+					"host":  parts[0],
+					"owner": parts[1],
+					"name":  parts[2],
+				},
+			},
+		},
+	}
+}
+
+func createTestTaskFile(t schema.Task) string {
+	b := &bytes.Buffer{}
+	dec := yaml.NewEncoder(b)
+	err := dec.Encode(&t)
+	if err != nil {
+		panic(err)
+	}
+
+	return createTempFile(b.String(), "*.yaml")
 }
 
 func createTempFile(content string, pattern string) string {
@@ -584,7 +600,7 @@ func TestExecuteRunner_Run(t *testing.T) {
 		repositories:                     []host.Repository{repo},
 		repositoriesWithOpenPullRequests: []host.Repository{repoWithPr},
 	}
-	taskFile := createTestTask("git.local/unittest/repo.*")
+	taskFile := createTestTaskFile(createTestTask("git.local/unittest/repo.*"))
 	cacheFile := createTestCache(taskFile)
 	cache := cache.NewJsonFile(cacheFile)
 	_ = cache.Read()
@@ -625,7 +641,7 @@ func TestExecuteRunner_Run_DryRun(t *testing.T) {
 	hostm := &mockHost{
 		repositories: []host.Repository{repo},
 	}
-	taskFile := createTestTask("git.local/unittest/repo.*")
+	taskFile := createTestTaskFile(createTestTask("git.local/unittest/repo.*"))
 	cacheFile := createTestCache(taskFile)
 	cache := cache.NewJsonFile(cacheFile)
 	_ = cache.Read()
@@ -668,7 +684,7 @@ func TestExecuteRunner_Run_RepositoriesCLI(t *testing.T) {
 	hostm := &mockHost{
 		repositories: []host.Repository{repo},
 	}
-	taskFile := createTestTask("git.local/unittest/repo.*")
+	taskFile := createTestTaskFile(createTestTask("git.local/unittest/repo.*"))
 	cacheFile := createTestCache(taskFile)
 	cache := cache.NewJsonFile(cacheFile)
 	_ = cache.Read()
@@ -695,4 +711,56 @@ func TestExecuteRunner_Run_RepositoriesCLI(t *testing.T) {
 
 	require.NoError(t, err)
 	assert.NotEqual(t, cacheLastExecutionBefore, cache.GetLastExecutionAt(), "Updates the lat execution time in the cache")
+}
+
+func TestExecuteRunner_MaxOpenPRs(t *testing.T) {
+	ctrl := gomock.NewController(t)
+	repoOne := mock.NewMockRepository(ctrl)
+	repoOne.EXPECT().FullName().Return("git.local/unittest/repoOne").AnyTimes()
+	repoOne.EXPECT().Host().Return("git.local").AnyTimes()
+	repoOne.EXPECT().Owner().Return("unittest").AnyTimes()
+	repoOne.EXPECT().Name().Return("repoOne").AnyTimes()
+	repoTwo := mock.NewMockRepository(ctrl)
+	repoTwo.EXPECT().FullName().Return("git.local/unittest/repoTwo").AnyTimes()
+	repoTwo.EXPECT().Host().Return("git.local").AnyTimes()
+	repoTwo.EXPECT().Owner().Return("unittest").AnyTimes()
+	repoTwo.EXPECT().Name().Return("repoTwo").AnyTimes()
+	gitc := mock.NewMockGitClient(ctrl)
+	gitc.EXPECT().Prepare(repoOne, false).Return("/work/repoOne", nil)
+	// Next call should not happen because maxOpenPRs has been reached.
+	gitc.EXPECT().Prepare(repoTwo, false).Return("/work/repoTwo", nil).Times(0)
+	hostm := &mockHost{
+		repositories: []host.Repository{repoOne, repoTwo},
+	}
+	testTask := createTestTask("git.local/unittest/repo.*")
+	testTask.MaxOpenPRs = 1
+	taskFile := createTestTaskFile(testTask)
+	cacheFile := createTestCache(taskFile)
+	cache := cache.NewJsonFile(cacheFile)
+	_ = cache.Read()
+	cacheLastExecutionBefore := cache.GetLastExecutionAt()
+	defer func() {
+		if err := os.Remove(cacheFile); err != nil {
+			panic(err)
+		}
+
+		if err := os.Remove(taskFile); err != nil {
+			panic(err)
+		}
+	}()
+
+	runner := &executeRunner{
+		applyTaskFunc: func(ctx context.Context, dryRun bool, gitc git.GitClient, logger *slog.Logger, repo host.Repository, task task.Task, workDir string) (ApplyResult, error) {
+			return ApplyResultPrCreated, nil
+		},
+		cache:        cache,
+		dryRun:       false,
+		git:          gitc,
+		hosts:        []host.Host{hostm},
+		taskRegistry: task.NewRegistry(runTestOpts),
+	}
+	err := runner.run([]string{}, []string{taskFile})
+
+	require.NoError(t, err)
+	assert.NotEqual(t, cacheLastExecutionBefore, cache.GetLastExecutionAt(), "Updates the last execution time in the cache")
 }

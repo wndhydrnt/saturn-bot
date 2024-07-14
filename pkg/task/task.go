@@ -75,9 +75,11 @@ type Task interface {
 	BranchName() string
 	Checksum() string
 	Filters() []filter.Filter
+	IncOpenPRsCount()
 	OnPrClosed(host.Repository) error
 	OnPrCreated(host.Repository) error
 	OnPrMerged(host.Repository) error
+	OpenPRsCount() int
 	PrTitle() string
 	SourceTask() *schema.Task
 	Stop()
@@ -88,6 +90,7 @@ type Wrapper struct {
 	autoMergeAfterDuration *time.Duration
 	checksum               string
 	filters                []filter.Filter
+	openPRs                int
 	plugins                []*pluginWrapper
 	Task                   *schema.Task
 }
@@ -123,6 +126,14 @@ func (tw *Wrapper) AutoMergeAfter() time.Duration {
 	}
 
 	return *tw.autoMergeAfterDuration
+}
+
+func (tw *Wrapper) IncOpenPRsCount() {
+	tw.openPRs++
+}
+
+func (tw *Wrapper) OpenPRsCount() int {
+	return tw.openPRs
 }
 
 func (tw *Wrapper) PrTitle() string {
