@@ -81,7 +81,7 @@ func TestTryRunner_Run_NoChanges(t *testing.T) {
 	gitcMock.EXPECT().UpdateTaskBranch("saturn-bot--unit-test", false, repoMock).Return(false, nil)
 	gitcMock.EXPECT().HasLocalChanges().Return(false, nil)
 	out := &bytes.Buffer{}
-	taskFile := createTestTask(repoName)
+	taskFile := createTestTaskFile(createTestTask(repoName))
 
 	underTest := &TryRunner{
 		applyActionsFunc: func(actions []action.Action, ctx context.Context, dir string) error { return nil },
@@ -133,7 +133,7 @@ func TestTryRunner_Run_TaskName(t *testing.T) {
 	registry := task.NewRegistry(tryTestOpts)
 	gitcMock := mock.NewMockGitClient(ctrl)
 	out := &bytes.Buffer{}
-	taskFile := createTestTask(repoName)
+	taskFile := createTestTaskFile(createTestTask(repoName))
 
 	underTest := &TryRunner{
 		applyActionsFunc: func(actions []action.Action, ctx context.Context, dir string) error { return nil },
@@ -191,7 +191,7 @@ func TestTryRunner_Run_UnsetRepositoryName(t *testing.T) {
 	hostMock := mock.NewMockHost(ctrl)
 	registry := task.NewRegistry(tryTestOpts)
 	gitcMock := mock.NewMockGitClient(ctrl)
-	taskFile := createTestTask("git.local/unit/test")
+	taskFile := createTestTaskFile(createTestTask("git.local/unit/test"))
 
 	underTest := &TryRunner{
 		applyActionsFunc: func(actions []action.Action, ctx context.Context, dir string) error { return nil },
