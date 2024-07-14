@@ -136,7 +136,7 @@ func (r *executeRunner) run(repositoryNames, taskFiles []string) error {
 						logger.Error("Task failed", "err", err)
 					}
 
-					if taskToApply.SourceTask().MaxOpenPRs > 0 && (applyResult == ApplyResultPrCreated || applyResult == ApplyResultPrOpen) {
+					if applyResult == ApplyResultPrCreated || applyResult == ApplyResultPrOpen {
 						taskToApply.IncOpenPRsCount()
 					}
 
@@ -225,7 +225,7 @@ func hasUpdatedTasks(cachedTasks []cache.CachedTask, tasks []task.Task) bool {
 func findMatchingTasksForRepository(ctx context.Context, repository host.Repository, tasks []task.Task) []task.Task {
 	var matchingTasks []task.Task
 	for _, t := range tasks {
-		if t.SourceTask().MaxOpenPRs > 0 && t.OpenPRsCount() >= t.SourceTask().MaxOpenPRs {
+		if t.HasReachMaxOpenPRs() {
 			slog.Debug("Skipping task because Max Open PRs have been reached", "task", t.SourceTask().Name)
 			continue
 		}

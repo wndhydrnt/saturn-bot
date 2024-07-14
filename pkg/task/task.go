@@ -76,12 +76,12 @@ type Task interface {
 	Checksum() string
 	Filters() []filter.Filter
 	HasReachedChangeLimit() bool
+	HasReachMaxOpenPRs() bool
 	IncChangeLimitCount()
 	IncOpenPRsCount()
 	OnPrClosed(host.Repository) error
 	OnPrCreated(host.Repository) error
 	OnPrMerged(host.Repository) error
-	OpenPRsCount() int
 	PrTitle() string
 	SourceTask() *schema.Task
 	Stop()
@@ -139,6 +139,14 @@ func (tw *Wrapper) HasReachedChangeLimit() bool {
 	return tw.changeLimitCount >= tw.Task.ChangeLimit
 }
 
+func (tw *Wrapper) HasReachMaxOpenPRs() bool {
+	if tw.Task.MaxOpenPRs == 0 {
+		return false
+	}
+
+	return tw.openPRs >= tw.Task.MaxOpenPRs
+}
+
 func (tw *Wrapper) IncChangeLimitCount() {
 	if tw.Task.ChangeLimit > 0 {
 		tw.changeLimitCount++
@@ -146,11 +154,9 @@ func (tw *Wrapper) IncChangeLimitCount() {
 }
 
 func (tw *Wrapper) IncOpenPRsCount() {
-	tw.openPRs++
-}
-
-func (tw *Wrapper) OpenPRsCount() int {
-	return tw.openPRs
+	if tw.Task.MaxOpenPRs > 0 {
+		tw.openPRs++
+	}
 }
 
 func (tw *Wrapper) PrTitle() string {
