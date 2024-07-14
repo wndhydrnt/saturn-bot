@@ -75,6 +75,8 @@ type Task interface {
 	BranchName() string
 	Checksum() string
 	Filters() []filter.Filter
+	HasReachedChangeLimit() bool
+	IncChangeLimitCount()
 	IncOpenPRsCount()
 	OnPrClosed(host.Repository) error
 	OnPrCreated(host.Repository) error
@@ -88,6 +90,7 @@ type Task interface {
 type Wrapper struct {
 	actions                []action.Action
 	autoMergeAfterDuration *time.Duration
+	changeLimitCount       int
 	checksum               string
 	filters                []filter.Filter
 	openPRs                int
@@ -126,6 +129,20 @@ func (tw *Wrapper) AutoMergeAfter() time.Duration {
 	}
 
 	return *tw.autoMergeAfterDuration
+}
+
+func (tw *Wrapper) HasReachedChangeLimit() bool {
+	if tw.Task.ChangeLimit == 0 {
+		return false
+	}
+
+	return tw.changeLimitCount >= tw.Task.ChangeLimit
+}
+
+func (tw *Wrapper) IncChangeLimitCount() {
+	if tw.Task.ChangeLimit > 0 {
+		tw.changeLimitCount++
+	}
 }
 
 func (tw *Wrapper) IncOpenPRsCount() {

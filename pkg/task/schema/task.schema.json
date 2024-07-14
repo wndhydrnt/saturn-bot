@@ -46,7 +46,7 @@
     },
     "changeLimit": {
       "default": 0,
-      "description": "Number of pull requests to create in one run. Useful to reduce strain on a system caused by, for example, many CI/CD jobs created at the same time.",
+      "description": "Number of pull requests to create or merge (combined) in one run. Useful to reduce strain on a system caused by, for example, many CI/CD jobs created at the same time.",
       "type": "integer"
     },
     "commitMessage": {

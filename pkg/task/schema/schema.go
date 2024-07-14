@@ -26,8 +26,9 @@ type Task struct {
 	// auto-generated name if not set.
 	BranchName string `json:"branchName,omitempty" yaml:"branchName,omitempty" mapstructure:"branchName,omitempty"`
 
-	// Number of pull requests to create in one run. Useful to reduce strain on a
-	// system caused by, for example, many CI/CD jobs created at the same time.
+	// Number of pull requests to create or merge (combined) in one run. Useful to
+	// reduce strain on a system caused by, for example, many CI/CD jobs created at
+	// the same time.
 	ChangeLimit int `json:"changeLimit,omitempty" yaml:"changeLimit,omitempty" mapstructure:"changeLimit,omitempty"`
 
 	// If set, used as the message when changes get committed. Defaults to an

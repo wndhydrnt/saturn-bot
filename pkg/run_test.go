@@ -764,3 +764,55 @@ func TestExecuteRunner_MaxOpenPRs(t *testing.T) {
 	require.NoError(t, err)
 	assert.NotEqual(t, cacheLastExecutionBefore, cache.GetLastExecutionAt(), "Updates the last execution time in the cache")
 }
+
+func TestExecuteRunner_ChangeLimit(t *testing.T) {
+	ctrl := gomock.NewController(t)
+	repoOne := mock.NewMockRepository(ctrl)
+	repoOne.EXPECT().FullName().Return("git.local/unittest/repoOne").AnyTimes()
+	repoOne.EXPECT().Host().Return("git.local").AnyTimes()
+	repoOne.EXPECT().Owner().Return("unittest").AnyTimes()
+	repoOne.EXPECT().Name().Return("repoOne").AnyTimes()
+	repoTwo := mock.NewMockRepository(ctrl)
+	repoTwo.EXPECT().FullName().Return("git.local/unittest/repoTwo").AnyTimes()
+	repoTwo.EXPECT().Host().Return("git.local").AnyTimes()
+	repoTwo.EXPECT().Owner().Return("unittest").AnyTimes()
+	repoTwo.EXPECT().Name().Return("repoTwo").AnyTimes()
+	gitc := mock.NewMockGitClient(ctrl)
+	gitc.EXPECT().Prepare(repoOne, false).Return("/work/repoOne", nil)
+	// Next call should not happen because changeLimit has been reached.
+	gitc.EXPECT().Prepare(repoTwo, false).Return("/work/repoTwo", nil).Times(0)
+	hostm := &mockHost{
+		repositories: []host.Repository{repoOne, repoTwo},
+	}
+	testTask := createTestTask("git.local/unittest/repo.*")
+	testTask.ChangeLimit = 1
+	taskFile := createTestTaskFile(testTask)
+	cacheFile := createTestCache(taskFile)
+	cache := cache.NewJsonFile(cacheFile)
+	_ = cache.Read()
+	cacheLastExecutionBefore := cache.GetLastExecutionAt()
+	defer func() {
+		if err := os.Remove(cacheFile); err != nil {
+			panic(err)
+		}
+
+		if err := os.Remove(taskFile); err != nil {
+			panic(err)
+		}
+	}()
+
+	runner := &executeRunner{
+		applyTaskFunc: func(ctx context.Context, dryRun bool, gitc git.GitClient, logger *slog.Logger, repo host.Repository, task task.Task, workDir string) (ApplyResult, error) {
+			return ApplyResultPrCreated, nil
+		},
+		cache:        cache,
+		dryRun:       false,
+		git:          gitc,
+		hosts:        []host.Host{hostm},
+		taskRegistry: task.NewRegistry(runTestOpts),
+	}
+	err := runner.run([]string{}, []string{taskFile})
+
+	require.NoError(t, err)
+	assert.NotEqual(t, cacheLastExecutionBefore, cache.GetLastExecutionAt(), "Updates the last execution time in the cache")
+}

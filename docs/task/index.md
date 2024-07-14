@@ -72,6 +72,14 @@ branchName: "feature/hello-world"
 
 [json-path:../../pkg/task/schema/task.schema.json:$.properties.changeLimit.description]
 
+```yaml title="Allow up to 5 pull requests combined to be created or merged in one run of saturn-bot"
+changeLimit: 5
+```
+
+```yaml title="Disable the feature"
+changeLimit: 0
+```
+
 ## commitMessage
 
 [json-path:../../pkg/task/schema/task.schema.json:$.properties.commitMessage.description]
