@@ -139,6 +139,10 @@ func (r *executeRunner) run(repositoryNames, taskFiles []string) error {
 					if taskToApply.SourceTask().MaxOpenPRs > 0 && (applyResult == ApplyResultPrCreated || applyResult == ApplyResultPrOpen) {
 						taskToApply.IncOpenPRsCount()
 					}
+
+					if applyResult == ApplyResultPrCreated || applyResult == ApplyResultPrMerged {
+						taskToApply.IncChangeLimitCount()
+					}
 				}
 			}
 		case err := <-errChan:
@@ -223,6 +227,11 @@ func findMatchingTasksForRepository(ctx context.Context, repository host.Reposit
 	for _, t := range tasks {
 		if t.SourceTask().MaxOpenPRs > 0 && t.OpenPRsCount() >= t.SourceTask().MaxOpenPRs {
 			slog.Debug("Skipping task because Max Open PRs have been reached", "task", t.SourceTask().Name)
+			continue
+		}
+
+		if t.HasReachedChangeLimit() {
+			slog.Debug("Skipping task because Change Limit have been reached", "task", t.SourceTask().Name)
 			continue
 		}
 
