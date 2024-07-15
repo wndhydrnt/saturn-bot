@@ -15,7 +15,8 @@ type Configuration struct {
 	// Toggle dry-run mode. No pull requests will be created or merged when enabled.
 	DryRun bool `json:"dryRun,omitempty" yaml:"dryRun,omitempty" mapstructure:"dryRun,omitempty"`
 
-	// Author to use for git commits. Must conform to RFC5322.
+	// Author to use for git commits. Global git configuration applies if not set.
+	// Must conform to RFC5322: `User Name <user@name.local>`.
 	GitAuthor string `json:"gitAuthor,omitempty" yaml:"gitAuthor,omitempty" mapstructure:"gitAuthor,omitempty"`
 
 	// Command-line options to pass to `git clone`.
@@ -228,7 +229,7 @@ func (j *Configuration) UnmarshalJSON(b []byte) error {
 		plain.DryRun = false
 	}
 	if v, ok := raw["gitAuthor"]; !ok || v == nil {
-		plain.GitAuthor = "saturn-bot <bot@saturn-bot.localhost>"
+		plain.GitAuthor = ""
 	}
 	if v, ok := raw["gitCloneOptions"]; !ok || v == nil {
 		plain.GitCloneOptions = []string{
@@ -276,7 +277,7 @@ func (j *Configuration) UnmarshalYAML(value *yaml.Node) error {
 		plain.DryRun = false
 	}
 	if v, ok := raw["gitAuthor"]; !ok || v == nil {
-		plain.GitAuthor = "saturn-bot <bot@saturn-bot.localhost>"
+		plain.GitAuthor = ""
 	}
 	if v, ok := raw["gitCloneOptions"]; !ok || v == nil {
 		plain.GitCloneOptions = []string{

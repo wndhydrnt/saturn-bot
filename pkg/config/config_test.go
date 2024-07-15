@@ -31,7 +31,6 @@ func TestReadConfig(t *testing.T) {
 			in:   Configuration{},
 			out: Configuration{
 				DataDir:          defaultDataDir(),
-				GitAuthor:        "saturn-bot <bot@saturn-bot.localhost>",
 				GitCloneOptions:  []string{"--filter", "blob:none"},
 				GitCommitMessage: "changes by saturn-bot",
 				GitlabAddress:    "https://gitlab.com",
