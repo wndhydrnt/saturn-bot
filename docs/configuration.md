@@ -61,6 +61,10 @@ githubToken: xxxxx
 | Env Var | `SATURN_BOT_GITAUTHOR` |
 | Type    | `string`               |
 
+```yaml title="Set a custom author"
+gitAuthor: "Saturn Bot <saturn-bot@example.local>"
+```
+
 ## gitCloneOptions
 
 [json-path:../pkg/config/config.schema.json:$.properties.gitCloneOptions.description]
