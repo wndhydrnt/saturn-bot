@@ -147,13 +147,18 @@ func (g *Git) Prepare(repo host.Repository, retry bool) (string, error) {
 		}
 	}
 
-	_, _, err = g.Execute("config", "user.email", g.userEmail)
-	if err != nil {
-		return "", fmt.Errorf("set git user email: %w", err)
+	if g.userEmail != "" {
+		_, _, err = g.Execute("config", "user.email", g.userEmail)
+		if err != nil {
+			return "", fmt.Errorf("set git user email: %w", err)
+		}
 	}
-	_, _, err = g.Execute("config", "user.name", g.userName)
-	if err != nil {
-		return "", fmt.Errorf("set git user name: %w", err)
+
+	if g.userName != "" {
+		_, _, err = g.Execute("config", "user.name", g.userName)
+		if err != nil {
+			return "", fmt.Errorf("set git user name: %w", err)
+		}
 	}
 
 	return checkoutDir, nil

@@ -200,6 +200,39 @@ func TestGit_Prepare_RetryOnCheckoutError(t *testing.T) {
 	assert.True(t, em.finished())
 }
 
+func TestGit_Prepare_EmptyGitUser(t *testing.T) {
+	dataDir, err := os.MkdirTemp("", "*")
+	require.NoError(t, err)
+	defer func() {
+		err := os.RemoveAll(dataDir)
+		if err != nil {
+			panic(err)
+		}
+	}()
+
+	ctrl := gomock.NewController(t)
+	repo := mock.NewMockRepository(ctrl)
+	repo.EXPECT().FullName().Return("git.local/unit/test").AnyTimes()
+	repo.EXPECT().BaseBranch().Return("main").AnyTimes()
+	repo.EXPECT().CloneUrlHttp().Return("https://git.local/unit/test.git")
+	em := &execMock{t: t}
+	dir := dataDir + "/git/git.local/unit/test"
+	em.withCall("git", "clone", "https://git.local/unit/test.git", ".").withDir(dir)
+
+	g := &Git{
+		dataDir:   dataDir,
+		executor:  em.exec,
+		gitPath:   "git",
+		userEmail: "",
+		userName:  "",
+	}
+	out, err := g.Prepare(repo, false)
+
+	require.NoError(t, err)
+	assert.Equal(t, dir, out)
+	assert.True(t, em.finished())
+}
+
 func TestGit_HasLocal_Changes_Changes(t *testing.T) {
 	em := &execMock{t: t}
 	em.withCall("git", "status", "--porcelain=v1").withStdout("M  test.txt\n")
