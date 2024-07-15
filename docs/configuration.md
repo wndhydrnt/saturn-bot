@@ -55,11 +55,11 @@ githubToken: xxxxx
 
 [json-path:../pkg/config/config.schema.json:$.properties.gitAuthor.description]
 
-| Name    | Value                                   |
-| ------- | --------------------------------------- |
-| Default | `saturn-bot <bot@saturn-bot.localhost>` |
-| Env Var | `SATURN_BOT_GITAUTHOR`                  |
-| Type    | `string`                                |
+| Name    | Value                  |
+| ------- | ---------------------- |
+| Default | -                      |
+| Env Var | `SATURN_BOT_GITAUTHOR` |
+| Type    | `string`               |
 
 ## gitCloneOptions
 

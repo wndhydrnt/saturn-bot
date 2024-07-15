@@ -27,8 +27,8 @@
       "type": "string"
     },
     "gitAuthor": {
-      "default": "saturn-bot <bot@saturn-bot.localhost>",
-      "description": "Author to use for git commits. Must conform to RFC5322.",
+      "default": "",
+      "description": "Author to use for git commits. Global git configuration applies if not set. Must conform to RFC5322: `User Name <user@name.local>`.",
       "type": "string"
     },
     "gitCloneOptions": {

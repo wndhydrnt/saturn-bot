@@ -93,9 +93,11 @@ func Read(cfgFile string) (cfg Configuration, err error) {
 		return cfg, fmt.Errorf("schema validation failed: %w", err)
 	}
 
-	_, err = mail.ParseAddress(cfg.GitAuthor)
-	if err != nil {
-		return cfg, fmt.Errorf("failed to parse field `gitAuthor`: %w", err)
+	if cfg.GitAuthor != "" {
+		_, err = mail.ParseAddress(cfg.GitAuthor)
+		if err != nil {
+			return cfg, fmt.Errorf("failed to parse field `gitAuthor`: %w", err)
+		}
 	}
 
 	if cfg.DataDir == nil {
