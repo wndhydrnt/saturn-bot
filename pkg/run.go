@@ -113,7 +113,6 @@ func (r *executeRunner) run(repositoryNames, taskFiles []string) error {
 					slog.Info("Applying all Tasks to repository because it has been supplied via CLI")
 					tasksToApply = tasks
 				} else {
-					slog.Info("Filtering repositories")
 					tasksToApply = findMatchingTasksForRepository(ctx, repo, tasks)
 					if len(tasksToApply) < 1 {
 						slog.Debug("No task matches the repository", "repository", repo.FullName())
