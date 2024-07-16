@@ -120,6 +120,20 @@ maxOpenPRs: 0
 
 [json-path:../../pkg/task/schema/task.schema.json:$.properties.name.description]
 
+## plugins
+
+[json-path:../../pkg/task/schema/task.schema.json:$.properties.plugins.description]
+
+```yaml title="Register a plugin"
+plugins:
+  - path: ./example # Plugin binary to execute. Path is relative to the task file.
+    configuration:
+      # Arbitrary configuration to pass to the plugin.
+      message: "Hello Plugin"
+```
+
+Learn more about how to create plugins in the [documentation](plugins/index.md).
+
 ## prBody
 
 [json-path:../../pkg/task/schema/task.schema.json:$.properties.prBody.description]
