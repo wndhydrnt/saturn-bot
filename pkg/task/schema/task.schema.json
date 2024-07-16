@@ -114,6 +114,7 @@
       "type": "string"
     },
     "plugins": {
+      "description": "List of plugins to start for the task.",
       "items": {
         "properties": {
           "configuration": {

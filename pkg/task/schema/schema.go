@@ -62,7 +62,7 @@ type Task struct {
 	// The name of the task. Used as an identifier.
 	Name string `json:"name" yaml:"name" mapstructure:"name"`
 
-	// Plugins corresponds to the JSON schema field "plugins".
+	// List of plugins to start for the task.
 	Plugins []TaskPluginsElem `json:"plugins,omitempty" yaml:"plugins,omitempty" mapstructure:"plugins,omitempty"`
 
 	// If set, used as the body of the pull request.
