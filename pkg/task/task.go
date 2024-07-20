@@ -19,6 +19,8 @@ import (
 	"github.com/wndhydrnt/saturn-bot/pkg/task/schema"
 )
 
+//go:generate go-jsonschema --extra-imports -p schema -t ./schema/task.schema.json --output ./schema/schema.go
+
 func createActionsForTask(actionDefs []schema.TaskActionsElem, factories options.ActionFactories, taskPath string) ([]action.Action, error) {
 	var result []action.Action
 	if actionDefs == nil {

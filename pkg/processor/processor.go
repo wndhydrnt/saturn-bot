@@ -35,7 +35,6 @@ const (
 	ResultPrOpen
 	ResultNoMatch
 	ResultSkip
-	ResultTtt
 )
 
 type Processor struct {

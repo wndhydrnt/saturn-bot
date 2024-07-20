@@ -38,15 +38,10 @@ endif
 ifeq (, $(shell which stringer))
 	go install golang.org/x/tools/cmd/stringer@latest
 endif
+ifeq (, $(shell which go-jsonschema))
+	go install github.com/atombender/go-jsonschema@latest
+endif
 	go generate ./...
-
-generate_json_schema_config: bin/go-jsonschema/go-jsonschema-${GO_JSONSCHEMA_VERSION}
-	bin/go-jsonschema/go-jsonschema-${GO_JSONSCHEMA_VERSION} --extra-imports -p config -t ./pkg/config/config.schema.json --output ./pkg/config/schema.go
-
-generate_json_schema_task: bin/go-jsonschema/go-jsonschema-${GO_JSONSCHEMA_VERSION}
-	bin/go-jsonschema/go-jsonschema-${GO_JSONSCHEMA_VERSION} --extra-imports -p schema -t ./pkg/task/schema/task.schema.json --output ./pkg/task/schema/schema.go
-
-generate_json_schema: generate_json_schema_config generate_json_schema_task
 
 test_cover:
 	go test -coverprofile cover.out ./...
@@ -58,21 +53,3 @@ docker_build:
 
 docker_build_full: docker_build
 	docker build --build-arg="BASE=${VERSION}" -t ghcr.io/wndhydrnt/saturn-bot:${VERSION}-full -f full.Dockerfile .
-
-bin/go-jsonschema/go-jsonschema-${GO_JSONSCHEMA_VERSION}:
-	mkdir -p bin/go-jsonschema
-ifeq (${OS}-${ARCH},Darwin-arm64)
-	curl -L --silent --fail -o bin/go-jsonschema/go-jsonschema.tar.gz 'https://github.com/omissis/go-jsonschema/releases/download/${GO_JSONSCHEMA_VERSION}/go-jsonschema_Darwin_arm64.tar.gz'
-endif
-ifeq (${OS}-${ARCH},Darwin-amd64)
-	curl -L --silent --fail -o bin/go-jsonschema/go-jsonschema.tar.gz 'https://github.com/omissis/go-jsonschema/releases/download/${GO_JSONSCHEMA_VERSION}/go-jsonschema_Darwin_amd64.tar.gz'
-endif
-ifeq (${OS}-${ARCH},Linux-aarch64)
-	curl -L --silent --fail -o bin/go-jsonschema/go-jsonschema.tar.gz 'https://github.com/omissis/go-jsonschema/releases/download/${GO_JSONSCHEMA_VERSION}/go-jsonschema_Linux_arm64.tar.gz'
-endif
-ifeq (${OS}-${ARCH},Linux-x86_64)
-	curl -L --silent --fail -o bin/go-jsonschema/go-jsonschema.tar.gz 'https://github.com/omissis/go-jsonschema/releases/download/${GO_JSONSCHEMA_VERSION}/go-jsonschema_Linux_x86_64.tar.gz'
-endif
-	tar -C bin/go-jsonschema/ -xzf bin/go-jsonschema/go-jsonschema.tar.gz
-	mv bin/go-jsonschema/go-jsonschema bin/go-jsonschema/go-jsonschema-${GO_JSONSCHEMA_VERSION}
-	rm bin/go-jsonschema/go-jsonschema.tar.gz
