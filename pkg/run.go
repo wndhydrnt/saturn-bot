@@ -78,6 +78,7 @@ func (r *executeRunner) run(repositoryNames, taskFiles []string) error {
 		select {
 		case repoList := <-repos:
 			for _, repo := range repoList {
+				slog.Debug("Repository discovered", "repository", repo.FullName())
 				_, exists := visitedRepositories[repo.FullName()]
 				if exists {
 					slog.Debug("Repository already visited", "repository", repo.FullName())
