@@ -30,6 +30,16 @@ build_all: build_darwin_amd64 build_darwin_arm64 build_linux_arm64 build_linux_a
 checksums:
 	sha256sum saturn-bot-$(VERSION).* > sha256sums.txt
 
+generate_go:
+ifeq (, $(shell which mockgen))
+	go install go.uber.org/mock/mockgen@latest
+endif
+	mkdir -p pkg/mock
+ifeq (, $(shell which stringer))
+	go install golang.org/x/tools/cmd/stringer@latest
+endif
+	go generate ./...
+
 generate_json_schema_config: bin/go-jsonschema/go-jsonschema-${GO_JSONSCHEMA_VERSION}
 	bin/go-jsonschema/go-jsonschema-${GO_JSONSCHEMA_VERSION} --extra-imports -p config -t ./pkg/config/config.schema.json --output ./pkg/config/schema.go
 
@@ -37,19 +47,6 @@ generate_json_schema_task: bin/go-jsonschema/go-jsonschema-${GO_JSONSCHEMA_VERSI
 	bin/go-jsonschema/go-jsonschema-${GO_JSONSCHEMA_VERSION} --extra-imports -p schema -t ./pkg/task/schema/task.schema.json --output ./pkg/task/schema/schema.go
 
 generate_json_schema: generate_json_schema_config generate_json_schema_task
-
-generate_mocks:
-ifeq (, $(shell which mockgen))
-	go install go.uber.org/mock/mockgen@latest
-endif
-	mkdir -p pkg/mock
-	rm -f pkg/mock/*.go
-	mockgen -package mock -source pkg/filter/filter.go > pkg/mock/filter.go
-	mockgen -package mock -source pkg/git/git.go > pkg/mock/git.go
-	mockgen -package mock -source pkg/host/host.go > pkg/mock/host.go
-	mockgen -package mock -source pkg/task/task.go > pkg/mock/task.go
-	mockgen -package mock github.com/wndhydrnt/saturn-bot-go/plugin Provider > pkg/mock/plugin.go
-	mockgen -package mock -source pkg/processor/processor.go > pkg/mock/processor.go
 
 test_cover:
 	go test -coverprofile cover.out ./...

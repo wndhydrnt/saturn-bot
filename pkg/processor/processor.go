@@ -17,6 +17,7 @@ import (
 	"github.com/wndhydrnt/saturn-bot/pkg/template"
 )
 
+//go:generate stringer -type=Result
 type Result int
 
 const (
