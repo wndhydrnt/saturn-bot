@@ -30,9 +30,6 @@ build_all: build_darwin_amd64 build_darwin_arm64 build_linux_arm64 build_linux_a
 checksums:
 	sha256sum saturn-bot-$(VERSION).* > sha256sums.txt
 
-generate_grpc:
-	buf generate
-
 generate_json_schema_config: bin/go-jsonschema/go-jsonschema-${GO_JSONSCHEMA_VERSION}
 	bin/go-jsonschema/go-jsonschema-${GO_JSONSCHEMA_VERSION} --extra-imports -p config -t ./pkg/config/config.schema.json --output ./pkg/config/schema.go
 
@@ -52,6 +49,7 @@ endif
 	mockgen -package mock -source pkg/host/host.go > pkg/mock/host.go
 	mockgen -package mock -source pkg/task/task.go > pkg/mock/task.go
 	mockgen -package mock github.com/wndhydrnt/saturn-bot-go/plugin Provider > pkg/mock/plugin.go
+	mockgen -package mock -source pkg/processor/processor.go > pkg/mock/processor.go
 
 test_cover:
 	go test -coverprofile cover.out ./...

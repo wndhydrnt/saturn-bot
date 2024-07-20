@@ -102,6 +102,10 @@ func (tw *Wrapper) Actions() []action.Action {
 	return tw.actions
 }
 
+func (tw *Wrapper) AddFilters(f ...filter.Filter) {
+	tw.filters = append(tw.filters, f...)
+}
+
 func (tw *Wrapper) Filters() []filter.Filter {
 	return tw.filters
 }

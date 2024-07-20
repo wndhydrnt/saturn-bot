@@ -1,4 +1,4 @@
-package task
+package task_test
 
 import (
 	"fmt"
@@ -10,6 +10,8 @@ import (
 	"github.com/stretchr/testify/require"
 	"github.com/wndhydrnt/saturn-bot/pkg/action"
 	"github.com/wndhydrnt/saturn-bot/pkg/filter"
+	"github.com/wndhydrnt/saturn-bot/pkg/options"
+	"github.com/wndhydrnt/saturn-bot/pkg/task"
 )
 
 func TestRegistry_ReadAll(t *testing.T) {
@@ -29,7 +31,7 @@ name: Task Two
 		require.NoError(t, err)
 	}()
 
-	tr := &Registry{}
+	tr := &task.Registry{}
 	err = tr.ReadAll([]string{f.Name()})
 	require.NoError(t, err)
 
@@ -55,7 +57,7 @@ name: Task Two
 		require.NoError(t, err)
 	}()
 
-	tr := &Registry{}
+	tr := &task.Registry{}
 	err = tr.ReadAll([]string{f.Name()})
 
 	assert.EqualError(t, err, fmt.Sprintf("failed to read tasks from file %s: unsupported extension: .yamll", f.Name()))
@@ -113,7 +115,7 @@ actions:
 		require.NoError(t, err)
 	}()
 
-	tr := &Registry{actionFactories: action.BuiltInFactories}
+	tr := task.NewRegistry(options.Opts{ActionFactories: action.BuiltInFactories})
 	err = tr.ReadAll([]string{taskPath})
 	require.NoError(t, err)
 
@@ -171,7 +173,7 @@ func TestRegistry_ReadAll_AllBuiltInFilters(t *testing.T) {
 		require.NoError(t, err)
 	}()
 
-	tr := &Registry{filterFactories: filter.BuiltInFactories}
+	tr := task.NewRegistry(options.Opts{FilterFactories: filter.BuiltInFactories})
 	err = tr.ReadAll([]string{taskPath})
 	require.NoError(t, err)
 

@@ -49,12 +49,13 @@ type GitClient interface {
 }
 
 type Git struct {
+	CmdExec func(*exec.Cmd) error // exists to mock calls in unit tests
+	EnvVars []string
+
 	cloneOpts        []string
 	checkoutDir      string
 	dataDir          string
 	defaultCommitMsg string
-	envVars          []string
-	executor         func(*exec.Cmd) error // executor exists to mock calls in unit tests
 	gitPath          string
 	userEmail        string
 	userName         string
@@ -70,8 +71,8 @@ func New(cfg config.Configuration) (*Git, error) {
 		cloneOpts:        cfg.GitCloneOptions,
 		dataDir:          *cfg.DataDir,
 		defaultCommitMsg: cfg.GitCommitMessage,
-		envVars:          envVars,
-		executor:         execCmd,
+		EnvVars:          envVars,
+		CmdExec:          execCmd,
 		gitPath:          cfg.GitPath,
 		userEmail:        cfg.GitUserEmail(),
 		userName:         cfg.GitUserName(),
@@ -167,14 +168,14 @@ func (g *Git) Prepare(repo host.Repository, retry bool) (string, error) {
 func (g *Git) Execute(arg ...string) (string, string, error) {
 	cmd := exec.Command(g.gitPath, arg...) // #nosec G204 -- git executable is checked and arguments are controlled by saturn-bot
 	cmd.Dir = g.checkoutDir
-	cmd.Env = g.envVars
+	cmd.Env = g.EnvVars
 	stderr := &bytes.Buffer{}
 	cmd.Stderr = stderr
 	stdout := &bytes.Buffer{}
 	cmd.Stdout = stdout
 	cmdLog := strings.Join(arg, " ")
 	log.GitLogger().Debug("Executing git", "cmd", cmdLog, "cwd", g.checkoutDir)
-	err := g.executor(cmd)
+	err := g.CmdExec(cmd)
 	if err != nil {
 		return stdout.String(), stderr.String(), &GitCommandError{err: err, exitCode: cmd.ProcessState.ExitCode(), stderr: stderr.String(), stdout: stdout.String()}
 	}

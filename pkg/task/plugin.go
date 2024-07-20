@@ -77,9 +77,9 @@ func newPluginWrapper(opts startPluginOptions) (*pluginWrapper, error) {
 
 	slog.Debug("Registered plugin", "name", getPluginResp.GetName())
 	return &pluginWrapper{
-		action:   &PluginAction{provider: provider},
+		action:   &PluginAction{Provider: provider},
 		client:   client,
-		filter:   &PluginFilter{provider: provider},
+		filter:   &PluginFilter{Provider: provider},
 		provider: provider,
 	}, nil
 }
@@ -157,7 +157,7 @@ func (pw *pluginWrapper) stop() {
 
 // PluginAction wraps remote actions provided by a plugin.
 type PluginAction struct {
-	provider plugin.Provider
+	Provider plugin.Provider
 }
 
 // Apply implements action.Apply().
@@ -165,7 +165,7 @@ func (a *PluginAction) Apply(ctx context.Context) error {
 	path := ctx.Value(gsContext.CheckoutPath{}).(string)
 	pluginData := gsContext.PluginData(ctx)
 	repo := ctx.Value(gsContext.RepositoryKey{}).(host.Repository)
-	reply, err := a.provider.ExecuteActions(&proto.ExecuteActionsRequest{
+	reply, err := a.Provider.ExecuteActions(&proto.ExecuteActionsRequest{
 		Path: path,
 		Context: &proto.Context{
 			PluginData:  pluginData,
@@ -198,14 +198,14 @@ func (a *PluginAction) String() string {
 
 // PluginFilter wraps remote filters provided by a plugin.
 type PluginFilter struct {
-	provider plugin.Provider
+	Provider plugin.Provider
 }
 
 // Do implements filter.Do().
 func (f *PluginFilter) Do(ctx context.Context) (bool, error) {
 	pluginData := gsContext.PluginData(ctx)
 	repo := ctx.Value(gsContext.RepositoryKey{}).(host.Repository)
-	reply, err := f.provider.ExecuteFilters(&proto.ExecuteFiltersRequest{
+	reply, err := f.Provider.ExecuteFilters(&proto.ExecuteFiltersRequest{
 		Context: &proto.Context{
 			PluginData:  pluginData,
 			PullRequest: newPullRequestPayload(ctx.Value(gsContext.PullRequestKey{})),
