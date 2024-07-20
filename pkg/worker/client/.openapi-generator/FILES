@@ -1,10 +1,14 @@
 .gitignore
+api_task.go
 api_worker.go
 client.go
 configuration.go
+model_error.go
+model_get_task_v1_200_response.go
 model_get_work_v1_200_response.go
+model_list_tasks_v1_200_response.go
 model_report_work_v1_201_response.go
 model_report_work_v1_request.go
-model_report_work_v1_request_repository_results_inner.go
+model_report_work_v1_request_task_results_inner.go
 response.go
 utils.go

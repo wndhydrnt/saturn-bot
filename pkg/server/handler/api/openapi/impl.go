@@ -8,7 +8,7 @@
  * API version: 1.0.0
  */
 
-package api
+package openapi
 
 // ImplResponse defines an implementation response with error code and the associated body
 type ImplResponse struct {

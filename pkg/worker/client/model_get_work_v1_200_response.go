@@ -23,10 +23,10 @@ var _ MappedNullable = &GetWorkV1200Response{}
 type GetWorkV1200Response struct {
 	// Internal identifier of the unit of work.
 	ExecutionID int32 `json:"executionID"`
-	// List of repositories for which to apply the task.
-	Repositories []string `json:"repositories"`
-	// Name of the task to execute.
-	Task string `json:"task"`
+	// Repository for which to apply the tasks.
+	Repository string `json:"repository"`
+	// Names of the tasks to execute.
+	Tasks []string `json:"tasks"`
 }
 
 type _GetWorkV1200Response GetWorkV1200Response
@@ -35,11 +35,11 @@ type _GetWorkV1200Response GetWorkV1200Response
 // This constructor will assign default values to properties that have it defined,
 // and makes sure properties required by API are set, but the set of arguments
 // will change when the set of required properties is changed
-func NewGetWorkV1200Response(executionID int32, repositories []string, task string) *GetWorkV1200Response {
+func NewGetWorkV1200Response(executionID int32, repository string, tasks []string) *GetWorkV1200Response {
 	this := GetWorkV1200Response{}
 	this.ExecutionID = executionID
-	this.Repositories = repositories
-	this.Task = task
+	this.Repository = repository
+	this.Tasks = tasks
 	return &this
 }
 
@@ -75,52 +75,52 @@ func (o *GetWorkV1200Response) SetExecutionID(v int32) {
 	o.ExecutionID = v
 }
 
-// GetRepositories returns the Repositories field value
-func (o *GetWorkV1200Response) GetRepositories() []string {
-	if o == nil {
-		var ret []string
-		return ret
-	}
-
-	return o.Repositories
-}
-
-// GetRepositoriesOk returns a tuple with the Repositories field value
-// and a boolean to check if the value has been set.
-func (o *GetWorkV1200Response) GetRepositoriesOk() ([]string, bool) {
-	if o == nil {
-		return nil, false
-	}
-	return o.Repositories, true
-}
-
-// SetRepositories sets field value
-func (o *GetWorkV1200Response) SetRepositories(v []string) {
-	o.Repositories = v
-}
-
-// GetTask returns the Task field value
-func (o *GetWorkV1200Response) GetTask() string {
+// GetRepository returns the Repository field value
+func (o *GetWorkV1200Response) GetRepository() string {
 	if o == nil {
 		var ret string
 		return ret
 	}
 
-	return o.Task
+	return o.Repository
 }
 
-// GetTaskOk returns a tuple with the Task field value
+// GetRepositoryOk returns a tuple with the Repository field value
 // and a boolean to check if the value has been set.
-func (o *GetWorkV1200Response) GetTaskOk() (*string, bool) {
+func (o *GetWorkV1200Response) GetRepositoryOk() (*string, bool) {
 	if o == nil {
 		return nil, false
 	}
-	return &o.Task, true
+	return &o.Repository, true
 }
 
-// SetTask sets field value
-func (o *GetWorkV1200Response) SetTask(v string) {
-	o.Task = v
+// SetRepository sets field value
+func (o *GetWorkV1200Response) SetRepository(v string) {
+	o.Repository = v
+}
+
+// GetTasks returns the Tasks field value
+func (o *GetWorkV1200Response) GetTasks() []string {
+	if o == nil {
+		var ret []string
+		return ret
+	}
+
+	return o.Tasks
+}
+
+// GetTasksOk returns a tuple with the Tasks field value
+// and a boolean to check if the value has been set.
+func (o *GetWorkV1200Response) GetTasksOk() ([]string, bool) {
+	if o == nil {
+		return nil, false
+	}
+	return o.Tasks, true
+}
+
+// SetTasks sets field value
+func (o *GetWorkV1200Response) SetTasks(v []string) {
+	o.Tasks = v
 }
 
 func (o GetWorkV1200Response) MarshalJSON() ([]byte, error) {
@@ -134,8 +134,8 @@ func (o GetWorkV1200Response) MarshalJSON() ([]byte, error) {
 func (o GetWorkV1200Response) ToMap() (map[string]interface{}, error) {
 	toSerialize := map[string]interface{}{}
 	toSerialize["executionID"] = o.ExecutionID
-	toSerialize["repositories"] = o.Repositories
-	toSerialize["task"] = o.Task
+	toSerialize["repository"] = o.Repository
+	toSerialize["tasks"] = o.Tasks
 	return toSerialize, nil
 }
 
@@ -145,8 +145,8 @@ func (o *GetWorkV1200Response) UnmarshalJSON(data []byte) (err error) {
 	// that every required field exists as a key in the generic map.
 	requiredProperties := []string{
 		"executionID",
-		"repositories",
-		"task",
+		"repository",
+		"tasks",
 	}
 
 	allProperties := make(map[string]interface{})

@@ -8,7 +8,7 @@
  * API version: 1.0.0
  */
 
-package api
+package openapi
 
 import (
 	"errors"

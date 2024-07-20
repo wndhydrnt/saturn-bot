@@ -8,7 +8,7 @@
  * API version: 1.0.0
  */
 
-package api
+package openapi
 
 
 
@@ -18,14 +18,14 @@ type ReportWorkV1Request struct {
 	// Internal identifier of the unit of work.
 	ExecutionID int32 `json:"executionID"`
 
-	RepositoryResults []ReportWorkV1RequestRepositoryResultsInner `json:"repositoryResults"`
+	TaskResults []ReportWorkV1RequestTaskResultsInner `json:"taskResults"`
 }
 
 // AssertReportWorkV1RequestRequired checks if the required fields are not zero-ed
 func AssertReportWorkV1RequestRequired(obj ReportWorkV1Request) error {
 	elements := map[string]interface{}{
 		"executionID": obj.ExecutionID,
-		"repositoryResults": obj.RepositoryResults,
+		"taskResults": obj.TaskResults,
 	}
 	for name, el := range elements {
 		if isZero := IsZeroValue(el); isZero {
@@ -33,8 +33,8 @@ func AssertReportWorkV1RequestRequired(obj ReportWorkV1Request) error {
 		}
 	}
 
-	for _, el := range obj.RepositoryResults {
-		if err := AssertReportWorkV1RequestRepositoryResultsInnerRequired(el); err != nil {
+	for _, el := range obj.TaskResults {
+		if err := AssertReportWorkV1RequestTaskResultsInnerRequired(el); err != nil {
 			return err
 		}
 	}
@@ -43,8 +43,8 @@ func AssertReportWorkV1RequestRequired(obj ReportWorkV1Request) error {
 
 // AssertReportWorkV1RequestConstraints checks if the values respects the defined constraints
 func AssertReportWorkV1RequestConstraints(obj ReportWorkV1Request) error {
-	for _, el := range obj.RepositoryResults {
-		if err := AssertReportWorkV1RequestRepositoryResultsInnerConstraints(el); err != nil {
+	for _, el := range obj.TaskResults {
+		if err := AssertReportWorkV1RequestTaskResultsInnerConstraints(el); err != nil {
 			return err
 		}
 	}

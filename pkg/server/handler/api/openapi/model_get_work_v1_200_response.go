@@ -8,7 +8,7 @@
  * API version: 1.0.0
  */
 
-package api
+package openapi
 
 
 
@@ -18,19 +18,19 @@ type GetWorkV1200Response struct {
 	// Internal identifier of the unit of work.
 	ExecutionID int32 `json:"executionID"`
 
-	// List of repositories for which to apply the task.
-	Repositories []string `json:"repositories"`
+	// Repository for which to apply the tasks.
+	Repository string `json:"repository"`
 
-	// Name of the task to execute.
-	Task string `json:"task"`
+	// Names of the tasks to execute.
+	Tasks []string `json:"tasks"`
 }
 
 // AssertGetWorkV1200ResponseRequired checks if the required fields are not zero-ed
 func AssertGetWorkV1200ResponseRequired(obj GetWorkV1200Response) error {
 	elements := map[string]interface{}{
 		"executionID": obj.ExecutionID,
-		"repositories": obj.Repositories,
-		"task": obj.Task,
+		"repository": obj.Repository,
+		"tasks": obj.Tasks,
 	}
 	for name, el := range elements {
 		if isZero := IsZeroValue(el); isZero {

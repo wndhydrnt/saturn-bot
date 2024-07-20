@@ -3,10 +3,7 @@ package task
 import (
 	"cmp"
 	"fmt"
-	"hash"
-	"io"
 	"log/slog"
-	"os"
 	"path"
 	"path/filepath"
 	"time"
@@ -85,7 +82,7 @@ type Task interface {
 	OnPrCreated(host.Repository) error
 	OnPrMerged(host.Repository) error
 	PrTitle() string
-	SourceTask() *schema.Task
+	SourceTask() schema.Task
 	Stop()
 }
 
@@ -97,7 +94,7 @@ type Wrapper struct {
 	filters                []filter.Filter
 	openPRs                int
 	plugins                []*pluginWrapper
-	Task                   *schema.Task
+	Task                   schema.Task
 }
 
 func (tw *Wrapper) Actions() []action.Action {
@@ -169,7 +166,7 @@ func (tw *Wrapper) PrTitle() string {
 	return cmp.Or(tw.Task.PrTitle, "Apply task "+tw.Task.Name)
 }
 
-func (tw *Wrapper) SourceTask() *schema.Task {
+func (tw *Wrapper) SourceTask() schema.Task {
 	return tw.Task
 }
 
@@ -279,19 +276,4 @@ func (tr *Registry) Stop() {
 	for _, t := range tr.tasks {
 		t.Stop()
 	}
-}
-
-func calculateChecksum(filePath string, h hash.Hash) error {
-	f, err := os.Open(filePath)
-	if err != nil {
-		return fmt.Errorf("open file to calculate hash: %w", err)
-	}
-
-	defer f.Close()
-	_, err = io.Copy(h, f)
-	if err != nil {
-		return fmt.Errorf("copy content to hash: %w", err)
-	}
-
-	return nil
 }

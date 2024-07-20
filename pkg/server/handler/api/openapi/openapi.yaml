@@ -1,0 +1,145 @@
+openapi: 3.1.0
+info:
+  title: saturn-bot server API
+  version: 1.0.0
+paths:
+  /api/v1/tasks:
+    get:
+      operationId: listTasksV1
+      summary: List tasks.
+      description: Returns a list of registered tasks.
+      tags:
+        - task
+      responses:
+        "200":
+          description: OK
+          content:
+            application/json:
+              schema:
+                type: object
+                properties:
+                  tasks:
+                    description: Names of registered tasks.
+                    type: array
+                    items:
+                      type: string
+                required: ["tasks"]
+  /api/v1/tasks/{task}:
+    get:
+      operationId: getTaskV1
+      summary: Get information about a task.
+      description: Returns detail information about a task.
+      tags:
+        - task
+      parameters:
+        - in: path
+          name: task
+          schema:
+            type: string
+          required: true
+          description: Name of the task to return.
+      responses:
+        "200":
+          description: OK
+          content:
+            application/json:
+              schema:
+                type: object
+                properties:
+                  name:
+                    type: string
+                  hash:
+                    type: string
+                  content:
+                    type: string
+                    format: byte
+                required: ["name", "hash", "content"]
+        "404":
+          description: Not Found
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/Error"
+        "500":
+          description: Internal Server Error
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/Error"
+  /api/v1/worker/work:
+    get:
+      operationId: getWorkV1
+      summary: Get a unit of work.
+      description: Let a worker retrieve the next unit of work.
+      tags:
+        - worker
+      responses:
+        "200":
+          description: OK
+          content:
+            application/json:
+              schema:
+                type: object
+                properties:
+                  executionID:
+                    description: Internal identifier of the unit of work.
+                    type: integer
+                  repository:
+                    description: Repository for which to apply the tasks.
+                    type: string
+                  tasks:
+                    description: Names of the tasks to execute.
+                    type: array
+                    items:
+                      type: string
+                required: ["executionID", "repository", "tasks"]
+    post:
+      operationId: reportWorkV1
+      summary: Report the result of a unit of work
+      description: Used by workers to report the result of a unit of work.
+      tags:
+        - worker
+      requestBody:
+        content:
+          application/json:
+            schema:
+              type: object
+              properties:
+                executionID:
+                  description: Internal identifier of the unit of work.
+                  type: integer
+                taskResults:
+                  type: array
+                  items:
+                    type: object
+                    properties:
+                      name:
+                        type: string
+                      result:
+                        type: integer
+                    required: ["name", "result"]
+              required: ["executionID", "taskResults"]
+        required: true
+      responses:
+        "201":
+          description: OK
+          content:
+            application/json:
+              schema:
+                type: object
+                properties:
+                  result:
+                    description: Indicator of the result of the operation.
+                    type: "string"
+                    enum: ["ok"]
+                required: ["result"]
+components:
+  schemas:
+    Error:
+      type: object
+      properties:
+        error:
+          type: string
+        message:
+          type: string
+      required: ["error", "message"]

@@ -49,6 +49,8 @@ type APIClient struct {
 
 	// API Services
 
+	TaskAPI TaskAPI
+
 	WorkerAPI WorkerAPI
 }
 
@@ -68,6 +70,7 @@ func NewAPIClient(cfg *Configuration) *APIClient {
 	c.common.client = c
 
 	// API Services
+	c.TaskAPI = (*TaskAPIService)(&c.common)
 	c.WorkerAPI = (*WorkerAPIService)(&c.common)
 
 	return c

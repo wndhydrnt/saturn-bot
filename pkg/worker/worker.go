@@ -11,6 +11,7 @@ import (
 	"syscall"
 	"time"
 
+	"github.com/wndhydrnt/saturn-bot/pkg/processor"
 	"github.com/wndhydrnt/saturn-bot/pkg/worker/client"
 )
 
@@ -63,7 +64,12 @@ func (a *APIExecutionSource) Next() (Execution, error) {
 
 func (a *APIExecutionSource) Report(result ExecutionResult) error {
 	req := a.client.ReportWorkV1(ctx)
-	req = req.ReportWorkV1Request(client.ReportWorkV1Request{ExecutionID: 123})
+	req = req.ReportWorkV1Request(client.ReportWorkV1Request{
+		ExecutionID: 123,
+		TaskResults: []client.ReportWorkV1RequestTaskResultsInner{
+			{Name: "foobar", Result: int32(processor.ResultNoChanges)},
+		},
+	})
 	_, _, err := a.client.ReportWorkV1Execute(req)
 	if err != nil {
 		return fmt.Errorf("send execution result to API: %w", err)
@@ -84,7 +90,7 @@ type Worker struct {
 func (w *Worker) Start() {
 	w.resultChan = make(chan ExecutionResult, 1)
 	w.stopChan = make(chan chan struct{})
-	t := time.NewTicker(10 * time.Second)
+	t := time.NewTicker(5 * time.Second)
 	executionCounter := 0
 	for {
 		select {
@@ -93,6 +99,7 @@ func (w *Worker) Start() {
 				continue
 			}
 
+			slog.Info("Parallel executions", "count", executionCounter)
 			if executionCounter >= w.ParallelExecutions {
 				slog.Debug("Max number of parallel executions reached")
 				continue

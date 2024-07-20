@@ -3,7 +3,6 @@ package task
 import (
 	"context"
 	"fmt"
-	"hash"
 	"log/slog"
 	"os/exec"
 	"path/filepath"
@@ -17,7 +16,6 @@ import (
 )
 
 type startPluginOptions struct {
-	hash       hash.Hash
 	config     map[string]string
 	filePath   string
 	pathJava   string
@@ -70,11 +68,6 @@ func newPluginWrapper(opts startPluginOptions) (*pluginWrapper, error) {
 	getPluginResp, err := provider.GetPlugin(&proto.GetPluginRequest{Config: opts.config})
 	if err != nil {
 		return nil, fmt.Errorf("get plugin: %w", err)
-	}
-
-	err = calculateChecksum(opts.filePath, opts.hash)
-	if err != nil {
-		return nil, fmt.Errorf("calculate checksum of plugin: %w", err)
 	}
 
 	slog.Debug("Registered plugin", "name", getPluginResp.GetName())

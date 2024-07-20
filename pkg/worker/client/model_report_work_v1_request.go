@@ -23,7 +23,7 @@ var _ MappedNullable = &ReportWorkV1Request{}
 type ReportWorkV1Request struct {
 	// Internal identifier of the unit of work.
 	ExecutionID int32 `json:"executionID"`
-	RepositoryResults []ReportWorkV1RequestRepositoryResultsInner `json:"repositoryResults"`
+	TaskResults []ReportWorkV1RequestTaskResultsInner `json:"taskResults"`
 }
 
 type _ReportWorkV1Request ReportWorkV1Request
@@ -32,10 +32,10 @@ type _ReportWorkV1Request ReportWorkV1Request
 // This constructor will assign default values to properties that have it defined,
 // and makes sure properties required by API are set, but the set of arguments
 // will change when the set of required properties is changed
-func NewReportWorkV1Request(executionID int32, repositoryResults []ReportWorkV1RequestRepositoryResultsInner) *ReportWorkV1Request {
+func NewReportWorkV1Request(executionID int32, taskResults []ReportWorkV1RequestTaskResultsInner) *ReportWorkV1Request {
 	this := ReportWorkV1Request{}
 	this.ExecutionID = executionID
-	this.RepositoryResults = repositoryResults
+	this.TaskResults = taskResults
 	return &this
 }
 
@@ -71,28 +71,28 @@ func (o *ReportWorkV1Request) SetExecutionID(v int32) {
 	o.ExecutionID = v
 }
 
-// GetRepositoryResults returns the RepositoryResults field value
-func (o *ReportWorkV1Request) GetRepositoryResults() []ReportWorkV1RequestRepositoryResultsInner {
+// GetTaskResults returns the TaskResults field value
+func (o *ReportWorkV1Request) GetTaskResults() []ReportWorkV1RequestTaskResultsInner {
 	if o == nil {
-		var ret []ReportWorkV1RequestRepositoryResultsInner
+		var ret []ReportWorkV1RequestTaskResultsInner
 		return ret
 	}
 
-	return o.RepositoryResults
+	return o.TaskResults
 }
 
-// GetRepositoryResultsOk returns a tuple with the RepositoryResults field value
+// GetTaskResultsOk returns a tuple with the TaskResults field value
 // and a boolean to check if the value has been set.
-func (o *ReportWorkV1Request) GetRepositoryResultsOk() ([]ReportWorkV1RequestRepositoryResultsInner, bool) {
+func (o *ReportWorkV1Request) GetTaskResultsOk() ([]ReportWorkV1RequestTaskResultsInner, bool) {
 	if o == nil {
 		return nil, false
 	}
-	return o.RepositoryResults, true
+	return o.TaskResults, true
 }
 
-// SetRepositoryResults sets field value
-func (o *ReportWorkV1Request) SetRepositoryResults(v []ReportWorkV1RequestRepositoryResultsInner) {
-	o.RepositoryResults = v
+// SetTaskResults sets field value
+func (o *ReportWorkV1Request) SetTaskResults(v []ReportWorkV1RequestTaskResultsInner) {
+	o.TaskResults = v
 }
 
 func (o ReportWorkV1Request) MarshalJSON() ([]byte, error) {
@@ -106,7 +106,7 @@ func (o ReportWorkV1Request) MarshalJSON() ([]byte, error) {
 func (o ReportWorkV1Request) ToMap() (map[string]interface{}, error) {
 	toSerialize := map[string]interface{}{}
 	toSerialize["executionID"] = o.ExecutionID
-	toSerialize["repositoryResults"] = o.RepositoryResults
+	toSerialize["taskResults"] = o.TaskResults
 	return toSerialize, nil
 }
 
@@ -116,7 +116,7 @@ func (o *ReportWorkV1Request) UnmarshalJSON(data []byte) (err error) {
 	// that every required field exists as a key in the generic map.
 	requiredProperties := []string{
 		"executionID",
-		"repositoryResults",
+		"taskResults",
 	}
 
 	allProperties := make(map[string]interface{})

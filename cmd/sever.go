@@ -13,7 +13,7 @@ func createServerCommand() *cobra.Command {
 		Short: "Start the server",
 		Long:  "Start the server.",
 		Run: func(cmd *cobra.Command, args []string) {
-			err := server.Run()
+			err := server.Run(taskFiles)
 			handleError(err, cmd.ErrOrStderr())
 		},
 	}
