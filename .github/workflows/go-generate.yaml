@@ -1,0 +1,30 @@
+name: Go Generate
+
+on:
+  pull_request: {}
+  push:
+    branches:
+      - main
+
+jobs:
+  test:
+    name: Code up-to-date
+    runs-on: ubuntu-latest
+    strategy:
+      matrix:
+        go-version: ["1.22.x"]
+    steps:
+      - uses: actions/checkout@v4
+      - name: Setup Go ${{ matrix.go-version }}
+        uses: actions/setup-go@v4
+        with:
+          go-version: ${{ matrix.go-version }}
+      - name: Generate code
+        run: make generate_go
+      - name: Check diff
+        id: diff
+        run: git diff --exit-code .
+        continue-on-error: true
+      - name: Help message
+        if: steps.diff.outcome != 'success'
+        run: echo "Generated code not up-to-date - run make generate_go" && exit 1
