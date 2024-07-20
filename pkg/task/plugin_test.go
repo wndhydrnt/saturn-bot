@@ -1,4 +1,4 @@
-package task
+package task_test
 
 import (
 	"context"
@@ -9,6 +9,7 @@ import (
 	gsContext "github.com/wndhydrnt/saturn-bot/pkg/context"
 	"github.com/wndhydrnt/saturn-bot/pkg/host"
 	"github.com/wndhydrnt/saturn-bot/pkg/mock"
+	"github.com/wndhydrnt/saturn-bot/pkg/task"
 	"go.uber.org/mock/gomock"
 )
 
@@ -53,7 +54,7 @@ func TestPluginAction_Apply(t *testing.T) {
 	templateVars := map[string]string{"a": "1"}
 	ctx = context.WithValue(ctx, gsContext.TemplateVarsKey{}, templateVars)
 
-	pa := &PluginAction{provider: provider}
+	pa := &task.PluginAction{Provider: provider}
 	err := pa.Apply(ctx)
 
 	require.NoError(t, err)
@@ -81,7 +82,7 @@ func TestPluginAction_Apply_WithPullRequest(t *testing.T) {
 	})
 	ctx = context.WithValue(ctx, gsContext.RepositoryKey{}, repo)
 
-	pa := &PluginAction{provider: provider}
+	pa := &task.PluginAction{Provider: provider}
 	err := pa.Apply(ctx)
 
 	require.NoError(t, err)
@@ -112,7 +113,7 @@ func TestPluginFilter_Do(t *testing.T) {
 	ctx = context.WithValue(ctx, gsContext.TemplateVarsKey{}, templateVars)
 	ctx = context.WithValue(ctx, gsContext.PluginDataKey{}, pluginData)
 
-	pf := &PluginFilter{provider: provider}
+	pf := &task.PluginFilter{Provider: provider}
 	match, err := pf.Do(ctx)
 
 	require.NoError(t, err)
@@ -142,7 +143,7 @@ func TestPluginFilter_Do_WithPullRequest(t *testing.T) {
 	})
 	ctx = context.WithValue(ctx, gsContext.RepositoryKey{}, repo)
 
-	pf := &PluginFilter{provider: provider}
+	pf := &task.PluginFilter{Provider: provider}
 	match, err := pf.Do(ctx)
 
 	require.NoError(t, err)

@@ -113,6 +113,58 @@ func (mr *MockTaskMockRecorder) Filters() *gomock.Call {
 	return mr.mock.ctrl.RecordCallWithMethodType(mr.mock, "Filters", reflect.TypeOf((*MockTask)(nil).Filters))
 }
 
+// HasReachMaxOpenPRs mocks base method.
+func (m *MockTask) HasReachMaxOpenPRs() bool {
+	m.ctrl.T.Helper()
+	ret := m.ctrl.Call(m, "HasReachMaxOpenPRs")
+	ret0, _ := ret[0].(bool)
+	return ret0
+}
+
+// HasReachMaxOpenPRs indicates an expected call of HasReachMaxOpenPRs.
+func (mr *MockTaskMockRecorder) HasReachMaxOpenPRs() *gomock.Call {
+	mr.mock.ctrl.T.Helper()
+	return mr.mock.ctrl.RecordCallWithMethodType(mr.mock, "HasReachMaxOpenPRs", reflect.TypeOf((*MockTask)(nil).HasReachMaxOpenPRs))
+}
+
+// HasReachedChangeLimit mocks base method.
+func (m *MockTask) HasReachedChangeLimit() bool {
+	m.ctrl.T.Helper()
+	ret := m.ctrl.Call(m, "HasReachedChangeLimit")
+	ret0, _ := ret[0].(bool)
+	return ret0
+}
+
+// HasReachedChangeLimit indicates an expected call of HasReachedChangeLimit.
+func (mr *MockTaskMockRecorder) HasReachedChangeLimit() *gomock.Call {
+	mr.mock.ctrl.T.Helper()
+	return mr.mock.ctrl.RecordCallWithMethodType(mr.mock, "HasReachedChangeLimit", reflect.TypeOf((*MockTask)(nil).HasReachedChangeLimit))
+}
+
+// IncChangeLimitCount mocks base method.
+func (m *MockTask) IncChangeLimitCount() {
+	m.ctrl.T.Helper()
+	m.ctrl.Call(m, "IncChangeLimitCount")
+}
+
+// IncChangeLimitCount indicates an expected call of IncChangeLimitCount.
+func (mr *MockTaskMockRecorder) IncChangeLimitCount() *gomock.Call {
+	mr.mock.ctrl.T.Helper()
+	return mr.mock.ctrl.RecordCallWithMethodType(mr.mock, "IncChangeLimitCount", reflect.TypeOf((*MockTask)(nil).IncChangeLimitCount))
+}
+
+// IncOpenPRsCount mocks base method.
+func (m *MockTask) IncOpenPRsCount() {
+	m.ctrl.T.Helper()
+	m.ctrl.Call(m, "IncOpenPRsCount")
+}
+
+// IncOpenPRsCount indicates an expected call of IncOpenPRsCount.
+func (mr *MockTaskMockRecorder) IncOpenPRsCount() *gomock.Call {
+	mr.mock.ctrl.T.Helper()
+	return mr.mock.ctrl.RecordCallWithMethodType(mr.mock, "IncOpenPRsCount", reflect.TypeOf((*MockTask)(nil).IncOpenPRsCount))
+}
+
 // OnPrClosed mocks base method.
 func (m *MockTask) OnPrClosed(arg0 host.Repository) error {
 	m.ctrl.T.Helper()

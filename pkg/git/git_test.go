@@ -1,4 +1,4 @@
-package git
+package git_test
 
 import (
 	"errors"
@@ -11,6 +11,7 @@ import (
 	"github.com/stretchr/testify/assert"
 	"github.com/stretchr/testify/require"
 	"github.com/wndhydrnt/saturn-bot/pkg/config"
+	"github.com/wndhydrnt/saturn-bot/pkg/git"
 	"github.com/wndhydrnt/saturn-bot/pkg/log"
 	"github.com/wndhydrnt/saturn-bot/pkg/mock"
 	"go.uber.org/mock/gomock"
@@ -109,13 +110,13 @@ func TestGit_Prepare_CloneRepository(t *testing.T) {
 	em.withCall("git", "config", "user.email", "unit@test.local").withDir(dir)
 	em.withCall("git", "config", "user.name", "unittest").withDir(dir)
 
-	g := &Git{
-		dataDir:   dataDir,
-		executor:  em.exec,
-		gitPath:   "git",
-		userEmail: "unit@test.local",
-		userName:  "unittest",
-	}
+	g, err := git.New(config.Configuration{
+		DataDir:   &dataDir,
+		GitPath:   "git",
+		GitAuthor: "unittest <unit@test.local>",
+	})
+	require.NoError(t, err)
+	g.CmdExec = em.exec
 	out, err := g.Prepare(repo, false)
 
 	require.NoError(t, err)
@@ -147,13 +148,13 @@ func TestGit_Prepare_UpdateExistingRepository(t *testing.T) {
 	em.withCall("git", "config", "user.email", "unit@test.local").withDir(dir)
 	em.withCall("git", "config", "user.name", "unittest").withDir(dir)
 
-	g := &Git{
-		dataDir:   dataDir,
-		executor:  em.exec,
-		gitPath:   "git",
-		userEmail: "unit@test.local",
-		userName:  "unittest",
-	}
+	g, err := git.New(config.Configuration{
+		DataDir:   &dataDir,
+		GitPath:   "git",
+		GitAuthor: "unittest <unit@test.local>",
+	})
+	require.NoError(t, err)
+	g.CmdExec = em.exec
 	out, err := g.Prepare(repo, false)
 
 	require.NoError(t, err)
@@ -186,13 +187,13 @@ func TestGit_Prepare_RetryOnCheckoutError(t *testing.T) {
 	em.withCall("git", "config", "user.email", "unit@test.local").withDir(dir)
 	em.withCall("git", "config", "user.name", "unittest").withDir(dir)
 
-	g := &Git{
-		dataDir:   dataDir,
-		executor:  em.exec,
-		gitPath:   "git",
-		userEmail: "unit@test.local",
-		userName:  "unittest",
-	}
+	g, err := git.New(config.Configuration{
+		DataDir:   &dataDir,
+		GitPath:   "git",
+		GitAuthor: "unittest <unit@test.local>",
+	})
+	require.NoError(t, err)
+	g.CmdExec = em.exec
 	out, err := g.Prepare(repo, false)
 
 	require.NoError(t, err)
@@ -219,13 +220,13 @@ func TestGit_Prepare_EmptyGitUser(t *testing.T) {
 	dir := dataDir + "/git/git.local/unit/test"
 	em.withCall("git", "clone", "https://git.local/unit/test.git", ".").withDir(dir)
 
-	g := &Git{
-		dataDir:   dataDir,
-		executor:  em.exec,
-		gitPath:   "git",
-		userEmail: "",
-		userName:  "",
-	}
+	g, err := git.New(config.Configuration{
+		DataDir:   toPtr(dataDir),
+		GitPath:   "git",
+		GitAuthor: "",
+	})
+	require.NoError(t, err)
+	g.CmdExec = em.exec
 	out, err := g.Prepare(repo, false)
 
 	require.NoError(t, err)
@@ -237,10 +238,12 @@ func TestGit_HasLocal_Changes_Changes(t *testing.T) {
 	em := &execMock{t: t}
 	em.withCall("git", "status", "--porcelain=v1").withStdout("M  test.txt\n")
 
-	g := &Git{
-		executor: em.exec,
-		gitPath:  "git",
-	}
+	g, err := git.New(config.Configuration{
+		DataDir: toPtr("/tmp"),
+		GitPath: "git",
+	})
+	require.NoError(t, err)
+	g.CmdExec = em.exec
 	result, err := g.HasLocalChanges()
 
 	require.NoError(t, err)
@@ -252,10 +255,12 @@ func TestGit_HasLocal_Changes_NoChanges(t *testing.T) {
 	em := &execMock{t: t}
 	em.withCall("git", "status", "--porcelain=v1").withStdout("")
 
-	g := &Git{
-		executor: em.exec,
-		gitPath:  "git",
-	}
+	g, err := git.New(config.Configuration{
+		DataDir: toPtr("/tmp"),
+		GitPath: "git",
+	})
+	require.NoError(t, err)
+	g.CmdExec = em.exec
 	result, err := g.HasLocalChanges()
 
 	require.NoError(t, err)
@@ -267,10 +272,12 @@ func TestGit_HasLocal_Changes_Error(t *testing.T) {
 	em := &execMock{t: t}
 	em.withCall("git", "status", "--porcelain=v1").withErrorMsg("status failed")
 
-	g := &Git{
-		executor: em.exec,
-		gitPath:  "git",
-	}
+	g, err := git.New(config.Configuration{
+		DataDir: toPtr("/tmp"),
+		GitPath: "git",
+	})
+	require.NoError(t, err)
+	g.CmdExec = em.exec
 	result, err := g.HasLocalChanges()
 
 	require.Error(t, err)
@@ -283,10 +290,12 @@ func TestGit_HasRemoteChanges_Changes(t *testing.T) {
 	em.withCall("git", "branch", "-r", "--format", "%(refname)").withStdout("refs/remotes/origin/unittest")
 	em.withCall("git", "diff", "--name-only", "origin/unittest").withStdout("test.txt\n")
 
-	g := &Git{
-		executor: em.exec,
-		gitPath:  "git",
-	}
+	g, err := git.New(config.Configuration{
+		DataDir: toPtr("/tmp"),
+		GitPath: "git",
+	})
+	require.NoError(t, err)
+	g.CmdExec = em.exec
 	result, err := g.HasRemoteChanges("unittest")
 
 	require.NoError(t, err)
@@ -298,10 +307,12 @@ func TestGit_HasRemoteChanges_BranchDoesNotExist(t *testing.T) {
 	em := &execMock{t: t}
 	em.withCall("git", "branch", "-r", "--format", "%(refname)").withStdout("refs/remotes/origin/other\nrefs/remotes/origin/another\n")
 
-	g := &Git{
-		executor: em.exec,
-		gitPath:  "git",
-	}
+	g, err := git.New(config.Configuration{
+		DataDir: toPtr("/tmp"),
+		GitPath: "git",
+	})
+	require.NoError(t, err)
+	g.CmdExec = em.exec
 	result, err := g.HasRemoteChanges("unittest")
 
 	require.NoError(t, err)
@@ -313,10 +324,12 @@ func TestGit_HasRemoteChanges_ErrorBranchCheck(t *testing.T) {
 	em := &execMock{t: t}
 	em.withCall("git", "branch", "-r", "--format", "%(refname)").withErrorMsg("branch check failed")
 
-	g := &Git{
-		executor: em.exec,
-		gitPath:  "git",
-	}
+	g, err := git.New(config.Configuration{
+		DataDir: toPtr("/tmp"),
+		GitPath: "git",
+	})
+	require.NoError(t, err)
+	g.CmdExec = em.exec
 	result, err := g.HasRemoteChanges("unittest")
 
 	assert.Error(t, err)
@@ -329,10 +342,12 @@ func TestGit_HasRemoteChanges_ErrorDiff(t *testing.T) {
 	em.withCall("git", "branch", "-r", "--format", "%(refname)").withStdout("refs/remotes/origin/unittest")
 	em.withCall("git", "diff", "--name-only", "origin/unittest").withErrorMsg("diff failed")
 
-	g := &Git{
-		executor: em.exec,
-		gitPath:  "git",
-	}
+	g, err := git.New(config.Configuration{
+		DataDir: toPtr("/tmp"),
+		GitPath: "git",
+	})
+	require.NoError(t, err)
+	g.CmdExec = em.exec
 	result, err := g.HasRemoteChanges("unittest")
 
 	assert.Error(t, err)
@@ -344,11 +359,13 @@ func TestGit_Push_Success(t *testing.T) {
 	em := &execMock{t: t}
 	em.withCall("git", "push", "origin", "unittest", "--force", "--set-upstream")
 
-	g := &Git{
-		executor: em.exec,
-		gitPath:  "git",
-	}
-	err := g.Push("unittest")
+	g, err := git.New(config.Configuration{
+		DataDir: toPtr("/tmp"),
+		GitPath: "git",
+	})
+	require.NoError(t, err)
+	g.CmdExec = em.exec
+	err = g.Push("unittest")
 
 	assert.NoError(t, err)
 	assert.True(t, em.finished())
@@ -358,11 +375,13 @@ func TestGit_Push_Failure(t *testing.T) {
 	em := &execMock{t: t}
 	em.withCall("git", "push", "origin", "unittest", "--force", "--set-upstream").withErrorMsg("push failed")
 
-	g := &Git{
-		executor: em.exec,
-		gitPath:  "git",
-	}
-	err := g.Push("unittest")
+	g, err := git.New(config.Configuration{
+		DataDir: toPtr("/tmp"),
+		GitPath: "git",
+	})
+	require.NoError(t, err)
+	g.CmdExec = em.exec
+	err = g.Push("unittest")
 
 	assert.Error(t, err)
 	assert.True(t, em.finished())
@@ -385,10 +404,12 @@ func TestGit_UpdateTaskBranch_NewBranch(t *testing.T) {
 	repo := mock.NewMockRepository(ctrl)
 	repo.EXPECT().BaseBranch().Return("main").AnyTimes()
 
-	g := &Git{
-		executor: em.exec,
-		gitPath:  "git",
-	}
+	g, err := git.New(config.Configuration{
+		DataDir: toPtr("/tmp"),
+		GitPath: "git",
+	})
+	require.NoError(t, err)
+	g.CmdExec = em.exec
 	conflict, err := g.UpdateTaskBranch("unittest", false, repo)
 
 	require.NoError(t, err)
@@ -414,10 +435,12 @@ func TestGit_UpdateTaskBranch_BranchExistsRemote(t *testing.T) {
 	repo := mock.NewMockRepository(ctrl)
 	repo.EXPECT().BaseBranch().Return("main").AnyTimes()
 
-	g := &Git{
-		executor: em.exec,
-		gitPath:  "git",
-	}
+	g, err := git.New(config.Configuration{
+		DataDir: toPtr("/tmp"),
+		GitPath: "git",
+	})
+	require.NoError(t, err)
+	g.CmdExec = em.exec
 	conflict, err := g.UpdateTaskBranch("unittest", false, repo)
 
 	require.NoError(t, err)
@@ -442,20 +465,22 @@ func TestGit_UpdateTaskBranch_BranchModified(t *testing.T) {
 	repo := mock.NewMockRepository(ctrl)
 	repo.EXPECT().BaseBranch().Return("main").AnyTimes()
 
-	g := &Git{
-		executor:  em.exec,
-		gitPath:   "git",
-		userEmail: "unit@test.local",
-	}
+	g, err := git.New(config.Configuration{
+		DataDir:   toPtr("/tmp"),
+		GitAuthor: "unittest <unit@test.local>",
+		GitPath:   "git",
+	})
+	require.NoError(t, err)
+	g.CmdExec = em.exec
 	conflict, err := g.UpdateTaskBranch("unittest", false, repo)
 
-	var expectedErr *BranchModifiedError
+	var expectedErr *git.BranchModifiedError
 	assert.ErrorAs(t, err, &expectedErr)
 	assert.False(t, conflict)
 	assert.True(t, em.finished())
 }
 
-func TestCreateGitEnvVars(t *testing.T) {
+func Test_New_EnvVars(t *testing.T) {
 	testCases := []struct {
 		name string
 		in   config.Configuration
@@ -501,10 +526,11 @@ func TestCreateGitEnvVars(t *testing.T) {
 
 	for _, tc := range testCases {
 		t.Run(tc.name, func(t *testing.T) {
-			envVars, err := createGitEnvVars(tc.in)
+			tc.in.DataDir = toPtr("/tmp")
+			g, err := git.New(tc.in)
 			require.NoError(t, err)
 
-			assert.ElementsMatch(t, tc.want, envVars)
+			assert.ElementsMatch(t, tc.want, g.EnvVars)
 		})
 	}
 }

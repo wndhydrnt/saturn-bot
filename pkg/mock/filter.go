@@ -188,7 +188,7 @@ func (m *MockFactory) EXPECT() *MockFactoryMockRecorder {
 }
 
 // Create mocks base method.
-func (m *MockFactory) Create(params map[string]string) (filter.Filter, error) {
+func (m *MockFactory) Create(params map[string]any) (filter.Filter, error) {
 	m.ctrl.T.Helper()
 	ret := m.ctrl.Call(m, "Create", params)
 	ret0, _ := ret[0].(filter.Filter)
