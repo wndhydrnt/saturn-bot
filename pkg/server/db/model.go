@@ -8,19 +8,29 @@ type RunStatus uint
 
 const (
 	RunStatusPending RunStatus = iota
-	RunStatusExecuting
+	RunStatusRunning
 	RunStatusFinished
 	RunStatusFailed
 )
 
+type RunReason uint
+
+const (
+	RunReasonManual RunReason = iota
+	RunReasonChanged
+	RunReasonNew
+	RunReasonNext
+)
+
 type Run struct {
-	ID            uint `gorm:"primarykey"`
-	FinishedAt    *time.Time
-	Reason        uint
-	ScheduleAfter time.Time
-	StartedAt     *time.Time
-	Status        RunStatus
-	TaskName      string
+	ID             uint `gorm:"primarykey"`
+	FinishedAt     *time.Time
+	Reason         RunReason
+	RepositoryName *string
+	ScheduleAfter  time.Time
+	StartedAt      *time.Time
+	Status         RunStatus
+	TaskName       string
 }
 
 type Task struct {

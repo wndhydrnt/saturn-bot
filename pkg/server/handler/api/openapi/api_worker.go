@@ -59,6 +59,11 @@ func (c *WorkerAPIController) Routes() Routes {
 			"/api/v1/worker/work",
 			c.ReportWorkV1,
 		},
+		"ScheduleRunV1": Route{
+			strings.ToUpper("Post"),
+			"/api/v1/runs",
+			c.ScheduleRunV1,
+		},
 	}
 }
 
@@ -92,6 +97,33 @@ func (c *WorkerAPIController) ReportWorkV1(w http.ResponseWriter, r *http.Reques
 		return
 	}
 	result, err := c.service.ReportWorkV1(r.Context(), reportWorkV1RequestParam)
+	// If an error occurred, encode the error with the status code
+	if err != nil {
+		c.errorHandler(w, r, err, &result)
+		return
+	}
+	// If no error, encode the body and the result code
+	_ = EncodeJSONResponse(result.Body, &result.Code, w)
+}
+
+// ScheduleRunV1 - Schedule a run.
+func (c *WorkerAPIController) ScheduleRunV1(w http.ResponseWriter, r *http.Request) {
+	scheduleRunV1RequestParam := ScheduleRunV1Request{}
+	d := json.NewDecoder(r.Body)
+	d.DisallowUnknownFields()
+	if err := d.Decode(&scheduleRunV1RequestParam); err != nil {
+		c.errorHandler(w, r, &ParsingError{Err: err}, nil)
+		return
+	}
+	if err := AssertScheduleRunV1RequestRequired(scheduleRunV1RequestParam); err != nil {
+		c.errorHandler(w, r, err, nil)
+		return
+	}
+	if err := AssertScheduleRunV1RequestConstraints(scheduleRunV1RequestParam); err != nil {
+		c.errorHandler(w, r, err, nil)
+		return
+	}
+	result, err := c.service.ScheduleRunV1(r.Context(), scheduleRunV1RequestParam)
 	// If an error occurred, encode the error with the status code
 	if err != nil {
 		c.errorHandler(w, r, err, &result)

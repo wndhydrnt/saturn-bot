@@ -46,3 +46,13 @@ func (wh *WorkHandler) ReportWorkV1(_ context.Context, req openapi.ReportWorkV1R
 	}
 	return openapi.ImplResponse{Code: http.StatusCreated, Body: body}, nil
 }
+
+func (wh *WorkHandler) ScheduleRunV1(_ context.Context, req openapi.ScheduleRunV1Request) (openapi.ImplResponse, error) {
+	runID, err := wh.WorkerService.ScheduleRun(req.RepositoryName, req.ScheduleAfter, req.TaskName)
+	if err != nil {
+		return openapi.Response(http.StatusInternalServerError, serverError), nil
+	}
+
+	body := openapi.ScheduleRunV1Response{RunID: int32(runID)}
+	return openapi.ImplResponse{Code: http.StatusCreated, Body: body}, nil
+}

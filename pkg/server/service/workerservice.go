@@ -2,9 +2,11 @@ package service
 
 import (
 	"errors"
+	"fmt"
 	"log/slog"
 	"time"
 
+	"github.com/wndhydrnt/saturn-bot/pkg/processor"
 	"github.com/wndhydrnt/saturn-bot/pkg/server/db"
 	"github.com/wndhydrnt/saturn-bot/pkg/server/handler/api/openapi"
 	"github.com/wndhydrnt/saturn-bot/pkg/server/task"
@@ -20,6 +22,26 @@ type WorkerService struct {
 
 func NewWorkerService(db *gorm.DB, tasks []task.Task) *WorkerService {
 	return &WorkerService{db: db, tasks: tasks}
+}
+
+func (ws *WorkerService) ScheduleRun(
+	repositoryName string,
+	scheduleAfter time.Time,
+	taskName string,
+) (uint, error) {
+	run := db.Run{
+		Reason:         db.RunReasonManual,
+		RepositoryName: ptr(repositoryName),
+		ScheduleAfter:  time.Now(),
+		Status:         db.RunStatusPending,
+		TaskName:       taskName,
+	}
+
+	if err := ws.db.Save(&run).Error; err != nil {
+		return 0, fmt.Errorf("schedule run: %w", err)
+	}
+
+	return run.ID, nil
 }
 
 func (ws *WorkerService) findTask(name string) *task.Task {
@@ -48,7 +70,7 @@ func (ws *WorkerService) NextRun() (db.Run, task.Task, error) {
 		return run, runTask, tx.Error
 	}
 
-	run.Status = db.RunStatusExecuting
+	run.Status = db.RunStatusRunning
 	if err := ws.db.Save(&run).Error; err != nil {
 		slog.Error("Update next run", "error", err)
 		return run, runTask, err
@@ -67,8 +89,8 @@ func (ws *WorkerService) NextRun() (db.Run, task.Task, error) {
 }
 
 func (ws *WorkerService) ReportRun(req openapi.ReportWorkV1Request) error {
-	var run db.Run
-	tx := ws.db.First(&run, req.RunID)
+	var runCurrent db.Run
+	tx := ws.db.First(&runCurrent, req.RunID)
 	if tx.Error != nil {
 		slog.Error("Failed to retrieve run by ID", "error", tx.Error)
 		return tx.Error
@@ -76,9 +98,9 @@ func (ws *WorkerService) ReportRun(req openapi.ReportWorkV1Request) error {
 
 	err := ws.db.Transaction(func(tx *gorm.DB) error {
 		now := time.Now()
-		run.FinishedAt = &now
-		run.Status = db.RunStatusFinished
-		if err := tx.Save(&run).Error; err != nil {
+		runCurrent.FinishedAt = &now
+		runCurrent.Status = db.RunStatusFinished
+		if err := tx.Save(&runCurrent).Error; err != nil {
 			return err
 		}
 
@@ -86,7 +108,7 @@ func (ws *WorkerService) ReportRun(req openapi.ReportWorkV1Request) error {
 			result := db.TaskResult{
 				RepositoryName: taskResult.RepositoryName,
 				Result:         uint(taskResult.Result),
-				RunID:          run.ID,
+				RunID:          runCurrent.ID,
 				TaskName:       taskResult.TaskName,
 			}
 			if taskResult.Error != "" {
@@ -96,10 +118,44 @@ func (ws *WorkerService) ReportRun(req openapi.ReportWorkV1Request) error {
 			if err := tx.Save(&result).Error; err != nil {
 				return err
 			}
+
+			procResult := processor.Result(taskResult.Result)
+			next := nextSchedule(procResult)
+			if next != nil {
+				runNew := db.Run{
+					Reason:         db.RunReasonNext,
+					RepositoryName: ptr(taskResult.RepositoryName),
+					ScheduleAfter:  *next,
+					Status:         db.RunStatusPending,
+					TaskName:       taskResult.TaskName,
+				}
+				if err := ws.db.Save(&runNew).Error; err != nil {
+					return err
+				}
+			}
 		}
 
 		return nil
 	})
 
 	return err
+}
+
+func nextSchedule(r processor.Result) *time.Time {
+	switch r {
+	case processor.ResultUnknown:
+		return ptr(time.Now().Add(15 * time.Minute))
+	case processor.ResultAutoMergeTooEarly:
+		return ptr(time.Now().Add(60 * time.Minute))
+	case processor.ResultPrCreated:
+		return ptr(time.Now().Add(15 * time.Minute))
+	case processor.ResultPrOpen:
+		return ptr(time.Now().Add(15 * time.Minute))
+	default:
+		return nil
+	}
+}
+
+func ptr[T any](in T) *T {
+	return &in
 }

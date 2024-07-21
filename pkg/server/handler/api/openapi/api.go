@@ -30,6 +30,7 @@ type TaskAPIRouter interface {
 type WorkerAPIRouter interface { 
 	GetWorkV1(http.ResponseWriter, *http.Request)
 	ReportWorkV1(http.ResponseWriter, *http.Request)
+	ScheduleRunV1(http.ResponseWriter, *http.Request)
 }
 
 
@@ -50,4 +51,5 @@ type TaskAPIServicer interface {
 type WorkerAPIServicer interface { 
 	GetWorkV1(context.Context) (ImplResponse, error)
 	ReportWorkV1(context.Context, ReportWorkV1Request) (ImplResponse, error)
+	ScheduleRunV1(context.Context, ScheduleRunV1Request) (ImplResponse, error)
 }

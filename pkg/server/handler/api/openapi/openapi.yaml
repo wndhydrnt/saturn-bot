@@ -3,6 +3,26 @@ info:
   title: saturn-bot server API
   version: 1.0.0
 paths:
+  /api/v1/runs:
+    post:
+      operationId: scheduleRunV1
+      summary: Schedule a run.
+      description: Add a new run to the queue.
+      tags:
+        - worker
+      requestBody:
+        content:
+          application/json:
+            schema:
+              $ref: "#/components/schemas/ScheduleRunV1Request"
+        required: true
+      responses:
+        "200":
+          description: OK
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/ScheduleRunV1Response"
   /api/v1/tasks:
     get:
       operationId: listTasksV1
@@ -107,6 +127,27 @@ paths:
                 required: ["result"]
 components:
   schemas:
+    ScheduleRunV1Request:
+      type: object
+      properties:
+        repositoryName:
+          description: Name of the repository for which to add a run. If empty, the run uses the filters of the task.
+          type: string
+        scheduleAfter:
+          description: Schedule the run after the given time. If empty, then the current time is used.
+          type: string
+          format: date-time
+        taskName:
+          description: Name of the task for which to add a run.
+          type: string
+      required: ["taskName"]
+    ScheduleRunV1Response:
+      type: object
+      properties:
+        runID:
+          description: Identifier of the newly scheduled run.
+          type: integer
+      required: ["runID"]
     GetWorkV1Response:
       type: object
       properties:
