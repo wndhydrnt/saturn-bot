@@ -1,4 +1,4 @@
-package pkg
+package command
 
 import (
 	"context"
@@ -23,7 +23,7 @@ var (
 	ErrNoHostsConfigured = errors.New("no hosts configured")
 )
 
-type executeRunner struct {
+type run struct {
 	cache        cache.Cache
 	dryRun       bool
 	hosts        []host.Host
@@ -31,7 +31,7 @@ type executeRunner struct {
 	taskRegistry *task.Registry
 }
 
-func (r *executeRunner) run(repositoryNames, taskFiles []string) error {
+func (r *run) run(repositoryNames, taskFiles []string) error {
 	if len(r.hosts) == 0 {
 		return ErrNoHostsConfigured
 	}
@@ -143,7 +143,7 @@ func ExecuteRun(opts options.Opts, repositoryNames, taskFiles []string) error {
 		return fmt.Errorf("new git client for run: %w", err)
 	}
 
-	e := &executeRunner{
+	e := &run{
 		cache:        cache,
 		dryRun:       opts.Config.DryRun,
 		hosts:        opts.Hosts,

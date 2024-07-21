@@ -1,4 +1,4 @@
-package pkg
+package command
 
 import (
 	"bytes"
@@ -163,7 +163,7 @@ func TestExecuteRunner_Run(t *testing.T) {
 		Process(gomock.AssignableToTypeOf(ctx), false, repoWithPr, gomock.AssignableToTypeOf(anyTask), true).
 		Return(processor.ResultNoChanges, nil)
 
-	runner := &executeRunner{
+	runner := &run{
 		cache:        cache,
 		dryRun:       false,
 		hosts:        []host.Host{hostm},
@@ -208,7 +208,7 @@ func TestExecuteRunner_Run_DryRun(t *testing.T) {
 		Process(gomock.AssignableToTypeOf(ctx), true, repo, gomock.AssignableToTypeOf(anyTask), true).
 		Return(processor.ResultNoChanges, nil)
 
-	runner := &executeRunner{
+	runner := &run{
 		cache:        cache,
 		dryRun:       true,
 		hosts:        []host.Host{hostm},
@@ -253,7 +253,7 @@ func TestExecuteRunner_Run_RepositoriesCLI(t *testing.T) {
 		Process(gomock.AssignableToTypeOf(ctx), false, repo, gomock.AssignableToTypeOf(anyTask), false).
 		Return(processor.ResultNoChanges, nil)
 
-	runner := &executeRunner{
+	runner := &run{
 		cache:        cache,
 		dryRun:       false,
 		hosts:        []host.Host{hostm},
