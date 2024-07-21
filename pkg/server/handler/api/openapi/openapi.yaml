@@ -79,20 +79,7 @@ paths:
           content:
             application/json:
               schema:
-                type: object
-                properties:
-                  executionID:
-                    description: Internal identifier of the unit of work.
-                    type: integer
-                  repository:
-                    description: Repository for which to apply the tasks.
-                    type: string
-                  tasks:
-                    description: Names of the tasks to execute.
-                    type: array
-                    items:
-                      type: string
-                required: ["executionID", "repository", "tasks"]
+                $ref: "#/components/schemas/GetWorkV1Response"
     post:
       operationId: reportWorkV1
       summary: Report the result of a unit of work
@@ -105,7 +92,7 @@ paths:
             schema:
               type: object
               properties:
-                executionID:
+                runID:
                   description: Internal identifier of the unit of work.
                   type: integer
                 taskResults:
@@ -118,7 +105,7 @@ paths:
                       result:
                         type: integer
                     required: ["name", "result"]
-              required: ["executionID", "taskResults"]
+              required: ["runID", "taskResults"]
         required: true
       responses:
         "201":
@@ -135,6 +122,31 @@ paths:
                 required: ["result"]
 components:
   schemas:
+    GetWorkV1Response:
+      type: object
+      properties:
+        runID:
+          description: Internal identifier of the unit of work.
+          type: integer
+        repository:
+          description: Repository for which to apply the tasks.
+          type: string
+        tasks:
+          description: Names of the tasks to execute.
+          type: array
+          items:
+            $ref: "#/components/schemas/GetWorkV1Task"
+      required: ["runID", "tasks"]
+    GetWorkV1Task:
+      type: object
+      properties:
+        hash:
+          description: Hash of the task. Used to detect if server and worker are out of sync.
+          type: string
+        name:
+          description: Name of the task to execute.
+          type: string
+      required: ["hash", "name"]
     Error:
       type: object
       properties:

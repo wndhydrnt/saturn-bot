@@ -32,8 +32,8 @@ type WorkerAPI interface {
 	GetWorkV1(ctx context.Context) ApiGetWorkV1Request
 
 	// GetWorkV1Execute executes the request
-	//  @return GetWorkV1200Response
-	GetWorkV1Execute(r ApiGetWorkV1Request) (*GetWorkV1200Response, *http.Response, error)
+	//  @return GetWorkV1Response
+	GetWorkV1Execute(r ApiGetWorkV1Request) (*GetWorkV1Response, *http.Response, error)
 
 	/*
 	ReportWorkV1 Report the result of a unit of work
@@ -58,7 +58,7 @@ type ApiGetWorkV1Request struct {
 	ApiService WorkerAPI
 }
 
-func (r ApiGetWorkV1Request) Execute() (*GetWorkV1200Response, *http.Response, error) {
+func (r ApiGetWorkV1Request) Execute() (*GetWorkV1Response, *http.Response, error) {
 	return r.ApiService.GetWorkV1Execute(r)
 }
 
@@ -78,13 +78,13 @@ func (a *WorkerAPIService) GetWorkV1(ctx context.Context) ApiGetWorkV1Request {
 }
 
 // Execute executes the request
-//  @return GetWorkV1200Response
-func (a *WorkerAPIService) GetWorkV1Execute(r ApiGetWorkV1Request) (*GetWorkV1200Response, *http.Response, error) {
+//  @return GetWorkV1Response
+func (a *WorkerAPIService) GetWorkV1Execute(r ApiGetWorkV1Request) (*GetWorkV1Response, *http.Response, error) {
 	var (
 		localVarHTTPMethod   = http.MethodGet
 		localVarPostBody     interface{}
 		formFiles            []formFile
-		localVarReturnValue  *GetWorkV1200Response
+		localVarReturnValue  *GetWorkV1Response
 	)
 
 	localBasePath, err := a.client.cfg.ServerURLWithContext(r.ctx, "WorkerAPIService.GetWorkV1")

@@ -15,6 +15,7 @@ import (
 	"github.com/go-chi/chi/v5/middleware"
 	"github.com/wndhydrnt/saturn-bot/pkg/server/handler/api"
 	"github.com/wndhydrnt/saturn-bot/pkg/server/handler/api/openapi"
+	"github.com/wndhydrnt/saturn-bot/pkg/server/task"
 )
 
 type Server struct {
@@ -22,17 +23,19 @@ type Server struct {
 }
 
 func (s *Server) Start(taskPaths []string) error {
-	s.httpServer = &http.Server{
-		Addr: ":3000",
-	}
-
-	taskService, err := api.NewTaskService(taskPaths)
+	tasks, err := task.Load(taskPaths)
 	if err != nil {
 		return fmt.Errorf("load tasks on server start: %w", err)
 	}
 
+	s.httpServer = &http.Server{
+		Addr: ":3000",
+	}
+
+	taskService := api.NewTaskService(tasks)
 	taskCtrl := openapi.NewTaskAPIController(taskService)
-	workerCtrl := openapi.NewWorkerAPIController(&api.WorkerService{})
+	workerService := api.NewWorkerService(tasks)
+	workerCtrl := openapi.NewWorkerAPIController(workerService)
 	router := newRouter(taskCtrl, workerCtrl)
 	s.httpServer.Handler = router
 	go func(server *http.Server) {
@@ -81,6 +84,7 @@ func Run(taskPaths []string) error {
 func newRouter(routers ...openapi.Router) chi.Router {
 	router := chi.NewRouter()
 	router.Use(middleware.Compress(5))
+	router.Use(middleware.Logger)
 	for _, api := range routers {
 		for _, route := range api.Routes() {
 			var handler http.Handler = route.HandlerFunc

@@ -13,7 +13,7 @@ func createWorkerCommand() *cobra.Command {
 		Short: "Start the worker",
 		Long:  "Start the worker.",
 		Run: func(cmd *cobra.Command, args []string) {
-			err := worker.Run()
+			err := worker.Run(taskFiles)
 			handleError(err, cmd.ErrOrStderr())
 		},
 	}

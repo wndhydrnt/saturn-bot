@@ -8,50 +8,28 @@ import (
 	"os"
 
 	"github.com/wndhydrnt/saturn-bot/pkg/server/handler/api/openapi"
-	"github.com/wndhydrnt/saturn-bot/pkg/task/schema"
+	"github.com/wndhydrnt/saturn-bot/pkg/server/task"
 )
 
-type taskEntry struct {
-	hash     []byte
-	taskName string
-	taskPath string
-}
-
 type TaskService struct {
-	tasks []taskEntry
+	tasks []task.Task
 }
 
-func NewTaskService(taskPaths []string) (*TaskService, error) {
-	var entries []taskEntry
-	for _, taskPath := range taskPaths {
-		tasks, checksum, err := schema.Read(taskPath)
-		if err != nil {
-			return nil, err
-		}
-
-		for _, t := range tasks {
-			entries = append(entries, taskEntry{
-				hash:     checksum.Sum(nil),
-				taskName: t.Name,
-				taskPath: taskPath,
-			})
-		}
-	}
-
-	return &TaskService{tasks: entries}, nil
+func NewTaskService(tasks []task.Task) *TaskService {
+	return &TaskService{tasks: tasks}
 }
 
 func (ts *TaskService) GetTaskV1(_ context.Context, taskName string) (openapi.ImplResponse, error) {
 	for _, entry := range ts.tasks {
-		if entry.taskName == taskName {
-			content, err := encodeBase64(entry.taskPath)
+		if entry.TaskName == taskName {
+			content, err := encodeBase64(entry.TaskPath)
 			if err != nil {
 				return openapi.Response(http.StatusInternalServerError, serverError), nil
 			}
 
 			body := openapi.GetTaskV1200Response{
-				Name:    entry.taskName,
-				Hash:    fmt.Sprintf("%x", entry.hash),
+				Name:    entry.TaskName,
+				Hash:    entry.Hash,
 				Content: content,
 			}
 			return openapi.Response(http.StatusOK, body), nil
@@ -66,7 +44,7 @@ func (ts *TaskService) ListTasksV1(_ context.Context) (openapi.ImplResponse, err
 		Tasks: []string{},
 	}
 	for _, entry := range ts.tasks {
-		body.Tasks = append(body.Tasks, entry.taskName)
+		body.Tasks = append(body.Tasks, entry.TaskName)
 	}
 
 	return openapi.Response(http.StatusOK, body), nil

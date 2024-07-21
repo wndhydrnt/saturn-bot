@@ -16,7 +16,7 @@ package openapi
 type ReportWorkV1Request struct {
 
 	// Internal identifier of the unit of work.
-	ExecutionID int32 `json:"executionID"`
+	RunID int32 `json:"runID"`
 
 	TaskResults []ReportWorkV1RequestTaskResultsInner `json:"taskResults"`
 }
@@ -24,7 +24,7 @@ type ReportWorkV1Request struct {
 // AssertReportWorkV1RequestRequired checks if the required fields are not zero-ed
 func AssertReportWorkV1RequestRequired(obj ReportWorkV1Request) error {
 	elements := map[string]interface{}{
-		"executionID": obj.ExecutionID,
+		"runID": obj.RunID,
 		"taskResults": obj.TaskResults,
 	}
 	for name, el := range elements {

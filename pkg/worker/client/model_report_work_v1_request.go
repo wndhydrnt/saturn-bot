@@ -22,7 +22,7 @@ var _ MappedNullable = &ReportWorkV1Request{}
 // ReportWorkV1Request struct for ReportWorkV1Request
 type ReportWorkV1Request struct {
 	// Internal identifier of the unit of work.
-	ExecutionID int32 `json:"executionID"`
+	RunID int32 `json:"runID"`
 	TaskResults []ReportWorkV1RequestTaskResultsInner `json:"taskResults"`
 }
 
@@ -32,9 +32,9 @@ type _ReportWorkV1Request ReportWorkV1Request
 // This constructor will assign default values to properties that have it defined,
 // and makes sure properties required by API are set, but the set of arguments
 // will change when the set of required properties is changed
-func NewReportWorkV1Request(executionID int32, taskResults []ReportWorkV1RequestTaskResultsInner) *ReportWorkV1Request {
+func NewReportWorkV1Request(runID int32, taskResults []ReportWorkV1RequestTaskResultsInner) *ReportWorkV1Request {
 	this := ReportWorkV1Request{}
-	this.ExecutionID = executionID
+	this.RunID = runID
 	this.TaskResults = taskResults
 	return &this
 }
@@ -47,28 +47,28 @@ func NewReportWorkV1RequestWithDefaults() *ReportWorkV1Request {
 	return &this
 }
 
-// GetExecutionID returns the ExecutionID field value
-func (o *ReportWorkV1Request) GetExecutionID() int32 {
+// GetRunID returns the RunID field value
+func (o *ReportWorkV1Request) GetRunID() int32 {
 	if o == nil {
 		var ret int32
 		return ret
 	}
 
-	return o.ExecutionID
+	return o.RunID
 }
 
-// GetExecutionIDOk returns a tuple with the ExecutionID field value
+// GetRunIDOk returns a tuple with the RunID field value
 // and a boolean to check if the value has been set.
-func (o *ReportWorkV1Request) GetExecutionIDOk() (*int32, bool) {
+func (o *ReportWorkV1Request) GetRunIDOk() (*int32, bool) {
 	if o == nil {
 		return nil, false
 	}
-	return &o.ExecutionID, true
+	return &o.RunID, true
 }
 
-// SetExecutionID sets field value
-func (o *ReportWorkV1Request) SetExecutionID(v int32) {
-	o.ExecutionID = v
+// SetRunID sets field value
+func (o *ReportWorkV1Request) SetRunID(v int32) {
+	o.RunID = v
 }
 
 // GetTaskResults returns the TaskResults field value
@@ -105,7 +105,7 @@ func (o ReportWorkV1Request) MarshalJSON() ([]byte, error) {
 
 func (o ReportWorkV1Request) ToMap() (map[string]interface{}, error) {
 	toSerialize := map[string]interface{}{}
-	toSerialize["executionID"] = o.ExecutionID
+	toSerialize["runID"] = o.RunID
 	toSerialize["taskResults"] = o.TaskResults
 	return toSerialize, nil
 }
@@ -115,7 +115,7 @@ func (o *ReportWorkV1Request) UnmarshalJSON(data []byte) (err error) {
 	// by unmarshalling the object into a generic map with string keys and checking
 	// that every required field exists as a key in the generic map.
 	requiredProperties := []string{
-		"executionID",
+		"runID",
 		"taskResults",
 	}
 

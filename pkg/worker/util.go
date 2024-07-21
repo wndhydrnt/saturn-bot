@@ -15,3 +15,7 @@ func genID(n int) string {
 	}
 	return sb.String()
 }
+
+func genIDInt(n int32) int32 {
+	return rand.Int31n(n)
+}
