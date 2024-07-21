@@ -170,7 +170,7 @@ func TestExecuteRunner_Run(t *testing.T) {
 		processor:    procMock,
 		taskRegistry: task.NewRegistry(runTestOpts),
 	}
-	err := runner.run([]string{}, []string{taskFile})
+	_, err := runner.run([]string{}, []string{taskFile})
 
 	require.NoError(t, err)
 	assert.NotEqual(t, cacheLastExecutionBefore, cache.GetLastExecutionAt(), "Updates the lat execution time in the cache")
@@ -215,7 +215,7 @@ func TestExecuteRunner_Run_DryRun(t *testing.T) {
 		processor:    procMock,
 		taskRegistry: task.NewRegistry(runTestOpts),
 	}
-	err := runner.run([]string{}, []string{taskFile})
+	_, err := runner.run([]string{}, []string{taskFile})
 
 	require.NoError(t, err)
 	assert.Equal(t, cacheLastExecutionBefore, cache.GetLastExecutionAt(), "Does not update the last execution time because dryRun is true")
@@ -260,7 +260,7 @@ func TestExecuteRunner_Run_RepositoriesCLI(t *testing.T) {
 		processor:    procMock,
 		taskRegistry: task.NewRegistry(runTestOpts),
 	}
-	err := runner.run([]string{"git.local/unittest/repo"}, []string{taskFile})
+	_, err := runner.run([]string{"git.local/unittest/repo"}, []string{taskFile})
 
 	require.NoError(t, err)
 	assert.NotEqual(t, cacheLastExecutionBefore, cache.GetLastExecutionAt(), "Updates the lat execution time in the cache")

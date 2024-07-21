@@ -20,7 +20,7 @@ func createRunCommand() *cobra.Command {
 			handleError(err, cmd.ErrOrStderr())
 			opts, err := options.ToOptions(cfg)
 			handleError(err, cmd.ErrOrStderr())
-			err = command.ExecuteRun(opts, repositories, taskFiles)
+			_, err = command.ExecuteRun(opts, repositories, taskFiles)
 			handleError(err, cmd.ErrOrStderr())
 		},
 	}

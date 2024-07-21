@@ -11,6 +11,8 @@ import (
 
 type WorkerService struct {
 	tasks []task.Task
+
+	ttt int
 }
 
 func NewWorkerService(tasks []task.Task) *WorkerService {
@@ -18,10 +20,19 @@ func NewWorkerService(tasks []task.Task) *WorkerService {
 }
 
 func (ws *WorkerService) GetWorkV1(_ context.Context) (openapi.ImplResponse, error) {
+	if ws.ttt > 0 {
+		body := openapi.GetWorkV1Response{
+			RunID: 0,
+			Tasks: []openapi.GetWorkV1Task{},
+		}
+		return openapi.Response(http.StatusOK, body), nil
+	}
+
 	if len(ws.tasks) == 0 {
 		return openapi.Response(http.StatusInternalServerError, serverError), nil
 	}
 
+	ws.ttt++
 	body := openapi.GetWorkV1Response{
 		RunID:      genIDInt(6),
 		Repository: "gitlab.com/wandhydrant/rcmt-test",

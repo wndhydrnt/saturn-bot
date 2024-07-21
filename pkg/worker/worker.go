@@ -11,7 +11,10 @@ import (
 	"syscall"
 	"time"
 
-	"github.com/wndhydrnt/saturn-bot/pkg/processor"
+	"github.com/wndhydrnt/saturn-bot/pkg/command"
+	"github.com/wndhydrnt/saturn-bot/pkg/config"
+	"github.com/wndhydrnt/saturn-bot/pkg/options"
+	"github.com/wndhydrnt/saturn-bot/pkg/server/task"
 	"github.com/wndhydrnt/saturn-bot/pkg/worker/client"
 )
 
@@ -22,14 +25,15 @@ var (
 
 type Execution client.GetWorkV1Response
 
-type ExecutionResult struct {
+type Result struct {
+	RunError    error
 	Execution   Execution
-	TaskResults []client.ReportWorkV1RequestTaskResultsInner
+	TaskResults []command.RunResult
 }
 
 type ExecutionSource interface {
 	Next() (Execution, error)
-	Report(ExecutionResult) error
+	Report(Result) error
 }
 
 type DummyExecutionSource struct{}
@@ -42,7 +46,7 @@ func (d *DummyExecutionSource) Next() (Execution, error) {
 	return Execution{RunID: genIDInt(8)}, nil
 }
 
-func (d *DummyExecutionSource) Report(result ExecutionResult) error {
+func (d *DummyExecutionSource) Report(result Result) error {
 	slog.Info("Work finished", "executionID", result.Execution.RunID)
 	return nil
 }
@@ -58,14 +62,18 @@ func (a *APIExecutionSource) Next() (Execution, error) {
 		return Execution{}, fmt.Errorf("api request to get work: %w", err)
 	}
 
+	if len(resp.Tasks) == 0 {
+		return Execution{}, ErrNoExec
+	}
+
 	return Execution(*resp), nil
 }
 
-func (a *APIExecutionSource) Report(result ExecutionResult) error {
+func (a *APIExecutionSource) Report(result Result) error {
 	req := a.client.ReportWorkV1(ctx)
 	req = req.ReportWorkV1Request(client.ReportWorkV1Request{
 		RunID:       result.Execution.RunID,
-		TaskResults: result.TaskResults,
+		TaskResults: mapRunResultsToTaskResults(result.TaskResults),
 	})
 	_, _, err := a.client.ReportWorkV1Execute(req)
 	if err != nil {
@@ -79,13 +87,44 @@ type Worker struct {
 	Exec               ExecutionSource
 	ParallelExecutions int
 
-	resultChan chan ExecutionResult
+	opts       options.Opts
+	resultChan chan Result
+	tasks      []task.Task
 	stopped    bool
 	stopChan   chan chan struct{}
 }
 
-func (w *Worker) Start(taskPaths []string) {
-	w.resultChan = make(chan ExecutionResult, 1)
+func NewWorker(configPath string, taskPaths []string) (*Worker, error) {
+	cfg, err := config.Read(configPath)
+	if err != nil {
+		return nil, err
+	}
+
+	opts, err := options.ToOptions(cfg)
+	if err != nil {
+		return nil, err
+	}
+
+	tasks, err := task.Load(taskPaths)
+	if err != nil {
+		return nil, err
+	}
+
+	apiClient := client.NewAPIClient(&client.Configuration{
+		Servers: []client.ServerConfiguration{
+			{URL: "http://localhost:3000"},
+		},
+	})
+	return &Worker{
+		Exec:               &APIExecutionSource{client: apiClient.WorkerAPI},
+		ParallelExecutions: 4,
+		opts:               opts,
+		tasks:              tasks,
+	}, nil
+}
+
+func (w *Worker) Start() {
+	w.resultChan = make(chan Result, 1)
 	w.stopChan = make(chan chan struct{})
 	t := time.NewTicker(5 * time.Second)
 	executionCounter := 0
@@ -114,23 +153,41 @@ func (w *Worker) Start(taskPaths []string) {
 			}
 
 			// Process in a Go routine
-			go func(exec Execution, result chan ExecutionResult) {
-				wait := time.Duration(rand.Intn(30)) * time.Second
-				slog.Info("Worker going to sleep", "duration", wait, "executionID", exec.RunID)
-				time.Sleep(wait)
-				result <- ExecutionResult{
-					Execution: exec,
-					TaskResults: []client.ReportWorkV1RequestTaskResultsInner{
-						{Name: "Dummy Task", Result: int32(processor.ResultNoChanges)},
-					},
+			go func(exec Execution, result chan Result) {
+				var repositoryNames []string
+				if exec.Repository != nil {
+					repositoryNames = append(repositoryNames, *exec.Repository)
+				}
+
+				var taskPaths []string
+				for _, taskReq := range exec.Tasks {
+					t, err := w.findTaskByName(taskReq.Name, taskReq.Hash)
+					if err != nil {
+						result <- Result{
+							RunError:  err,
+							Execution: exec,
+						}
+						return
+					}
+					taskPaths = append(taskPaths, t.TaskPath)
+				}
+				results, err := command.ExecuteRun(w.opts, repositoryNames, taskPaths)
+				result <- Result{
+					RunError:    err,
+					Execution:   exec,
+					TaskResults: results,
 				}
 			}(exec, w.resultChan)
 			executionCounter += 1
 
 		case result := <-w.resultChan:
+			if result.RunError != nil {
+				slog.Error("Run failed", "runID", result.Execution.RunID, "error", result.RunError)
+			}
+
 			err := w.Exec.Report(result)
 			if err != nil {
-				slog.Error("Failed to report execution", "executionID", result.Execution.RunID, "err", err)
+				slog.Error("Failed to report run", "runID", result.Execution.RunID, "err", err)
 			}
 			executionCounter -= 1
 
@@ -158,19 +215,47 @@ func (w *Worker) Stop() chan struct{} {
 	return waitChan
 }
 
-func Run(taskPaths []string) error {
+func (w *Worker) findTaskByName(name string, hash string) (task.Task, error) {
+	for _, t := range w.tasks {
+		if t.TaskName == name {
+			if t.Hash == hash {
+				return t, nil
+			} else {
+				return task.Task{}, fmt.Errorf("hash of task '%s' does not match - got '%s' want '%s'", name, hash, t.Hash)
+			}
+		}
+	}
+
+	return task.Task{}, fmt.Errorf("task '%s' not found", name)
+}
+
+func mapRunResultsToTaskResults(runResults []command.RunResult) []client.ReportWorkV1TaskResult {
+	var results []client.ReportWorkV1TaskResult
+	for _, rr := range runResults {
+		result := client.ReportWorkV1TaskResult{
+			RepositoryName: rr.RepositoryName,
+			Result:         int32(rr.Result),
+			TaskName:       rr.TaskName,
+		}
+		if rr.Error != nil {
+			result.Error = client.PtrString(rr.Error.Error())
+		}
+
+		results = append(results, result)
+	}
+
+	return results
+}
+
+func Run(configPath string, taskPaths []string) error {
 	sigs := make(chan os.Signal, 1)
 	signal.Notify(sigs, syscall.SIGINT, syscall.SIGTERM)
-	apiClient := client.NewAPIClient(&client.Configuration{
-		Servers: []client.ServerConfiguration{
-			{URL: "http://localhost:3000"},
-		},
-	})
-	s := &Worker{
-		Exec:               &APIExecutionSource{client: apiClient.WorkerAPI},
-		ParallelExecutions: 4,
+	s, err := NewWorker(configPath, taskPaths)
+	if err != nil {
+		return fmt.Errorf("start worker: %w", err)
 	}
-	go s.Start(taskPaths)
+
+	go s.Start()
 	slog.Info("Worker started")
 	sig := <-sigs
 	slog.Info("Shutting down", "signal", sig.String())

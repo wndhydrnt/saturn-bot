@@ -90,22 +90,7 @@ paths:
         content:
           application/json:
             schema:
-              type: object
-              properties:
-                runID:
-                  description: Internal identifier of the unit of work.
-                  type: integer
-                taskResults:
-                  type: array
-                  items:
-                    type: object
-                    properties:
-                      name:
-                        type: string
-                      result:
-                        type: integer
-                    required: ["name", "result"]
-              required: ["runID", "taskResults"]
+              $ref: "#/components/schemas/ReportWorkV1Request"
         required: true
       responses:
         "201":
@@ -155,3 +140,32 @@ components:
         message:
           type: string
       required: ["error", "message"]
+    ReportWorkV1Request:
+      type: object
+      properties:
+        runID:
+          description: Internal identifier of the unit of work.
+          type: integer
+        taskResults:
+          description: List of runs of each task.
+          type: array
+          items:
+            $ref: "#/components/schemas/ReportWorkV1TaskResult"
+      required: ["runID", "taskResults"]
+    ReportWorkV1TaskResult:
+      description: Result of the run of a task.
+      type: object
+      properties:
+        error:
+          description: Error encountered during the run, if any.
+          type: string
+        repositoryName:
+          description: Name of the repository.
+          type: string
+        result:
+          description: Identifier of the result.
+          type: integer
+        taskName:
+          description: Name of the task.
+          type: string
+      required: ["repositoryName", "result", "taskName"]

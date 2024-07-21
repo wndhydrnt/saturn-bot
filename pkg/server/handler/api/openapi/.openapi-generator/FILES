@@ -12,5 +12,5 @@ model_get_work_v1_task.go
 model_list_tasks_v1_200_response.go
 model_report_work_v1_201_response.go
 model_report_work_v1_request.go
-model_report_work_v1_request_task_results_inner.go
+model_report_work_v1_task_result.go
 routers.go

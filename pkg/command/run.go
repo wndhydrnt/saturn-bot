@@ -23,6 +23,13 @@ var (
 	ErrNoHostsConfigured = errors.New("no hosts configured")
 )
 
+type RunResult struct {
+	Error          error
+	RepositoryName string
+	Result         processor.Result
+	TaskName       string
+}
+
 type run struct {
 	cache        cache.Cache
 	dryRun       bool
@@ -31,14 +38,14 @@ type run struct {
 	taskRegistry *task.Registry
 }
 
-func (r *run) run(repositoryNames, taskFiles []string) error {
+func (r *run) run(repositoryNames, taskFiles []string) ([]RunResult, error) {
 	if len(r.hosts) == 0 {
-		return ErrNoHostsConfigured
+		return nil, ErrNoHostsConfigured
 	}
 
 	err := r.cache.Read()
 	if err != nil {
-		return err
+		return nil, err
 	}
 
 	var since *time.Time
@@ -49,13 +56,13 @@ func (r *run) run(repositoryNames, taskFiles []string) error {
 
 	err = r.taskRegistry.ReadAll(taskFiles)
 	if err != nil {
-		return err
+		return nil, err
 	}
 
 	tasks := r.taskRegistry.GetTasks()
 	if len(tasks) == 0 {
 		slog.Warn("0 tasks loaded from files - stopping")
-		return nil
+		return nil, nil
 	}
 
 	needsAllRepositories := hasUpdatedTasks(r.cache.GetCachedTasks(), tasks)
@@ -74,6 +81,7 @@ func (r *run) run(repositoryNames, taskFiles []string) error {
 	finishes := 0
 	visitedRepositories := map[string]struct{}{}
 	success := true
+	var results []RunResult
 	for {
 		select {
 		case repoList := <-repos:
@@ -90,16 +98,22 @@ func (r *run) run(repositoryNames, taskFiles []string) error {
 				ctx = context.WithValue(ctx, sContext.TemplateVarsKey{}, make(map[string]string))
 				doFilter := len(repositoryNames) == 0
 				for _, t := range tasks {
-					_, err := r.processor.Process(ctx, r.dryRun, repo, t, doFilter)
-					if err != nil {
-						success = false
-						slog.Error("Task failed", "err", err)
+					result := RunResult{
+						RepositoryName: repo.FullName(),
+						TaskName:       t.SourceTask().Name,
 					}
+					result.Result, result.Error = r.processor.Process(ctx, r.dryRun, repo, t, doFilter)
+					if result.Error != nil {
+						success = false
+						slog.Error("Task failed", "err", result.Error)
+					}
+
+					results = append(results, result)
 				}
 			}
 		case err := <-errChan:
 			if err != nil {
-				return err
+				return results, err
 			}
 
 			finishes += 1
@@ -116,23 +130,23 @@ func (r *run) run(repositoryNames, taskFiles []string) error {
 		r.cache.UpdateCachedTasks(tasks)
 		err = r.cache.Write()
 		if err != nil {
-			return err
+			return results, err
 		}
 	}
 
 	r.taskRegistry.Stop()
 
 	if !success {
-		return fmt.Errorf("errors occurred, check previous log messages")
+		return results, fmt.Errorf("errors occurred, check previous log messages")
 	}
 	slog.Info("Run finished")
-	return nil
+	return results, nil
 }
 
-func ExecuteRun(opts options.Opts, repositoryNames, taskFiles []string) error {
+func ExecuteRun(opts options.Opts, repositoryNames, taskFiles []string) ([]RunResult, error) {
 	err := options.Initialize(opts)
 	if err != nil {
-		return fmt.Errorf("initialize options: %w", err)
+		return nil, fmt.Errorf("initialize options: %w", err)
 	}
 
 	cache := cache.NewJsonFile(path.Join(*opts.Config.DataDir, cache.DefaultJsonFileName))
@@ -140,7 +154,7 @@ func ExecuteRun(opts options.Opts, repositoryNames, taskFiles []string) error {
 
 	gitClient, err := git.New(opts.Config)
 	if err != nil {
-		return fmt.Errorf("new git client for run: %w", err)
+		return nil, fmt.Errorf("new git client for run: %w", err)
 	}
 
 	e := &run{

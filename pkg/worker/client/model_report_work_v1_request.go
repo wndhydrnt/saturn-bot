@@ -23,7 +23,8 @@ var _ MappedNullable = &ReportWorkV1Request{}
 type ReportWorkV1Request struct {
 	// Internal identifier of the unit of work.
 	RunID int32 `json:"runID"`
-	TaskResults []ReportWorkV1RequestTaskResultsInner `json:"taskResults"`
+	// List of runs of each task.
+	TaskResults []ReportWorkV1TaskResult `json:"taskResults"`
 }
 
 type _ReportWorkV1Request ReportWorkV1Request
@@ -32,7 +33,7 @@ type _ReportWorkV1Request ReportWorkV1Request
 // This constructor will assign default values to properties that have it defined,
 // and makes sure properties required by API are set, but the set of arguments
 // will change when the set of required properties is changed
-func NewReportWorkV1Request(runID int32, taskResults []ReportWorkV1RequestTaskResultsInner) *ReportWorkV1Request {
+func NewReportWorkV1Request(runID int32, taskResults []ReportWorkV1TaskResult) *ReportWorkV1Request {
 	this := ReportWorkV1Request{}
 	this.RunID = runID
 	this.TaskResults = taskResults
@@ -72,9 +73,9 @@ func (o *ReportWorkV1Request) SetRunID(v int32) {
 }
 
 // GetTaskResults returns the TaskResults field value
-func (o *ReportWorkV1Request) GetTaskResults() []ReportWorkV1RequestTaskResultsInner {
+func (o *ReportWorkV1Request) GetTaskResults() []ReportWorkV1TaskResult {
 	if o == nil {
-		var ret []ReportWorkV1RequestTaskResultsInner
+		var ret []ReportWorkV1TaskResult
 		return ret
 	}
 
@@ -83,7 +84,7 @@ func (o *ReportWorkV1Request) GetTaskResults() []ReportWorkV1RequestTaskResultsI
 
 // GetTaskResultsOk returns a tuple with the TaskResults field value
 // and a boolean to check if the value has been set.
-func (o *ReportWorkV1Request) GetTaskResultsOk() ([]ReportWorkV1RequestTaskResultsInner, bool) {
+func (o *ReportWorkV1Request) GetTaskResultsOk() ([]ReportWorkV1TaskResult, bool) {
 	if o == nil {
 		return nil, false
 	}
@@ -91,7 +92,7 @@ func (o *ReportWorkV1Request) GetTaskResultsOk() ([]ReportWorkV1RequestTaskResul
 }
 
 // SetTaskResults sets field value
-func (o *ReportWorkV1Request) SetTaskResults(v []ReportWorkV1RequestTaskResultsInner) {
+func (o *ReportWorkV1Request) SetTaskResults(v []ReportWorkV1TaskResult) {
 	o.TaskResults = v
 }
 
