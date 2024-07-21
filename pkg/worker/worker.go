@@ -14,6 +14,7 @@ import (
 	"github.com/wndhydrnt/saturn-bot/pkg/command"
 	"github.com/wndhydrnt/saturn-bot/pkg/config"
 	"github.com/wndhydrnt/saturn-bot/pkg/options"
+	"github.com/wndhydrnt/saturn-bot/pkg/processor"
 	"github.com/wndhydrnt/saturn-bot/pkg/server/task"
 	"github.com/wndhydrnt/saturn-bot/pkg/worker/client"
 )
@@ -232,6 +233,10 @@ func (w *Worker) findTaskByName(name string, hash string) (task.Task, error) {
 func mapRunResultsToTaskResults(runResults []command.RunResult) []client.ReportWorkV1TaskResult {
 	var results []client.ReportWorkV1TaskResult
 	for _, rr := range runResults {
+		if rr.Result == processor.ResultNoMatch {
+			continue
+		}
+
 		result := client.ReportWorkV1TaskResult{
 			RepositoryName: rr.RepositoryName,
 			Result:         int32(rr.Result),

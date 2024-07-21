@@ -13,8 +13,12 @@ import (
 
 	"github.com/go-chi/chi/v5"
 	"github.com/go-chi/chi/v5/middleware"
+	"github.com/wndhydrnt/saturn-bot/pkg/config"
+	"github.com/wndhydrnt/saturn-bot/pkg/options"
+	"github.com/wndhydrnt/saturn-bot/pkg/server/db"
 	"github.com/wndhydrnt/saturn-bot/pkg/server/handler/api"
 	"github.com/wndhydrnt/saturn-bot/pkg/server/handler/api/openapi"
+	"github.com/wndhydrnt/saturn-bot/pkg/server/service"
 	"github.com/wndhydrnt/saturn-bot/pkg/server/task"
 )
 
@@ -28,15 +32,25 @@ func (s *Server) Start(taskPaths []string) error {
 		return fmt.Errorf("load tasks on server start: %w", err)
 	}
 
+	database, err := db.New(true)
+	if err != nil {
+		return fmt.Errorf("initialize database: %w", err)
+	}
+
+	taskService := service.NewTaskService(database, tasks)
+	err = taskService.SyncDbTasks()
+	if err != nil {
+		return err
+	}
+
+	taskCtrl := openapi.NewTaskAPIController(&api.TaskHandler{TaskService: taskService})
+	workerService := service.NewWorkerService(database, tasks)
+	workerHandler := &api.WorkHandler{WorkerService: workerService}
+	workerCtrl := openapi.NewWorkerAPIController(workerHandler)
+	router := newRouter(taskCtrl, workerCtrl)
 	s.httpServer = &http.Server{
 		Addr: ":3000",
 	}
-
-	taskService := api.NewTaskService(tasks)
-	taskCtrl := openapi.NewTaskAPIController(taskService)
-	workerService := api.NewWorkerService(tasks)
-	workerCtrl := openapi.NewWorkerAPIController(workerService)
-	router := newRouter(taskCtrl, workerCtrl)
 	s.httpServer.Handler = router
 	go func(server *http.Server) {
 		err := server.ListenAndServe()
@@ -66,11 +80,30 @@ func (s *Server) Stop() error {
 	return nil
 }
 
-func Run(taskPaths []string) error {
+func Run(configPath string, taskPaths []string) error {
+	cfg, err := config.Read(configPath)
+	if err != nil {
+		return err
+	}
+
+	opts, err := options.ToOptions(cfg)
+	if err != nil {
+		return err
+	}
+
+	err = options.Initialize(opts)
+	if err != nil {
+		return err
+	}
+
 	sigs := make(chan os.Signal, 1)
 	signal.Notify(sigs, syscall.SIGINT, syscall.SIGTERM)
 	s := &Server{}
-	s.Start(taskPaths)
+	err = s.Start(taskPaths)
+	if err != nil {
+		return err
+	}
+
 	slog.Info("Server started")
 	sig := <-sigs
 	slog.Info("Shutting down", "signal", sig.String())
