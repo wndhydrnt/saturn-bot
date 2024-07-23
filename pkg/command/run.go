@@ -158,10 +158,13 @@ func ExecuteRun(opts options.Opts, repositoryNames, taskFiles []string) ([]RunRe
 	}
 
 	e := &run{
-		cache:        cache,
-		dryRun:       opts.Config.DryRun,
-		hosts:        opts.Hosts,
-		processor:    &processor.Processor{Git: gitClient},
+		cache:  cache,
+		dryRun: opts.Config.DryRun,
+		hosts:  opts.Hosts,
+		processor: &processor.Processor{
+			DataDir: *opts.Config.DataDir,
+			Git:     gitClient,
+		},
 		taskRegistry: taskRegistry,
 	}
 	return e.run(repositoryNames, taskFiles)

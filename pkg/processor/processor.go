@@ -38,7 +38,8 @@ const (
 )
 
 type Processor struct {
-	Git git.GitClient
+	DataDir string
+	Git     git.GitClient
 }
 
 type RepositoryTaskProcessor interface {
@@ -79,6 +80,19 @@ func (p *Processor) Process(
 	}
 
 	logger.Info("Task matches repository")
+	lck := &locker{}
+	err := lck.lock(p.DataDir, repo)
+	if err != nil {
+		return ResultUnknown, fmt.Errorf("lock of repository '%s' failed: %w", repo.FullName(), err)
+	}
+
+	defer func() {
+		err := lck.unlock()
+		if err != nil {
+			logger.Error("Failed to unlock repository")
+		}
+	}()
+
 	workDir, err := p.Git.Prepare(repo, false)
 	if err != nil {
 		return ResultUnknown, fmt.Errorf("prepare of git repository failed: %w", err)

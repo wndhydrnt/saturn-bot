@@ -4,6 +4,7 @@ go 1.22.0
 
 require (
 	github.com/go-chi/chi/v5 v5.0.13
+	github.com/gofrs/flock v0.12.1
 	github.com/google/go-github/v59 v59.0.0
 	github.com/gosimple/slug v1.13.1
 	github.com/gregjones/httpcache v0.0.0-20190611155906-901d90724c79
@@ -21,7 +22,7 @@ require (
 	github.com/ncruces/go-sqlite3/gormlite v0.16.3
 	github.com/santhosh-tekuri/jsonschema/v5 v5.3.1
 	github.com/spf13/cobra v1.8.0
-	github.com/stretchr/testify v1.8.4
+	github.com/stretchr/testify v1.9.0
 	github.com/wndhydrnt/saturn-bot-go v0.4.1
 	github.com/xanzy/go-gitlab v0.97.0
 	go.uber.org/mock v0.4.0
@@ -45,6 +46,7 @@ require (
 	github.com/jinzhu/inflection v1.0.0 // indirect
 	github.com/jinzhu/now v1.1.5 // indirect
 	github.com/knadh/koanf/maps v0.1.1 // indirect
+	github.com/kr/text v0.2.0 // indirect
 	github.com/mattn/go-colorable v0.1.13 // indirect
 	github.com/mitchellh/copystructure v1.2.0 // indirect
 	github.com/mitchellh/go-testing-interface v1.0.0 // indirect
@@ -52,6 +54,7 @@ require (
 	github.com/ncruces/julianday v1.0.0 // indirect
 	github.com/oklog/run v1.0.0 // indirect
 	github.com/pmezard/go-difflib v1.0.1-0.20181226105442-5d4384ee4fb2 // indirect
+	github.com/rogpeppe/go-internal v1.12.0 // indirect
 	github.com/spf13/pflag v1.0.5 // indirect
 	github.com/tetratelabs/wazero v1.7.3 // indirect
 	golang.org/x/net v0.20.0 // indirect
