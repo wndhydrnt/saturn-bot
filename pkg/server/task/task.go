@@ -15,14 +15,14 @@ type Task struct {
 func Load(taskPaths []string) ([]Task, error) {
 	var entries []Task
 	for _, taskPath := range taskPaths {
-		tasks, h, err := schema.Read(taskPath)
+		tasks, hashes, err := schema.Read(taskPath)
 		if err != nil {
 			return nil, err
 		}
 
-		for _, t := range tasks {
+		for idx, t := range tasks {
 			entries = append(entries, Task{
-				Hash:     fmt.Sprintf("%x", h.Sum(nil)),
+				Hash:     fmt.Sprintf("%x", hashes[idx].Sum(nil)),
 				TaskName: t.Name,
 				TaskPath: taskPath,
 			})

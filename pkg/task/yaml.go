@@ -15,13 +15,13 @@ func readTasksYaml(
 	pathPython string,
 	taskFile string,
 ) ([]Task, error) {
-	schemaTasks, checksum, err := schema.Read(taskFile)
+	schemaTasks, hashes, err := schema.Read(taskFile)
 	if err != nil {
 		return nil, err
 	}
 
 	var result []Task
-	for _, schemaTask := range schemaTasks {
+	for idx, schemaTask := range schemaTasks {
 		if !schemaTask.Active {
 			slog.Warn("Task deactivated", "task", schemaTask.Name)
 			continue
@@ -55,7 +55,7 @@ func readTasksYaml(
 			wrapper.plugins = append(wrapper.plugins, pw)
 		}
 
-		wrapper.checksum = fmt.Sprintf("%x", checksum.Sum(nil))
+		wrapper.checksum = fmt.Sprintf("%x", hashes[idx].Sum(nil))
 		result = append(result, wrapper)
 	}
 

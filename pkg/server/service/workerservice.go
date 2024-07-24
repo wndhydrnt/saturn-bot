@@ -25,23 +25,50 @@ func NewWorkerService(db *gorm.DB, tasks []task.Task) *WorkerService {
 }
 
 func (ws *WorkerService) ScheduleRun(
+	reason db.RunReason,
 	repositoryName string,
 	scheduleAfter time.Time,
 	taskName string,
+	tx *gorm.DB,
 ) (uint, error) {
-	run := db.Run{
-		Reason:         db.RunReasonManual,
-		RepositoryName: ptr(repositoryName),
-		ScheduleAfter:  time.Now(),
-		Status:         db.RunStatusPending,
-		TaskName:       taskName,
+	var runDB db.Run
+	if tx == nil {
+		tx = ws.db
+	}
+	result := tx.
+		Where("repository_name = ?", repositoryName).
+		Where("task_name = ?", taskName).
+		Where("status = ?", db.RunStatusPending).
+		First(&runDB)
+	if errors.Is(result.Error, gorm.ErrRecordNotFound) {
+		slog.Debug("Scheduling new run", "repository", repositoryName, "task", taskName)
+		run := db.Run{
+			Reason:         reason,
+			RepositoryName: ptr(repositoryName),
+			ScheduleAfter:  scheduleAfter,
+			Status:         db.RunStatusPending,
+			TaskName:       taskName,
+		}
+
+		if err := tx.Save(&run).Error; err != nil {
+			return 0, fmt.Errorf("schedule run: %w", err)
+		}
+
+		return run.ID, nil
 	}
 
-	if err := ws.db.Save(&run).Error; err != nil {
-		return 0, fmt.Errorf("schedule run: %w", err)
+	if result.Error != nil {
+		return 0, fmt.Errorf("read next scheduled run: %w", tx.Error)
 	}
 
-	return run.ID, nil
+	if runDB.ScheduleAfter.Before(scheduleAfter) {
+		runDB.ScheduleAfter = scheduleAfter
+		if err := tx.Save(&runDB).Error; err != nil {
+			return 0, fmt.Errorf("update scheduleAfter of run: %w", err)
+		}
+	}
+
+	return runDB.ID, nil
 }
 
 func (ws *WorkerService) findTask(name string) *task.Task {
@@ -68,6 +95,10 @@ func (ws *WorkerService) NextRun() (db.Run, task.Task, error) {
 
 		slog.Error("Failed to get next run", "error", tx.Error)
 		return run, runTask, tx.Error
+	}
+
+	if run.ScheduleAfter.After(time.Now()) {
+		return run, runTask, ErrNoRun
 	}
 
 	run.Status = db.RunStatusRunning
@@ -122,14 +153,8 @@ func (ws *WorkerService) ReportRun(req openapi.ReportWorkV1Request) error {
 			procResult := processor.Result(taskResult.Result)
 			next := nextSchedule(procResult)
 			if next != nil {
-				runNew := db.Run{
-					Reason:         db.RunReasonNext,
-					RepositoryName: ptr(taskResult.RepositoryName),
-					ScheduleAfter:  *next,
-					Status:         db.RunStatusPending,
-					TaskName:       taskResult.TaskName,
-				}
-				if err := ws.db.Save(&runNew).Error; err != nil {
+				_, err := ws.ScheduleRun(db.RunReasonNext, taskResult.RepositoryName, *next, taskResult.TaskName, tx)
+				if err != nil {
 					return err
 				}
 			}

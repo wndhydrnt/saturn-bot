@@ -6,6 +6,7 @@ import (
 	"log/slog"
 	"net/http"
 
+	"github.com/wndhydrnt/saturn-bot/pkg/server/db"
 	"github.com/wndhydrnt/saturn-bot/pkg/server/handler/api/openapi"
 	"github.com/wndhydrnt/saturn-bot/pkg/server/service"
 )
@@ -48,7 +49,7 @@ func (wh *WorkHandler) ReportWorkV1(_ context.Context, req openapi.ReportWorkV1R
 }
 
 func (wh *WorkHandler) ScheduleRunV1(_ context.Context, req openapi.ScheduleRunV1Request) (openapi.ImplResponse, error) {
-	runID, err := wh.WorkerService.ScheduleRun(req.RepositoryName, req.ScheduleAfter, req.TaskName)
+	runID, err := wh.WorkerService.ScheduleRun(db.RunReasonManual, req.RepositoryName, req.ScheduleAfter, req.TaskName, nil)
 	if err != nil {
 		return openapi.Response(http.StatusInternalServerError, serverError), nil
 	}
