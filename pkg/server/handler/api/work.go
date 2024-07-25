@@ -33,6 +33,10 @@ func (wh *WorkHandler) GetWorkV1(_ context.Context) (openapi.ImplResponse, error
 			{Hash: task.Hash, Name: task.TaskName},
 		},
 	}
+	if run.RepositoryName != nil {
+		body.Repository = *run.RepositoryName
+	}
+
 	return openapi.Response(http.StatusOK, body), nil
 }
 
