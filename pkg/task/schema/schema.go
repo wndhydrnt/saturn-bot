@@ -6,6 +6,62 @@ import "encoding/json"
 import "fmt"
 import yaml "gopkg.in/yaml.v3"
 
+type Filter struct {
+	// Identifier of the filter.
+	Filter string `json:"filter" yaml:"filter" mapstructure:"filter"`
+
+	// Key/value pairs passed as parameters to the filter.
+	Params FilterParams `json:"params,omitempty" yaml:"params,omitempty" mapstructure:"params,omitempty"`
+
+	// Reverse the result of the filter, i.e. negate it.
+	Reverse bool `json:"reverse,omitempty" yaml:"reverse,omitempty" mapstructure:"reverse,omitempty"`
+}
+
+// Key/value pairs passed as parameters to the filter.
+type FilterParams map[string]interface{}
+
+// UnmarshalJSON implements json.Unmarshaler.
+func (j *Filter) UnmarshalJSON(b []byte) error {
+	var raw map[string]interface{}
+	if err := json.Unmarshal(b, &raw); err != nil {
+		return err
+	}
+	if _, ok := raw["filter"]; raw != nil && !ok {
+		return fmt.Errorf("field filter in Filter: required")
+	}
+	type Plain Filter
+	var plain Plain
+	if err := json.Unmarshal(b, &plain); err != nil {
+		return err
+	}
+	if v, ok := raw["reverse"]; !ok || v == nil {
+		plain.Reverse = false
+	}
+	*j = Filter(plain)
+	return nil
+}
+
+// UnmarshalYAML implements yaml.Unmarshaler.
+func (j *Filter) UnmarshalYAML(value *yaml.Node) error {
+	var raw map[string]interface{}
+	if err := value.Decode(&raw); err != nil {
+		return err
+	}
+	if _, ok := raw["filter"]; raw != nil && !ok {
+		return fmt.Errorf("field filter in Filter: required")
+	}
+	type Plain Filter
+	var plain Plain
+	if err := value.Decode(&plain); err != nil {
+		return err
+	}
+	if v, ok := raw["reverse"]; !ok || v == nil {
+		plain.Reverse = false
+	}
+	*j = Filter(plain)
+	return nil
+}
+
 type Task struct {
 	// List of actions that modify a repository.
 	Actions []TaskActionsElem `json:"actions,omitempty" yaml:"actions,omitempty" mapstructure:"actions,omitempty"`
@@ -43,7 +99,7 @@ type Task struct {
 	Disabled *bool `json:"disabled,omitempty" yaml:"disabled,omitempty" mapstructure:"disabled,omitempty"`
 
 	// Filters allow targeting a specific repositories.
-	Filters []TaskFiltersElem `json:"filters,omitempty" yaml:"filters,omitempty" mapstructure:"filters,omitempty"`
+	Filters []Filter `json:"filters,omitempty" yaml:"filters,omitempty" mapstructure:"filters,omitempty"`
 
 	// If `true`, keep the branch after a pull request has been merged.
 	KeepBranchAfterMerge bool `json:"keepBranchAfterMerge,omitempty" yaml:"keepBranchAfterMerge,omitempty" mapstructure:"keepBranchAfterMerge,omitempty"`
@@ -119,62 +175,6 @@ func (j *TaskActionsElem) UnmarshalYAML(value *yaml.Node) error {
 		return err
 	}
 	*j = TaskActionsElem(plain)
-	return nil
-}
-
-type TaskFiltersElem struct {
-	// Identifier of the filter.
-	Filter string `json:"filter" yaml:"filter" mapstructure:"filter"`
-
-	// Key/value pairs passed as parameters to the filter.
-	Params TaskFiltersElemParams `json:"params,omitempty" yaml:"params,omitempty" mapstructure:"params,omitempty"`
-
-	// Reverse the result of the filter, i.e. negate it.
-	Reverse bool `json:"reverse,omitempty" yaml:"reverse,omitempty" mapstructure:"reverse,omitempty"`
-}
-
-// Key/value pairs passed as parameters to the filter.
-type TaskFiltersElemParams map[string]interface{}
-
-// UnmarshalJSON implements json.Unmarshaler.
-func (j *TaskFiltersElem) UnmarshalJSON(b []byte) error {
-	var raw map[string]interface{}
-	if err := json.Unmarshal(b, &raw); err != nil {
-		return err
-	}
-	if _, ok := raw["filter"]; raw != nil && !ok {
-		return fmt.Errorf("field filter in TaskFiltersElem: required")
-	}
-	type Plain TaskFiltersElem
-	var plain Plain
-	if err := json.Unmarshal(b, &plain); err != nil {
-		return err
-	}
-	if v, ok := raw["reverse"]; !ok || v == nil {
-		plain.Reverse = false
-	}
-	*j = TaskFiltersElem(plain)
-	return nil
-}
-
-// UnmarshalYAML implements yaml.Unmarshaler.
-func (j *TaskFiltersElem) UnmarshalYAML(value *yaml.Node) error {
-	var raw map[string]interface{}
-	if err := value.Decode(&raw); err != nil {
-		return err
-	}
-	if _, ok := raw["filter"]; raw != nil && !ok {
-		return fmt.Errorf("field filter in TaskFiltersElem: required")
-	}
-	type Plain TaskFiltersElem
-	var plain Plain
-	if err := value.Decode(&plain); err != nil {
-		return err
-	}
-	if v, ok := raw["reverse"]; !ok || v == nil {
-		plain.Reverse = false
-	}
-	*j = TaskFiltersElem(plain)
 	return nil
 }
 

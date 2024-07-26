@@ -85,10 +85,10 @@ func createTestTask(nameFilter string) schema.Task {
 	parts := strings.Split(nameFilter, "/")
 	return schema.Task{
 		Name: "Unit Test",
-		Filters: []schema.TaskFiltersElem{
+		Filters: []schema.Filter{
 			{
 				Filter: "repository",
-				Params: schema.TaskFiltersElemParams{
+				Params: schema.FilterParams{
 					"host":  parts[0],
 					"owner": parts[1],
 					"name":  parts[2],
