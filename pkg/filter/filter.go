@@ -45,19 +45,43 @@ func (f FileFactory) Name() string {
 }
 
 func (f FileFactory) Create(params map[string]any) (Filter, error) {
-	if params["path"] == nil {
-		return nil, fmt.Errorf("required parameter `path` not set")
-	}
-	path, ok := params["path"].(string)
-	if !ok {
-		return nil, fmt.Errorf("required parameter `path` is of type %T not string", params["path"])
+	if params["paths"] == nil {
+		return nil, fmt.Errorf("required parameter `paths` not set")
 	}
 
-	return &File{Path: path}, nil
+	op, ok := params["op"].(string)
+	if !ok {
+		op = opAnd
+	} else {
+		if op != opAnd && op != opOr {
+			return nil, fmt.Errorf("value of parameter `op` can be and,or not '%s'", params["op"])
+		}
+	}
+
+	inPaths, ok := params["paths"].([]interface{})
+	if !ok {
+		return nil, fmt.Errorf("required parameter `paths` is not a list")
+	}
+
+	var paths []string
+	for _, item := range inPaths {
+		p, ok := item.(string)
+		if ok {
+			paths = append(paths, p)
+		}
+	}
+
+	return &File{Op: op, Paths: paths}, nil
 }
 
+const (
+	opAnd = "and"
+	opOr  = "or"
+)
+
 type File struct {
-	Path string
+	Op    string
+	Paths []string
 }
 
 func (fe *File) Do(ctx context.Context) (bool, error) {
@@ -66,11 +90,30 @@ func (fe *File) Do(ctx context.Context) (bool, error) {
 		return false, errors.New("context passed to filter fileExists does not contain a repository")
 	}
 
-	return repo.HasFile(fe.Path)
+	for _, p := range fe.Paths {
+		result, err := repo.HasFile(p)
+		if err != nil {
+			return false, nil
+		}
+
+		if fe.Op == opAnd && !result {
+			return false, nil
+		}
+
+		if fe.Op == opOr && result {
+			return true, nil
+		}
+	}
+
+	if fe.Op == opAnd {
+		return true, nil
+	} else {
+		return false, nil
+	}
 }
 
 func (fe *File) String() string {
-	return fmt.Sprintf("file(path=%s)", fe.Path)
+	return fmt.Sprintf("file(op=%s,paths=%s)", fe.Op, fe.Paths)
 }
 
 type FileContentFactory struct{}
