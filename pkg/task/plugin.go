@@ -17,9 +17,11 @@ import (
 )
 
 type startPluginOptions struct {
-	hash     hash.Hash
-	config   map[string]string
-	filePath string
+	hash       hash.Hash
+	config     map[string]string
+	filePath   string
+	pathJava   string
+	pathPython string
 }
 
 type pluginWrapper struct {
@@ -37,10 +39,10 @@ func newPluginWrapper(opts startPluginOptions) (*pluginWrapper, error) {
 	case "":
 		executable = opts.filePath
 	case ".jar":
-		executable = "java"
+		executable = opts.pathJava
 		args = append(args, "-jar", opts.filePath)
 	case ".py":
-		executable = "python"
+		executable = opts.pathPython
 		args = append(args, opts.filePath)
 	}
 

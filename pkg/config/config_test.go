@@ -38,6 +38,8 @@ func TestReadConfig(t *testing.T) {
 				GitPath:          "git",
 				LogFormat:        "auto",
 				LogLevel:         "info",
+				JavaPath:         "java",
+				PythonPath:       "python",
 			},
 		},
 	}

@@ -76,6 +76,16 @@
     "gitlabToken": {
       "description": "Token to use for authentication at the GitLab API.",
       "type": "string"
+    },
+    "javaPath": {
+      "default": "java",
+      "description": "Path to the Java binary to execute plugins. If not set explicitly, then saturn-bot searches for the binary in $PATH.",
+      "type": "string"
+    },
+    "pythonPath": {
+      "default": "python",
+      "description": "Path to the Python binary to execute plugins. If not set explicitly, then saturn-bot searches for the binary in $PATH.",
+      "type": "string"
     }
   }
 }

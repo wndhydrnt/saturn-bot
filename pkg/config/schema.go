@@ -47,11 +47,19 @@ type Configuration struct {
 	// Token to use for authentication at the GitLab API.
 	GitlabToken *string `json:"gitlabToken,omitempty" yaml:"gitlabToken,omitempty" mapstructure:"gitlabToken,omitempty"`
 
+	// Path to the Java binary to execute plugins. If not set explicitly, then
+	// saturn-bot searches for the binary in $PATH.
+	JavaPath string `json:"javaPath,omitempty" yaml:"javaPath,omitempty" mapstructure:"javaPath,omitempty"`
+
 	// Format of log messages.
 	LogFormat ConfigurationLogFormat `json:"logFormat,omitempty" yaml:"logFormat,omitempty" mapstructure:"logFormat,omitempty"`
 
 	// Log level of the application.
 	LogLevel ConfigurationLogLevel `json:"logLevel,omitempty" yaml:"logLevel,omitempty" mapstructure:"logLevel,omitempty"`
+
+	// Path to the Python binary to execute plugins. If not set explicitly, then
+	// saturn-bot searches for the binary in $PATH.
+	PythonPath string `json:"pythonPath,omitempty" yaml:"pythonPath,omitempty" mapstructure:"pythonPath,omitempty"`
 }
 
 type ConfigurationGitLogLevel string
@@ -252,11 +260,17 @@ func (j *Configuration) UnmarshalJSON(b []byte) error {
 	if v, ok := raw["gitlabAddress"]; !ok || v == nil {
 		plain.GitlabAddress = "https://gitlab.com"
 	}
+	if v, ok := raw["javaPath"]; !ok || v == nil {
+		plain.JavaPath = "java"
+	}
 	if v, ok := raw["logFormat"]; !ok || v == nil {
 		plain.LogFormat = "auto"
 	}
 	if v, ok := raw["logLevel"]; !ok || v == nil {
 		plain.LogLevel = "info"
+	}
+	if v, ok := raw["pythonPath"]; !ok || v == nil {
+		plain.PythonPath = "python"
 	}
 	*j = Configuration(plain)
 	return nil
@@ -300,11 +314,17 @@ func (j *Configuration) UnmarshalYAML(value *yaml.Node) error {
 	if v, ok := raw["gitlabAddress"]; !ok || v == nil {
 		plain.GitlabAddress = "https://gitlab.com"
 	}
+	if v, ok := raw["javaPath"]; !ok || v == nil {
+		plain.JavaPath = "java"
+	}
 	if v, ok := raw["logFormat"]; !ok || v == nil {
 		plain.LogFormat = "auto"
 	}
 	if v, ok := raw["logLevel"]; !ok || v == nil {
 		plain.LogLevel = "info"
+	}
+	if v, ok := raw["pythonPath"]; !ok || v == nil {
+		plain.PythonPath = "python"
 	}
 	*j = Configuration(plain)
 	return nil
