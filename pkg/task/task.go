@@ -216,6 +216,8 @@ func (tw *Wrapper) Stop() {
 type Registry struct {
 	actionFactories options.ActionFactories
 	filterFactories options.FilterFactories
+	pathJava        string
+	pathPython      string
 	tasks           []Task
 }
 
@@ -223,6 +225,8 @@ func NewRegistry(opts options.Opts) *Registry {
 	return &Registry{
 		actionFactories: opts.ActionFactories,
 		filterFactories: opts.FilterFactories,
+		pathJava:        opts.Config.JavaPath,
+		pathPython:      opts.Config.PythonPath,
 	}
 }
 
@@ -254,7 +258,7 @@ func (tr *Registry) readTasks(taskFile string) error {
 	switch ext {
 	case ".yml":
 	case ".yaml":
-		tasks, err := readTasksYaml(tr.actionFactories, tr.filterFactories, taskFile)
+		tasks, err := readTasksYaml(tr.actionFactories, tr.filterFactories, tr.pathJava, tr.pathPython, taskFile)
 		if err != nil {
 			return err
 		}

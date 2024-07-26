@@ -155,3 +155,23 @@ gitAuthor: "Saturn Bot <saturn-bot@example.local>"
 | Default | -                        |
 | Env Var | `SATURN_BOT_GITLABTOKEN` |
 | Type    | `string`                 |
+
+## javaPath
+
+[json-path:../pkg/config/config.schema.json:$.properties.javaPath.description]
+
+| Name    | Value                 |
+| ------- | --------------------- |
+| Default | `java`                |
+| Env Var | `SATURN_BOT_JAVAPATH` |
+| Type    | `string`              |
+
+## pythonPath
+
+[json-path:../pkg/config/config.schema.json:$.properties.pythonPath.description]
+
+| Name    | Value                   |
+| ------- | ----------------------- |
+| Default | `python`                |
+| Env Var | `SATURN_BOT_PYTHONPATH` |
+| Type    | `string`                |

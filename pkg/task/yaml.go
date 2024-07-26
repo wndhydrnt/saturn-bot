@@ -13,7 +13,13 @@ import (
 	"gopkg.in/yaml.v3"
 )
 
-func readTasksYaml(actionFactories options.ActionFactories, filterFactories options.FilterFactories, taskFile string) ([]Task, error) {
+func readTasksYaml(
+	actionFactories options.ActionFactories,
+	filterFactories options.FilterFactories,
+	pathJava string,
+	pathPython string,
+	taskFile string,
+) ([]Task, error) {
 	var result []Task
 	b, err := os.ReadFile(taskFile)
 	if err != nil {
@@ -53,9 +59,11 @@ func readTasksYaml(actionFactories options.ActionFactories, filterFactories opti
 
 		for idx, plugin := range task.Plugins {
 			pw, err := newPluginWrapper(startPluginOptions{
-				hash:     checksum,
-				config:   plugin.Configuration,
-				filePath: plugin.Path,
+				hash:       checksum,
+				config:     plugin.Configuration,
+				filePath:   plugin.Path,
+				pathJava:   pathJava,
+				pathPython: pathPython,
 			})
 			if err != nil {
 				return nil, fmt.Errorf("initialize plugin #%d: %w", idx, err)
