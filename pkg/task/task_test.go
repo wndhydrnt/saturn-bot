@@ -149,14 +149,14 @@ func TestRegistry_ReadAll_AllBuiltInFilters(t *testing.T) {
         name: test|test2
     - filter: file
       params:
-        path: unit-test.txt
+        paths: [unit-test.txt]
     - filter: fileContent
       params:
         path: hello-world.txt
         regexp: Hello World
     - filter: file
       params:
-        path: test.txt
+        paths: [test.txt]
       reverse: true
 `
 	tempDir, err := os.MkdirTemp("", "")
@@ -182,9 +182,9 @@ func TestRegistry_ReadAll_AllBuiltInFilters(t *testing.T) {
 	assert.Equal(t, "Task", task.SourceTask().Name)
 	wantFilters := []string{
 		"repository(host=^git.localhost$,owner=^unit$,name=^test|test2$)",
-		"file(path=unit-test.txt)",
+		"file(op=and,paths=[unit-test.txt])",
 		"fileContent(path=hello-world.txt,regexp=Hello World)",
-		"!file(path=test.txt)",
+		"!file(op=and,paths=[test.txt])",
 	}
 	var actualFilters []string
 	for _, a := range task.Filters() {

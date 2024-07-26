@@ -67,23 +67,7 @@
       "type": "array",
       "description": "Filters allow targeting a specific repositories.",
       "items": {
-        "type": "object",
-        "properties": {
-          "filter": {
-            "type": "string",
-            "description": "Identifier of the filter."
-          },
-          "params": {
-            "type": "object",
-            "description": "Key/value pairs passed as parameters to the filter."
-          },
-          "reverse": {
-            "type": "boolean",
-            "description": "Reverse the result of the filter, i.e. negate it.",
-            "default": false
-          }
-        },
-        "required": ["filter"]
+        "$ref": "#/$defs/filter"
       }
     },
     "keepBranchAfterMerge": {
@@ -151,5 +135,26 @@
       }
     }
   },
-  "required": ["name"]
+  "required": ["name"],
+  "$defs": {
+    "filter": {
+      "type": "object",
+      "properties": {
+        "filter": {
+          "type": "string",
+          "description": "Identifier of the filter."
+        },
+        "params": {
+          "type": "object",
+          "description": "Key/value pairs passed as parameters to the filter."
+        },
+        "reverse": {
+          "type": "boolean",
+          "description": "Reverse the result of the filter, i.e. negate it.",
+          "default": false
+        }
+      },
+      "required": ["filter"]
+    }
+  }
 }

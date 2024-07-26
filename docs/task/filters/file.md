@@ -1,17 +1,27 @@
 # file
 
-Match a repository if a file exists in the repository.
+Match a repository if one or more files exist in the repository.
 
 ## Parameters
 
-### `path`
+### `op`
 
-Path of the file in the repository.
+Operator to connect the entries in `paths`. Can be `and` or `or`.
 
 | Name     | Value    |
 | -------- | -------- |
 | Type     | `string` |
-| Required | **Yes**  |
+| Required | No       |
+| Default  | `and`    |
+
+### `paths`
+
+One or more paths to files in the repository.
+
+| Name     | Value      |
+| -------- | ---------- |
+| Type     | `string[]` |
+| Required | **Yes**    |
 
 ## Examples
 
@@ -20,7 +30,7 @@ Path of the file in the repository.
 filters:
   - filter: file
     params:
-      path: "hello-world.txt"
+      paths: ["hello-world.txt"]
 ```
 
 ```yaml
@@ -29,5 +39,24 @@ filters:
 filters:
   - filter: file
     params:
-      path: "config/*.yaml"
+      paths: ["config/*.yaml"]
+```
+
+```yaml
+# Match a repository if it
+# contains the files "pom.xml" and "README.md".
+filters:
+  - filter: file
+    params:
+      paths: ["pom.xml", "README.md"]
+```
+
+```yaml
+# Match a repository if it
+# contains either "pom.xml" or "settings.gradle".
+filters:
+  - filter: file
+    params:
+      op: "or"
+      paths: ["pom.xml", "settings.gradle"]
 ```

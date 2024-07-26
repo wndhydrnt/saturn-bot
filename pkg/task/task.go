@@ -44,7 +44,7 @@ func createActionsForTask(actionDefs []schema.TaskActionsElem, factories options
 	return result, nil
 }
 
-func createFiltersForTask(filterDefs []schema.TaskFiltersElem, factories options.FilterFactories) ([]filter.Filter, error) {
+func createFiltersForTask(filterDefs []schema.Filter, factories options.FilterFactories) ([]filter.Filter, error) {
 	var result []filter.Filter
 	if filterDefs == nil {
 		return result, nil

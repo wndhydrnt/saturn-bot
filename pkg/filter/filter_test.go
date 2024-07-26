@@ -40,27 +40,63 @@ func (r *repositoryMock) Owner() string {
 func TestFileFactory_Create(t *testing.T) {
 	fac := FileFactory{}
 	_, err := fac.Create(map[string]any{})
-	require.ErrorContains(t, err, "required parameter `path` not set")
+	require.ErrorContains(t, err, "required parameter `paths` not set")
+
+	_, err = fac.Create(map[string]any{"op": "invalid", "paths": []string{"test.yaml"}})
+	require.ErrorContains(t, err, "value of parameter `op` can be and,or not 'invalid'")
 }
 
 func TestFile_Do(t *testing.T) {
-	repo := &repositoryMock{hasFileResult: map[string]bool{"test.yaml": true, "test.json": false}}
+	repo := &repositoryMock{hasFileResult: map[string]bool{
+		"test.yaml":  true,
+		"test.json":  false,
+		"test.toml":  true,
+		"test.json5": false,
+	}}
 	ctx := context.Background()
 	ctx = context.WithValue(ctx, gsContext.RepositoryKey{}, repo)
 
 	fac := FileFactory{}
 
-	f, err := fac.Create(map[string]any{"path": "test.yaml"})
+	// One file, exists
+	f, err := fac.Create(map[string]any{"paths": []any{"test.yaml"}})
 	require.NoError(t, err)
 	result, err := f.Do(ctx)
-
 	require.NoError(t, err)
 	require.True(t, result)
 
-	f, err = fac.Create(map[string]any{"path": "test.json"})
+	// One file, missing
+	f, err = fac.Create(map[string]any{"paths": []any{"test.json"}})
 	require.NoError(t, err)
 	result, err = f.Do(ctx)
+	require.NoError(t, err)
+	require.False(t, result)
 
+	// Two files, all exist, and
+	f, err = fac.Create(map[string]any{"op": "and", "paths": []any{"test.yaml", "test.toml"}})
+	require.NoError(t, err)
+	result, err = f.Do(ctx)
+	require.NoError(t, err)
+	require.True(t, result)
+
+	// Two files, one missing, and
+	f, err = fac.Create(map[string]any{"op": "and", "paths": []any{"test.yaml", "test.json"}})
+	require.NoError(t, err)
+	result, err = f.Do(ctx)
+	require.NoError(t, err)
+	require.False(t, result)
+
+	// Two files, one exists, or
+	f, err = fac.Create(map[string]any{"op": "or", "paths": []any{"test.yaml", "test.json"}})
+	require.NoError(t, err)
+	result, err = f.Do(ctx)
+	require.NoError(t, err)
+	require.True(t, result)
+
+	// Two files, both missing, or
+	f, err = fac.Create(map[string]any{"op": "or", "paths": []any{"test.json", "test.json5"}})
+	require.NoError(t, err)
+	result, err = f.Do(ctx)
 	require.NoError(t, err)
 	require.False(t, result)
 }
