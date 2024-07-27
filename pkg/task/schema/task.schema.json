@@ -8,18 +8,7 @@
       "type": "array",
       "description": "List of actions that modify a repository.",
       "items": {
-        "type": "object",
-        "properties": {
-          "action": {
-            "type": "string",
-            "description": "Identifier of the action."
-          },
-          "params": {
-            "type": "object",
-            "description": "Key/value pairs passed as parameters to the action."
-          }
-        },
-        "required": ["action"]
+        "$ref": "#/$defs/action"
       }
     },
     "active": {
@@ -101,20 +90,7 @@
     "plugins": {
       "description": "List of plugins to start for the task.",
       "items": {
-        "properties": {
-          "configuration": {
-            "additionalProperties": {
-              "type": "string"
-            },
-            "description": "Key/value pairs that hold additional configuration for the plugin. Sent to the plugin once on startup.",
-            "type": "object"
-          },
-          "path": {
-            "type": "string"
-          }
-        },
-        "required": ["path"],
-        "type": "object"
+        "$ref": "#/$defs/plugin"
       },
       "type": "array"
     },
@@ -138,6 +114,21 @@
   },
   "required": ["name"],
   "$defs": {
+    "action": {
+      "description": "An action tells saturn-bot how to modify a repository.",
+      "type": "object",
+      "properties": {
+        "action": {
+          "type": "string",
+          "description": "Identifier of the action."
+        },
+        "params": {
+          "type": "object",
+          "description": "Key/value pairs passed as parameters to the action."
+        }
+      },
+      "required": ["action"]
+    },
     "filter": {
       "type": "object",
       "properties": {
@@ -156,6 +147,23 @@
         }
       },
       "required": ["filter"]
+    },
+    "plugin": {
+      "description": "A plugin extends saturn-bot and allows custom filtering or modification of repositories.",
+      "type": "object",
+      "properties": {
+        "configuration": {
+          "additionalProperties": {
+            "type": "string"
+          },
+          "description": "Key/value pairs that hold additional configuration for the plugin. Sent to the plugin once on startup.",
+          "type": "object"
+        },
+        "path": {
+          "type": "string"
+        }
+      },
+      "required": ["path"]
     }
   }
 }

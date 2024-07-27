@@ -6,6 +6,54 @@ import "encoding/json"
 import "fmt"
 import yaml "gopkg.in/yaml.v3"
 
+// An action tells saturn-bot how to modify a repository.
+type Action struct {
+	// Identifier of the action.
+	Action string `json:"action" yaml:"action" mapstructure:"action"`
+
+	// Key/value pairs passed as parameters to the action.
+	Params ActionParams `json:"params,omitempty" yaml:"params,omitempty" mapstructure:"params,omitempty"`
+}
+
+// Key/value pairs passed as parameters to the action.
+type ActionParams map[string]interface{}
+
+// UnmarshalJSON implements json.Unmarshaler.
+func (j *Action) UnmarshalJSON(b []byte) error {
+	var raw map[string]interface{}
+	if err := json.Unmarshal(b, &raw); err != nil {
+		return err
+	}
+	if _, ok := raw["action"]; raw != nil && !ok {
+		return fmt.Errorf("field action in Action: required")
+	}
+	type Plain Action
+	var plain Plain
+	if err := json.Unmarshal(b, &plain); err != nil {
+		return err
+	}
+	*j = Action(plain)
+	return nil
+}
+
+// UnmarshalYAML implements yaml.Unmarshaler.
+func (j *Action) UnmarshalYAML(value *yaml.Node) error {
+	var raw map[string]interface{}
+	if err := value.Decode(&raw); err != nil {
+		return err
+	}
+	if _, ok := raw["action"]; raw != nil && !ok {
+		return fmt.Errorf("field action in Action: required")
+	}
+	type Plain Action
+	var plain Plain
+	if err := value.Decode(&plain); err != nil {
+		return err
+	}
+	*j = Action(plain)
+	return nil
+}
+
 type Filter struct {
 	// Identifier of the filter.
 	Filter string `json:"filter" yaml:"filter" mapstructure:"filter"`
@@ -62,9 +110,60 @@ func (j *Filter) UnmarshalYAML(value *yaml.Node) error {
 	return nil
 }
 
+// A plugin extends saturn-bot and allows custom filtering or modification of
+// repositories.
+type Plugin struct {
+	// Key/value pairs that hold additional configuration for the plugin. Sent to the
+	// plugin once on startup.
+	Configuration PluginConfiguration `json:"configuration,omitempty" yaml:"configuration,omitempty" mapstructure:"configuration,omitempty"`
+
+	// Path corresponds to the JSON schema field "path".
+	Path string `json:"path" yaml:"path" mapstructure:"path"`
+}
+
+// Key/value pairs that hold additional configuration for the plugin. Sent to the
+// plugin once on startup.
+type PluginConfiguration map[string]string
+
+// UnmarshalJSON implements json.Unmarshaler.
+func (j *Plugin) UnmarshalJSON(b []byte) error {
+	var raw map[string]interface{}
+	if err := json.Unmarshal(b, &raw); err != nil {
+		return err
+	}
+	if _, ok := raw["path"]; raw != nil && !ok {
+		return fmt.Errorf("field path in Plugin: required")
+	}
+	type Plain Plugin
+	var plain Plain
+	if err := json.Unmarshal(b, &plain); err != nil {
+		return err
+	}
+	*j = Plugin(plain)
+	return nil
+}
+
+// UnmarshalYAML implements yaml.Unmarshaler.
+func (j *Plugin) UnmarshalYAML(value *yaml.Node) error {
+	var raw map[string]interface{}
+	if err := value.Decode(&raw); err != nil {
+		return err
+	}
+	if _, ok := raw["path"]; raw != nil && !ok {
+		return fmt.Errorf("field path in Plugin: required")
+	}
+	type Plain Plugin
+	var plain Plain
+	if err := value.Decode(&plain); err != nil {
+		return err
+	}
+	*j = Plugin(plain)
+	return nil
+}
+
 type Task struct {
 	// List of actions that modify a repository.
-	Actions []TaskActionsElem `json:"actions,omitempty" yaml:"actions,omitempty" mapstructure:"actions,omitempty"`
+	Actions []Action `json:"actions,omitempty" yaml:"actions,omitempty" mapstructure:"actions,omitempty"`
 
 	// Set to `false` to temporarily deactivate the task and prevent it from
 	// executing.
@@ -120,7 +219,7 @@ type Task struct {
 	Name string `json:"name" yaml:"name" mapstructure:"name"`
 
 	// List of plugins to start for the task.
-	Plugins []TaskPluginsElem `json:"plugins,omitempty" yaml:"plugins,omitempty" mapstructure:"plugins,omitempty"`
+	Plugins []Plugin `json:"plugins,omitempty" yaml:"plugins,omitempty" mapstructure:"plugins,omitempty"`
 
 	// If set, used as the body of the pull request.
 	PrBody string `json:"prBody,omitempty" yaml:"prBody,omitempty" mapstructure:"prBody,omitempty"`
@@ -130,102 +229,6 @@ type Task struct {
 
 	// A list of usernames to set as reviewers of the pull request.
 	Reviewers []string `json:"reviewers,omitempty" yaml:"reviewers,omitempty" mapstructure:"reviewers,omitempty"`
-}
-
-type TaskActionsElem struct {
-	// Identifier of the action.
-	Action string `json:"action" yaml:"action" mapstructure:"action"`
-
-	// Key/value pairs passed as parameters to the action.
-	Params TaskActionsElemParams `json:"params,omitempty" yaml:"params,omitempty" mapstructure:"params,omitempty"`
-}
-
-// Key/value pairs passed as parameters to the action.
-type TaskActionsElemParams map[string]interface{}
-
-// UnmarshalJSON implements json.Unmarshaler.
-func (j *TaskActionsElem) UnmarshalJSON(b []byte) error {
-	var raw map[string]interface{}
-	if err := json.Unmarshal(b, &raw); err != nil {
-		return err
-	}
-	if _, ok := raw["action"]; raw != nil && !ok {
-		return fmt.Errorf("field action in TaskActionsElem: required")
-	}
-	type Plain TaskActionsElem
-	var plain Plain
-	if err := json.Unmarshal(b, &plain); err != nil {
-		return err
-	}
-	*j = TaskActionsElem(plain)
-	return nil
-}
-
-// UnmarshalYAML implements yaml.Unmarshaler.
-func (j *TaskActionsElem) UnmarshalYAML(value *yaml.Node) error {
-	var raw map[string]interface{}
-	if err := value.Decode(&raw); err != nil {
-		return err
-	}
-	if _, ok := raw["action"]; raw != nil && !ok {
-		return fmt.Errorf("field action in TaskActionsElem: required")
-	}
-	type Plain TaskActionsElem
-	var plain Plain
-	if err := value.Decode(&plain); err != nil {
-		return err
-	}
-	*j = TaskActionsElem(plain)
-	return nil
-}
-
-type TaskPluginsElem struct {
-	// Key/value pairs that hold additional configuration for the plugin. Sent to the
-	// plugin once on startup.
-	Configuration TaskPluginsElemConfiguration `json:"configuration,omitempty" yaml:"configuration,omitempty" mapstructure:"configuration,omitempty"`
-
-	// Path corresponds to the JSON schema field "path".
-	Path string `json:"path" yaml:"path" mapstructure:"path"`
-}
-
-// Key/value pairs that hold additional configuration for the plugin. Sent to the
-// plugin once on startup.
-type TaskPluginsElemConfiguration map[string]string
-
-// UnmarshalJSON implements json.Unmarshaler.
-func (j *TaskPluginsElem) UnmarshalJSON(b []byte) error {
-	var raw map[string]interface{}
-	if err := json.Unmarshal(b, &raw); err != nil {
-		return err
-	}
-	if _, ok := raw["path"]; raw != nil && !ok {
-		return fmt.Errorf("field path in TaskPluginsElem: required")
-	}
-	type Plain TaskPluginsElem
-	var plain Plain
-	if err := json.Unmarshal(b, &plain); err != nil {
-		return err
-	}
-	*j = TaskPluginsElem(plain)
-	return nil
-}
-
-// UnmarshalYAML implements yaml.Unmarshaler.
-func (j *TaskPluginsElem) UnmarshalYAML(value *yaml.Node) error {
-	var raw map[string]interface{}
-	if err := value.Decode(&raw); err != nil {
-		return err
-	}
-	if _, ok := raw["path"]; raw != nil && !ok {
-		return fmt.Errorf("field path in TaskPluginsElem: required")
-	}
-	type Plain TaskPluginsElem
-	var plain Plain
-	if err := value.Decode(&plain); err != nil {
-		return err
-	}
-	*j = TaskPluginsElem(plain)
-	return nil
 }
 
 // UnmarshalJSON implements json.Unmarshaler.

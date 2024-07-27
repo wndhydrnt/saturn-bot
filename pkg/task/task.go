@@ -21,7 +21,7 @@ import (
 
 //go:generate go-jsonschema --extra-imports -p schema -t ./schema/task.schema.json --output ./schema/schema.go
 
-func createActionsForTask(actionDefs []schema.TaskActionsElem, factories options.ActionFactories, taskPath string) ([]action.Action, error) {
+func createActionsForTask(actionDefs []schema.Action, factories options.ActionFactories, taskPath string) ([]action.Action, error) {
 	var result []action.Action
 	if actionDefs == nil {
 		return result, nil
