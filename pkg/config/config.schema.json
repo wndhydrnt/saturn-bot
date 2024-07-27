@@ -104,7 +104,22 @@
     },
     "serverDatabasePath": {
       "default": "",
-      "description": "Path to the sqlite database of the server. If unset, defaults to `{{dataDir}}/db/saturn-bot.db`",
+      "description": "Path to the sqlite database of the server. If unset, defaults to `{{dataDir}}/db/saturn-bot.db`.",
+      "type": "string"
+    },
+    "workerLoopInterval": {
+      "default": "10s",
+      "description": "Interval at which a worker queries the server for new tasks to run.",
+      "type": "string"
+    },
+    "workerParallelExecutions": {
+      "default": 4,
+      "description": "Number of parallel executions of tasks per worker.",
+      "type": "integer"
+    },
+    "workerServerAPIBaseURL": {
+      "default": "http://localhost:3035",
+      "description": "Base URL of the server API to query for new tasks to execute.",
       "type": "string"
     }
   }

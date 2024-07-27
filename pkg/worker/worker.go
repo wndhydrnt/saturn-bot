@@ -118,21 +118,21 @@ func NewWorker(configPath string, taskPaths []string) (*Worker, error) {
 
 	apiClient := client.NewAPIClient(&client.Configuration{
 		Servers: []client.ServerConfiguration{
-			{URL: "http://localhost:3000"},
+			{URL: opts.Config.WorkerServerAPIBaseURL},
 		},
 	})
 	return &Worker{
-		Exec:               &APIExecutionSource{client: apiClient.WorkerAPI},
-		ParallelExecutions: 4,
-		opts:               opts,
-		tasks:              tasks,
+		Exec:  &APIExecutionSource{client: apiClient.WorkerAPI},
+		opts:  opts,
+		tasks: tasks,
 	}, nil
 }
 
 func (w *Worker) Start() {
 	w.resultChan = make(chan Result, 1)
 	w.stopChan = make(chan chan struct{})
-	t := time.NewTicker(5 * time.Second)
+	t := time.NewTicker(w.opts.WorkerLoopInterval())
+	parallelExecutions := w.opts.Config.WorkerParallelExecutions
 	executionCounter := 0
 	for {
 		select {
@@ -142,7 +142,7 @@ func (w *Worker) Start() {
 			}
 
 			slog.Info("Parallel executions", "count", executionCounter)
-			if executionCounter >= w.ParallelExecutions {
+			if executionCounter >= parallelExecutions {
 				slog.Debug("Max number of parallel executions reached")
 				continue
 			}

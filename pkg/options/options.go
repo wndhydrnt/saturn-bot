@@ -6,6 +6,7 @@ import (
 	"log/slog"
 	"os"
 	"path/filepath"
+	"time"
 
 	"github.com/wndhydrnt/saturn-bot/pkg/action"
 	"github.com/wndhydrnt/saturn-bot/pkg/config"
@@ -44,11 +45,16 @@ type Opts struct {
 	FilterFactories FilterFactories
 	Hosts           []host.Host
 
-	dataDir string
+	dataDir            string
+	workerLoopInterval time.Duration
 }
 
 func (o Opts) DataDir() string {
 	return o.dataDir
+}
+
+func (o Opts) WorkerLoopInterval() time.Duration {
+	return o.workerLoopInterval
 }
 
 // ToOptions takes a configuration struct, initializes global state
@@ -141,5 +147,12 @@ func Initialize(opts *Opts) error {
 	}
 
 	opts.dataDir = dataDir
+
+	loop, err := time.ParseDuration(opts.Config.WorkerLoopInterval)
+	if err != nil {
+		return fmt.Errorf("setting workerLoopInterval '%s' is not a Go duration: %w", opts.Config.WorkerLoopInterval, err)
+	}
+
+	opts.workerLoopInterval = loop
 	return nil
 }

@@ -71,8 +71,17 @@ type Configuration struct {
 	ServerCompress bool `json:"serverCompress,omitempty" yaml:"serverCompress,omitempty" mapstructure:"serverCompress,omitempty"`
 
 	// Path to the sqlite database of the server. If unset, defaults to
-	// `{{dataDir}}/db/saturn-bot.db`
+	// `{{dataDir}}/db/saturn-bot.db`.
 	ServerDatabasePath string `json:"serverDatabasePath,omitempty" yaml:"serverDatabasePath,omitempty" mapstructure:"serverDatabasePath,omitempty"`
+
+	// Interval at which a worker queries the server for new tasks to run.
+	WorkerLoopInterval string `json:"workerLoopInterval,omitempty" yaml:"workerLoopInterval,omitempty" mapstructure:"workerLoopInterval,omitempty"`
+
+	// Number of parallel executions of tasks per worker.
+	WorkerParallelExecutions int `json:"workerParallelExecutions,omitempty" yaml:"workerParallelExecutions,omitempty" mapstructure:"workerParallelExecutions,omitempty"`
+
+	// Base URL of the server API to query for new tasks to execute.
+	WorkerServerAPIBaseURL string `json:"workerServerAPIBaseURL,omitempty" yaml:"workerServerAPIBaseURL,omitempty" mapstructure:"workerServerAPIBaseURL,omitempty"`
 }
 
 type ConfigurationGitLogLevel string
@@ -297,6 +306,15 @@ func (j *Configuration) UnmarshalJSON(b []byte) error {
 	if v, ok := raw["serverDatabasePath"]; !ok || v == nil {
 		plain.ServerDatabasePath = ""
 	}
+	if v, ok := raw["workerLoopInterval"]; !ok || v == nil {
+		plain.WorkerLoopInterval = "10s"
+	}
+	if v, ok := raw["workerParallelExecutions"]; !ok || v == nil {
+		plain.WorkerParallelExecutions = 4.0
+	}
+	if v, ok := raw["workerServerAPIBaseURL"]; !ok || v == nil {
+		plain.WorkerServerAPIBaseURL = "http://localhost:3035"
+	}
 	*j = Configuration(plain)
 	return nil
 }
@@ -362,6 +380,15 @@ func (j *Configuration) UnmarshalYAML(value *yaml.Node) error {
 	}
 	if v, ok := raw["serverDatabasePath"]; !ok || v == nil {
 		plain.ServerDatabasePath = ""
+	}
+	if v, ok := raw["workerLoopInterval"]; !ok || v == nil {
+		plain.WorkerLoopInterval = "10s"
+	}
+	if v, ok := raw["workerParallelExecutions"]; !ok || v == nil {
+		plain.WorkerParallelExecutions = 4.0
+	}
+	if v, ok := raw["workerServerAPIBaseURL"]; !ok || v == nil {
+		plain.WorkerServerAPIBaseURL = "http://localhost:3035"
 	}
 	*j = Configuration(plain)
 	return nil
