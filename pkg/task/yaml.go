@@ -6,6 +6,7 @@ import (
 	"errors"
 	"fmt"
 	"io"
+	"log/slog"
 	"os"
 
 	"github.com/wndhydrnt/saturn-bot/pkg/options"
@@ -43,6 +44,11 @@ func readTasksYaml(
 		err = schema.Validate(task)
 		if err != nil {
 			return nil, fmt.Errorf("validation failed: %w", err)
+		}
+
+		if !task.Active {
+			slog.Warn("Task deactivated", "task", task.Name)
+			continue
 		}
 
 		wrapper := &Wrapper{}

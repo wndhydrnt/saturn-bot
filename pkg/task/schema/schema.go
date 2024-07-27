@@ -66,6 +66,10 @@ type Task struct {
 	// List of actions that modify a repository.
 	Actions []TaskActionsElem `json:"actions,omitempty" yaml:"actions,omitempty" mapstructure:"actions,omitempty"`
 
+	// Set to `false` to temporarily deactivate the task and prevent it from
+	// executing.
+	Active bool `json:"active,omitempty" yaml:"active,omitempty" mapstructure:"active,omitempty"`
+
 	// A list of usernames to set as assignees of a pull request.
 	Assignees []string `json:"assignees,omitempty" yaml:"assignees,omitempty" mapstructure:"assignees,omitempty"`
 
@@ -94,9 +98,6 @@ type Task struct {
 	// Create pull requests only. Don't attempt to update a pull request on a
 	// subsequent run.
 	CreateOnly bool `json:"createOnly,omitempty" yaml:"createOnly,omitempty" mapstructure:"createOnly,omitempty"`
-
-	// Disable the task temporarily.
-	Disabled *bool `json:"disabled,omitempty" yaml:"disabled,omitempty" mapstructure:"disabled,omitempty"`
 
 	// Filters allow targeting a specific repositories.
 	Filters []Filter `json:"filters,omitempty" yaml:"filters,omitempty" mapstructure:"filters,omitempty"`
@@ -241,6 +242,9 @@ func (j *Task) UnmarshalJSON(b []byte) error {
 	if err := json.Unmarshal(b, &plain); err != nil {
 		return err
 	}
+	if v, ok := raw["active"]; !ok || v == nil {
+		plain.Active = true
+	}
 	if v, ok := raw["autoMerge"]; !ok || v == nil {
 		plain.AutoMerge = false
 	}
@@ -291,6 +295,9 @@ func (j *Task) UnmarshalYAML(value *yaml.Node) error {
 	var plain Plain
 	if err := value.Decode(&plain); err != nil {
 		return err
+	}
+	if v, ok := raw["active"]; !ok || v == nil {
+		plain.Active = true
 	}
 	if v, ok := raw["autoMerge"]; !ok || v == nil {
 		plain.AutoMerge = false
