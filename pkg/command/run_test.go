@@ -5,7 +5,6 @@ import (
 	"context"
 	"crypto/sha256"
 	"fmt"
-	"io"
 	"os"
 	"reflect"
 	"strings"
@@ -65,11 +64,22 @@ func createTestCache(taskFilePath string) string {
 		panic(fmt.Sprintf("createTestCache: open task file: %s", err))
 	}
 
+	// Decode and encode the task to align with what saturn-bot does
 	defer f.Close()
+	var tempTask schema.Task
+	dec := yaml.NewDecoder(f)
+	if err := dec.Decode(&tempTask); err != nil {
+		panic(fmt.Sprintf("createTestCache: decode from YAML: %s", err))
+	}
+
 	h := sha256.New()
-	_, err = io.Copy(h, f)
-	if err != nil {
-		panic(fmt.Sprintf("createTestCache: calc checksum of task: %s", err))
+	enc := yaml.NewEncoder(h)
+	if err := enc.Encode(&tempTask); err != nil {
+		panic(fmt.Sprintf("createTestCache: encode to YAML: %s", err))
+	}
+
+	if err := enc.Close(); err != nil {
+		panic(fmt.Sprintf("createTestCache: close YAML encoder: %s", err))
 	}
 
 	checksum := fmt.Sprintf("%x", h.Sum(nil))
