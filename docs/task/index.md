@@ -25,6 +25,22 @@ actions:
       path: "hello-world.txt"
 ```
 
+## active
+
+[json-path:../../pkg/task/schema/task.schema.json:$.properties.active.description]
+
+Examples
+
+```yaml
+# Activate the task (default)
+active: true
+```
+
+```yaml
+# Deactivate the task
+active: false
+```
+
 ## autoMerge
 
 [json-path:../../pkg/task/schema/task.schema.json:$.properties.autoMerge.description]
@@ -87,10 +103,6 @@ changeLimit: 0
 ## createOnly
 
 [json-path:../../pkg/task/schema/task.schema.json:$.properties.createOnly.description]
-
-## disabled
-
-[json-path:../../pkg/task/schema/task.schema.json:$.properties.disabled.description]
 
 ## keepBranchAfterMerge
 

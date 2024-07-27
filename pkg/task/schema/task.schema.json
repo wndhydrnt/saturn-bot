@@ -22,6 +22,11 @@
         "required": ["action"]
       }
     },
+    "active": {
+      "default": true,
+      "description": "Set to `false` to temporarily deactivate the task and prevent it from executing.",
+      "type": "boolean"
+    },
     "assignees": {
       "description": "A list of usernames to set as assignees of a pull request.",
       "type": "array",
@@ -57,10 +62,6 @@
     "createOnly": {
       "default": false,
       "description": "Create pull requests only. Don't attempt to update a pull request on a subsequent run.",
-      "type": "boolean"
-    },
-    "disabled": {
-      "description": "Disable the task temporarily.",
       "type": "boolean"
     },
     "filters": {

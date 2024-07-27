@@ -193,3 +193,29 @@ func TestRegistry_ReadAll_AllBuiltInFilters(t *testing.T) {
 
 	assert.Equal(t, wantFilters, actualFilters)
 }
+
+func TestRegistry_ReadAll_DeactivatedTask(t *testing.T) {
+	tasksRaw := `
+name: Task One
+active: false
+---
+name: Task Two
+`
+
+	f, err := os.CreateTemp("", "*.yaml")
+	require.NoError(t, err)
+	_, err = f.WriteString(tasksRaw)
+	require.NoError(t, err)
+	f.Close()
+	defer func() {
+		err := os.Remove(f.Name())
+		require.NoError(t, err)
+	}()
+
+	tr := &task.Registry{}
+	err = tr.ReadAll([]string{f.Name()})
+	require.NoError(t, err)
+
+	assert.Len(t, tr.GetTasks(), 1)
+	assert.Equal(t, "Task Two", tr.GetTasks()[0].SourceTask().Name)
+}
