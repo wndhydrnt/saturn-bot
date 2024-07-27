@@ -86,6 +86,26 @@
       "default": "python",
       "description": "Path to the Python binary to execute plugins. If not set explicitly, then saturn-bot searches for the binary in $PATH.",
       "type": "string"
+    },
+    "serverAccessLog": {
+      "default": false,
+      "description": "Turn access log of server on or off.",
+      "type": "boolean"
+    },
+    "serverAddr": {
+      "default": ":3035",
+      "description": "Address of the server.",
+      "type": "string"
+    },
+    "serverCompress": {
+      "default": true,
+      "description": "Turn compression of responses on or off.",
+      "type": "boolean"
+    },
+    "serverDatabasePath": {
+      "default": "",
+      "description": "Path to the sqlite database of the server. If unset, defaults to `{{dataDir}}/db/saturn-bot.db`",
+      "type": "string"
     }
   }
 }

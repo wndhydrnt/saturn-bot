@@ -144,7 +144,7 @@ func (r *run) run(repositoryNames, taskFiles []string) ([]RunResult, error) {
 }
 
 func ExecuteRun(opts options.Opts, repositoryNames, taskFiles []string) ([]RunResult, error) {
-	err := options.Initialize(opts)
+	err := options.Initialize(&opts)
 	if err != nil {
 		return nil, fmt.Errorf("initialize options: %w", err)
 	}

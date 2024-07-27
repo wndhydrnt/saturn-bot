@@ -8,8 +8,8 @@ import (
 	"gorm.io/gorm"
 )
 
-func New(migrate bool) (*gorm.DB, error) {
-	db, err := gorm.Open(gormlite.Open("gorm.db"))
+func New(migrate bool, path string) (*gorm.DB, error) {
+	db, err := gorm.Open(gormlite.Open(path))
 	if err != nil {
 		return nil, err
 	}

@@ -5,8 +5,6 @@ import (
 	"encoding/json"
 	"fmt"
 	"net/mail"
-	"os"
-	"path/filepath"
 	"strings"
 
 	"github.com/knadh/koanf/parsers/yaml"
@@ -100,16 +98,6 @@ func Read(cfgFile string) (cfg Configuration, err error) {
 		if err != nil {
 			return cfg, fmt.Errorf("failed to parse field `gitAuthor`: %w", err)
 		}
-	}
-
-	if cfg.DataDir == nil {
-		homeDir, err := os.UserHomeDir()
-		if err != nil {
-			return cfg, fmt.Errorf("get user home dir to set default data dir: %w", err)
-		}
-
-		dir := filepath.Join(homeDir, ".saturn-bot", "data")
-		cfg.DataDir = &dir
 	}
 
 	return cfg, nil

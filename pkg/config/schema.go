@@ -60,6 +60,19 @@ type Configuration struct {
 	// Path to the Python binary to execute plugins. If not set explicitly, then
 	// saturn-bot searches for the binary in $PATH.
 	PythonPath string `json:"pythonPath,omitempty" yaml:"pythonPath,omitempty" mapstructure:"pythonPath,omitempty"`
+
+	// Turn access log of server on or off.
+	ServerAccessLog bool `json:"serverAccessLog,omitempty" yaml:"serverAccessLog,omitempty" mapstructure:"serverAccessLog,omitempty"`
+
+	// Address of the server.
+	ServerAddr string `json:"serverAddr,omitempty" yaml:"serverAddr,omitempty" mapstructure:"serverAddr,omitempty"`
+
+	// Turn compression of responses on or off.
+	ServerCompress bool `json:"serverCompress,omitempty" yaml:"serverCompress,omitempty" mapstructure:"serverCompress,omitempty"`
+
+	// Path to the sqlite database of the server. If unset, defaults to
+	// `{{dataDir}}/db/saturn-bot.db`
+	ServerDatabasePath string `json:"serverDatabasePath,omitempty" yaml:"serverDatabasePath,omitempty" mapstructure:"serverDatabasePath,omitempty"`
 }
 
 type ConfigurationGitLogLevel string
@@ -272,6 +285,18 @@ func (j *Configuration) UnmarshalJSON(b []byte) error {
 	if v, ok := raw["pythonPath"]; !ok || v == nil {
 		plain.PythonPath = "python"
 	}
+	if v, ok := raw["serverAccessLog"]; !ok || v == nil {
+		plain.ServerAccessLog = false
+	}
+	if v, ok := raw["serverAddr"]; !ok || v == nil {
+		plain.ServerAddr = ":3035"
+	}
+	if v, ok := raw["serverCompress"]; !ok || v == nil {
+		plain.ServerCompress = true
+	}
+	if v, ok := raw["serverDatabasePath"]; !ok || v == nil {
+		plain.ServerDatabasePath = ""
+	}
 	*j = Configuration(plain)
 	return nil
 }
@@ -325,6 +350,18 @@ func (j *Configuration) UnmarshalYAML(value *yaml.Node) error {
 	}
 	if v, ok := raw["pythonPath"]; !ok || v == nil {
 		plain.PythonPath = "python"
+	}
+	if v, ok := raw["serverAccessLog"]; !ok || v == nil {
+		plain.ServerAccessLog = false
+	}
+	if v, ok := raw["serverAddr"]; !ok || v == nil {
+		plain.ServerAddr = ":3035"
+	}
+	if v, ok := raw["serverCompress"]; !ok || v == nil {
+		plain.ServerCompress = true
+	}
+	if v, ok := raw["serverDatabasePath"]; !ok || v == nil {
+		plain.ServerDatabasePath = ""
 	}
 	*j = Configuration(plain)
 	return nil

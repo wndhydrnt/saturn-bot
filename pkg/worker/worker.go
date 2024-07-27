@@ -106,7 +106,7 @@ func NewWorker(configPath string, taskPaths []string) (*Worker, error) {
 		return nil, err
 	}
 
-	err = options.Initialize(opts)
+	err = options.Initialize(&opts)
 	if err != nil {
 		return nil, err
 	}

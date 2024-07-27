@@ -33,7 +33,7 @@ func NewTryRunner(opts options.Opts, dataDir string, repositoryName string, task
 
 	// This code sets its own data dir.
 	opts.Config.DataDir = &dataDir
-	err := options.Initialize(opts)
+	err := options.Initialize(&opts)
 	if err != nil {
 		return nil, fmt.Errorf("initialize options: %w", err)
 	}

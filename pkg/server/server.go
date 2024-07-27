@@ -8,6 +8,7 @@ import (
 	"net/http"
 	"os"
 	"os/signal"
+	"path/filepath"
 	"syscall"
 	"time"
 
@@ -26,13 +27,18 @@ type Server struct {
 	httpServer *http.Server
 }
 
-func (s *Server) Start(taskPaths []string) error {
+func (s *Server) Start(opts options.Opts, taskPaths []string) error {
 	tasks, err := task.Load(taskPaths)
 	if err != nil {
 		return fmt.Errorf("load tasks on server start: %w", err)
 	}
 
-	database, err := db.New(true)
+	dbPath := opts.Config.ServerDatabasePath
+	if dbPath == "" {
+		dbPath = filepath.Join(opts.DataDir(), "db", "saturn-bot.db")
+	}
+
+	database, err := db.New(true, dbPath)
 	if err != nil {
 		return fmt.Errorf("initialize database: %w", err)
 	}
@@ -47,9 +53,9 @@ func (s *Server) Start(taskPaths []string) error {
 	workerService := service.NewWorkerService(database, tasks)
 	workerHandler := &api.WorkHandler{WorkerService: workerService}
 	workerCtrl := openapi.NewWorkerAPIController(workerHandler)
-	router := newRouter(taskCtrl, workerCtrl)
+	router := newRouter(opts, taskCtrl, workerCtrl)
 	s.httpServer = &http.Server{
-		Addr: ":3000",
+		Addr: opts.Config.ServerAddr,
 	}
 	s.httpServer.Handler = router
 	go func(server *http.Server) {
@@ -91,7 +97,7 @@ func Run(configPath string, taskPaths []string) error {
 		return err
 	}
 
-	err = options.Initialize(opts)
+	err = options.Initialize(&opts)
 	if err != nil {
 		return err
 	}
@@ -99,7 +105,7 @@ func Run(configPath string, taskPaths []string) error {
 	sigs := make(chan os.Signal, 1)
 	signal.Notify(sigs, syscall.SIGINT, syscall.SIGTERM)
 	s := &Server{}
-	err = s.Start(taskPaths)
+	err = s.Start(opts, taskPaths)
 	if err != nil {
 		return err
 	}
@@ -114,10 +120,16 @@ func Run(configPath string, taskPaths []string) error {
 
 // newRouter copies openapi.newRouter.
 // This is done to configure middlewares of chi.Router.
-func newRouter(routers ...openapi.Router) chi.Router {
+func newRouter(opts options.Opts, routers ...openapi.Router) chi.Router {
 	router := chi.NewRouter()
-	router.Use(middleware.Compress(5))
-	router.Use(middleware.Logger)
+	if opts.Config.ServerCompress {
+		router.Use(middleware.Compress(5))
+	}
+
+	if opts.Config.ServerAccessLog {
+		router.Use(middleware.Logger)
+	}
+
 	for _, api := range routers {
 		for _, route := range api.Routes() {
 			var handler http.Handler = route.HandlerFunc
