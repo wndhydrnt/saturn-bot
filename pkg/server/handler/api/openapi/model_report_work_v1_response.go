@@ -13,14 +13,14 @@ package openapi
 
 
 
-type ReportWorkV1201Response struct {
+type ReportWorkV1Response struct {
 
 	// Indicator of the result of the operation.
 	Result string `json:"result"`
 }
 
-// AssertReportWorkV1201ResponseRequired checks if the required fields are not zero-ed
-func AssertReportWorkV1201ResponseRequired(obj ReportWorkV1201Response) error {
+// AssertReportWorkV1ResponseRequired checks if the required fields are not zero-ed
+func AssertReportWorkV1ResponseRequired(obj ReportWorkV1Response) error {
 	elements := map[string]interface{}{
 		"result": obj.Result,
 	}
@@ -33,7 +33,7 @@ func AssertReportWorkV1201ResponseRequired(obj ReportWorkV1201Response) error {
 	return nil
 }
 
-// AssertReportWorkV1201ResponseConstraints checks if the values respects the defined constraints
-func AssertReportWorkV1201ResponseConstraints(obj ReportWorkV1201Response) error {
+// AssertReportWorkV1ResponseConstraints checks if the values respects the defined constraints
+func AssertReportWorkV1ResponseConstraints(obj ReportWorkV1Response) error {
 	return nil
 }

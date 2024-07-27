@@ -46,7 +46,7 @@ func (wh *WorkHandler) ReportWorkV1(_ context.Context, req openapi.ReportWorkV1R
 		return openapi.Response(http.StatusInternalServerError, serverError), nil
 	}
 
-	body := openapi.ReportWorkV1201Response{
+	body := openapi.ReportWorkV1Response{
 		Result: "ok",
 	}
 	return openapi.ImplResponse{Code: http.StatusCreated, Body: body}, nil

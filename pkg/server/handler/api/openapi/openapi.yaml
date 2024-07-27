@@ -118,13 +118,7 @@ paths:
           content:
             application/json:
               schema:
-                type: object
-                properties:
-                  result:
-                    description: Indicator of the result of the operation.
-                    type: "string"
-                    enum: ["ok"]
-                required: ["result"]
+                $ref: "#/components/schemas/ReportWorkV1Response"
 components:
   schemas:
     ScheduleRunV1Request:
@@ -181,6 +175,14 @@ components:
         message:
           type: string
       required: ["error", "message"]
+    ReportWorkV1Response:
+      type: object
+      properties:
+        result:
+          description: Indicator of the result of the operation.
+          type: "string"
+          enum: ["ok"]
+      required: ["result"]
     ReportWorkV1Request:
       type: object
       properties:

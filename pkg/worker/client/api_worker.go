@@ -46,8 +46,8 @@ type WorkerAPI interface {
 	ReportWorkV1(ctx context.Context) ApiReportWorkV1Request
 
 	// ReportWorkV1Execute executes the request
-	//  @return ReportWorkV1201Response
-	ReportWorkV1Execute(r ApiReportWorkV1Request) (*ReportWorkV1201Response, *http.Response, error)
+	//  @return ReportWorkV1Response
+	ReportWorkV1Execute(r ApiReportWorkV1Request) (*ReportWorkV1Response, *http.Response, error)
 
 	/*
 	ScheduleRunV1 Schedule a run.
@@ -177,7 +177,7 @@ func (r ApiReportWorkV1Request) ReportWorkV1Request(reportWorkV1Request ReportWo
 	return r
 }
 
-func (r ApiReportWorkV1Request) Execute() (*ReportWorkV1201Response, *http.Response, error) {
+func (r ApiReportWorkV1Request) Execute() (*ReportWorkV1Response, *http.Response, error) {
 	return r.ApiService.ReportWorkV1Execute(r)
 }
 
@@ -197,13 +197,13 @@ func (a *WorkerAPIService) ReportWorkV1(ctx context.Context) ApiReportWorkV1Requ
 }
 
 // Execute executes the request
-//  @return ReportWorkV1201Response
-func (a *WorkerAPIService) ReportWorkV1Execute(r ApiReportWorkV1Request) (*ReportWorkV1201Response, *http.Response, error) {
+//  @return ReportWorkV1Response
+func (a *WorkerAPIService) ReportWorkV1Execute(r ApiReportWorkV1Request) (*ReportWorkV1Response, *http.Response, error) {
 	var (
 		localVarHTTPMethod   = http.MethodPost
 		localVarPostBody     interface{}
 		formFiles            []formFile
-		localVarReturnValue  *ReportWorkV1201Response
+		localVarReturnValue  *ReportWorkV1Response
 	)
 
 	localBasePath, err := a.client.cfg.ServerURLWithContext(r.ctx, "WorkerAPIService.ReportWorkV1")

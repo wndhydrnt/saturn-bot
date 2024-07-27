@@ -16,37 +16,37 @@ import (
 	"fmt"
 )
 
-// checks if the ReportWorkV1201Response type satisfies the MappedNullable interface at compile time
-var _ MappedNullable = &ReportWorkV1201Response{}
+// checks if the ReportWorkV1Response type satisfies the MappedNullable interface at compile time
+var _ MappedNullable = &ReportWorkV1Response{}
 
-// ReportWorkV1201Response struct for ReportWorkV1201Response
-type ReportWorkV1201Response struct {
+// ReportWorkV1Response struct for ReportWorkV1Response
+type ReportWorkV1Response struct {
 	// Indicator of the result of the operation.
 	Result string `json:"result"`
 }
 
-type _ReportWorkV1201Response ReportWorkV1201Response
+type _ReportWorkV1Response ReportWorkV1Response
 
-// NewReportWorkV1201Response instantiates a new ReportWorkV1201Response object
+// NewReportWorkV1Response instantiates a new ReportWorkV1Response object
 // This constructor will assign default values to properties that have it defined,
 // and makes sure properties required by API are set, but the set of arguments
 // will change when the set of required properties is changed
-func NewReportWorkV1201Response(result string) *ReportWorkV1201Response {
-	this := ReportWorkV1201Response{}
+func NewReportWorkV1Response(result string) *ReportWorkV1Response {
+	this := ReportWorkV1Response{}
 	this.Result = result
 	return &this
 }
 
-// NewReportWorkV1201ResponseWithDefaults instantiates a new ReportWorkV1201Response object
+// NewReportWorkV1ResponseWithDefaults instantiates a new ReportWorkV1Response object
 // This constructor will only assign default values to properties that have it defined,
 // but it doesn't guarantee that properties required by API are set
-func NewReportWorkV1201ResponseWithDefaults() *ReportWorkV1201Response {
-	this := ReportWorkV1201Response{}
+func NewReportWorkV1ResponseWithDefaults() *ReportWorkV1Response {
+	this := ReportWorkV1Response{}
 	return &this
 }
 
 // GetResult returns the Result field value
-func (o *ReportWorkV1201Response) GetResult() string {
+func (o *ReportWorkV1Response) GetResult() string {
 	if o == nil {
 		var ret string
 		return ret
@@ -57,7 +57,7 @@ func (o *ReportWorkV1201Response) GetResult() string {
 
 // GetResultOk returns a tuple with the Result field value
 // and a boolean to check if the value has been set.
-func (o *ReportWorkV1201Response) GetResultOk() (*string, bool) {
+func (o *ReportWorkV1Response) GetResultOk() (*string, bool) {
 	if o == nil {
 		return nil, false
 	}
@@ -65,11 +65,11 @@ func (o *ReportWorkV1201Response) GetResultOk() (*string, bool) {
 }
 
 // SetResult sets field value
-func (o *ReportWorkV1201Response) SetResult(v string) {
+func (o *ReportWorkV1Response) SetResult(v string) {
 	o.Result = v
 }
 
-func (o ReportWorkV1201Response) MarshalJSON() ([]byte, error) {
+func (o ReportWorkV1Response) MarshalJSON() ([]byte, error) {
 	toSerialize,err := o.ToMap()
 	if err != nil {
 		return []byte{}, err
@@ -77,13 +77,13 @@ func (o ReportWorkV1201Response) MarshalJSON() ([]byte, error) {
 	return json.Marshal(toSerialize)
 }
 
-func (o ReportWorkV1201Response) ToMap() (map[string]interface{}, error) {
+func (o ReportWorkV1Response) ToMap() (map[string]interface{}, error) {
 	toSerialize := map[string]interface{}{}
 	toSerialize["result"] = o.Result
 	return toSerialize, nil
 }
 
-func (o *ReportWorkV1201Response) UnmarshalJSON(data []byte) (err error) {
+func (o *ReportWorkV1Response) UnmarshalJSON(data []byte) (err error) {
 	// This validates that all required properties are included in the JSON object
 	// by unmarshalling the object into a generic map with string keys and checking
 	// that every required field exists as a key in the generic map.
@@ -105,53 +105,53 @@ func (o *ReportWorkV1201Response) UnmarshalJSON(data []byte) (err error) {
 		}
 	}
 
-	varReportWorkV1201Response := _ReportWorkV1201Response{}
+	varReportWorkV1Response := _ReportWorkV1Response{}
 
 	decoder := json.NewDecoder(bytes.NewReader(data))
 	decoder.DisallowUnknownFields()
-	err = decoder.Decode(&varReportWorkV1201Response)
+	err = decoder.Decode(&varReportWorkV1Response)
 
 	if err != nil {
 		return err
 	}
 
-	*o = ReportWorkV1201Response(varReportWorkV1201Response)
+	*o = ReportWorkV1Response(varReportWorkV1Response)
 
 	return err
 }
 
-type NullableReportWorkV1201Response struct {
-	value *ReportWorkV1201Response
+type NullableReportWorkV1Response struct {
+	value *ReportWorkV1Response
 	isSet bool
 }
 
-func (v NullableReportWorkV1201Response) Get() *ReportWorkV1201Response {
+func (v NullableReportWorkV1Response) Get() *ReportWorkV1Response {
 	return v.value
 }
 
-func (v *NullableReportWorkV1201Response) Set(val *ReportWorkV1201Response) {
+func (v *NullableReportWorkV1Response) Set(val *ReportWorkV1Response) {
 	v.value = val
 	v.isSet = true
 }
 
-func (v NullableReportWorkV1201Response) IsSet() bool {
+func (v NullableReportWorkV1Response) IsSet() bool {
 	return v.isSet
 }
 
-func (v *NullableReportWorkV1201Response) Unset() {
+func (v *NullableReportWorkV1Response) Unset() {
 	v.value = nil
 	v.isSet = false
 }
 
-func NewNullableReportWorkV1201Response(val *ReportWorkV1201Response) *NullableReportWorkV1201Response {
-	return &NullableReportWorkV1201Response{value: val, isSet: true}
+func NewNullableReportWorkV1Response(val *ReportWorkV1Response) *NullableReportWorkV1Response {
+	return &NullableReportWorkV1Response{value: val, isSet: true}
 }
 
-func (v NullableReportWorkV1201Response) MarshalJSON() ([]byte, error) {
+func (v NullableReportWorkV1Response) MarshalJSON() ([]byte, error) {
 	return json.Marshal(v.value)
 }
 
-func (v *NullableReportWorkV1201Response) UnmarshalJSON(src []byte) error {
+func (v *NullableReportWorkV1Response) UnmarshalJSON(src []byte) error {
 	v.isSet = true
 	return json.Unmarshal(src, &v.value)
 }
