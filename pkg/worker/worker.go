@@ -141,7 +141,7 @@ func (w *Worker) Start() {
 				continue
 			}
 
-			slog.Info("Parallel executions", "count", executionCounter)
+			slog.Debug("Parallel executions", "count", executionCounter)
 			if executionCounter >= parallelExecutions {
 				slog.Debug("Max number of parallel executions reached")
 				continue
@@ -152,38 +152,14 @@ func (w *Worker) Start() {
 				if errors.Is(err, ErrNoExec) {
 					slog.Info("No new executions")
 				} else {
-					slog.Error("Failed to get next execution", "err", err)
+					slog.Error("Failed to get next execution", "error", err)
 				}
 
 				continue
 			}
 
 			// Process in a Go routine
-			go func(exec Execution, result chan Result) {
-				var repositoryNames []string
-				if exec.Repository != nil {
-					repositoryNames = append(repositoryNames, *exec.Repository)
-				}
-
-				var taskPaths []string
-				for _, taskReq := range exec.Tasks {
-					t, err := w.findTaskByName(taskReq.Name, taskReq.Hash)
-					if err != nil {
-						result <- Result{
-							RunError:  err,
-							Execution: exec,
-						}
-						return
-					}
-					taskPaths = append(taskPaths, t.TaskPath)
-				}
-				results, err := command.ExecuteRun(w.opts, repositoryNames, taskPaths)
-				result <- Result{
-					RunError:    err,
-					Execution:   exec,
-					TaskResults: results,
-				}
-			}(exec, w.resultChan)
+			go w.executeRun(exec, w.resultChan)
 			executionCounter += 1
 
 		case result := <-w.resultChan:
@@ -193,7 +169,7 @@ func (w *Worker) Start() {
 
 			err := w.Exec.Report(result)
 			if err != nil {
-				slog.Error("Failed to report run", "runID", result.Execution.RunID, "err", err)
+				slog.Error("Failed to report run", "runID", result.Execution.RunID, "error", err)
 			}
 			executionCounter -= 1
 
@@ -219,6 +195,32 @@ func (w *Worker) Stop() chan struct{} {
 	waitChan := make(chan struct{})
 	w.stopChan <- waitChan
 	return waitChan
+}
+
+func (w *Worker) executeRun(exec Execution, result chan Result) {
+	var repositoryNames []string
+	if exec.Repository != nil {
+		repositoryNames = append(repositoryNames, *exec.Repository)
+	}
+
+	var taskPaths []string
+	for _, taskReq := range exec.Tasks {
+		t, err := w.findTaskByName(taskReq.Name, taskReq.Hash)
+		if err != nil {
+			result <- Result{
+				RunError:  err,
+				Execution: exec,
+			}
+			return
+		}
+		taskPaths = append(taskPaths, t.TaskPath)
+	}
+	results, err := command.ExecuteRun(w.opts, repositoryNames, taskPaths)
+	result <- Result{
+		RunError:    err,
+		Execution:   exec,
+		TaskResults: results,
+	}
 }
 
 func (w *Worker) findTaskByName(name string, hash string) (task.Task, error) {
