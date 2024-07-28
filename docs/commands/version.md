@@ -1,7 +1,7 @@
 # version
 
 ```{.text mdox-exec="./saturn-bot version --help" title="version"}
-Display version informationnnnn.
+Display version information.
 
 Usage:
   saturn-bot version [flags]
