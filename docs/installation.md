@@ -5,8 +5,7 @@
 Install from the brew tap:
 
 ```shell
-brew tap wndhydrnt/saturn-bot
-brew install saturn-bot
+brew install wndhydrnt/tap/saturn-bot
 ```
 
 ## Docker

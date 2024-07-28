@@ -8,6 +8,7 @@ theme:
   features:
     - content.code.copy
     - navigation.indexes
+    - navigation.sections
   name: material
 markdown_extensions:
   - pymdownx.highlight:
