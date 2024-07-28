@@ -25,7 +25,7 @@ jobs:
         run: make mdox
       - name: Check diff
         id: diff
-        run: git diff --exit-code . || echo "Command documentation not up-to-date - run make mdox" && exit 1
+        run: git diff --exit-code . || (echo "Command documentation not up-to-date - run make mdox" && exit 1)
   mkdocs:
     name: Check mkdocs
     runs-on: ubuntu-latest
