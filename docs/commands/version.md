@@ -1,6 +1,6 @@
 # version
 
-```{.text mdox-exec="saturn-bot version --help" title="version"}
+```{.text mdox-exec="./saturn-bot version --help" title="version"}
 Display version information.
 
 Usage:
