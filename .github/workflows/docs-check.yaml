@@ -37,7 +37,9 @@ jobs:
       - uses: actions/checkout@v4
       - name: Setup Python
         uses: actions/setup-python@v5
-      - uses: Gr1N/setup-poetry@v9
-      - run: poetry install
+        with:
+          python-version: "3.11"
+      - name: Install dependencies
+        run: pip install -r ./docs/requirements.txt
       - name: Build docs
         run: mkdocs build --strict
