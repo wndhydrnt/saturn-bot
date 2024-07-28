@@ -43,6 +43,12 @@ ifeq (, $(shell which go-jsonschema))
 endif
 	go generate ./...
 
+mdox:
+ifeq (, $(shell which mdox))
+	go install github.com/bwplotka/mdox@latest
+endif
+	mdox fmt --soft-wraps ./docs/commands/*.md
+
 test_cover:
 	go test -coverprofile cover.out ./...
 	go tool cover -html cover.out -o cover.html

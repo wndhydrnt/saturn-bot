@@ -1,0 +1,43 @@
+name: Docs Check
+
+on:
+  pull_request: {}
+  push:
+    branches:
+      - main
+
+jobs:
+  mdox:
+    name: Check command documentation
+    runs-on: ubuntu-latest
+    strategy:
+      matrix:
+        go-version: ["1.22.x"]
+    steps:
+      - uses: actions/checkout@v4
+      - name: Setup Go ${{ matrix.go-version }}
+        uses: actions/setup-go@v4
+        with:
+          go-version: ${{ matrix.go-version }}
+      - name: Build saturn-bot
+        run: make build
+      - name: Run mdox
+        run: make mdox
+      - name: Check diff
+        id: diff
+        run: git diff --exit-code .
+        continue-on-error: true
+      - name: Help message
+        if: steps.diff.outcome != 'success'
+        run: echo "Command documentation not up-to-date - run make mdox" && exit 1
+  mkdocs:
+    name: Check mkdocs
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+      - name: Setup Python
+        uses: actions/setup-python@v5
+      - uses: Gr1N/setup-poetry@v9
+      - run: poetry install
+      - name: Build docs
+        run: mkdocs build --strict
