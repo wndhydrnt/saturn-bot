@@ -68,7 +68,7 @@ func readTasksYaml(
 			pw, err := newPluginWrapper(startPluginOptions{
 				hash:       checksum,
 				config:     plugin.Configuration,
-				filePath:   findPluginPath(plugin.Path, taskFile),
+				filePath:   resolvePluginPath(plugin.Path, taskFile),
 				pathJava:   pathJava,
 				pathPython: pathPython,
 			})
@@ -88,8 +88,8 @@ func readTasksYaml(
 	return result, nil
 }
 
-// findPluginPath resolves the path of a plugin relative to the path of its task.
-func findPluginPath(pluginPath, taskPath string) string {
+// resolvePluginPath resolves the path of a plugin relative to the path of its task.
+func resolvePluginPath(pluginPath, taskPath string) string {
 	if filepath.IsAbs(pluginPath) {
 		return pluginPath
 	}
