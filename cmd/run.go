@@ -16,7 +16,7 @@ Then it modifies a repository by executing the actions of a task if the filters
 of that task match.
 If files have been modified, it creates a pull request for the repository.
 
-Examplessss:
+Examples:
 
 Execute task in file "task.yaml" against all repositories:
 

@@ -43,7 +43,7 @@ ifeq (, $(shell which go-jsonschema))
 endif
 	go generate ./...
 
-mdox:
+mdox: build
 ifeq (, $(shell which mdox))
 	go install github.com/bwplotka/mdox@latest
 endif

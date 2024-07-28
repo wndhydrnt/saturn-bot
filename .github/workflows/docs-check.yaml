@@ -19,8 +19,6 @@ jobs:
         uses: actions/setup-go@v4
         with:
           go-version: ${{ matrix.go-version }}
-      - name: Build saturn-bot
-        run: make build
       - name: Run mdox
         run: make mdox
       - name: Check diff
