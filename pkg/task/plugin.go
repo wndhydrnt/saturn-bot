@@ -44,6 +44,8 @@ func newPluginWrapper(opts startPluginOptions) (*pluginWrapper, error) {
 	case ".py":
 		executable = opts.pathPython
 		args = append(args, opts.filePath)
+	default:
+		return nil, fmt.Errorf("unsupported plugin extension '%s'", ext)
 	}
 
 	client := goPlugin.NewClient(&goPlugin.ClientConfig{
