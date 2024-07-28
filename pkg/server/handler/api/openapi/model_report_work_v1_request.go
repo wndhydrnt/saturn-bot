@@ -15,18 +15,20 @@ package openapi
 
 type ReportWorkV1Request struct {
 
+	// General that occurred during the run, if any.
+	Error string `json:"error,omitempty"`
+
 	// Internal identifier of the unit of work.
 	RunID int32 `json:"runID"`
 
-	// List of runs of each task.
-	TaskResults []ReportWorkV1TaskResult `json:"taskResults"`
+	// Results of each task.
+	TaskResults []ReportWorkV1TaskResult `json:"taskResults,omitempty"`
 }
 
 // AssertReportWorkV1RequestRequired checks if the required fields are not zero-ed
 func AssertReportWorkV1RequestRequired(obj ReportWorkV1Request) error {
 	elements := map[string]interface{}{
 		"runID": obj.RunID,
-		"taskResults": obj.TaskResults,
 	}
 	for name, el := range elements {
 		if isZero := IsZeroValue(el); isZero {

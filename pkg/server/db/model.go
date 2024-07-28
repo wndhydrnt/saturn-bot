@@ -23,6 +23,7 @@ const (
 )
 
 type Run struct {
+	Error          *string
 	ID             uint `gorm:"primarykey"`
 	FinishedAt     *time.Time
 	Reason         RunReason

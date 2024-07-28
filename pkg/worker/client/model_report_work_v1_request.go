@@ -21,10 +21,12 @@ var _ MappedNullable = &ReportWorkV1Request{}
 
 // ReportWorkV1Request struct for ReportWorkV1Request
 type ReportWorkV1Request struct {
+	// General that occurred during the run, if any.
+	Error *string `json:"error,omitempty"`
 	// Internal identifier of the unit of work.
 	RunID int32 `json:"runID"`
-	// List of runs of each task.
-	TaskResults []ReportWorkV1TaskResult `json:"taskResults"`
+	// Results of each task.
+	TaskResults []ReportWorkV1TaskResult `json:"taskResults,omitempty"`
 }
 
 type _ReportWorkV1Request ReportWorkV1Request
@@ -33,10 +35,9 @@ type _ReportWorkV1Request ReportWorkV1Request
 // This constructor will assign default values to properties that have it defined,
 // and makes sure properties required by API are set, but the set of arguments
 // will change when the set of required properties is changed
-func NewReportWorkV1Request(runID int32, taskResults []ReportWorkV1TaskResult) *ReportWorkV1Request {
+func NewReportWorkV1Request(runID int32) *ReportWorkV1Request {
 	this := ReportWorkV1Request{}
 	this.RunID = runID
-	this.TaskResults = taskResults
 	return &this
 }
 
@@ -46,6 +47,38 @@ func NewReportWorkV1Request(runID int32, taskResults []ReportWorkV1TaskResult) *
 func NewReportWorkV1RequestWithDefaults() *ReportWorkV1Request {
 	this := ReportWorkV1Request{}
 	return &this
+}
+
+// GetError returns the Error field value if set, zero value otherwise.
+func (o *ReportWorkV1Request) GetError() string {
+	if o == nil || IsNil(o.Error) {
+		var ret string
+		return ret
+	}
+	return *o.Error
+}
+
+// GetErrorOk returns a tuple with the Error field value if set, nil otherwise
+// and a boolean to check if the value has been set.
+func (o *ReportWorkV1Request) GetErrorOk() (*string, bool) {
+	if o == nil || IsNil(o.Error) {
+		return nil, false
+	}
+	return o.Error, true
+}
+
+// HasError returns a boolean if a field has been set.
+func (o *ReportWorkV1Request) HasError() bool {
+	if o != nil && !IsNil(o.Error) {
+		return true
+	}
+
+	return false
+}
+
+// SetError gets a reference to the given string and assigns it to the Error field.
+func (o *ReportWorkV1Request) SetError(v string) {
+	o.Error = &v
 }
 
 // GetRunID returns the RunID field value
@@ -72,26 +105,34 @@ func (o *ReportWorkV1Request) SetRunID(v int32) {
 	o.RunID = v
 }
 
-// GetTaskResults returns the TaskResults field value
+// GetTaskResults returns the TaskResults field value if set, zero value otherwise.
 func (o *ReportWorkV1Request) GetTaskResults() []ReportWorkV1TaskResult {
-	if o == nil {
+	if o == nil || IsNil(o.TaskResults) {
 		var ret []ReportWorkV1TaskResult
 		return ret
 	}
-
 	return o.TaskResults
 }
 
-// GetTaskResultsOk returns a tuple with the TaskResults field value
+// GetTaskResultsOk returns a tuple with the TaskResults field value if set, nil otherwise
 // and a boolean to check if the value has been set.
 func (o *ReportWorkV1Request) GetTaskResultsOk() ([]ReportWorkV1TaskResult, bool) {
-	if o == nil {
+	if o == nil || IsNil(o.TaskResults) {
 		return nil, false
 	}
 	return o.TaskResults, true
 }
 
-// SetTaskResults sets field value
+// HasTaskResults returns a boolean if a field has been set.
+func (o *ReportWorkV1Request) HasTaskResults() bool {
+	if o != nil && !IsNil(o.TaskResults) {
+		return true
+	}
+
+	return false
+}
+
+// SetTaskResults gets a reference to the given []ReportWorkV1TaskResult and assigns it to the TaskResults field.
 func (o *ReportWorkV1Request) SetTaskResults(v []ReportWorkV1TaskResult) {
 	o.TaskResults = v
 }
@@ -106,8 +147,13 @@ func (o ReportWorkV1Request) MarshalJSON() ([]byte, error) {
 
 func (o ReportWorkV1Request) ToMap() (map[string]interface{}, error) {
 	toSerialize := map[string]interface{}{}
+	if !IsNil(o.Error) {
+		toSerialize["error"] = o.Error
+	}
 	toSerialize["runID"] = o.RunID
-	toSerialize["taskResults"] = o.TaskResults
+	if !IsNil(o.TaskResults) {
+		toSerialize["taskResults"] = o.TaskResults
+	}
 	return toSerialize, nil
 }
 
@@ -117,7 +163,6 @@ func (o *ReportWorkV1Request) UnmarshalJSON(data []byte) (err error) {
 	// that every required field exists as a key in the generic map.
 	requiredProperties := []string{
 		"runID",
-		"taskResults",
 	}
 
 	allProperties := make(map[string]interface{})

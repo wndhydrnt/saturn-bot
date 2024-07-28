@@ -71,11 +71,17 @@ func (a *APIExecutionSource) Next() (Execution, error) {
 }
 
 func (a *APIExecutionSource) Report(result Result) error {
-	req := a.client.ReportWorkV1(ctx)
-	req = req.ReportWorkV1Request(client.ReportWorkV1Request{
+	payload := client.ReportWorkV1Request{
 		RunID:       result.Execution.RunID,
 		TaskResults: mapRunResultsToTaskResults(result.TaskResults),
-	})
+	}
+	if result.RunError != nil {
+		payload.Error = client.PtrString(result.RunError.Error())
+	}
+
+	req := a.client.
+		ReportWorkV1(ctx).
+		ReportWorkV1Request(payload)
 	_, _, err := a.client.ReportWorkV1Execute(req)
 	if err != nil {
 		return fmt.Errorf("send execution result to API: %w", err)

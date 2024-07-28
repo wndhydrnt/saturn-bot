@@ -186,15 +186,18 @@ components:
     ReportWorkV1Request:
       type: object
       properties:
+        error:
+          description: General that occurred during the run, if any.
+          type: string
         runID:
           description: Internal identifier of the unit of work.
           type: integer
         taskResults:
-          description: List of runs of each task.
+          description: Results of each task.
           type: array
           items:
             $ref: "#/components/schemas/ReportWorkV1TaskResult"
-      required: ["runID", "taskResults"]
+      required: ["runID"]
     ReportWorkV1TaskResult:
       description: Result of the run of a task.
       type: object
