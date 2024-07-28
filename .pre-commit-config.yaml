@@ -7,5 +7,5 @@ repos:
       name: Check command documentation
       entry: make mdox
       language: system
-      always_run: true
+      files: ^cmd/.*\.go$
       pass_filenames: false
