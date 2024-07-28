@@ -4,6 +4,8 @@ repos:
 - repo: local
   hooks:
     - id: mdox
-      name: Update command documentation
-      entry: ./ttt.sh
-      language: script
+      name: Check command documentation
+      entry: make mdox
+      language: system
+      always_run: true
+      pass_filenames: false
