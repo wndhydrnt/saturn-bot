@@ -1,0 +1,9 @@
+# See https://pre-commit.com for more information
+# See https://pre-commit.com/hooks.html for more hooks
+repos:
+- repo: local
+  hooks:
+    - id: mdox
+      name: Update command documentation
+      entry: ./ttt.sh
+      language: script
