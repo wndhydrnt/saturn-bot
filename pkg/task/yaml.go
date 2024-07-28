@@ -88,6 +88,7 @@ func readTasksYaml(
 	return result, nil
 }
 
+// findPluginPath resolves the path of a plugin relative to the path of its task.
 func findPluginPath(pluginPath, taskPath string) string {
 	if filepath.IsAbs(pluginPath) {
 		return pluginPath
