@@ -27,6 +27,8 @@ type ScheduleRunV1Request struct {
 
 	// Name of the task for which to add a run.
 	TaskName string `json:"taskName"`
+
+	RunData map[string]string `json:"runData,omitempty"`
 }
 
 // AssertScheduleRunV1RequestRequired checks if the required fields are not zero-ed

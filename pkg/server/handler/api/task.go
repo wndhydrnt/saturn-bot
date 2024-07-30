@@ -19,7 +19,7 @@ func (ts *TaskHandler) GetTaskV1(_ context.Context, taskName string) (openapi.Im
 		return openapi.Response(http.StatusNotFound, openapi.Error{Error: "Not Found", Message: "Task unknown"}), nil
 	}
 
-	body := openapi.GetTaskV1200Response{
+	body := openapi.GetTaskV1Response{
 		Name:    t.TaskName,
 		Hash:    t.Hash,
 		Content: content,
@@ -29,7 +29,7 @@ func (ts *TaskHandler) GetTaskV1(_ context.Context, taskName string) (openapi.Im
 
 // ListTasksV1 implements openapi.TaskAPIServicer
 func (th *TaskHandler) ListTasksV1(_ context.Context) (openapi.ImplResponse, error) {
-	body := openapi.ListTasksV1200Response{
+	body := openapi.ListTasksV1Response{
 		Tasks: []string{},
 	}
 	for _, entry := range th.TaskService.ListTasks() {

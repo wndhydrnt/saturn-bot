@@ -4,10 +4,10 @@ api_worker.go
 client.go
 configuration.go
 model_error.go
-model_get_task_v1_200_response.go
+model_get_task_v1_response.go
 model_get_work_v1_response.go
 model_get_work_v1_task.go
-model_list_tasks_v1_200_response.go
+model_list_tasks_v1_response.go
 model_report_work_v1_request.go
 model_report_work_v1_response.go
 model_report_work_v1_task_result.go

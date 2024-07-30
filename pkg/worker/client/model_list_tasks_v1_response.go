@@ -16,37 +16,37 @@ import (
 	"fmt"
 )
 
-// checks if the ListTasksV1200Response type satisfies the MappedNullable interface at compile time
-var _ MappedNullable = &ListTasksV1200Response{}
+// checks if the ListTasksV1Response type satisfies the MappedNullable interface at compile time
+var _ MappedNullable = &ListTasksV1Response{}
 
-// ListTasksV1200Response struct for ListTasksV1200Response
-type ListTasksV1200Response struct {
+// ListTasksV1Response struct for ListTasksV1Response
+type ListTasksV1Response struct {
 	// Names of registered tasks.
 	Tasks []string `json:"tasks"`
 }
 
-type _ListTasksV1200Response ListTasksV1200Response
+type _ListTasksV1Response ListTasksV1Response
 
-// NewListTasksV1200Response instantiates a new ListTasksV1200Response object
+// NewListTasksV1Response instantiates a new ListTasksV1Response object
 // This constructor will assign default values to properties that have it defined,
 // and makes sure properties required by API are set, but the set of arguments
 // will change when the set of required properties is changed
-func NewListTasksV1200Response(tasks []string) *ListTasksV1200Response {
-	this := ListTasksV1200Response{}
+func NewListTasksV1Response(tasks []string) *ListTasksV1Response {
+	this := ListTasksV1Response{}
 	this.Tasks = tasks
 	return &this
 }
 
-// NewListTasksV1200ResponseWithDefaults instantiates a new ListTasksV1200Response object
+// NewListTasksV1ResponseWithDefaults instantiates a new ListTasksV1Response object
 // This constructor will only assign default values to properties that have it defined,
 // but it doesn't guarantee that properties required by API are set
-func NewListTasksV1200ResponseWithDefaults() *ListTasksV1200Response {
-	this := ListTasksV1200Response{}
+func NewListTasksV1ResponseWithDefaults() *ListTasksV1Response {
+	this := ListTasksV1Response{}
 	return &this
 }
 
 // GetTasks returns the Tasks field value
-func (o *ListTasksV1200Response) GetTasks() []string {
+func (o *ListTasksV1Response) GetTasks() []string {
 	if o == nil {
 		var ret []string
 		return ret
@@ -57,7 +57,7 @@ func (o *ListTasksV1200Response) GetTasks() []string {
 
 // GetTasksOk returns a tuple with the Tasks field value
 // and a boolean to check if the value has been set.
-func (o *ListTasksV1200Response) GetTasksOk() ([]string, bool) {
+func (o *ListTasksV1Response) GetTasksOk() ([]string, bool) {
 	if o == nil {
 		return nil, false
 	}
@@ -65,11 +65,11 @@ func (o *ListTasksV1200Response) GetTasksOk() ([]string, bool) {
 }
 
 // SetTasks sets field value
-func (o *ListTasksV1200Response) SetTasks(v []string) {
+func (o *ListTasksV1Response) SetTasks(v []string) {
 	o.Tasks = v
 }
 
-func (o ListTasksV1200Response) MarshalJSON() ([]byte, error) {
+func (o ListTasksV1Response) MarshalJSON() ([]byte, error) {
 	toSerialize,err := o.ToMap()
 	if err != nil {
 		return []byte{}, err
@@ -77,13 +77,13 @@ func (o ListTasksV1200Response) MarshalJSON() ([]byte, error) {
 	return json.Marshal(toSerialize)
 }
 
-func (o ListTasksV1200Response) ToMap() (map[string]interface{}, error) {
+func (o ListTasksV1Response) ToMap() (map[string]interface{}, error) {
 	toSerialize := map[string]interface{}{}
 	toSerialize["tasks"] = o.Tasks
 	return toSerialize, nil
 }
 
-func (o *ListTasksV1200Response) UnmarshalJSON(data []byte) (err error) {
+func (o *ListTasksV1Response) UnmarshalJSON(data []byte) (err error) {
 	// This validates that all required properties are included in the JSON object
 	// by unmarshalling the object into a generic map with string keys and checking
 	// that every required field exists as a key in the generic map.
@@ -105,53 +105,53 @@ func (o *ListTasksV1200Response) UnmarshalJSON(data []byte) (err error) {
 		}
 	}
 
-	varListTasksV1200Response := _ListTasksV1200Response{}
+	varListTasksV1Response := _ListTasksV1Response{}
 
 	decoder := json.NewDecoder(bytes.NewReader(data))
 	decoder.DisallowUnknownFields()
-	err = decoder.Decode(&varListTasksV1200Response)
+	err = decoder.Decode(&varListTasksV1Response)
 
 	if err != nil {
 		return err
 	}
 
-	*o = ListTasksV1200Response(varListTasksV1200Response)
+	*o = ListTasksV1Response(varListTasksV1Response)
 
 	return err
 }
 
-type NullableListTasksV1200Response struct {
-	value *ListTasksV1200Response
+type NullableListTasksV1Response struct {
+	value *ListTasksV1Response
 	isSet bool
 }
 
-func (v NullableListTasksV1200Response) Get() *ListTasksV1200Response {
+func (v NullableListTasksV1Response) Get() *ListTasksV1Response {
 	return v.value
 }
 
-func (v *NullableListTasksV1200Response) Set(val *ListTasksV1200Response) {
+func (v *NullableListTasksV1Response) Set(val *ListTasksV1Response) {
 	v.value = val
 	v.isSet = true
 }
 
-func (v NullableListTasksV1200Response) IsSet() bool {
+func (v NullableListTasksV1Response) IsSet() bool {
 	return v.isSet
 }
 
-func (v *NullableListTasksV1200Response) Unset() {
+func (v *NullableListTasksV1Response) Unset() {
 	v.value = nil
 	v.isSet = false
 }
 
-func NewNullableListTasksV1200Response(val *ListTasksV1200Response) *NullableListTasksV1200Response {
-	return &NullableListTasksV1200Response{value: val, isSet: true}
+func NewNullableListTasksV1Response(val *ListTasksV1Response) *NullableListTasksV1Response {
+	return &NullableListTasksV1Response{value: val, isSet: true}
 }
 
-func (v NullableListTasksV1200Response) MarshalJSON() ([]byte, error) {
+func (v NullableListTasksV1Response) MarshalJSON() ([]byte, error) {
 	return json.Marshal(v.value)
 }
 
-func (v *NullableListTasksV1200Response) UnmarshalJSON(src []byte) error {
+func (v *NullableListTasksV1Response) UnmarshalJSON(src []byte) error {
 	v.isSet = true
 	return json.Unmarshal(src, &v.value)
 }

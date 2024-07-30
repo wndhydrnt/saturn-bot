@@ -34,8 +34,8 @@ type TaskAPI interface {
 	GetTaskV1(ctx context.Context, task string) ApiGetTaskV1Request
 
 	// GetTaskV1Execute executes the request
-	//  @return GetTaskV1200Response
-	GetTaskV1Execute(r ApiGetTaskV1Request) (*GetTaskV1200Response, *http.Response, error)
+	//  @return GetTaskV1Response
+	GetTaskV1Execute(r ApiGetTaskV1Request) (*GetTaskV1Response, *http.Response, error)
 
 	/*
 	ListTasksV1 List tasks.
@@ -48,8 +48,8 @@ type TaskAPI interface {
 	ListTasksV1(ctx context.Context) ApiListTasksV1Request
 
 	// ListTasksV1Execute executes the request
-	//  @return ListTasksV1200Response
-	ListTasksV1Execute(r ApiListTasksV1Request) (*ListTasksV1200Response, *http.Response, error)
+	//  @return ListTasksV1Response
+	ListTasksV1Execute(r ApiListTasksV1Request) (*ListTasksV1Response, *http.Response, error)
 }
 
 // TaskAPIService TaskAPI service
@@ -61,7 +61,7 @@ type ApiGetTaskV1Request struct {
 	task string
 }
 
-func (r ApiGetTaskV1Request) Execute() (*GetTaskV1200Response, *http.Response, error) {
+func (r ApiGetTaskV1Request) Execute() (*GetTaskV1Response, *http.Response, error) {
 	return r.ApiService.GetTaskV1Execute(r)
 }
 
@@ -83,13 +83,13 @@ func (a *TaskAPIService) GetTaskV1(ctx context.Context, task string) ApiGetTaskV
 }
 
 // Execute executes the request
-//  @return GetTaskV1200Response
-func (a *TaskAPIService) GetTaskV1Execute(r ApiGetTaskV1Request) (*GetTaskV1200Response, *http.Response, error) {
+//  @return GetTaskV1Response
+func (a *TaskAPIService) GetTaskV1Execute(r ApiGetTaskV1Request) (*GetTaskV1Response, *http.Response, error) {
 	var (
 		localVarHTTPMethod   = http.MethodGet
 		localVarPostBody     interface{}
 		formFiles            []formFile
-		localVarReturnValue  *GetTaskV1200Response
+		localVarReturnValue  *GetTaskV1Response
 	)
 
 	localBasePath, err := a.client.cfg.ServerURLWithContext(r.ctx, "TaskAPIService.GetTaskV1")
@@ -184,7 +184,7 @@ type ApiListTasksV1Request struct {
 	ApiService TaskAPI
 }
 
-func (r ApiListTasksV1Request) Execute() (*ListTasksV1200Response, *http.Response, error) {
+func (r ApiListTasksV1Request) Execute() (*ListTasksV1Response, *http.Response, error) {
 	return r.ApiService.ListTasksV1Execute(r)
 }
 
@@ -204,13 +204,13 @@ func (a *TaskAPIService) ListTasksV1(ctx context.Context) ApiListTasksV1Request 
 }
 
 // Execute executes the request
-//  @return ListTasksV1200Response
-func (a *TaskAPIService) ListTasksV1Execute(r ApiListTasksV1Request) (*ListTasksV1200Response, *http.Response, error) {
+//  @return ListTasksV1Response
+func (a *TaskAPIService) ListTasksV1Execute(r ApiListTasksV1Request) (*ListTasksV1Response, *http.Response, error) {
 	var (
 		localVarHTTPMethod   = http.MethodGet
 		localVarPostBody     interface{}
 		formFiles            []formFile
-		localVarReturnValue  *ListTasksV1200Response
+		localVarReturnValue  *ListTasksV1Response
 	)
 
 	localBasePath, err := a.client.cfg.ServerURLWithContext(r.ctx, "TaskAPIService.ListTasksV1")

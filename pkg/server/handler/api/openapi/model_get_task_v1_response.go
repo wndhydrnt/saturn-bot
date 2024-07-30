@@ -13,7 +13,7 @@ package openapi
 
 
 
-type GetTaskV1200Response struct {
+type GetTaskV1Response struct {
 
 	Name string `json:"name"`
 
@@ -22,8 +22,8 @@ type GetTaskV1200Response struct {
 	Content string `json:"content"`
 }
 
-// AssertGetTaskV1200ResponseRequired checks if the required fields are not zero-ed
-func AssertGetTaskV1200ResponseRequired(obj GetTaskV1200Response) error {
+// AssertGetTaskV1ResponseRequired checks if the required fields are not zero-ed
+func AssertGetTaskV1ResponseRequired(obj GetTaskV1Response) error {
 	elements := map[string]interface{}{
 		"name": obj.Name,
 		"hash": obj.Hash,
@@ -38,7 +38,7 @@ func AssertGetTaskV1200ResponseRequired(obj GetTaskV1200Response) error {
 	return nil
 }
 
-// AssertGetTaskV1200ResponseConstraints checks if the values respects the defined constraints
-func AssertGetTaskV1200ResponseConstraints(obj GetTaskV1200Response) error {
+// AssertGetTaskV1ResponseConstraints checks if the values respects the defined constraints
+func AssertGetTaskV1ResponseConstraints(obj GetTaskV1Response) error {
 	return nil
 }

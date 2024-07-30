@@ -28,6 +28,7 @@ type ScheduleRunV1Request struct {
 	ScheduleAfter *time.Time `json:"scheduleAfter,omitempty"`
 	// Name of the task for which to add a run.
 	TaskName string `json:"taskName"`
+	RunData map[string]string `json:"runData,omitempty"`
 }
 
 type _ScheduleRunV1Request ScheduleRunV1Request
@@ -138,6 +139,38 @@ func (o *ScheduleRunV1Request) SetTaskName(v string) {
 	o.TaskName = v
 }
 
+// GetRunData returns the RunData field value if set, zero value otherwise.
+func (o *ScheduleRunV1Request) GetRunData() map[string]string {
+	if o == nil || IsNil(o.RunData) {
+		var ret map[string]string
+		return ret
+	}
+	return o.RunData
+}
+
+// GetRunDataOk returns a tuple with the RunData field value if set, nil otherwise
+// and a boolean to check if the value has been set.
+func (o *ScheduleRunV1Request) GetRunDataOk() (map[string]string, bool) {
+	if o == nil || IsNil(o.RunData) {
+		return map[string]string{}, false
+	}
+	return o.RunData, true
+}
+
+// HasRunData returns a boolean if a field has been set.
+func (o *ScheduleRunV1Request) HasRunData() bool {
+	if o != nil && !IsNil(o.RunData) {
+		return true
+	}
+
+	return false
+}
+
+// SetRunData gets a reference to the given map[string]string and assigns it to the RunData field.
+func (o *ScheduleRunV1Request) SetRunData(v map[string]string) {
+	o.RunData = v
+}
+
 func (o ScheduleRunV1Request) MarshalJSON() ([]byte, error) {
 	toSerialize,err := o.ToMap()
 	if err != nil {
@@ -155,6 +188,9 @@ func (o ScheduleRunV1Request) ToMap() (map[string]interface{}, error) {
 		toSerialize["scheduleAfter"] = o.ScheduleAfter
 	}
 	toSerialize["taskName"] = o.TaskName
+	if !IsNil(o.RunData) {
+		toSerialize["runData"] = o.RunData
+	}
 	return toSerialize, nil
 }
 

@@ -36,14 +36,7 @@ paths:
           content:
             application/json:
               schema:
-                type: object
-                properties:
-                  tasks:
-                    description: Names of registered tasks.
-                    type: array
-                    items:
-                      type: string
-                required: ["tasks"]
+                $ref: "#/components/schemas/ListTasksV1Response"
   /api/v1/tasks/{task}:
     get:
       operationId: getTaskV1
@@ -64,16 +57,7 @@ paths:
           content:
             application/json:
               schema:
-                type: object
-                properties:
-                  name:
-                    type: string
-                  hash:
-                    type: string
-                  content:
-                    type: string
-                    format: byte
-                required: ["name", "hash", "content"]
+                $ref: "#/components/schemas/GetTaskV1Response"
         "404":
           description: Not Found
           content:
@@ -134,6 +118,10 @@ components:
         taskName:
           description: Name of the task for which to add a run.
           type: string
+        runData:
+          type: object
+          additionalProperties:
+            type: string
       required: ["taskName"]
     ScheduleRunV1Response:
       type: object
@@ -215,3 +203,23 @@ components:
           description: Name of the task.
           type: string
       required: ["repositoryName", "result", "taskName"]
+    ListTasksV1Response:
+      type: object
+      properties:
+        tasks:
+          description: Names of registered tasks.
+          type: array
+          items:
+            type: string
+      required: ["tasks"]
+    GetTaskV1Response:
+      type: object
+      properties:
+        name:
+          type: string
+        hash:
+          type: string
+        content:
+          type: string
+          format: byte
+      required: ["name", "hash", "content"]

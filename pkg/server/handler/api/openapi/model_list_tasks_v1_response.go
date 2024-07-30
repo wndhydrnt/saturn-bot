@@ -13,14 +13,14 @@ package openapi
 
 
 
-type ListTasksV1200Response struct {
+type ListTasksV1Response struct {
 
 	// Names of registered tasks.
 	Tasks []string `json:"tasks"`
 }
 
-// AssertListTasksV1200ResponseRequired checks if the required fields are not zero-ed
-func AssertListTasksV1200ResponseRequired(obj ListTasksV1200Response) error {
+// AssertListTasksV1ResponseRequired checks if the required fields are not zero-ed
+func AssertListTasksV1ResponseRequired(obj ListTasksV1Response) error {
 	elements := map[string]interface{}{
 		"tasks": obj.Tasks,
 	}
@@ -33,7 +33,7 @@ func AssertListTasksV1200ResponseRequired(obj ListTasksV1200Response) error {
 	return nil
 }
 
-// AssertListTasksV1200ResponseConstraints checks if the values respects the defined constraints
-func AssertListTasksV1200ResponseConstraints(obj ListTasksV1200Response) error {
+// AssertListTasksV1ResponseConstraints checks if the values respects the defined constraints
+func AssertListTasksV1ResponseConstraints(obj ListTasksV1Response) error {
 	return nil
 }
