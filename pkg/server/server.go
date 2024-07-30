@@ -55,7 +55,8 @@ func (s *Server) Start(opts options.Opts, taskPaths []string) error {
 	workerCtrl := openapi.NewWorkerAPIController(workerHandler)
 	router := newRouter(opts, taskCtrl, workerCtrl)
 	s.httpServer = &http.Server{
-		Addr: opts.Config.ServerAddr,
+		ReadHeaderTimeout: 10 * time.Millisecond,
+		Addr:              opts.Config.ServerAddr,
 	}
 	s.httpServer.Handler = router
 	go func(server *http.Server) {
@@ -113,8 +114,12 @@ func Run(configPath string, taskPaths []string) error {
 	slog.Info("Server started")
 	sig := <-sigs
 	slog.Info("Shutting down", "signal", sig.String())
-	s.Stop()
-	slog.Info("Server stopped")
+	err = s.Stop()
+	if err == nil {
+		slog.Info("Server stopped")
+	} else {
+		slog.Error("Server failed during stop", "error", err)
+	}
 	return nil
 }
 
