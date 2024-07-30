@@ -5,7 +5,6 @@ import (
 	"errors"
 	"fmt"
 	"log/slog"
-	"math/rand"
 	"os"
 	"os/signal"
 	"syscall"
@@ -35,21 +34,6 @@ type Result struct {
 type ExecutionSource interface {
 	Next() (Execution, error)
 	Report(Result) error
-}
-
-type DummyExecutionSource struct{}
-
-func (d *DummyExecutionSource) Next() (Execution, error) {
-	if rand.Intn(2) == 1 {
-		return Execution{}, ErrNoExec
-	}
-
-	return Execution{RunID: genIDInt(8)}, nil
-}
-
-func (d *DummyExecutionSource) Report(result Result) error {
-	slog.Info("Work finished", "executionID", result.Execution.RunID)
-	return nil
 }
 
 type APIExecutionSource struct {
