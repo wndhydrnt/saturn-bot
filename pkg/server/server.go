@@ -54,7 +54,7 @@ func (s *Server) Start(opts options.Opts, taskPaths []string) error {
 	workerHandler := &api.WorkHandler{WorkerService: workerService}
 	workerCtrl := openapi.NewWorkerAPIController(workerHandler)
 	router := newRouter(opts, taskCtrl, workerCtrl)
-	err = api.RegisterOpenAPIDefinitionRoute("http://localhost:3035", router)
+	err = api.RegisterOpenAPIDefinitionRoute(opts.Config.ServerBaseUrl, router)
 	if err != nil {
 		return fmt.Errorf("failed to register OpenAPI definition route: %w", err)
 	}
