@@ -29,6 +29,7 @@ func TestReadConfig(t *testing.T) {
 				JavaPath:                 "java",
 				PythonPath:               "python",
 				ServerAddr:               ":3035",
+				ServerBaseUrl:            "http://localhost:3035",
 				ServerCompress:           true,
 				WorkerLoopInterval:       "10s",
 				WorkerParallelExecutions: 4,

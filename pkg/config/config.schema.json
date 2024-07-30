@@ -97,6 +97,11 @@
       "description": "Address of the server.",
       "type": "string"
     },
+    "serverBaseUrl": {
+      "default": "http://localhost:3035",
+      "description": "URL of the API server. The value is used to populate the `servers` array in the OpenAPI definition.",
+      "type": "string"
+    },
     "serverCompress": {
       "default": true,
       "description": "Turn compression of responses on or off.",

@@ -67,6 +67,10 @@ type Configuration struct {
 	// Address of the server.
 	ServerAddr string `json:"serverAddr,omitempty" yaml:"serverAddr,omitempty" mapstructure:"serverAddr,omitempty"`
 
+	// URL of the API server. The value is used to populate the `servers` array in the
+	// OpenAPI definition.
+	ServerBaseUrl string `json:"serverBaseUrl,omitempty" yaml:"serverBaseUrl,omitempty" mapstructure:"serverBaseUrl,omitempty"`
+
 	// Turn compression of responses on or off.
 	ServerCompress bool `json:"serverCompress,omitempty" yaml:"serverCompress,omitempty" mapstructure:"serverCompress,omitempty"`
 
@@ -300,6 +304,9 @@ func (j *Configuration) UnmarshalJSON(b []byte) error {
 	if v, ok := raw["serverAddr"]; !ok || v == nil {
 		plain.ServerAddr = ":3035"
 	}
+	if v, ok := raw["serverBaseUrl"]; !ok || v == nil {
+		plain.ServerBaseUrl = "http://localhost:3035"
+	}
 	if v, ok := raw["serverCompress"]; !ok || v == nil {
 		plain.ServerCompress = true
 	}
@@ -374,6 +381,9 @@ func (j *Configuration) UnmarshalYAML(value *yaml.Node) error {
 	}
 	if v, ok := raw["serverAddr"]; !ok || v == nil {
 		plain.ServerAddr = ":3035"
+	}
+	if v, ok := raw["serverBaseUrl"]; !ok || v == nil {
+		plain.ServerBaseUrl = "http://localhost:3035"
 	}
 	if v, ok := raw["serverCompress"]; !ok || v == nil {
 		plain.ServerCompress = true
