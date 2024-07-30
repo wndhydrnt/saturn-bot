@@ -21,15 +21,17 @@ var rootCmd = &cobra.Command{
 	Long:  `Synchronize code across many repositories.`,
 }
 
-func Execute() {
+func Execute() int {
 	rootCmd.AddCommand(createRunCommand())
 	rootCmd.AddCommand(createServerCommand())
 	rootCmd.AddCommand(createTryCommand())
 	rootCmd.AddCommand(createVersionCommand())
 	rootCmd.AddCommand(createWorkerCommand())
 	if err := rootCmd.Execute(); err != nil {
-		os.Exit(1)
+		return 1
 	}
+
+	return 0
 }
 
 func handleError(err error, out io.Writer) {

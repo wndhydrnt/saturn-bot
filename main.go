@@ -1,7 +1,11 @@
 package main
 
-import "github.com/wndhydrnt/saturn-bot/cmd"
+import (
+	"os"
+
+	"github.com/wndhydrnt/saturn-bot/cmd"
+)
 
 func main() {
-	cmd.Execute()
+	os.Exit(cmd.Execute())
 }
