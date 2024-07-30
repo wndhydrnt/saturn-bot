@@ -34,11 +34,11 @@ generate_openapi: generate_openapi_server generate_openapi_worker
 
 generate_openapi_server:
 	rm -f ./pkg/server/handler/api/openapi/*.go
-	docker run --rm -v "$(PWD):/work" --workdir "/work/pkg/server/handler/api/openapi" openapitools/openapi-generator-cli:v7.6.0 generate -i openapi.yaml -g go-server --additional-properties=router=chi,outputAsLibrary=true,sourceFolder=.,packageName=openapi,onlyInterfaces=true
+	docker run --rm -v "$(PWD):/work" --workdir "/work/pkg/server/api/openapi" openapitools/openapi-generator-cli:v7.6.0 generate -i openapi.yaml -g go-server --additional-properties=router=chi,outputAsLibrary=true,sourceFolder=.,packageName=openapi,onlyInterfaces=true
 
 generate_openapi_worker:
 	rm -f ./pkg/worker/client/*.go
-	docker run --rm -v "$(PWD):/work" --workdir "/work/pkg/worker/client" openapitools/openapi-generator-cli:v7.6.0 generate -i ../../server/handler/api/openapi/openapi.yaml -g go --additional-properties=packageName=client,withGoMod=false,generateInterfaces=true
+	docker run --rm -v "$(PWD):/work" --workdir "/work/pkg/worker/client" openapitools/openapi-generator-cli:v7.6.0 generate -i ../../server/api/openapi/openapi.yaml -g go --additional-properties=packageName=client,withGoMod=false,generateInterfaces=true
 
 generate_go:
 ifeq (, $(shell which mockgen))

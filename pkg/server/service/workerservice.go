@@ -7,8 +7,8 @@ import (
 	"time"
 
 	"github.com/wndhydrnt/saturn-bot/pkg/processor"
+	"github.com/wndhydrnt/saturn-bot/pkg/server/api/openapi"
 	"github.com/wndhydrnt/saturn-bot/pkg/server/db"
-	"github.com/wndhydrnt/saturn-bot/pkg/server/handler/api/openapi"
 	"github.com/wndhydrnt/saturn-bot/pkg/server/task"
 	"gorm.io/gorm"
 )

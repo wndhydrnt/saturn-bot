@@ -4,7 +4,7 @@ import (
 	"context"
 	"net/http"
 
-	"github.com/wndhydrnt/saturn-bot/pkg/server/handler/api/openapi"
+	"github.com/wndhydrnt/saturn-bot/pkg/server/api/openapi"
 	"github.com/wndhydrnt/saturn-bot/pkg/server/service"
 )
 

@@ -16,9 +16,9 @@ import (
 	"github.com/go-chi/chi/v5/middleware"
 	"github.com/wndhydrnt/saturn-bot/pkg/config"
 	"github.com/wndhydrnt/saturn-bot/pkg/options"
+	"github.com/wndhydrnt/saturn-bot/pkg/server/api"
+	"github.com/wndhydrnt/saturn-bot/pkg/server/api/openapi"
 	"github.com/wndhydrnt/saturn-bot/pkg/server/db"
-	"github.com/wndhydrnt/saturn-bot/pkg/server/handler/api"
-	"github.com/wndhydrnt/saturn-bot/pkg/server/handler/api/openapi"
 	"github.com/wndhydrnt/saturn-bot/pkg/server/service"
 	"github.com/wndhydrnt/saturn-bot/pkg/server/task"
 )

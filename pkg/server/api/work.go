@@ -6,8 +6,8 @@ import (
 	"log/slog"
 	"net/http"
 
+	"github.com/wndhydrnt/saturn-bot/pkg/server/api/openapi"
 	"github.com/wndhydrnt/saturn-bot/pkg/server/db"
-	"github.com/wndhydrnt/saturn-bot/pkg/server/handler/api/openapi"
 	"github.com/wndhydrnt/saturn-bot/pkg/server/service"
 )
 
