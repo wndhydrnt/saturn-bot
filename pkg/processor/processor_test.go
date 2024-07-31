@@ -399,7 +399,7 @@ func TestProcessor_Process_UpdatePullRequest(t *testing.T) {
 	tw := &task.Wrapper{Task: &schema.Task{Name: "unittest"}}
 	tw.AddFilters(&trueFilter{})
 	ctx := context.Background()
-	ctx = context.WithValue(ctx, sContext.TemplateVarsKey{}, map[string]string{"Greeting": "Hello", "TaskName": "other"})
+	ctx = context.WithValue(ctx, sContext.RunDataKey{}, map[string]string{"Greeting": "Hello", "TaskName": "other"})
 
 	p := &processor.Processor{Git: gitc}
 	result, err := p.Process(ctx, false, repo, tw, true)

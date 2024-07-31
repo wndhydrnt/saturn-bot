@@ -87,7 +87,7 @@ func (r *executeRunner) run(repositoryNames, taskFiles []string) error {
 
 				visitedRepositories[repo.FullName()] = struct{}{}
 				ctx := context.Background()
-				ctx = context.WithValue(ctx, sContext.TemplateVarsKey{}, make(map[string]string))
+				ctx = context.WithValue(ctx, sContext.RunDataKey{}, make(map[string]string))
 				doFilter := len(repositoryNames) == 0
 				for _, t := range tasks {
 					_, err := r.processor.Process(ctx, r.dryRun, repo, t, doFilter)
