@@ -65,7 +65,6 @@ func (p *Processor) Process(
 	}
 
 	ctx = context.WithValue(ctx, sContext.RepositoryKey{}, repo)
-	ctx = context.WithValue(ctx, sContext.PluginDataKey{}, make(map[string]string))
 
 	if doFilter {
 		match, err := matchTaskToRepository(ctx, task)
@@ -394,11 +393,9 @@ func inDirectory(dir string, f func() error) error {
 
 func newTemplateVars(ctx context.Context, repo host.Repository, tk task.Task) map[string]any {
 	vars := make(map[string]any)
-	tplVars, inCtx := ctx.Value(sContext.TemplateVarsKey{}).(map[string]string)
-	if inCtx {
-		for k, v := range tplVars {
-			vars[k] = v
-		}
+	runData := sContext.RunData(ctx)
+	for k, v := range runData {
+		vars[k] = v
 	}
 
 	vars["RepositoryFullName"] = repo.FullName()

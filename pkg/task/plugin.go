@@ -167,12 +167,11 @@ type PluginAction struct {
 // Apply implements action.Apply().
 func (a *PluginAction) Apply(ctx context.Context) error {
 	path := ctx.Value(gsContext.CheckoutPath{}).(string)
-	pluginData := gsContext.PluginData(ctx)
+	runData := gsContext.RunData(ctx)
 	repo := ctx.Value(gsContext.RepositoryKey{}).(host.Repository)
 	reply, err := a.Provider.ExecuteActions(&proto.ExecuteActionsRequest{
 		Path: path,
 		Context: &proto.Context{
-			PluginData:  pluginData,
 			PullRequest: newPullRequestPayload(ctx.Value(gsContext.PullRequestKey{})),
 			Repository: &proto.Repository{
 				FullName:     repo.FullName(),
@@ -180,6 +179,7 @@ func (a *PluginAction) Apply(ctx context.Context) error {
 				CloneUrlSsh:  repo.CloneUrlSsh(),
 				WebUrl:       repo.WebUrl(),
 			},
+			RunData: runData,
 		},
 	})
 	if err != nil {
@@ -190,8 +190,7 @@ func (a *PluginAction) Apply(ctx context.Context) error {
 		return fmt.Errorf("plugin failed to execute actions: %s", reply.GetError())
 	}
 
-	updatePluginData(pluginData, reply.PluginData)
-	updateTemplateVars(ctx, reply.TemplateVars)
+	updateRunData(runData, reply.RunData)
 	return nil
 }
 
@@ -207,11 +206,10 @@ type PluginFilter struct {
 
 // Do implements filter.Do().
 func (f *PluginFilter) Do(ctx context.Context) (bool, error) {
-	pluginData := gsContext.PluginData(ctx)
+	runData := gsContext.RunData(ctx)
 	repo := ctx.Value(gsContext.RepositoryKey{}).(host.Repository)
 	reply, err := f.Provider.ExecuteFilters(&proto.ExecuteFiltersRequest{
 		Context: &proto.Context{
-			PluginData:  pluginData,
 			PullRequest: newPullRequestPayload(ctx.Value(gsContext.PullRequestKey{})),
 			Repository: &proto.Repository{
 				FullName:     repo.FullName(),
@@ -219,6 +217,7 @@ func (f *PluginFilter) Do(ctx context.Context) (bool, error) {
 				CloneUrlSsh:  repo.CloneUrlSsh(),
 				WebUrl:       repo.WebUrl(),
 			},
+			RunData: runData,
 		},
 	})
 	if err != nil {
@@ -229,8 +228,7 @@ func (f *PluginFilter) Do(ctx context.Context) (bool, error) {
 		return false, fmt.Errorf("plugin failed to execute filters: %s", reply.GetError())
 	}
 
-	updatePluginData(pluginData, reply.PluginData)
-	updateTemplateVars(ctx, reply.TemplateVars)
+	updateRunData(runData, reply.RunData)
 	return reply.GetMatch(), nil
 }
 
@@ -256,23 +254,8 @@ func newPullRequestPayload(value any) *proto.PullRequest {
 	}
 }
 
-func updatePluginData(current, received map[string]string) {
+func updateRunData(current, received map[string]string) {
 	for k, v := range received {
 		current[k] = v
-	}
-}
-
-func updateTemplateVars(ctx context.Context, templateVarsReply map[string]string) {
-	templateVars, ok := ctx.Value(gsContext.TemplateVarsKey{}).(map[string]string)
-	if !ok {
-		templateVars = make(map[string]string)
-	}
-
-	for k, v := range templateVarsReply {
-		_, exists := templateVars[k]
-		// Plugin should not update existing keys to avoid confusion.
-		if !exists {
-			templateVars[k] = v
-		}
 	}
 }
