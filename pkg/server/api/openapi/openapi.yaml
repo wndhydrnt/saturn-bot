@@ -1,0 +1,225 @@
+openapi: 3.1.0
+info:
+  title: saturn-bot server API
+  version: 1.0.0
+paths:
+  /api/v1/runs:
+    post:
+      operationId: scheduleRunV1
+      summary: Schedule a run.
+      description: Add a new run to the queue.
+      tags:
+        - worker
+      requestBody:
+        content:
+          application/json:
+            schema:
+              $ref: "#/components/schemas/ScheduleRunV1Request"
+        required: true
+      responses:
+        "200":
+          description: OK
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/ScheduleRunV1Response"
+  /api/v1/tasks:
+    get:
+      operationId: listTasksV1
+      summary: List tasks.
+      description: Returns a list of registered tasks.
+      tags:
+        - task
+      responses:
+        "200":
+          description: OK
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/ListTasksV1Response"
+  /api/v1/tasks/{task}:
+    get:
+      operationId: getTaskV1
+      summary: Get information about a task.
+      description: Returns detail information about a task.
+      tags:
+        - task
+      parameters:
+        - in: path
+          name: task
+          schema:
+            type: string
+          required: true
+          description: Name of the task to return.
+      responses:
+        "200":
+          description: OK
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/GetTaskV1Response"
+        "404":
+          description: Not Found
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/Error"
+        "500":
+          description: Internal Server Error
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/Error"
+  /api/v1/worker/work:
+    get:
+      operationId: getWorkV1
+      summary: Get a unit of work.
+      description: Let a worker retrieve the next unit of work.
+      tags:
+        - worker
+      responses:
+        "200":
+          description: OK
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/GetWorkV1Response"
+    post:
+      operationId: reportWorkV1
+      summary: Report the result of a unit of work
+      description: Used by workers to report the result of a unit of work.
+      tags:
+        - worker
+      requestBody:
+        content:
+          application/json:
+            schema:
+              $ref: "#/components/schemas/ReportWorkV1Request"
+        required: true
+      responses:
+        "201":
+          description: OK
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/ReportWorkV1Response"
+components:
+  schemas:
+    ScheduleRunV1Request:
+      type: object
+      properties:
+        repositoryName:
+          description: Name of the repository for which to add a run. If empty, the run uses the filters of the task.
+          type: string
+        scheduleAfter:
+          description: Schedule the run after the given time. If empty, then the current time is used.
+          type: string
+          format: date-time
+        taskName:
+          description: Name of the task for which to add a run.
+          type: string
+        runData:
+          type: object
+          additionalProperties:
+            type: string
+      required: ["taskName"]
+    ScheduleRunV1Response:
+      type: object
+      properties:
+        runID:
+          description: Identifier of the newly scheduled run.
+          type: integer
+      required: ["runID"]
+    GetWorkV1Response:
+      type: object
+      properties:
+        runID:
+          description: Internal identifier of the unit of work.
+          type: integer
+        repository:
+          description: Repository for which to apply the tasks.
+          type: string
+        tasks:
+          description: Names of the tasks to execute.
+          type: array
+          items:
+            $ref: "#/components/schemas/GetWorkV1Task"
+      required: ["runID", "tasks"]
+    GetWorkV1Task:
+      type: object
+      properties:
+        hash:
+          description: Hash of the task. Used to detect if server and worker are out of sync.
+          type: string
+        name:
+          description: Name of the task to execute.
+          type: string
+      required: ["hash", "name"]
+    Error:
+      type: object
+      properties:
+        error:
+          type: string
+        message:
+          type: string
+      required: ["error", "message"]
+    ReportWorkV1Response:
+      type: object
+      properties:
+        result:
+          description: Indicator of the result of the operation.
+          type: "string"
+          enum: ["ok"]
+      required: ["result"]
+    ReportWorkV1Request:
+      type: object
+      properties:
+        error:
+          description: General that occurred during the run, if any.
+          type: string
+        runID:
+          description: Internal identifier of the unit of work.
+          type: integer
+        taskResults:
+          description: Results of each task.
+          type: array
+          items:
+            $ref: "#/components/schemas/ReportWorkV1TaskResult"
+      required: ["runID"]
+    ReportWorkV1TaskResult:
+      description: Result of the run of a task.
+      type: object
+      properties:
+        error:
+          description: Error encountered during the run, if any.
+          type: string
+        repositoryName:
+          description: Name of the repository.
+          type: string
+        result:
+          description: Identifier of the result.
+          type: integer
+        taskName:
+          description: Name of the task.
+          type: string
+      required: ["repositoryName", "result", "taskName"]
+    ListTasksV1Response:
+      type: object
+      properties:
+        tasks:
+          description: Names of registered tasks.
+          type: array
+          items:
+            type: string
+      required: ["tasks"]
+    GetTaskV1Response:
+      type: object
+      properties:
+        name:
+          type: string
+        hash:
+          type: string
+        content:
+          type: string
+          format: byte
+      required: ["name", "hash", "content"]

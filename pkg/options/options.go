@@ -5,6 +5,8 @@ import (
 	"fmt"
 	"log/slog"
 	"os"
+	"path/filepath"
+	"time"
 
 	"github.com/wndhydrnt/saturn-bot/pkg/action"
 	"github.com/wndhydrnt/saturn-bot/pkg/config"
@@ -42,6 +44,17 @@ type Opts struct {
 	Config          config.Configuration
 	FilterFactories FilterFactories
 	Hosts           []host.Host
+
+	dataDir            string
+	workerLoopInterval time.Duration
+}
+
+func (o Opts) DataDir() string {
+	return o.dataDir
+}
+
+func (o Opts) WorkerLoopInterval() time.Duration {
+	return o.workerLoopInterval
 }
 
 // ToOptions takes a configuration struct, initializes global state
@@ -96,14 +109,27 @@ func createHostsFromConfig(cfg config.Configuration) ([]host.Host, error) {
 
 // Initialize ensures that outside dependencies needed on every execution of saturn-bot are set up.
 // Such dependencies can be logging or directories.
-func Initialize(opts Opts) error {
+func Initialize(opts *Opts) error {
 	sLog.InitLog(opts.Config.LogFormat, opts.Config.LogLevel, opts.Config.GitLogLevel)
 
 	if opts.Config.DataDir == nil {
 		return fmt.Errorf("missing dataDir configuration setting")
 	}
 
-	info, err := os.Stat(*opts.Config.DataDir)
+	var dataDir string
+	if opts.Config.DataDir == nil {
+		homeDir, err := os.UserHomeDir()
+		if err != nil {
+			return fmt.Errorf("get user home dir to set default data directory: %w", err)
+		}
+
+		dataDir = filepath.Join(homeDir, ".saturn-bot", "data")
+	} else {
+		dataDir = *opts.Config.DataDir
+	}
+
+	slog.Info(fmt.Sprintf("Using data directory %s", dataDir))
+	info, err := os.Stat(dataDir)
 	if err != nil {
 		if errors.Is(err, os.ErrNotExist) {
 			slog.Info("Creating data directory", "path", *opts.Config.DataDir)
@@ -120,5 +146,13 @@ func Initialize(opts Opts) error {
 		return fmt.Errorf("data directory %s is not a directory", *opts.Config.DataDir)
 	}
 
+	opts.dataDir = dataDir
+
+	loop, err := time.ParseDuration(opts.Config.WorkerLoopInterval)
+	if err != nil {
+		return fmt.Errorf("setting workerLoopInterval '%s' is not a Go duration: %w", opts.Config.WorkerLoopInterval, err)
+	}
+
+	opts.workerLoopInterval = loop
 	return nil
 }

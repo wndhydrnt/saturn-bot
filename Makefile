@@ -1,4 +1,4 @@
-VERSION?=dev
+VERSION?=v0.0.0-dev
 VERSION_HASH?=$(shell git rev-parse HEAD)
 VERSION_DATETIME?=$(shell date -u +"%Y-%m-%dT%H:%M:%SZ")
 BUILD_FLAGS=-ldflags="-X 'github.com/wndhydrnt/saturn-bot/pkg/version.Version=$(VERSION)' -X 'github.com/wndhydrnt/saturn-bot/pkg/version.Hash=$(VERSION_HASH)' -X 'github.com/wndhydrnt/saturn-bot/pkg/version.DateTime=$(VERSION_DATETIME)'"
@@ -29,6 +29,16 @@ build_all: build_darwin_amd64 build_darwin_arm64 build_linux_arm64 build_linux_a
 
 checksums:
 	sha256sum saturn-bot-$(VERSION).* > sha256sums.txt
+
+generate_openapi: generate_openapi_server generate_openapi_worker
+
+generate_openapi_server:
+	rm -f ./pkg/server/handler/api/openapi/*.go
+	docker run --rm -v "$(PWD):/work" --workdir "/work/pkg/server/api/openapi" openapitools/openapi-generator-cli:v7.6.0 generate -i openapi.yaml -g go-server --additional-properties=router=chi,outputAsLibrary=true,sourceFolder=.,packageName=openapi,onlyInterfaces=true
+
+generate_openapi_worker:
+	rm -f ./pkg/worker/client/*.go
+	docker run --rm -v "$(PWD):/work" --workdir "/work/pkg/worker/client" openapitools/openapi-generator-cli:v7.6.0 generate -i ../../server/api/openapi/openapi.yaml -g go --additional-properties=packageName=client,withGoMod=false,generateInterfaces=true
 
 generate_go:
 ifeq (, $(shell which mockgen))

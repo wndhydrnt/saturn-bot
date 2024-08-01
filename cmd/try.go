@@ -2,7 +2,7 @@ package cmd
 
 import (
 	"github.com/spf13/cobra"
-	"github.com/wndhydrnt/saturn-bot/pkg"
+	"github.com/wndhydrnt/saturn-bot/pkg/command"
 	"github.com/wndhydrnt/saturn-bot/pkg/config"
 	"github.com/wndhydrnt/saturn-bot/pkg/options"
 )
@@ -56,7 +56,7 @@ func createTryCommand() *cobra.Command {
 			handleError(err, cmd.ErrOrStderr())
 			opts, err := options.ToOptions(cfg)
 			handleError(err, cmd.ErrOrStderr())
-			runner, err := pkg.NewTryRunner(opts, dataDir, repository, taskFile, taskName)
+			runner, err := command.NewTryRunner(opts, dataDir, repository, taskFile, taskName)
 			if err != nil {
 				handleError(err, cmd.ErrOrStderr())
 			}

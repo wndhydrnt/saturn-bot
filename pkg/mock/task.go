@@ -224,10 +224,10 @@ func (mr *MockTaskMockRecorder) PrTitle() *gomock.Call {
 }
 
 // SourceTask mocks base method.
-func (m *MockTask) SourceTask() *schema.Task {
+func (m *MockTask) SourceTask() schema.Task {
 	m.ctrl.T.Helper()
 	ret := m.ctrl.Call(m, "SourceTask")
-	ret0, _ := ret[0].(*schema.Task)
+	ret0, _ := ret[0].(schema.Task)
 	return ret0
 }
 

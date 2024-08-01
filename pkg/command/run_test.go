@@ -1,11 +1,10 @@
-package pkg
+package command
 
 import (
 	"bytes"
 	"context"
 	"crypto/sha256"
 	"fmt"
-	"io"
 	"os"
 	"reflect"
 	"strings"
@@ -65,11 +64,22 @@ func createTestCache(taskFilePath string) string {
 		panic(fmt.Sprintf("createTestCache: open task file: %s", err))
 	}
 
+	// Decode and encode the task to align with what saturn-bot does
 	defer f.Close()
+	var tempTask schema.Task
+	dec := yaml.NewDecoder(f)
+	if err := dec.Decode(&tempTask); err != nil {
+		panic(fmt.Sprintf("createTestCache: decode from YAML: %s", err))
+	}
+
 	h := sha256.New()
-	_, err = io.Copy(h, f)
-	if err != nil {
-		panic(fmt.Sprintf("createTestCache: calc checksum of task: %s", err))
+	enc := yaml.NewEncoder(h)
+	if err := enc.Encode(&tempTask); err != nil {
+		panic(fmt.Sprintf("createTestCache: encode to YAML: %s", err))
+	}
+
+	if err := enc.Close(); err != nil {
+		panic(fmt.Sprintf("createTestCache: close YAML encoder: %s", err))
 	}
 
 	checksum := fmt.Sprintf("%x", h.Sum(nil))
@@ -163,14 +173,14 @@ func TestExecuteRunner_Run(t *testing.T) {
 		Process(gomock.AssignableToTypeOf(ctx), false, repoWithPr, gomock.AssignableToTypeOf(anyTask), true).
 		Return(processor.ResultNoChanges, nil)
 
-	runner := &executeRunner{
+	runner := &run{
 		cache:        cache,
 		dryRun:       false,
 		hosts:        []host.Host{hostm},
 		processor:    procMock,
 		taskRegistry: task.NewRegistry(runTestOpts),
 	}
-	err := runner.run([]string{}, []string{taskFile})
+	_, err := runner.run([]string{}, []string{taskFile})
 
 	require.NoError(t, err)
 	assert.NotEqual(t, cacheLastExecutionBefore, cache.GetLastExecutionAt(), "Updates the lat execution time in the cache")
@@ -208,14 +218,14 @@ func TestExecuteRunner_Run_DryRun(t *testing.T) {
 		Process(gomock.AssignableToTypeOf(ctx), true, repo, gomock.AssignableToTypeOf(anyTask), true).
 		Return(processor.ResultNoChanges, nil)
 
-	runner := &executeRunner{
+	runner := &run{
 		cache:        cache,
 		dryRun:       true,
 		hosts:        []host.Host{hostm},
 		processor:    procMock,
 		taskRegistry: task.NewRegistry(runTestOpts),
 	}
-	err := runner.run([]string{}, []string{taskFile})
+	_, err := runner.run([]string{}, []string{taskFile})
 
 	require.NoError(t, err)
 	assert.Equal(t, cacheLastExecutionBefore, cache.GetLastExecutionAt(), "Does not update the last execution time because dryRun is true")
@@ -253,14 +263,14 @@ func TestExecuteRunner_Run_RepositoriesCLI(t *testing.T) {
 		Process(gomock.AssignableToTypeOf(ctx), false, repo, gomock.AssignableToTypeOf(anyTask), false).
 		Return(processor.ResultNoChanges, nil)
 
-	runner := &executeRunner{
+	runner := &run{
 		cache:        cache,
 		dryRun:       false,
 		hosts:        []host.Host{hostm},
 		processor:    procMock,
 		taskRegistry: task.NewRegistry(runTestOpts),
 	}
-	err := runner.run([]string{"git.local/unittest/repo"}, []string{taskFile})
+	_, err := runner.run([]string{"git.local/unittest/repo"}, []string{taskFile})
 
 	require.NoError(t, err)
 	assert.NotEqual(t, cacheLastExecutionBefore, cache.GetLastExecutionAt(), "Updates the lat execution time in the cache")

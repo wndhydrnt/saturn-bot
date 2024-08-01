@@ -1,18 +1,12 @@
 package task
 
 import (
-	"bytes"
-	"crypto/sha256"
-	"errors"
 	"fmt"
-	"io"
 	"log/slog"
-	"os"
 	"path/filepath"
 
 	"github.com/wndhydrnt/saturn-bot/pkg/options"
 	"github.com/wndhydrnt/saturn-bot/pkg/task/schema"
-	"gopkg.in/yaml.v3"
 )
 
 func readTasksYaml(
@@ -22,38 +16,20 @@ func readTasksYaml(
 	pathPython string,
 	taskFile string,
 ) ([]Task, error) {
-	var result []Task
-	b, err := os.ReadFile(taskFile)
+	schemaTasks, hashes, err := schema.Read(taskFile)
 	if err != nil {
-		return nil, fmt.Errorf("read task file '%s': %w", taskFile, err)
+		return nil, err
 	}
 
-	checksum := sha256.New()
-	_, _ = checksum.Write(b)
-	dec := yaml.NewDecoder(bytes.NewReader(b))
-	for {
-		task := &schema.Task{}
-		err := dec.Decode(task)
-		if errors.Is(err, io.EOF) {
-			break
-		}
-
-		if err != nil {
-			return nil, fmt.Errorf("decode task file '%s' from YAML: %w", taskFile, err)
-		}
-
-		err = schema.Validate(task)
-		if err != nil {
-			return nil, fmt.Errorf("validation failed: %w", err)
-		}
-
-		if !task.Active {
-			slog.Warn("Task deactivated", "task", task.Name)
+	var result []Task
+	for idx, schemaTask := range schemaTasks {
+		if !schemaTask.Active {
+			slog.Warn("Task deactivated", "task", schemaTask.Name)
 			continue
 		}
 
 		wrapper := &Wrapper{}
-		wrapper.Task = task
+		wrapper.Task = schemaTask
 		wrapper.actions, err = createActionsForTask(wrapper.Task.Actions, actionFactories, taskFile)
 		if err != nil {
 			return nil, fmt.Errorf("parse actions of task: %w", err)
@@ -64,9 +40,8 @@ func readTasksYaml(
 			return nil, fmt.Errorf("parse filters of task file '%s': %w", taskFile, err)
 		}
 
-		for idx, plugin := range task.Plugins {
+		for idx, plugin := range schemaTask.Plugins {
 			pw, err := newPluginWrapper(startPluginOptions{
-				hash:       checksum,
 				config:     plugin.Configuration,
 				filePath:   resolvePluginPath(plugin.Path, taskFile),
 				pathJava:   pathJava,
@@ -81,7 +56,7 @@ func readTasksYaml(
 			wrapper.plugins = append(wrapper.plugins, pw)
 		}
 
-		wrapper.checksum = fmt.Sprintf("%x", checksum.Sum(nil))
+		wrapper.checksum = fmt.Sprintf("%x", hashes[idx].Sum(nil))
 		result = append(result, wrapper)
 	}
 

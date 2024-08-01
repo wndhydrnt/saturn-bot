@@ -1,24 +1,12 @@
 package config
 
 import (
-	"fmt"
 	"os"
-	"path/filepath"
 	"testing"
 
 	"github.com/stretchr/testify/require"
 	"gopkg.in/yaml.v3"
 )
-
-func defaultDataDir() *string {
-	homeDir, err := os.UserHomeDir()
-	if err != nil {
-		panic(fmt.Errorf("defaultDataDir: %w", err))
-	}
-
-	dir := filepath.Join(homeDir, ".saturn-bot", "data")
-	return &dir
-}
 
 func TestReadConfig(t *testing.T) {
 	testCases := []struct {
@@ -30,16 +18,22 @@ func TestReadConfig(t *testing.T) {
 			name: "default and required values",
 			in:   Configuration{},
 			out: Configuration{
-				DataDir:          defaultDataDir(),
-				GitCloneOptions:  []string{"--filter", "blob:none"},
-				GitCommitMessage: "changes by saturn-bot",
-				GitlabAddress:    "https://gitlab.com",
-				GitLogLevel:      "warn",
-				GitPath:          "git",
-				LogFormat:        "auto",
-				LogLevel:         "info",
-				JavaPath:         "java",
-				PythonPath:       "python",
+				DataDir:                  nil,
+				GitCloneOptions:          []string{"--filter", "blob:none"},
+				GitCommitMessage:         "changes by saturn-bot",
+				GitlabAddress:            "https://gitlab.com",
+				GitLogLevel:              "warn",
+				GitPath:                  "git",
+				LogFormat:                "auto",
+				LogLevel:                 "info",
+				JavaPath:                 "java",
+				PythonPath:               "python",
+				ServerAddr:               ":3035",
+				ServerBaseUrl:            "http://localhost:3035",
+				ServerCompress:           true,
+				WorkerLoopInterval:       "10s",
+				WorkerParallelExecutions: 4,
+				WorkerServerAPIBaseURL:   "http://localhost:3035",
 			},
 		},
 	}
