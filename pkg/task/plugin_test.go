@@ -32,34 +32,30 @@ func setupRepoPluginTest(ctrl *gomock.Controller) (repoMock *mock.MockRepository
 func TestPluginAction_Apply(t *testing.T) {
 	ctrl := gomock.NewController(t)
 	repo, payload := setupRepoPluginTest(ctrl)
-	pluginData := map[string]string{"source": "test"}
+	runData := map[string]string{"a": "1"}
 	provider := mock.NewMockProvider(ctrl)
 	provider.EXPECT().ExecuteActions(&proto.ExecuteActionsRequest{
 		Context: &proto.Context{
-			PluginData: pluginData,
+			RunData:    runData,
 			Repository: payload,
 		},
 		Path: "/tmp",
 	}).Return(&proto.ExecuteActionsResponse{
-		PluginData: map[string]string{"source": "plugin"},
-		TemplateVars: map[string]string{
-			"a": "2", // Should not be updated because key "a" already exists.
-			"b": "2", // Should be added to template variables because key "b" does not exist.
+		RunData: map[string]string{
+			"a": "2", // Should update key "a" because it already exists.
+			"b": "2", // Should be added because key "b" does not exist.
 		},
 	}, nil)
 	ctx := context.Background()
 	ctx = context.WithValue(ctx, gsContext.CheckoutPath{}, "/tmp")
-	ctx = context.WithValue(ctx, gsContext.PluginDataKey{}, pluginData)
+	ctx = context.WithValue(ctx, gsContext.RunDataKey{}, runData)
 	ctx = context.WithValue(ctx, gsContext.RepositoryKey{}, repo)
-	templateVars := map[string]string{"a": "1"}
-	ctx = context.WithValue(ctx, gsContext.TemplateVarsKey{}, templateVars)
 
 	pa := &task.PluginAction{Provider: provider}
 	err := pa.Apply(ctx)
 
 	require.NoError(t, err)
-	require.Equal(t, map[string]string{"a": "1", "b": "2"}, templateVars)
-	require.Equal(t, map[string]string{"source": "plugin"}, pluginData)
+	require.Equal(t, map[string]string{"a": "2", "b": "2"}, runData)
 }
 
 func TestPluginAction_Apply_WithPullRequest(t *testing.T) {
@@ -68,7 +64,7 @@ func TestPluginAction_Apply_WithPullRequest(t *testing.T) {
 	provider := mock.NewMockProvider(ctrl)
 	provider.EXPECT().ExecuteActions(&proto.ExecuteActionsRequest{
 		Context: &proto.Context{
-			PluginData:  make(map[string]string),
+			RunData:     make(map[string]string),
 			PullRequest: &proto.PullRequest{Number: 123, WebUrl: "https://git.localhost/unit/test/pulls/123"},
 			Repository:  payload,
 		},
@@ -91,35 +87,31 @@ func TestPluginAction_Apply_WithPullRequest(t *testing.T) {
 func TestPluginFilter_Do(t *testing.T) {
 	ctrl := gomock.NewController(t)
 	repo, payload := setupRepoPluginTest(ctrl)
-	pluginData := map[string]string{"source": "test"}
+	runData := map[string]string{"a": "1"}
 	provider := mock.NewMockProvider(ctrl)
 	provider.EXPECT().ExecuteFilters(&proto.ExecuteFiltersRequest{
 		Context: &proto.Context{
-			PluginData: pluginData,
 			Repository: payload,
+			RunData:    runData,
 		},
 	}).Return(&proto.ExecuteFiltersResponse{
-		Match:      true,
-		PluginData: map[string]string{"source": "plugin"},
-		TemplateVars: map[string]string{
-			"a": "2", // Should not be updated because key "a" already exists.
-			"b": "2", // Should be added to template variables because key "b" does not exist.
+		Match: true,
+		RunData: map[string]string{
+			"a": "2", // Should update key "a" because it already exists.
+			"b": "2", // Should be added to run data because key "b" does not exist.
 		},
 	}, nil)
 	ctx := context.Background()
 	ctx = context.WithValue(ctx, gsContext.CheckoutPath{}, "/tmp")
 	ctx = context.WithValue(ctx, gsContext.RepositoryKey{}, repo)
-	templateVars := map[string]string{"a": "1"}
-	ctx = context.WithValue(ctx, gsContext.TemplateVarsKey{}, templateVars)
-	ctx = context.WithValue(ctx, gsContext.PluginDataKey{}, pluginData)
+	ctx = context.WithValue(ctx, gsContext.RunDataKey{}, runData)
 
 	pf := &task.PluginFilter{Provider: provider}
 	match, err := pf.Do(ctx)
 
 	require.NoError(t, err)
 	require.True(t, match)
-	require.Equal(t, map[string]string{"a": "1", "b": "2"}, templateVars)
-	require.Equal(t, map[string]string{"source": "plugin"}, pluginData)
+	require.Equal(t, map[string]string{"a": "2", "b": "2"}, runData)
 }
 
 func TestPluginFilter_Do_WithPullRequest(t *testing.T) {
@@ -128,7 +120,7 @@ func TestPluginFilter_Do_WithPullRequest(t *testing.T) {
 	provider := mock.NewMockProvider(ctrl)
 	provider.EXPECT().ExecuteFilters(&proto.ExecuteFiltersRequest{
 		Context: &proto.Context{
-			PluginData:  make(map[string]string),
+			RunData:     make(map[string]string),
 			PullRequest: &proto.PullRequest{Number: 123, WebUrl: "https://git.localhost/unit/test/pulls/123"},
 			Repository:  payload,
 		},

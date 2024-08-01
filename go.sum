@@ -122,6 +122,10 @@ github.com/tetratelabs/wazero v1.7.3 h1:PBH5KVahrt3S2AHgEjKu4u+LlDbbk+nsGE3KLucy
 github.com/tetratelabs/wazero v1.7.3/go.mod h1:ytl6Zuh20R/eROuyDaGPkp82O9C/DJfXAwJfQ3X6/7Y=
 github.com/wndhydrnt/saturn-bot-go v0.4.1 h1:SSpKrakJt3GULMAxvf44K62JbagfDtYUAh+Bo8M5zJc=
 github.com/wndhydrnt/saturn-bot-go v0.4.1/go.mod h1:kgjTySVkesKSYKP2e8xfwOZbfeU12c8A4U7DGWPjUUo=
+github.com/wndhydrnt/saturn-bot-go v0.4.2-0.20240731163311-d3327b5ef0a5 h1:toVTlLj/AseArol6poJYD3eowSTkcxcsZafb/4UG8Vk=
+github.com/wndhydrnt/saturn-bot-go v0.4.2-0.20240731163311-d3327b5ef0a5/go.mod h1:kgjTySVkesKSYKP2e8xfwOZbfeU12c8A4U7DGWPjUUo=
+github.com/wndhydrnt/saturn-bot-go v0.5.0 h1:ZWgRoxbueRcuue20qdlXrTZ++3QeqvfF1jaNdQ5ZhcM=
+github.com/wndhydrnt/saturn-bot-go v0.5.0/go.mod h1:kgjTySVkesKSYKP2e8xfwOZbfeU12c8A4U7DGWPjUUo=
 github.com/xanzy/go-gitlab v0.97.0 h1:StMqJ1Kvt00X43pYIBBjj52dFlghwSeBhRDRfzaZ7xY=
 github.com/xanzy/go-gitlab v0.97.0/go.mod h1:ETg8tcj4OhrB84UEgeE8dSuV/0h4BBL1uOV/qK0vlyI=
 github.com/yuin/goldmark v1.4.13/go.mod h1:6yULJ656Px+3vBD8DxQVa3kxgyrAnzto9xy5taEt/CY=
