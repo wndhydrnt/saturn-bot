@@ -38,7 +38,7 @@ type run struct {
 	taskRegistry *task.Registry
 }
 
-func (r *run) run(repositoryNames, taskFiles []string) ([]RunResult, error) {
+func (r *run) run(inputs map[string]string, repositoryNames, taskFiles []string) ([]RunResult, error) {
 	if len(r.hosts) == 0 {
 		return nil, ErrNoHostsConfigured
 	}
@@ -54,7 +54,7 @@ func (r *run) run(repositoryNames, taskFiles []string) ([]RunResult, error) {
 		since = &ts
 	}
 
-	err = r.taskRegistry.ReadAll(taskFiles)
+	err = r.taskRegistry.ReadAll(taskFiles, inputs)
 	if err != nil {
 		return nil, err
 	}
@@ -143,7 +143,7 @@ func (r *run) run(repositoryNames, taskFiles []string) ([]RunResult, error) {
 	return results, nil
 }
 
-func ExecuteRun(opts options.Opts, repositoryNames, taskFiles []string) ([]RunResult, error) {
+func ExecuteRun(inputs map[string]string, opts options.Opts, repositoryNames, taskFiles []string) ([]RunResult, error) {
 	err := options.Initialize(&opts)
 	if err != nil {
 		return nil, fmt.Errorf("initialize options: %w", err)
@@ -167,7 +167,7 @@ func ExecuteRun(opts options.Opts, repositoryNames, taskFiles []string) ([]RunRe
 		},
 		taskRegistry: taskRegistry,
 	}
-	return e.run(repositoryNames, taskFiles)
+	return e.run(inputs, repositoryNames, taskFiles)
 }
 
 func hasUpdatedTasks(cachedTasks []cache.CachedTask, tasks []task.Task) bool {

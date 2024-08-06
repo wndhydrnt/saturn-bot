@@ -19,6 +19,7 @@ type TryRunner struct {
 	applyActionsFunc func(actions []action.Action, ctx context.Context, dir string) error
 	gitc             git.GitClient
 	hosts            []host.Host
+	inputs           map[string]string
 	out              io.Writer
 	registry         *task.Registry
 	repositoryName   string
@@ -26,7 +27,14 @@ type TryRunner struct {
 	taskName         string
 }
 
-func NewTryRunner(opts options.Opts, dataDir string, repositoryName string, taskFile string, taskName string) (*TryRunner, error) {
+func NewTryRunner(
+	opts options.Opts,
+	dataDir string,
+	repositoryName string,
+	taskFile string,
+	taskName string,
+	inputs map[string]string,
+) (*TryRunner, error) {
 	if dataDir == "" {
 		dataDir = path.Join(os.TempDir(), "saturn-bot")
 	}
@@ -47,6 +55,7 @@ func NewTryRunner(opts options.Opts, dataDir string, repositoryName string, task
 		applyActionsFunc: applyActionsInDirectory,
 		gitc:             gitClient,
 		hosts:            opts.Hosts,
+		inputs:           inputs,
 		out:              os.Stdout,
 		registry:         task.NewRegistry(opts),
 		repositoryName:   repositoryName,
@@ -81,7 +90,7 @@ func (r *TryRunner) Run() error {
 		return fmt.Errorf("no host supports the repository")
 	}
 
-	err := r.registry.ReadAll([]string{r.taskFile})
+	err := r.registry.ReadAll([]string{r.taskFile}, r.inputs)
 	if err != nil {
 		return err
 	}

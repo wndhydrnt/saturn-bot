@@ -14,6 +14,10 @@ import (
 	"github.com/wndhydrnt/saturn-bot/pkg/task"
 )
 
+var (
+	inputsEmpty = make(map[string]string)
+)
+
 func TestRegistry_ReadAll(t *testing.T) {
 	tasksRaw := `
 name: Task One
@@ -32,7 +36,7 @@ name: Task Two
 	}()
 
 	tr := &task.Registry{}
-	err = tr.ReadAll([]string{f.Name()})
+	err = tr.ReadAll([]string{f.Name()}, inputsEmpty)
 	require.NoError(t, err)
 
 	assert.Len(t, tr.GetTasks(), 2)
@@ -58,7 +62,7 @@ name: Task Two
 	}()
 
 	tr := &task.Registry{}
-	err = tr.ReadAll([]string{f.Name()})
+	err = tr.ReadAll([]string{f.Name()}, inputsEmpty)
 
 	assert.EqualError(t, err, fmt.Sprintf("failed to read tasks from file %s: unsupported extension: .yamll", f.Name()))
 	assert.Len(t, tr.GetTasks(), 0)
@@ -116,7 +120,7 @@ actions:
 	}()
 
 	tr := task.NewRegistry(options.Opts{ActionFactories: action.BuiltInFactories})
-	err = tr.ReadAll([]string{taskPath})
+	err = tr.ReadAll([]string{taskPath}, inputsEmpty)
 	require.NoError(t, err)
 
 	require.Len(t, tr.GetTasks(), 1)
@@ -174,7 +178,7 @@ func TestRegistry_ReadAll_AllBuiltInFilters(t *testing.T) {
 	}()
 
 	tr := task.NewRegistry(options.Opts{FilterFactories: filter.BuiltInFactories})
-	err = tr.ReadAll([]string{taskPath})
+	err = tr.ReadAll([]string{taskPath}, inputsEmpty)
 	require.NoError(t, err)
 
 	require.Len(t, tr.GetTasks(), 1)
@@ -213,9 +217,65 @@ name: Task Two
 	}()
 
 	tr := &task.Registry{}
-	err = tr.ReadAll([]string{f.Name()})
+	err = tr.ReadAll([]string{f.Name()}, inputsEmpty)
 	require.NoError(t, err)
 
 	assert.Len(t, tr.GetTasks(), 1)
 	assert.Equal(t, "Task Two", tr.GetTasks()[0].SourceTask().Name)
+}
+
+func TestRegistry_ReadAll_Inputs(t *testing.T) {
+	tasksRaw := `
+name: Task One
+inputs:
+  - name: color
+`
+
+	f, err := os.CreateTemp("", "*.yaml")
+	require.NoError(t, err)
+	_, err = f.WriteString(tasksRaw)
+	require.NoError(t, err)
+	f.Close()
+	defer func() {
+		err := os.Remove(f.Name())
+		require.NoError(t, err)
+	}()
+
+	tr := &task.Registry{}
+	err = tr.ReadAll([]string{f.Name()}, map[string]string{"color": "purple", "size": "M"})
+	require.NoError(t, err)
+
+	assert.Len(t, tr.GetTasks(), 1)
+	assert.Equal(t, "Task One", tr.GetTasks()[0].SourceTask().Name)
+	assert.Equal(t, map[string]string{"color": "purple"}, tr.GetTasks()[0].Inputs())
+}
+
+func TestRegistry_ReadAll_DeactivateIfInputMissing(t *testing.T) {
+	tasksRaw := `
+name: Task One
+inputs:
+  - name: size
+---
+name: Task Two
+inputs:
+  - name: color
+`
+
+	f, err := os.CreateTemp("", "*.yaml")
+	require.NoError(t, err)
+	_, err = f.WriteString(tasksRaw)
+	require.NoError(t, err)
+	f.Close()
+	defer func() {
+		err := os.Remove(f.Name())
+		require.NoError(t, err)
+	}()
+
+	tr := &task.Registry{}
+	err = tr.ReadAll([]string{f.Name()}, map[string]string{"color": "purple"})
+	require.NoError(t, err)
+
+	assert.Len(t, tr.GetTasks(), 1)
+	assert.Equal(t, "Task Two", tr.GetTasks()[0].SourceTask().Name)
+	assert.Equal(t, map[string]string{"color": "purple"}, tr.GetTasks()[0].Inputs())
 }

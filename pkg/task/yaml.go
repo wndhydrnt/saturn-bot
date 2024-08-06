@@ -12,6 +12,7 @@ import (
 func readTasksYaml(
 	actionFactories options.ActionFactories,
 	filterFactories options.FilterFactories,
+	inputs map[string]string,
 	pathJava string,
 	pathPython string,
 	taskFile string,
@@ -38,6 +39,13 @@ func readTasksYaml(
 		wrapper.filters, err = createFiltersForTask(wrapper.Task.Filters, filterFactories)
 		if err != nil {
 			return nil, fmt.Errorf("parse filters of task file '%s': %w", taskFile, err)
+		}
+
+		wrapper.inputs, err = validateInputs(schemaTask, inputs)
+		if err != nil {
+			slog.Warn("Deactivating task because inputs are invalid", "error", err, "task", schemaTask.Name)
+			schemaTask.Active = false
+			continue
 		}
 
 		for idx, plugin := range schemaTask.Plugins {
@@ -71,4 +79,18 @@ func resolvePluginPath(pluginPath, taskPath string) string {
 
 	dir := filepath.Dir(taskPath)
 	return filepath.Join(dir, pluginPath)
+}
+
+func validateInputs(t schema.Task, inputs map[string]string) (map[string]string, error) {
+	validated := map[string]string{}
+	for _, taskInput := range t.Inputs {
+		value := inputs[taskInput.Name]
+		if value == "" {
+			return nil, fmt.Errorf("no value for input `%s`", taskInput.Name)
+		}
+
+		validated[taskInput.Name] = value
+	}
+
+	return validated, nil
 }

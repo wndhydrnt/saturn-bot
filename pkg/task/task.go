@@ -78,6 +78,7 @@ type Task interface {
 	HasReachMaxOpenPRs() bool
 	IncChangeLimitCount()
 	IncOpenPRsCount()
+	Inputs() map[string]string
 	OnPrClosed(host.Repository) error
 	OnPrCreated(host.Repository) error
 	OnPrMerged(host.Repository) error
@@ -92,6 +93,7 @@ type Wrapper struct {
 	changeLimitCount       int
 	checksum               string
 	filters                []filter.Filter
+	inputs                 map[string]string
 	openPRs                int
 	plugins                []*pluginWrapper
 	Task                   schema.Task
@@ -160,6 +162,10 @@ func (tw *Wrapper) IncOpenPRsCount() {
 	if tw.Task.MaxOpenPRs > 0 {
 		tw.openPRs++
 	}
+}
+
+func (tw *Wrapper) Inputs() map[string]string {
+	return tw.inputs
 }
 
 func (tw *Wrapper) PrTitle() string {
@@ -234,14 +240,14 @@ func (tr *Registry) GetTasks() []Task {
 }
 
 // ReadAll takes a list of paths to task files and reads all tasks from the files.
-func (tr *Registry) ReadAll(taskFiles []string) error {
+func (tr *Registry) ReadAll(taskFiles []string, inputs map[string]string) error {
 	for _, file := range taskFiles {
 		fileAbs, err := filepath.Abs(file)
 		if err != nil {
 			return fmt.Errorf("create absolute path of task file: %w", err)
 		}
 
-		err = tr.readTasks(fileAbs)
+		err = tr.readTasks(fileAbs, inputs)
 		if err != nil {
 			return fmt.Errorf("failed to read tasks from file %s: %w", file, err)
 		}
@@ -250,12 +256,12 @@ func (tr *Registry) ReadAll(taskFiles []string) error {
 	return nil
 }
 
-func (tr *Registry) readTasks(taskFile string) error {
+func (tr *Registry) readTasks(taskFile string, inputs map[string]string) error {
 	ext := path.Ext(taskFile)
 	switch ext {
 	case ".yml":
 	case ".yaml":
-		tasks, err := readTasksYaml(tr.actionFactories, tr.filterFactories, tr.pathJava, tr.pathPython, taskFile)
+		tasks, err := readTasksYaml(tr.actionFactories, tr.filterFactories, inputs, tr.pathJava, tr.pathPython, taskFile)
 		if err != nil {
 			return err
 		}

@@ -43,6 +43,7 @@ saturn-bot try \
 
 func createTryCommand() *cobra.Command {
 	var dataDir string
+	var inputs map[string]string
 	var repository string
 	var taskFile string
 	var taskName string
@@ -56,7 +57,7 @@ func createTryCommand() *cobra.Command {
 			handleError(err, cmd.ErrOrStderr())
 			opts, err := options.ToOptions(cfg)
 			handleError(err, cmd.ErrOrStderr())
-			runner, err := command.NewTryRunner(opts, dataDir, repository, taskFile, taskName)
+			runner, err := command.NewTryRunner(opts, dataDir, repository, taskFile, taskName, inputs)
 			if err != nil {
 				handleError(err, cmd.ErrOrStderr())
 			}
@@ -71,5 +72,6 @@ func createTryCommand() *cobra.Command {
 	cmd.Flags().StringVar(&taskFile, "task-file", "", "Path to the task file to try out.")
 	cmd.Flags().StringVar(&taskName, "task-name", "", `If set, try only the task that matches the name.
 Useful if a task file contains multiple tasks.`)
+	cmd.Flags().StringToStringVar(&inputs, "inputs", map[string]string{}, "")
 	return cmd
 }

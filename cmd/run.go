@@ -48,6 +48,7 @@ saturn-bot run \
 )
 
 func createRunCommand() *cobra.Command {
+	var inputs map[string]string
 	var repositories []string
 	var taskFiles []string
 
@@ -60,7 +61,7 @@ func createRunCommand() *cobra.Command {
 			handleError(err, cmd.ErrOrStderr())
 			opts, err := options.ToOptions(cfg)
 			handleError(err, cmd.ErrOrStderr())
-			_, err = command.ExecuteRun(opts, repositories, taskFiles)
+			_, err = command.ExecuteRun(inputs, opts, repositories, taskFiles)
 			handleError(err, cmd.ErrOrStderr())
 		},
 	}
@@ -71,5 +72,6 @@ is set.
 Can be supplied multiple times.`)
 	cmd.Flags().StringArrayVar(&taskFiles, "task", []string{}, `Path to a file to read Tasks from.
 Can be supplied multiple times.`)
+	cmd.Flags().StringToStringVar(&inputs, "inputs", map[string]string{}, "")
 	return cmd
 }

@@ -37,11 +37,12 @@ Usage:
   saturn-bot try [flags]
 
 Flags:
-      --config string       Path to config file.
-      --data-dir string     Path to directory to clone the repository.
-  -h, --help                help for try
-      --repository string   Name of the repository to test against.
-      --task-file string    Path to the task file to try out.
-      --task-name string    If set, try only the task that matches the name.
-                            Useful if a task file contains multiple tasks.
+      --config string           Path to config file.
+      --data-dir string         Path to directory to clone the repository.
+  -h, --help                    help for try
+      --inputs stringToString    (default [])
+      --repository string       Name of the repository to test against.
+      --task-file string        Path to the task file to try out.
+      --task-name string        If set, try only the task that matches the name.
+                                Useful if a task file contains multiple tasks.
 ```

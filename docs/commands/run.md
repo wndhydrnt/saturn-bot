@@ -45,6 +45,7 @@ Usage:
 Flags:
       --config string            Path to config file
   -h, --help                     help for run
+      --inputs stringToString     (default [])
       --repository stringArray   Name of a repository to apply the tasks to.
                                  Filters of a task aren't executed if this flag
                                  is set.

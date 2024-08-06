@@ -237,7 +237,7 @@ gitUserName: "unittest"`
 	opts, err := options.ToOptions(cfg)
 	require.NoError(t, err, "should convert configuration to options successfully")
 
-	runner, err := NewTryRunner(opts, "", "git.local/unit/test", "task.yaml", "Unit Test")
+	runner, err := NewTryRunner(opts, "", "git.local/unit/test", "task.yaml", "Unit Test", map[string]string{})
 
 	require.NoError(t, err)
 	assert.NotNil(t, runner.applyActionsFunc)
