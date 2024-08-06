@@ -162,13 +162,9 @@
         "name": {
           "description": "Name of the input.",
           "type": "string"
-        },
-        "type": {
-          "description": "Name of the input.",
-          "enum": ["array", "boolean", "map", "number", "string"]
         }
       },
-      "required": ["name", "type"]
+      "required": ["name"]
     },
     "plugin": {
       "description": "A plugin extends saturn-bot and allows custom filtering or modification of repositories.",
