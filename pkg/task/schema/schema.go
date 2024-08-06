@@ -5,6 +5,7 @@ package schema
 import "encoding/json"
 import "fmt"
 import yaml "gopkg.in/yaml.v3"
+import "reflect"
 
 // An action tells saturn-bot how to modify a repository.
 type Action struct {
@@ -110,6 +111,113 @@ func (j *Filter) UnmarshalYAML(value *yaml.Node) error {
 	return nil
 }
 
+// A input is a custom parameter of a task.
+type Input struct {
+	// Name of the input.
+	Name string `json:"name" yaml:"name" mapstructure:"name"`
+
+	// Name of the input.
+	Type InputType `json:"type" yaml:"type" mapstructure:"type"`
+}
+
+type InputType string
+
+const InputTypeArray InputType = "array"
+const InputTypeBoolean InputType = "boolean"
+const InputTypeMap InputType = "map"
+const InputTypeNumber InputType = "number"
+const InputTypeString InputType = "string"
+
+var enumValues_InputType = []interface{}{
+	"array",
+	"boolean",
+	"map",
+	"number",
+	"string",
+}
+
+// UnmarshalYAML implements yaml.Unmarshaler.
+func (j *InputType) UnmarshalYAML(value *yaml.Node) error {
+	var v string
+	if err := value.Decode(&v); err != nil {
+		return err
+	}
+	var ok bool
+	for _, expected := range enumValues_InputType {
+		if reflect.DeepEqual(v, expected) {
+			ok = true
+			break
+		}
+	}
+	if !ok {
+		return fmt.Errorf("invalid value (expected one of %#v): %#v", enumValues_InputType, v)
+	}
+	*j = InputType(v)
+	return nil
+}
+
+// UnmarshalJSON implements json.Unmarshaler.
+func (j *InputType) UnmarshalJSON(b []byte) error {
+	var v string
+	if err := json.Unmarshal(b, &v); err != nil {
+		return err
+	}
+	var ok bool
+	for _, expected := range enumValues_InputType {
+		if reflect.DeepEqual(v, expected) {
+			ok = true
+			break
+		}
+	}
+	if !ok {
+		return fmt.Errorf("invalid value (expected one of %#v): %#v", enumValues_InputType, v)
+	}
+	*j = InputType(v)
+	return nil
+}
+
+// UnmarshalYAML implements yaml.Unmarshaler.
+func (j *Input) UnmarshalYAML(value *yaml.Node) error {
+	var raw map[string]interface{}
+	if err := value.Decode(&raw); err != nil {
+		return err
+	}
+	if _, ok := raw["name"]; raw != nil && !ok {
+		return fmt.Errorf("field name in Input: required")
+	}
+	if _, ok := raw["type"]; raw != nil && !ok {
+		return fmt.Errorf("field type in Input: required")
+	}
+	type Plain Input
+	var plain Plain
+	if err := value.Decode(&plain); err != nil {
+		return err
+	}
+	*j = Input(plain)
+	return nil
+}
+
+// UnmarshalJSON implements json.Unmarshaler.
+func (j *Input) UnmarshalJSON(b []byte) error {
+	var raw map[string]interface{}
+	if err := json.Unmarshal(b, &raw); err != nil {
+		return err
+	}
+	if _, ok := raw["name"]; raw != nil && !ok {
+		return fmt.Errorf("field name in Input: required")
+	}
+	if _, ok := raw["type"]; raw != nil && !ok {
+		return fmt.Errorf("field type in Input: required")
+	}
+	type Plain Input
+	var plain Plain
+	if err := json.Unmarshal(b, &plain); err != nil {
+		return err
+	}
+	*j = Input(plain)
+	return nil
+}
+
 // A plugin extends saturn-bot and allows custom filtering or modification of
 // repositories.
 type Plugin struct {
@@ -200,6 +308,9 @@ type Task struct {
 
 	// Filters allow targeting a specific repositories.
 	Filters []Filter `json:"filters,omitempty" yaml:"filters,omitempty" mapstructure:"filters,omitempty"`
+
+	// Inputs allow supplying custom inputs to a task.
+	Inputs []Input `json:"inputs,omitempty" yaml:"inputs,omitempty" mapstructure:"inputs,omitempty"`
 
 	// If `true`, keep the branch after a pull request has been merged.
 	KeepBranchAfterMerge bool `json:"keepBranchAfterMerge,omitempty" yaml:"keepBranchAfterMerge,omitempty" mapstructure:"keepBranchAfterMerge,omitempty"`
