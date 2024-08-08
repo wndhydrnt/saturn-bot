@@ -57,11 +57,11 @@ Run saturn-bot:
 GitHub
 
 ```shell
-SATURN_BOT_GITHUBTOKEN=<token> saturn-bot run --task hello-world.yaml
+SATURN_BOT_GITHUBTOKEN=<token> saturn-bot run hello-world.yaml
 ```
 
 GitLab
 
 ```shell
-SATURN_BOT_GITLABTOKEN=<token> saturn-bot run --task hello-world.yaml
+SATURN_BOT_GITLABTOKEN=<token> saturn-bot run hello-world.yaml
 ```
