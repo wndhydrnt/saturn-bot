@@ -22,45 +22,45 @@ Execute task in file "task.yaml" against all repositories:
 
 saturn-bot run \
   --config config.yaml \
-  --task task.yaml
+  task.yaml
 
 Execute tasks in files "task1.yaml" and "task2.yaml"
 against all repositories:
 
 saturn-bot run \
   --config config.yaml \
-  --task task1.yaml \
-  --task task2.yaml
+  task1.yaml \
+  task2.yaml
 
 Globbing support:
 
 saturn-bot run \
   --config config.yaml \
-  --task *.yaml
+  *.yaml
 
 Execute task in file "task.yaml" against
 repository "github.com/wndhydrnt/saturn-bot-example":
 
 saturn-bot run \
   --config config.yaml \
-  --task task.yaml
-  --repository github.com/wndhydrnt/saturn-bot-example`
+  --repository github.com/wndhydrnt/saturn-bot-example \
+  task.yaml`
 )
 
 func createRunCommand() *cobra.Command {
 	var repositories []string
-	var taskFiles []string
 
 	var cmd = &cobra.Command{
-		Use:   "run",
+		Use:   "run FILE [FILE...]",
 		Short: "Execute tasks against repositories",
 		Long:  runCommandHelp,
+		Args:  cobra.MinimumNArgs(1),
 		Run: func(cmd *cobra.Command, args []string) {
 			cfg, err := config.Read(cfgFile)
 			handleError(err, cmd.ErrOrStderr())
 			opts, err := options.ToOptions(cfg)
 			handleError(err, cmd.ErrOrStderr())
-			_, err = command.ExecuteRun(opts, repositories, taskFiles)
+			_, err = command.ExecuteRun(opts, repositories, args)
 			handleError(err, cmd.ErrOrStderr())
 		},
 	}
@@ -68,8 +68,6 @@ func createRunCommand() *cobra.Command {
 	cmd.Flags().StringArrayVar(&repositories, "repository", []string{}, `Name of a repository to apply the tasks to.
 Filters of a task aren't executed if this flag
 is set.
-Can be supplied multiple times.`)
-	cmd.Flags().StringArrayVar(&taskFiles, "task", []string{}, `Path to a file to read Tasks from.
 Can be supplied multiple times.`)
 	return cmd
 }
