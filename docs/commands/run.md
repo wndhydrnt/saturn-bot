@@ -15,32 +15,32 @@ Execute task in file "task.yaml" against all repositories:
 
 saturn-bot run \
   --config config.yaml \
-  --task task.yaml
+  task.yaml
 
 Execute tasks in files "task1.yaml" and "task2.yaml"
 against all repositories:
 
 saturn-bot run \
   --config config.yaml \
-  --task task1.yaml \
-  --task task2.yaml
+  task1.yaml \
+  task2.yaml
 
 Globbing support:
 
 saturn-bot run \
   --config config.yaml \
-  --task *.yaml
+  *.yaml
 
 Execute task in file "task.yaml" against
 repository "github.com/wndhydrnt/saturn-bot-example":
 
 saturn-bot run \
   --config config.yaml \
-  --task task.yaml
-  --repository github.com/wndhydrnt/saturn-bot-example
+  --repository github.com/wndhydrnt/saturn-bot-example \
+  task.yaml
 
 Usage:
-  saturn-bot run [flags]
+  saturn-bot run FILE [FILE...] [flags]
 
 Flags:
       --config string            Path to config file
@@ -48,7 +48,5 @@ Flags:
       --repository stringArray   Name of a repository to apply the tasks to.
                                  Filters of a task aren't executed if this flag
                                  is set.
-                                 Can be supplied multiple times.
-      --task stringArray         Path to a file to read Tasks from.
                                  Can be supplied multiple times.
 ```
