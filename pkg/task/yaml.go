@@ -3,7 +3,6 @@ package task
 import (
 	"fmt"
 	"log/slog"
-	"path/filepath"
 
 	"github.com/wndhydrnt/saturn-bot/pkg/options"
 	"github.com/wndhydrnt/saturn-bot/pkg/task/schema"
@@ -43,7 +42,7 @@ func readTasksYaml(
 		for idx, plugin := range schemaTask.Plugins {
 			pw, err := newPluginWrapper(startPluginOptions{
 				config:     plugin.Configuration,
-				filePath:   resolvePluginPath(plugin.Path, taskFile),
+				filePath:   plugin.PathAbs(taskFile),
 				pathJava:   pathJava,
 				pathPython: pathPython,
 			})
@@ -61,14 +60,4 @@ func readTasksYaml(
 	}
 
 	return result, nil
-}
-
-// resolvePluginPath resolves the path of a plugin relative to the path of its task.
-func resolvePluginPath(pluginPath, taskPath string) string {
-	if filepath.IsAbs(pluginPath) {
-		return pluginPath
-	}
-
-	dir := filepath.Dir(taskPath)
-	return filepath.Join(dir, pluginPath)
 }
