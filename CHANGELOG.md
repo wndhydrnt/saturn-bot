@@ -1,5 +1,13 @@
 # Changelog
 
+## [0.8.1](https://github.com/wndhydrnt/saturn-bot/compare/v0.8.0...v0.8.1) (2024-08-11)
+
+
+### Bug Fixes
+
+* **plugin:** Cannot load plugin due to failure during checksum caculation ([#47](https://github.com/wndhydrnt/saturn-bot/issues/47)) ([1070e76](https://github.com/wndhydrnt/saturn-bot/commit/1070e760b96507b260d9e1cb84b9c63fcc60c883))
+* **task:** Cannot load tasks from glob paths if no shell is available ([#49](https://github.com/wndhydrnt/saturn-bot/issues/49)) ([e8d07eb](https://github.com/wndhydrnt/saturn-bot/commit/e8d07eb5d1171b14b1106b79c29184849f7534b4))
+
 ## [0.8.0](https://github.com/wndhydrnt/saturn-bot/compare/v0.7.0...v0.8.0) (2024-08-08)
 
 
