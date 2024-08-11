@@ -7,6 +7,7 @@ import (
 	"fmt"
 	"hash"
 	"io"
+	"log/slog"
 	"os"
 
 	"gopkg.in/yaml.v3"
@@ -15,6 +16,7 @@ import (
 // Read return all Tasks from the file at `path`.
 // It also calculates the hash of the file.
 func Read(path string) ([]Task, []hash.Hash, error) {
+	slog.Debug(fmt.Sprintf("Reading task file %s", path))
 	b, err := os.ReadFile(path)
 	if err != nil {
 		return nil, nil, fmt.Errorf("read task file '%s': %w", path, err)
@@ -63,6 +65,7 @@ func Read(path string) ([]Task, []hash.Hash, error) {
 			}
 		}
 
+		slog.Debug(fmt.Sprintf("Found task %s", task.Name))
 		result = append(result, task)
 		hashes = append(hashes, checksum)
 	}

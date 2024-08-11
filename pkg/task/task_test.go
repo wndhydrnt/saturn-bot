@@ -21,7 +21,9 @@ name: Task One
 name: Task Two
 `
 
-	f, err := os.CreateTemp("", "*.yaml")
+	tempDir, err := os.MkdirTemp("", "")
+	require.NoError(t, err)
+	f, err := os.CreateTemp(tempDir, "*.yaml")
 	require.NoError(t, err)
 	_, err = f.WriteString(tasksRaw)
 	require.NoError(t, err)
@@ -32,7 +34,8 @@ name: Task Two
 	}()
 
 	tr := &task.Registry{}
-	err = tr.ReadAll([]string{f.Name()})
+	pathGlob := fmt.Sprintf("%s/*.yaml", filepath.Dir(f.Name()))
+	err = tr.ReadAll([]string{pathGlob})
 	require.NoError(t, err)
 
 	assert.Len(t, tr.GetTasks(), 2)
