@@ -51,7 +51,7 @@ func Read(path string) ([]Task, []hash.Hash, error) {
 		}
 
 		for _, plugin := range task.Plugins {
-			pluginFile, err := os.Open(plugin.Path)
+			pluginFile, err := os.Open(plugin.PathAbs(path))
 			if err != nil {
 				return nil, nil, fmt.Errorf("open plugin file: %w", err)
 			}
