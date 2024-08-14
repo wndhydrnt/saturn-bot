@@ -9,9 +9,10 @@ import (
 	_ "github.com/ncruces/go-sqlite3/embed"
 	"github.com/ncruces/go-sqlite3/gormlite"
 	"gorm.io/gorm"
+	"gorm.io/gorm/logger"
 )
 
-func New(migrate bool, path string) (*gorm.DB, error) {
+func New(enableLog, migrate bool, path string) (*gorm.DB, error) {
 	dir := filepath.Dir(path)
 	if dir != "" {
 		_, err := os.Stat(dir)
@@ -23,7 +24,14 @@ func New(migrate bool, path string) (*gorm.DB, error) {
 		}
 	}
 
-	db, err := gorm.Open(gormlite.Open(path))
+	cfg := &gorm.Config{}
+	if enableLog {
+		cfg.Logger = logger.Default
+	} else {
+		cfg.Logger = logger.Discard
+	}
+
+	db, err := gorm.Open(gormlite.Open(path), cfg)
 	if err != nil {
 		return nil, err
 	}

@@ -74,6 +74,10 @@ type Configuration struct {
 	// Turn compression of responses on or off.
 	ServerCompress bool `json:"serverCompress,omitempty" yaml:"serverCompress,omitempty" mapstructure:"serverCompress,omitempty"`
 
+	// If `true`, display executed SQL queries and errors of the database. Useful for
+	// debugging.
+	ServerDatabaseLog bool `json:"serverDatabaseLog,omitempty" yaml:"serverDatabaseLog,omitempty" mapstructure:"serverDatabaseLog,omitempty"`
+
 	// Path to the sqlite database of the server. If unset, defaults to
 	// `{{dataDir}}/db/saturn-bot.db`.
 	ServerDatabasePath string `json:"serverDatabasePath,omitempty" yaml:"serverDatabasePath,omitempty" mapstructure:"serverDatabasePath,omitempty"`
@@ -310,6 +314,9 @@ func (j *Configuration) UnmarshalJSON(b []byte) error {
 	if v, ok := raw["serverCompress"]; !ok || v == nil {
 		plain.ServerCompress = true
 	}
+	if v, ok := raw["serverDatabaseLog"]; !ok || v == nil {
+		plain.ServerDatabaseLog = false
+	}
 	if v, ok := raw["serverDatabasePath"]; !ok || v == nil {
 		plain.ServerDatabasePath = ""
 	}
@@ -387,6 +394,9 @@ func (j *Configuration) UnmarshalYAML(value *yaml.Node) error {
 	}
 	if v, ok := raw["serverCompress"]; !ok || v == nil {
 		plain.ServerCompress = true
+	}
+	if v, ok := raw["serverDatabaseLog"]; !ok || v == nil {
+		plain.ServerDatabaseLog = false
 	}
 	if v, ok := raw["serverDatabasePath"]; !ok || v == nil {
 		plain.ServerDatabasePath = ""

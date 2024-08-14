@@ -38,7 +38,7 @@ func (s *Server) Start(opts options.Opts, taskPaths []string) error {
 		dbPath = filepath.Join(opts.DataDir(), "db", "saturn-bot.db")
 	}
 
-	database, err := db.New(true, dbPath)
+	database, err := db.New(opts.Config.ServerDatabaseLog, true, dbPath)
 	if err != nil {
 		return fmt.Errorf("initialize database: %w", err)
 	}
