@@ -106,6 +106,16 @@ gitAuthor: "Saturn Bot <saturn-bot@example.local>"
 | Env Var | `SATURN_BOT_GITPATH` |
 | Type    | `string`             |
 
+## gitUrl
+
+[json-path:../pkg/config/config.schema.json:$.properties.gitUrl.description]
+
+| Name    | Value               |
+| ------- | ------------------- |
+| Default | `https`             |
+| Env Var | `SATURN_BOT_GITURL` |
+| Type    | `string`            |
+
 ## githubAddress
 
 [json-path:../pkg/config/config.schema.json:$.properties.githubAddress.description]
