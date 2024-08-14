@@ -106,6 +106,26 @@ gitAuthor: "Saturn Bot <saturn-bot@example.local>"
 | Env Var | `SATURN_BOT_GITPATH` |
 | Type    | `string`             |
 
+## gitUrl
+
+[json-path:../pkg/config/config.schema.json:$.properties.gitUrl.description]
+
+Set to `ssh` to clone repositories via SSH.
+
+| Name    | Value               |
+| ------- | ------------------- |
+| Default | `https`             |
+| Env Var | `SATURN_BOT_GITURL` |
+| Type    | `string`            |
+| Values  | `https`, `ssh`      |
+
+!!! warning
+
+    If set to `ssh`, git and ssh need to be configured.
+    Follow instructions for your platform:
+    - [GitHub](https://docs.github.com/en/authentication/connecting-to-github-with-ssh)
+    - [GitLab](https://docs.gitlab.com/ee/ci/ssh_keys/)
+
 ## githubAddress
 
 [json-path:../pkg/config/config.schema.json:$.properties.githubAddress.description]

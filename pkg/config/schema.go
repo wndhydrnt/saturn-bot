@@ -32,6 +32,9 @@ type Configuration struct {
 	// Path to `git` executable. PATH will be searched if not set.
 	GitPath string `json:"gitPath,omitempty" yaml:"gitPath,omitempty" mapstructure:"gitPath,omitempty"`
 
+	// Configure how to clone git repositories.
+	GitUrl ConfigurationGitUrl `json:"gitUrl,omitempty" yaml:"gitUrl,omitempty" mapstructure:"gitUrl,omitempty"`
+
 	// Address of GitHub server to use.
 	GithubAddress *string `json:"githubAddress,omitempty" yaml:"githubAddress,omitempty" mapstructure:"githubAddress,omitempty"`
 
@@ -106,6 +109,26 @@ var enumValues_ConfigurationGitLogLevel = []interface{}{
 	"warn",
 }
 
+// UnmarshalYAML implements yaml.Unmarshaler.
+func (j *ConfigurationGitLogLevel) UnmarshalYAML(value *yaml.Node) error {
+	var v string
+	if err := value.Decode(&v); err != nil {
+		return err
+	}
+	var ok bool
+	for _, expected := range enumValues_ConfigurationGitLogLevel {
+		if reflect.DeepEqual(v, expected) {
+			ok = true
+			break
+		}
+	}
+	if !ok {
+		return fmt.Errorf("invalid value (expected one of %#v): %#v", enumValues_ConfigurationGitLogLevel, v)
+	}
+	*j = ConfigurationGitLogLevel(v)
+	return nil
+}
+
 // UnmarshalJSON implements json.Unmarshaler.
 func (j *ConfigurationGitLogLevel) UnmarshalJSON(b []byte) error {
 	var v string
@@ -126,23 +149,53 @@ func (j *ConfigurationGitLogLevel) UnmarshalJSON(b []byte) error {
 	return nil
 }
 
-// UnmarshalYAML implements yaml.Unmarshaler.
-func (j *ConfigurationGitLogLevel) UnmarshalYAML(value *yaml.Node) error {
+type ConfigurationGitUrl string
+
+const ConfigurationGitUrlHttps ConfigurationGitUrl = "https"
+const ConfigurationGitUrlSsh ConfigurationGitUrl = "ssh"
+
+var enumValues_ConfigurationGitUrl = []interface{}{
+	"https",
+	"ssh",
+}
+
+// UnmarshalJSON implements json.Unmarshaler.
+func (j *ConfigurationGitUrl) UnmarshalJSON(b []byte) error {
 	var v string
-	if err := value.Decode(&v); err != nil {
+	if err := json.Unmarshal(b, &v); err != nil {
 		return err
 	}
 	var ok bool
-	for _, expected := range enumValues_ConfigurationGitLogLevel {
+	for _, expected := range enumValues_ConfigurationGitUrl {
 		if reflect.DeepEqual(v, expected) {
 			ok = true
 			break
 		}
 	}
 	if !ok {
-		return fmt.Errorf("invalid value (expected one of %#v): %#v", enumValues_ConfigurationGitLogLevel, v)
+		return fmt.Errorf("invalid value (expected one of %#v): %#v", enumValues_ConfigurationGitUrl, v)
 	}
-	*j = ConfigurationGitLogLevel(v)
+	*j = ConfigurationGitUrl(v)
+	return nil
+}
+
+// UnmarshalYAML implements yaml.Unmarshaler.
+func (j *ConfigurationGitUrl) UnmarshalYAML(value *yaml.Node) error {
+	var v string
+	if err := value.Decode(&v); err != nil {
+		return err
+	}
+	var ok bool
+	for _, expected := range enumValues_ConfigurationGitUrl {
+		if reflect.DeepEqual(v, expected) {
+			ok = true
+			break
+		}
+	}
+	if !ok {
+		return fmt.Errorf("invalid value (expected one of %#v): %#v", enumValues_ConfigurationGitUrl, v)
+	}
+	*j = ConfigurationGitUrl(v)
 	return nil
 }
 
@@ -212,10 +265,10 @@ var enumValues_ConfigurationLogLevel = []interface{}{
 	"warn",
 }
 
-// UnmarshalYAML implements yaml.Unmarshaler.
-func (j *ConfigurationLogLevel) UnmarshalYAML(value *yaml.Node) error {
+// UnmarshalJSON implements json.Unmarshaler.
+func (j *ConfigurationLogLevel) UnmarshalJSON(b []byte) error {
 	var v string
-	if err := value.Decode(&v); err != nil {
+	if err := json.Unmarshal(b, &v); err != nil {
 		return err
 	}
 	var ok bool
@@ -232,10 +285,10 @@ func (j *ConfigurationLogLevel) UnmarshalYAML(value *yaml.Node) error {
 	return nil
 }
 
-// UnmarshalJSON implements json.Unmarshaler.
-func (j *ConfigurationLogLevel) UnmarshalJSON(b []byte) error {
+// UnmarshalYAML implements yaml.Unmarshaler.
+func (j *ConfigurationLogLevel) UnmarshalYAML(value *yaml.Node) error {
 	var v string
-	if err := json.Unmarshal(b, &v); err != nil {
+	if err := value.Decode(&v); err != nil {
 		return err
 	}
 	var ok bool
@@ -283,6 +336,9 @@ func (j *Configuration) UnmarshalJSON(b []byte) error {
 	}
 	if v, ok := raw["gitPath"]; !ok || v == nil {
 		plain.GitPath = "git"
+	}
+	if v, ok := raw["gitUrl"]; !ok || v == nil {
+		plain.GitUrl = "https"
 	}
 	if v, ok := raw["githubCacheDisabled"]; !ok || v == nil {
 		plain.GithubCacheDisabled = false
@@ -364,6 +420,9 @@ func (j *Configuration) UnmarshalYAML(value *yaml.Node) error {
 	}
 	if v, ok := raw["gitPath"]; !ok || v == nil {
 		plain.GitPath = "git"
+	}
+	if v, ok := raw["gitUrl"]; !ok || v == nil {
+		plain.GitUrl = "https"
 	}
 	if v, ok := raw["githubCacheDisabled"]; !ok || v == nil {
 		plain.GithubCacheDisabled = false

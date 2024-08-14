@@ -57,6 +57,7 @@ type Git struct {
 	dataDir          string
 	defaultCommitMsg string
 	gitPath          string
+	gitUrl           config.ConfigurationGitUrl
 	userEmail        string
 	userName         string
 }
@@ -74,6 +75,7 @@ func New(cfg config.Configuration) (*Git, error) {
 		EnvVars:          envVars,
 		CmdExec:          execCmd,
 		gitPath:          cfg.GitPath,
+		gitUrl:           cfg.GitUrl,
 		userEmail:        cfg.GitUserEmail(),
 		userName:         cfg.GitUserName(),
 	}, nil
@@ -113,7 +115,7 @@ func (g *Git) Prepare(repo host.Repository, retry bool) (string, error) {
 		}
 
 		logger.Debug("Cloning repository")
-		cloneArgs := append([]string{"clone", repo.CloneUrlHttp(), "."}, g.cloneOpts...)
+		cloneArgs := append([]string{"clone", g.getCloneUrl(repo), "."}, g.cloneOpts...)
 		_, _, err = g.Execute(cloneArgs...)
 		if err != nil {
 			return "", fmt.Errorf("clone repository %s: %w", repo.FullName(), err)
@@ -403,6 +405,14 @@ func (g *Git) hasMergeConflict(branchName string) (bool, error) {
 	}
 
 	return detected, nil
+}
+
+func (g *Git) getCloneUrl(repo host.Repository) string {
+	if g.gitUrl == "ssh" {
+		return repo.CloneUrlSsh()
+	}
+
+	return repo.CloneUrlHttp()
 }
 
 func (g *Git) reset(checkoutDir string) error {
