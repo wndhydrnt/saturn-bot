@@ -55,6 +55,12 @@
       "description": "Path to `git` executable. PATH will be searched if not set.",
       "type": "string"
     },
+    "gitUrl": {
+      "default": "https",
+      "description": "Configure how to clone git repositories.",
+      "enum": ["https", "ssh"],
+      "type": "string"
+    },
     "githubAddress": {
       "description": "Address of GitHub server to use.",
       "type": "string"

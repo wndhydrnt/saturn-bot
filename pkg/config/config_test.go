@@ -24,6 +24,7 @@ func TestReadConfig(t *testing.T) {
 				GitlabAddress:            "https://gitlab.com",
 				GitLogLevel:              "warn",
 				GitPath:                  "git",
+				GitUrl:                   "https",
 				LogFormat:                "auto",
 				LogLevel:                 "info",
 				JavaPath:                 "java",

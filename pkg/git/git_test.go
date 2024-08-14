@@ -124,6 +124,42 @@ func TestGit_Prepare_CloneRepository(t *testing.T) {
 	assert.True(t, em.finished())
 }
 
+func TestGit_Prepare_CloneRepositorySsh(t *testing.T) {
+	dataDir, err := os.MkdirTemp("", "*")
+	require.NoError(t, err)
+	defer func() {
+		err := os.RemoveAll(dataDir)
+		if err != nil {
+			panic(err)
+		}
+	}()
+
+	ctrl := gomock.NewController(t)
+	repo := mock.NewMockRepository(ctrl)
+	repo.EXPECT().FullName().Return("git.local/unit/test").AnyTimes()
+	repo.EXPECT().BaseBranch().Return("main").AnyTimes()
+	repo.EXPECT().CloneUrlSsh().Return("git@git.local/unit/test.git")
+	em := &execMock{t: t}
+	dir := dataDir + "/git/git.local/unit/test"
+	em.withCall("git", "clone", "git@git.local/unit/test.git", ".").withDir(dir)
+	em.withCall("git", "config", "user.email", "unit@test.local").withDir(dir)
+	em.withCall("git", "config", "user.name", "unittest").withDir(dir)
+
+	g, err := git.New(config.Configuration{
+		DataDir:   &dataDir,
+		GitPath:   "git",
+		GitAuthor: "unittest <unit@test.local>",
+		GitUrl:    config.ConfigurationGitUrlSsh,
+	})
+	require.NoError(t, err)
+	g.CmdExec = em.exec
+	out, err := g.Prepare(repo, false)
+
+	require.NoError(t, err)
+	assert.Equal(t, dir, out)
+	assert.True(t, em.finished())
+}
+
 func TestGit_Prepare_UpdateExistingRepository(t *testing.T) {
 	dataDir, err := os.MkdirTemp("", "*")
 	require.NoError(t, err)
