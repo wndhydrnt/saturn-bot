@@ -123,6 +123,7 @@ Set to `ssh` to clone repositories via SSH.
 
     If set to `ssh`, git and ssh need to be configured.
     Follow instructions for your platform:
+
     - [GitHub](https://docs.github.com/en/authentication/connecting-to-github-with-ssh)
     - [GitLab](https://docs.gitlab.com/ee/ci/ssh_keys/)
 
