@@ -7,12 +7,15 @@ import (
 
 	"github.com/stretchr/testify/require"
 	gsContext "github.com/wndhydrnt/saturn-bot/pkg/context"
+	"github.com/wndhydrnt/saturn-bot/pkg/host"
+	"github.com/wndhydrnt/saturn-bot/pkg/mock"
+	"go.uber.org/mock/gomock"
 )
 
 type repositoryMock struct {
 	getFileResult map[string]string
 	hasFileResult map[string]bool
-	host          string
+	host          host.HostDetail
 	name          string
 	owner         string
 }
@@ -25,7 +28,7 @@ func (r *repositoryMock) HasFile(path string) (bool, error) {
 	return r.hasFileResult[path], nil
 }
 
-func (r *repositoryMock) Host() string {
+func (r *repositoryMock) Host() host.HostDetail {
 	return r.host
 }
 
@@ -213,12 +216,15 @@ func TestRepository_Do(t *testing.T) {
 	for _, tc := range cases {
 		testName := fmt.Sprintf("%s/%s/%s", tc.host, tc.owner, tc.name)
 		t.Run(testName, func(t *testing.T) {
-			ctx := context.Background()
+			ctrl := gomock.NewController(t)
+			hostMock := mock.NewMockHostDetail(ctrl)
+			hostMock.EXPECT().Name().Return(tc.host)
 			repoMock := &repositoryMock{
-				host:  tc.host,
+				host:  hostMock,
 				name:  tc.name,
 				owner: tc.owner,
 			}
+			ctx := context.Background()
 			ctx = context.WithValue(ctx, gsContext.RepositoryKey{}, repoMock)
 			result, err := f.Do(ctx)
 			require.NoError(t, err)

@@ -12,6 +12,7 @@ import (
 	"github.com/stretchr/testify/require"
 	"github.com/wndhydrnt/saturn-bot/pkg/config"
 	"github.com/wndhydrnt/saturn-bot/pkg/git"
+	"github.com/wndhydrnt/saturn-bot/pkg/host"
 	"github.com/wndhydrnt/saturn-bot/pkg/log"
 	"github.com/wndhydrnt/saturn-bot/pkg/mock"
 	"go.uber.org/mock/gomock"
@@ -237,7 +238,7 @@ func TestGit_Prepare_RetryOnCheckoutError(t *testing.T) {
 	assert.True(t, em.finished())
 }
 
-func TestGit_Prepare_EmptyGitUser(t *testing.T) {
+func TestGit_Prepare_EmptyGitAuthor(t *testing.T) {
 	dataDir, err := os.MkdirTemp("", "*")
 	require.NoError(t, err)
 	defer func() {
@@ -248,13 +249,18 @@ func TestGit_Prepare_EmptyGitUser(t *testing.T) {
 	}()
 
 	ctrl := gomock.NewController(t)
+	hostM := mock.NewMockHostDetail(ctrl)
+	hostM.EXPECT().AuthenticatedUser().Return(&host.UserInfo{Email: "unit@test.local", Name: "Unit Test"}, nil)
 	repo := mock.NewMockRepository(ctrl)
+	repo.EXPECT().Host().Return(hostM)
 	repo.EXPECT().FullName().Return("git.local/unit/test").AnyTimes()
 	repo.EXPECT().BaseBranch().Return("main").AnyTimes()
 	repo.EXPECT().CloneUrlHttp().Return("https://git.local/unit/test.git")
 	em := &execMock{t: t}
 	dir := dataDir + "/git/git.local/unit/test"
 	em.withCall("git", "clone", "https://git.local/unit/test.git", ".").withDir(dir)
+	em.withCall("git", "config", "user.email", "unit@test.local").withDir(dir)
+	em.withCall("git", "config", "user.name", "Unit Test").withDir(dir)
 
 	g, err := git.New(config.Configuration{
 		DataDir:   toPtr(dataDir),

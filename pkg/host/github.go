@@ -3,6 +3,7 @@ package host
 import (
 	"context"
 	"fmt"
+	"log/slog"
 	"net/http"
 	"net/url"
 	"path"
@@ -20,6 +21,7 @@ var (
 
 type GitHubRepository struct {
 	client *github.Client
+	host   *GitHubHost
 	repo   *github.Repository
 }
 
@@ -252,12 +254,8 @@ func (g *GitHubRepository) HasSuccessfulPullRequestBuild(pr interface{}) (bool, 
 	return true, nil
 }
 
-func (g *GitHubRepository) Host() string {
-	if g.client.BaseURL.Host == "api.github.com" {
-		return "github.com"
-	}
-
-	return g.client.BaseURL.Host
+func (g *GitHubRepository) Host() HostDetail {
+	return g.host
 }
 
 func (g *GitHubRepository) IsPullRequestClosed(pr interface{}) bool {
@@ -497,7 +495,8 @@ func diffReviewers(requested, submitted []*github.User, want []string) (toAdd, t
 }
 
 type GitHubHost struct {
-	client *github.Client
+	authenticatedUser *UserInfo
+	client            *github.Client
 }
 
 func NewGitHubHost(address, token string, cacheDisabled bool) (*GitHubHost, error) {
@@ -520,6 +519,56 @@ func NewGitHubHost(address, token string, cacheDisabled bool) (*GitHubHost, erro
 	}
 
 	return &GitHubHost{client: client}, nil
+}
+
+func (g *GitHubHost) AuthenticatedUser() (*UserInfo, error) {
+	if g.authenticatedUser != nil {
+		return g.authenticatedUser, nil
+	}
+
+	user, _, err := g.client.Users.Get(ctx, "")
+	if err != nil {
+		return nil, fmt.Errorf("get current github user: %w", err)
+	}
+
+	var userEmail string
+	opts := &github.ListOptions{
+		Page:    1,
+		PerPage: 20,
+	}
+	for {
+		emails, resp, err := g.client.Users.ListEmails(ctx, opts)
+		if err != nil {
+			return nil, fmt.Errorf("list email of authenticated user: %w", err)
+		}
+
+		for _, email := range emails {
+			if email.GetVisibility() == "public" {
+				userEmail = email.GetEmail()
+			}
+		}
+
+		if userEmail != "" {
+			break
+		}
+
+		if resp.NextPage == 0 {
+			break
+		}
+
+		opts.Page = resp.NextPage
+	}
+
+	if userEmail == "" {
+		return nil, fmt.Errorf("no public email address for user %s", user.GetLogin())
+	}
+
+	slog.Debug("Discovered authenticated user from GitHub")
+	g.authenticatedUser = &UserInfo{
+		Email: userEmail,
+		Name:  user.GetLogin(),
+	}
+	return g.authenticatedUser, nil
 }
 
 func (g *GitHubHost) CreateFromName(name string) (Repository, error) {
@@ -553,7 +602,7 @@ func (g *GitHubHost) CreateFromName(name string) (Repository, error) {
 		return nil, fmt.Errorf("get github repository: %w", err)
 	}
 
-	return &GitHubRepository{repo: repo}, nil
+	return &GitHubRepository{client: g.client, host: g, repo: repo}, nil
 }
 
 func (g *GitHubHost) ListRepositories(since *time.Time, result chan []Repository, errChan chan error) {
@@ -583,7 +632,7 @@ func (g *GitHubHost) ListRepositories(since *time.Time, result chan []Repository
 				return
 			}
 
-			batch = append(batch, &GitHubRepository{client: g.client, repo: repo})
+			batch = append(batch, &GitHubRepository{client: g.client, host: g, repo: repo})
 		}
 
 		result <- batch
@@ -636,7 +685,7 @@ func (g *GitHubHost) ListRepositoriesWithOpenPullRequests(result chan []Reposito
 					return
 				}
 
-				batch = append(batch, &GitHubRepository{client: g.client, repo: repo})
+				batch = append(batch, &GitHubRepository{client: g.client, host: g, repo: repo})
 			}
 		}
 
@@ -648,4 +697,12 @@ func (g *GitHubHost) ListRepositoriesWithOpenPullRequests(result chan []Reposito
 
 		opts.Page = resp.NextPage
 	}
+}
+
+func (g *GitHubHost) Name() string {
+	if g.client.BaseURL.Host == "api.github.com" {
+		return "github.com"
+	}
+
+	return g.client.BaseURL.Host
 }
