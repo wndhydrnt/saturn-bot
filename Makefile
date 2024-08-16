@@ -44,7 +44,6 @@ generate_go:
 ifeq (, $(shell which mockgen))
 	go install go.uber.org/mock/mockgen@latest
 endif
-	mkdir -p pkg/mock
 ifeq (, $(shell which stringer))
 	go install golang.org/x/tools/cmd/stringer@latest
 endif
