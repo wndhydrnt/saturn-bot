@@ -1,7 +1,6 @@
 package log
 
 import (
-	"context"
 	"io"
 	"log"
 	"os"
@@ -14,7 +13,6 @@ import (
 )
 
 var (
-	ctx                 = context.Background()
 	defaultHclogAdapter = &hclogAdapter{}
 	gitLogger           *zap.SugaredLogger
 )
