@@ -3,7 +3,6 @@ package task
 import (
 	"context"
 	"fmt"
-	"log/slog"
 	"os/exec"
 	"path/filepath"
 
@@ -12,6 +11,7 @@ import (
 	proto "github.com/wndhydrnt/saturn-bot-go/protocol/v1"
 	gsContext "github.com/wndhydrnt/saturn-bot/pkg/context"
 	"github.com/wndhydrnt/saturn-bot/pkg/host"
+	"github.com/wndhydrnt/saturn-bot/pkg/log"
 	gsLog "github.com/wndhydrnt/saturn-bot/pkg/log"
 )
 
@@ -72,7 +72,7 @@ func newPluginWrapper(opts startPluginOptions) (*pluginWrapper, error) {
 		return nil, fmt.Errorf("get plugin: %w", err)
 	}
 
-	slog.Debug("Registered plugin", "name", getPluginResp.GetName())
+	log.Log().Debugf("Registered plugin %s", getPluginResp.GetName())
 	return &pluginWrapper{
 		action:   &PluginAction{Provider: provider},
 		client:   client,

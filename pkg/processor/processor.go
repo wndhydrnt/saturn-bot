@@ -4,7 +4,6 @@ import (
 	"context"
 	"errors"
 	"fmt"
-	"log/slog"
 	"os"
 	"strings"
 	"time"
@@ -13,8 +12,10 @@ import (
 	sContext "github.com/wndhydrnt/saturn-bot/pkg/context"
 	"github.com/wndhydrnt/saturn-bot/pkg/git"
 	"github.com/wndhydrnt/saturn-bot/pkg/host"
+	"github.com/wndhydrnt/saturn-bot/pkg/log"
 	"github.com/wndhydrnt/saturn-bot/pkg/task"
 	"github.com/wndhydrnt/saturn-bot/pkg/template"
+	"go.uber.org/zap"
 )
 
 //go:generate stringer -type=Result
@@ -53,7 +54,12 @@ func (p *Processor) Process(
 	task task.Task,
 	doFilter bool,
 ) (Result, error) {
-	logger := slog.With("dryRun", dryRun, "repository", repo.FullName(), "task", task.SourceTask().Name)
+	logger := log.Log().
+		WithOptions(zap.Fields(
+			log.FieldDryRun(dryRun),
+			log.FieldRepo(repo.FullName()),
+			log.FieldTask(task.SourceTask().Name),
+		))
 	logger.Debug("Processing repository")
 	if task.HasReachMaxOpenPRs() {
 		logger.Debug("Skipping task because Max Open PRs have been reached")
@@ -129,7 +135,7 @@ func matchTaskToRepository(ctx context.Context, task task.Task) (bool, error) {
 		}
 
 		if !match {
-			slog.Debug("Filter does not match", "filter", filter.String(), "task", task.SourceTask().Name)
+			log.Log().Debug("Filter %s does not match task %s", filter.String(), task.SourceTask().Name)
 			return false, nil
 		}
 	}
@@ -137,7 +143,7 @@ func matchTaskToRepository(ctx context.Context, task task.Task) (bool, error) {
 	return true, nil
 }
 
-func applyTaskToRepository(ctx context.Context, dryRun bool, gitc git.GitClient, logger *slog.Logger, repo host.Repository, task task.Task, workDir string) (Result, error) {
+func applyTaskToRepository(ctx context.Context, dryRun bool, gitc git.GitClient, logger *zap.SugaredLogger, repo host.Repository, task task.Task, workDir string) (Result, error) {
 	logger.Debug("Applying actions of task to repository")
 	prID, err := repo.FindPullRequest(task.BranchName())
 	if err != nil && !errors.Is(err, host.ErrPullRequestNotFound) {

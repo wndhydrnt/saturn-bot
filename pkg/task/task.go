@@ -3,7 +3,6 @@ package task
 import (
 	"cmp"
 	"fmt"
-	"log/slog"
 	"path"
 	"path/filepath"
 	"time"
@@ -12,8 +11,10 @@ import (
 	"github.com/wndhydrnt/saturn-bot/pkg/action"
 	"github.com/wndhydrnt/saturn-bot/pkg/filter"
 	"github.com/wndhydrnt/saturn-bot/pkg/host"
+	"github.com/wndhydrnt/saturn-bot/pkg/log"
 	"github.com/wndhydrnt/saturn-bot/pkg/options"
 	"github.com/wndhydrnt/saturn-bot/pkg/task/schema"
+	"go.uber.org/zap"
 )
 
 //go:generate go-jsonschema --extra-imports -p schema -t ./schema/task.schema.json --output ./schema/schema.go
@@ -174,7 +175,7 @@ func (tw *Wrapper) OnPrClosed(repository host.Repository) error {
 	for _, p := range tw.plugins {
 		err := p.onPrClosed(repository)
 		if err != nil {
-			slog.Error("OnPrClosed event of plugin failed", "err", err)
+			log.Log().Errorw("OnPrClosed event of plugin failed", zap.Error(err))
 		}
 	}
 
@@ -185,7 +186,7 @@ func (tw *Wrapper) OnPrCreated(repository host.Repository) error {
 	for _, p := range tw.plugins {
 		err := p.onPrCreated(repository)
 		if err != nil {
-			slog.Error("OnPrCreated event of plugin failed", "err", err)
+			log.Log().Errorw("OnPrCreated event of plugin failed", zap.Error(err))
 		}
 	}
 
@@ -196,7 +197,7 @@ func (tw *Wrapper) OnPrMerged(repository host.Repository) error {
 	for _, p := range tw.plugins {
 		err := p.onPrMerged(repository)
 		if err != nil {
-			slog.Error("OnPrMerged event of plugin failed", "err", err)
+			log.Log().Errorw("OnPrMerged event of plugin failed", zap.Error(err))
 		}
 	}
 

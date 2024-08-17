@@ -5,10 +5,10 @@ import (
 	"errors"
 	"fmt"
 	"html/template"
-	"log/slog"
 	"strings"
 	"time"
 
+	"github.com/wndhydrnt/saturn-bot/pkg/log"
 	gsTemplate "github.com/wndhydrnt/saturn-bot/pkg/template"
 )
 
@@ -168,7 +168,7 @@ func CreatePullRequestCommentWithIdentifier(body string, identifier string, pr i
 		}
 	}
 
-	slog.Debug("Create comment on pull request with identifier", "identifier", identifier, "repository", repo.FullName())
+	log.Log().Debugf("Create comment on pull request of repository %s with identifier %s", repo.FullName(), identifier)
 	return repo.CreatePullRequestComment(prefix+"\n"+body, pr)
 }
 
@@ -185,7 +185,7 @@ func DeletePullRequestCommentByIdentifier(identifier string, pr interface{}, rep
 	prefix := fmt.Sprintf("<!-- saturn-bot::{%s} -->", identifier)
 	for _, comment := range comments {
 		if strings.HasPrefix(comment.Body, prefix) {
-			slog.Debug("Delete comment on pull request with identifier", "identifier", identifier, "repository", repo.FullName())
+			log.Log().Debugf("Delete comment on pull request of repository %s with identifier %s", repo.FullName(), identifier)
 			err := repo.DeletePullRequestComment(comment, pr)
 			if err != nil {
 				return fmt.Errorf("delete comment by identifier %s: %w", identifier, err)

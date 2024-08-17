@@ -4,11 +4,11 @@ import (
 	"errors"
 	"fmt"
 	"io"
-	"log/slog"
 	"os"
 
 	"github.com/santhosh-tekuri/jsonschema/v5"
 	"github.com/spf13/cobra"
+	"github.com/wndhydrnt/saturn-bot/pkg/log"
 )
 
 var (
@@ -41,10 +41,10 @@ func handleError(err error, out io.Writer) {
 
 	var validationError *jsonschema.ValidationError
 	if errors.As(err, &validationError) {
-		slog.Error("Configuration file contains errors:")
+		log.Log().Error("Configuration file contains errors:")
 		fmt.Fprintf(out, "%s\n", validationError.Error())
 	} else {
-		slog.Error("command failed", "err", err)
+		log.Log().Error("command failed", "error", err)
 	}
 
 	os.Exit(1)

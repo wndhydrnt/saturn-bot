@@ -7,16 +7,16 @@ import (
 	"fmt"
 	"hash"
 	"io"
-	"log/slog"
 	"os"
 
+	"github.com/wndhydrnt/saturn-bot/pkg/log"
 	"gopkg.in/yaml.v3"
 )
 
 // Read return all Tasks from the file at `path`.
 // It also calculates the hash of the file.
 func Read(path string) ([]Task, []hash.Hash, error) {
-	slog.Debug(fmt.Sprintf("Reading task file %s", path))
+	log.Log().Debugf("Reading task file %s", path)
 	b, err := os.ReadFile(path)
 	if err != nil {
 		return nil, nil, fmt.Errorf("read task file '%s': %w", path, err)
@@ -65,7 +65,7 @@ func Read(path string) ([]Task, []hash.Hash, error) {
 			}
 		}
 
-		slog.Debug(fmt.Sprintf("Found task %s", task.Name))
+		log.Log().Debugf("Found task %s", task.Name)
 		result = append(result, task)
 		hashes = append(hashes, checksum)
 	}
