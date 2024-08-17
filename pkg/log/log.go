@@ -1,55 +1,65 @@
 package log
 
 import (
-	"context"
 	"io"
 	"log"
-	"log/slog"
 	"os"
-	"strings"
 
 	"github.com/hashicorp/go-hclog"
-	"github.com/lmittmann/tint"
 	"github.com/mattn/go-isatty"
 	"github.com/wndhydrnt/saturn-bot/pkg/config"
+	"go.uber.org/zap"
+	"go.uber.org/zap/zapcore"
 )
 
 var (
-	ctx                 = context.Background()
 	defaultHclogAdapter = &hclogAdapter{}
-	gitLogger           *slog.Logger
+	gitLogger           *zap.SugaredLogger
 )
 
+var (
+	DefaultLogger *zap.SugaredLogger
+)
+
+func Log() *zap.SugaredLogger {
+	return DefaultLogger
+}
+
+func init() {
+	// Ensure that a logger is always present
+	logger := zap.Must(zap.NewProduction())
+	DefaultLogger = logger.Sugar()
+}
+
 type hclogAdapter struct {
-	level      *slog.LevelVar
 	levelHclog hclog.Level
-	logger     *slog.Logger
+	logger     *zap.SugaredLogger
 	name       string
 }
 
 func (l *hclogAdapter) Log(level hclog.Level, msg string, args ...interface{}) {
-	slogLvl := mapHclogToSlogLevel(level)
-	l.logger.Log(context.Background(), slogLvl, msg, args...)
+	lvl := mapHclogToLevel(level)
+	l.logger.Logw(lvl, msg, args...)
 }
 
 func (l *hclogAdapter) Trace(msg string, args ...interface{}) {
-	l.logger.Debug(msg, args...)
+	l.logger.Debugf(msg, args...)
 }
 
 func (l *hclogAdapter) Debug(msg string, args ...interface{}) {
-	l.logger.Debug(msg, args...)
+	l.logger.Debugf(msg, args...)
 }
 
 func (l *hclogAdapter) Info(msg string, args ...interface{}) {
-	l.logger.Info(msg, args...)
+	l.logger.Infof(msg, args...)
 }
 
 func (l *hclogAdapter) Warn(msg string, args ...interface{}) {
-	l.logger.Warn(msg, args...)
+	l.logger.Warnf(msg, args...)
 }
 
 func (l *hclogAdapter) Error(msg string, args ...interface{}) {
-	l.logger.Error(msg, args...)
+	l.logger.Errorf(msg, args...)
 }
 
 func (l *hclogAdapter) IsTrace() bool {
@@ -57,19 +67,19 @@ func (l *hclogAdapter) IsTrace() bool {
 }
 
 func (l *hclogAdapter) IsDebug() bool {
-	return l.logger.Enabled(ctx, slog.LevelDebug)
+	return l.logger.Level() == zapcore.DebugLevel
 }
 
 func (l *hclogAdapter) IsInfo() bool {
-	return l.logger.Enabled(ctx, slog.LevelInfo)
+	return l.logger.Level() == zapcore.InfoLevel
 }
 
 func (l *hclogAdapter) IsWarn() bool {
-	return l.logger.Enabled(ctx, slog.LevelWarn)
+	return l.logger.Level() == zapcore.WarnLevel
 }
 
 func (l *hclogAdapter) IsError() bool {
-	return l.logger.Enabled(ctx, slog.LevelError)
+	return l.logger.Level() == zapcore.ErrorLevel
 }
 
 func (l *hclogAdapter) ImpliedArgs() []interface{} {
@@ -77,7 +87,7 @@ func (l *hclogAdapter) ImpliedArgs() []interface{} {
 }
 
 func (l *hclogAdapter) With(args ...interface{}) hclog.Logger {
-	logger := slog.With(args...)
+	logger := l.logger.With(args...)
 	return &hclogAdapter{logger: logger}
 }
 
@@ -86,20 +96,16 @@ func (l *hclogAdapter) Name() string {
 }
 
 func (l *hclogAdapter) Named(name string) hclog.Logger {
-	logger := l.logger.WithGroup(l.name + "." + name)
+	logger := l.logger.Named(l.name + "." + name)
 	return &hclogAdapter{logger: logger, name: name}
 }
 
 func (l *hclogAdapter) ResetNamed(name string) hclog.Logger {
-	logger := l.logger.WithGroup(name)
+	logger := l.logger.Named(name)
 	return &hclogAdapter{logger: logger, name: name}
 }
 
-func (l *hclogAdapter) SetLevel(level hclog.Level) {
-	slogLevel := mapHclogToSlogLevel(level)
-	l.level.Set(slogLevel)
-	l.levelHclog = level
-}
+func (l *hclogAdapter) SetLevel(level hclog.Level) {}
 
 func (l *hclogAdapter) GetLevel() hclog.Level {
 	return l.levelHclog
@@ -113,48 +119,47 @@ func (l *hclogAdapter) StandardWriter(_ *hclog.StandardLoggerOptions) io.Writer 
 	return os.Stderr
 }
 
-func mapHclogToSlogLevel(in hclog.Level) slog.Level {
+func mapHclogToLevel(in hclog.Level) zapcore.Level {
 	switch in {
 	case hclog.Debug:
-		return slog.LevelDebug
+		return zap.DebugLevel
 	case hclog.Error:
-		return slog.LevelError
+		return zap.ErrorLevel
 	case hclog.Info:
-		return slog.LevelInfo
+		return zap.InfoLevel
 	case hclog.NoLevel:
-		return slog.LevelError
+		return zap.WarnLevel
 	case hclog.Off:
-		return slog.LevelError
+		return zap.DebugLevel
 	case hclog.Warn:
-		return slog.LevelWarn
+		return zap.WarnLevel
 	case hclog.Trace:
-		return slog.LevelDebug
+		return zap.DebugLevel
 	}
 
-	return slog.LevelInfo
+	return zap.InfoLevel
 }
 
 func InitLog(format config.ConfigurationLogFormat, level config.ConfigurationLogLevel, levelGit config.ConfigurationGitLogLevel) {
-	lvl := logStringToLevel(string(level))
-	w := os.Stderr
-	isTty := isatty.IsTerminal(w.Fd())
-	handler := newHandler(string(format), isTty, lvl, w)
-	logger := slog.New(handler)
-	slog.SetDefault(logger)
-	defaultHclogAdapter.level = lvl
+	loggerCfg := newConfig(format)
+	loggerCfg.Level = zap.NewAtomicLevelAt(logStringToLevel(string(level)))
+
+	logger := zap.Must(loggerCfg.Build())
+	DefaultLogger = logger.Sugar()
+
 	defaultHclogAdapter.levelHclog = hclog.Info
-	defaultHclogAdapter.logger = logger
+	defaultHclogAdapter.logger = DefaultLogger
 	defaultHclogAdapter.name = "plugin"
 	lvlGit := logStringToLevel(string(levelGit))
-	handlerGit := newHandler(string(format), isTty, lvlGit, w)
-	gitLogger = slog.New(handlerGit)
+	gitLogger = DefaultLogger.
+		WithOptions(zap.IncreaseLevel(lvlGit))
 }
 
 func DefaultHclogAdapter() hclog.Logger {
 	return defaultHclogAdapter
 }
 
-func GitLogger() *slog.Logger {
+func GitLogger() *zap.SugaredLogger {
 	if gitLogger == nil {
 		panic("git logger not initialized")
 	}
@@ -162,41 +167,56 @@ func GitLogger() *slog.Logger {
 	return gitLogger
 }
 
-func logStringToLevel(level string) *slog.LevelVar {
-	lvl := new(slog.LevelVar)
-	switch strings.ToLower(level) {
-	case "debug":
-		lvl.Set(slog.LevelDebug)
-	case "error":
-		lvl.Set(slog.LevelError)
-	case "warn":
-		lvl.Set(slog.LevelWarn)
-	case "info":
-		lvl.Set(slog.LevelInfo)
-	default:
-		slog.Warn("Unknown log level, falling back to info", "unknown", level)
-		lvl.Set(slog.LevelInfo)
+func logStringToLevel(level string) zapcore.Level {
+	lvl, err := zapcore.ParseLevel(level)
+	if err != nil {
+		lvl = zapcore.InfoLevel
 	}
 
 	return lvl
 }
 
-func newHandler(format string, isTty bool, level *slog.LevelVar, w io.Writer) slog.Handler {
-	switch format {
-	case "console":
-		return tint.NewHandler(w, &tint.Options{
-			NoColor: !isTty,
-			Level:   level,
-		})
-	case "json":
-		return slog.NewJSONHandler(w, &slog.HandlerOptions{Level: level})
-	default:
-		if isTty {
-			return tint.NewHandler(w, &tint.Options{
-				Level: level,
-			})
+func newConfig(format config.ConfigurationLogFormat) zap.Config {
+	zapCfg := zap.NewProductionConfig()
+	var encoderFormat string
+	if format == "auto" {
+		if isatty.IsTerminal(os.Stderr.Fd()) {
+			encoderFormat = "console"
 		} else {
-			return slog.NewJSONHandler(w, &slog.HandlerOptions{Level: level})
+			encoderFormat = "json"
 		}
 	}
+
+	if encoderFormat != "console" && encoderFormat != "json" {
+		encoderFormat = "json"
+	}
+
+	if encoderFormat == "console" {
+		zapCfg.DisableCaller = true
+		zapCfg.EncoderConfig.EncodeTime = zapcore.ISO8601TimeEncoder
+		zapCfg.EncoderConfig.EncodeLevel = zapcore.CapitalColorLevelEncoder
+	}
+
+	if encoderFormat == "json" {
+		zapCfg.EncoderConfig.EncodeTime = zapcore.RFC3339NanoTimeEncoder
+		zapCfg.EncoderConfig.TimeKey = "time"
+	}
+
+	zapCfg.Encoding = encoderFormat
+	return zapCfg
+}
+
+func FieldDryRun(v bool) zap.Field {
+	const key = "saturn-bot.dryRun"
+	return zap.Bool(key, v)
+}
+
+func FieldRepo(name string) zap.Field {
+	const key = "saturn-bot.repository"
+	return zap.String(key, name)
+}
+
+func FieldTask(name string) zap.Field {
+	const key = "saturn-bot.task"
+	return zap.String(key, name)
 }

@@ -4,10 +4,10 @@ import (
 	"encoding/base64"
 	"errors"
 	"fmt"
-	"log/slog"
 	"os"
 	"time"
 
+	"github.com/wndhydrnt/saturn-bot/pkg/log"
 	"github.com/wndhydrnt/saturn-bot/pkg/server/db"
 	"github.com/wndhydrnt/saturn-bot/pkg/server/task"
 	"gorm.io/gorm"
@@ -31,7 +31,7 @@ func (ts *TaskService) SyncDbTasks() error {
 				return tx.Error
 			}
 
-			slog.Debug("Creating task in DB", "task", t.TaskName)
+			log.Log().Debugf("Creating task %s in DB", t.TaskName)
 			taskDB.Hash = t.Hash
 			taskDB.Name = t.TaskName
 			err := ts.db.Transaction(func(tx *gorm.DB) error {
@@ -57,7 +57,7 @@ func (ts *TaskService) SyncDbTasks() error {
 		} else {
 			if taskDB.Hash != t.Hash {
 				taskDB.Hash = t.Hash
-				slog.Debug("Updating task in DB", "task", taskDB.Name)
+				log.Log().Debugf("Updating task %s in DB", taskDB.Name)
 				run := db.Run{
 					Reason:        0,
 					ScheduleAfter: time.Now(),

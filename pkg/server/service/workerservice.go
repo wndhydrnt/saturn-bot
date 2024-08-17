@@ -3,13 +3,14 @@ package service
 import (
 	"errors"
 	"fmt"
-	"log/slog"
 	"time"
 
+	"github.com/wndhydrnt/saturn-bot/pkg/log"
 	"github.com/wndhydrnt/saturn-bot/pkg/processor"
 	"github.com/wndhydrnt/saturn-bot/pkg/server/api/openapi"
 	"github.com/wndhydrnt/saturn-bot/pkg/server/db"
 	"github.com/wndhydrnt/saturn-bot/pkg/server/task"
+	"go.uber.org/zap"
 	"gorm.io/gorm"
 )
 
@@ -41,7 +42,7 @@ func (ws *WorkerService) ScheduleRun(
 		Where("status = ?", db.RunStatusPending).
 		First(&runDB)
 	if errors.Is(result.Error, gorm.ErrRecordNotFound) {
-		slog.Debug("Scheduling new run", "repository", repositoryName, "task", taskName)
+		log.Log().Debugf("Scheduling new run of task %s for repository %s", taskName, repositoryName)
 		run := db.Run{
 			Reason:         reason,
 			RepositoryName: ptr(repositoryName),
@@ -93,7 +94,7 @@ func (ws *WorkerService) NextRun() (db.Run, task.Task, error) {
 			return run, runTask, ErrNoRun
 		}
 
-		slog.Error("Failed to get next run", "error", tx.Error)
+		log.Log().Errorw("Failed to get next run", zap.Error(tx.Error))
 		return run, runTask, tx.Error
 	}
 
@@ -103,14 +104,14 @@ func (ws *WorkerService) NextRun() (db.Run, task.Task, error) {
 
 	run.Status = db.RunStatusRunning
 	if err := ws.db.Save(&run).Error; err != nil {
-		slog.Error("Update next run", "error", err)
+		log.Log().Errorw("Update next run", zap.Error(err))
 		return run, runTask, err
 	}
 
 	task := ws.findTask(run.TaskName)
 	if task == nil {
 		if err := ws.db.Delete(&run).Error; err != nil {
-			slog.Error("Delete run of unknown task", "error", tx.Error)
+			log.Log().Error("Delete run of unknown task", zap.Error(tx.Error))
 		}
 
 		return run, runTask, ErrNoRun
@@ -123,7 +124,7 @@ func (ws *WorkerService) ReportRun(req openapi.ReportWorkV1Request) error {
 	var runCurrent db.Run
 	tx := ws.db.First(&runCurrent, req.RunID)
 	if tx.Error != nil {
-		slog.Error("Failed to retrieve run by ID", "error", tx.Error)
+		log.Log().Errorw("Failed to retrieve run by ID", zap.Error(tx.Error))
 		return tx.Error
 	}
 

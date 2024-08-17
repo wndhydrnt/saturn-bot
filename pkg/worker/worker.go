@@ -4,7 +4,6 @@ import (
 	"context"
 	"errors"
 	"fmt"
-	"log/slog"
 	"os"
 	"os/signal"
 	"syscall"
@@ -12,10 +11,12 @@ import (
 
 	"github.com/wndhydrnt/saturn-bot/pkg/command"
 	"github.com/wndhydrnt/saturn-bot/pkg/config"
+	"github.com/wndhydrnt/saturn-bot/pkg/log"
 	"github.com/wndhydrnt/saturn-bot/pkg/options"
 	"github.com/wndhydrnt/saturn-bot/pkg/processor"
 	"github.com/wndhydrnt/saturn-bot/pkg/server/task"
 	"github.com/wndhydrnt/saturn-bot/pkg/worker/client"
+	"go.uber.org/zap"
 )
 
 var (
@@ -131,18 +132,18 @@ func (w *Worker) Start() {
 				continue
 			}
 
-			slog.Debug("Parallel executions", "count", executionCounter)
+			log.Log().Debug("%d parallel executions", executionCounter)
 			if executionCounter >= parallelExecutions {
-				slog.Debug("Max number of parallel executions reached")
+				log.Log().Debug("Max number of parallel executions reached")
 				continue
 			}
 
 			exec, err := w.Exec.Next()
 			if err != nil {
 				if errors.Is(err, ErrNoExec) {
-					slog.Info("No new executions")
+					log.Log().Info("No new executions")
 				} else {
-					slog.Error("Failed to get next execution", "error", err)
+					log.Log().Errorw("Failed to get next execution", zap.Error(err))
 				}
 
 				continue
@@ -154,12 +155,12 @@ func (w *Worker) Start() {
 
 		case result := <-w.resultChan:
 			if result.RunError != nil {
-				slog.Error("Run failed", "runID", result.Execution.RunID, "error", result.RunError)
+				log.Log().Errorw("Run failed", zap.Error(fmt.Errorf("ID %d: %w", result.Execution.RunID, result.RunError)))
 			}
 
 			err := w.Exec.Report(result)
 			if err != nil {
-				slog.Error("Failed to report run", "runID", result.Execution.RunID, "error", err)
+				log.Log().Errorw("Failed to report run", zap.Error(fmt.Errorf("ID %d: %w", result.Execution.RunID, result.RunError)))
 			}
 			executionCounter -= 1
 
@@ -173,7 +174,7 @@ func (w *Worker) Start() {
 						return
 					}
 					waitDuration := 10 * time.Second
-					slog.Info(fmt.Sprintf("Waiting %s for %d workers to finish", waitDuration, executionCounter))
+					log.Log().Infof("Waiting %s for %d workers to finish", waitDuration, executionCounter)
 					time.Sleep(waitDuration)
 				}
 			}()
@@ -258,10 +259,10 @@ func Run(configPath string, taskPaths []string) error {
 	}
 
 	go s.Start()
-	slog.Info("Worker started")
+	log.Log().Info("Worker started")
 	sig := <-sigs
-	slog.Info("Shutting down", "signal", sig.String())
+	log.Log().Infof("Caught signal %s - shutting down", sig.String())
 	<-s.Stop()
-	slog.Info("Worker stopped")
+	log.Log().Info("Worker stopped")
 	return nil
 }

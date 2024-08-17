@@ -4,7 +4,6 @@ import (
 	"context"
 	"errors"
 	"fmt"
-	"log/slog"
 	"os"
 	"path"
 	"time"
@@ -14,6 +13,7 @@ import (
 	sContext "github.com/wndhydrnt/saturn-bot/pkg/context"
 	"github.com/wndhydrnt/saturn-bot/pkg/git"
 	"github.com/wndhydrnt/saturn-bot/pkg/host"
+	"github.com/wndhydrnt/saturn-bot/pkg/log"
 	"github.com/wndhydrnt/saturn-bot/pkg/options"
 	"github.com/wndhydrnt/saturn-bot/pkg/processor"
 	"github.com/wndhydrnt/saturn-bot/pkg/task"
@@ -30,42 +30,42 @@ type RunResult struct {
 	TaskName       string
 }
 
-type run struct {
-	cache        cache.Cache
-	dryRun       bool
-	hosts        []host.Host
-	processor    processor.RepositoryTaskProcessor
-	taskRegistry *task.Registry
+type Run struct {
+	Cache        cache.Cache
+	DryRun       bool
+	Hosts        []host.Host
+	Processor    processor.RepositoryTaskProcessor
+	TaskRegistry *task.Registry
 }
 
-func (r *run) run(repositoryNames, taskFiles []string) ([]RunResult, error) {
-	if len(r.hosts) == 0 {
+func (r *Run) Run(repositoryNames, taskFiles []string) ([]RunResult, error) {
+	if len(r.Hosts) == 0 {
 		return nil, ErrNoHostsConfigured
 	}
 
-	err := r.cache.Read()
+	err := r.Cache.Read()
 	if err != nil {
 		return nil, err
 	}
 
 	var since *time.Time
-	if r.cache.GetLastExecutionAt() != 0 {
-		ts := time.UnixMicro(r.cache.GetLastExecutionAt())
+	if r.Cache.GetLastExecutionAt() != 0 {
+		ts := time.UnixMicro(r.Cache.GetLastExecutionAt())
 		since = &ts
 	}
 
-	err = r.taskRegistry.ReadAll(taskFiles)
+	err = r.TaskRegistry.ReadAll(taskFiles)
 	if err != nil {
 		return nil, err
 	}
 
-	tasks := r.taskRegistry.GetTasks()
+	tasks := r.TaskRegistry.GetTasks()
 	if len(tasks) == 0 {
-		slog.Warn("0 tasks loaded from files - stopping")
+		log.Log().Warn("0 tasks loaded from files - stopping")
 		return nil, nil
 	}
 
-	needsAllRepositories := hasUpdatedTasks(r.cache.GetCachedTasks(), tasks)
+	needsAllRepositories := hasUpdatedTasks(r.Cache.GetCachedTasks(), tasks)
 	if needsAllRepositories {
 		since = nil
 	}
@@ -74,9 +74,9 @@ func (r *run) run(repositoryNames, taskFiles []string) ([]RunResult, error) {
 	errChan := make(chan error)
 	var expectedFinishes int
 	if len(repositoryNames) > 0 {
-		expectedFinishes = discoverRepositoriesFromCLI(r.hosts, repositoryNames, repos, errChan)
+		expectedFinishes = discoverRepositoriesFromCLI(r.Hosts, repositoryNames, repos, errChan)
 	} else {
-		expectedFinishes = discoverRepositoriesFromHosts(r.hosts, since, repos, errChan)
+		expectedFinishes = discoverRepositoriesFromHosts(r.Hosts, since, repos, errChan)
 	}
 	finishes := 0
 	visitedRepositories := map[string]struct{}{}
@@ -86,10 +86,10 @@ func (r *run) run(repositoryNames, taskFiles []string) ([]RunResult, error) {
 		select {
 		case repoList := <-repos:
 			for _, repo := range repoList {
-				slog.Debug("Repository discovered", "repository", repo.FullName())
+				log.Log().Debugf("Discovered repository %s", repo.FullName())
 				_, exists := visitedRepositories[repo.FullName()]
 				if exists {
-					slog.Debug("Repository already visited", "repository", repo.FullName())
+					log.Log().Debugf("Repository %s already visited", repo.FullName())
 					continue
 				}
 
@@ -102,10 +102,10 @@ func (r *run) run(repositoryNames, taskFiles []string) ([]RunResult, error) {
 						RepositoryName: repo.FullName(),
 						TaskName:       t.SourceTask().Name,
 					}
-					result.Result, result.Error = r.processor.Process(ctx, r.dryRun, repo, t, doFilter)
+					result.Result, result.Error = r.Processor.Process(ctx, r.DryRun, repo, t, doFilter)
 					if result.Error != nil {
 						success = false
-						slog.Error("Task failed", "err", result.Error)
+						log.Log().Errorw("Task failed", "error", result.Error)
 					}
 
 					results = append(results, result)
@@ -123,23 +123,23 @@ func (r *run) run(repositoryNames, taskFiles []string) ([]RunResult, error) {
 		}
 	}
 
-	if !r.dryRun {
+	if !r.DryRun {
 		// Only update cache if this is not a dry run.
 		// Without this guard, subsequent non dry runs would not recognize that they need to do anything.
-		r.cache.SetLastExecutionAt(time.Now().UnixMicro())
-		r.cache.UpdateCachedTasks(tasks)
-		err = r.cache.Write()
+		r.Cache.SetLastExecutionAt(time.Now().UnixMicro())
+		r.Cache.UpdateCachedTasks(tasks)
+		err = r.Cache.Write()
 		if err != nil {
 			return results, err
 		}
 	}
 
-	r.taskRegistry.Stop()
+	r.TaskRegistry.Stop()
 
 	if !success {
 		return results, fmt.Errorf("errors occurred, check previous log messages")
 	}
-	slog.Info("Run finished")
+	log.Log().Info("Run finished")
 	return results, nil
 }
 
@@ -157,17 +157,17 @@ func ExecuteRun(opts options.Opts, repositoryNames, taskFiles []string) ([]RunRe
 		return nil, fmt.Errorf("new git client for run: %w", err)
 	}
 
-	e := &run{
-		cache:  cache,
-		dryRun: opts.Config.DryRun,
-		hosts:  opts.Hosts,
-		processor: &processor.Processor{
+	e := &Run{
+		Cache:  cache,
+		DryRun: opts.Config.DryRun,
+		Hosts:  opts.Hosts,
+		Processor: &processor.Processor{
 			DataDir: *opts.Config.DataDir,
 			Git:     gitClient,
 		},
-		taskRegistry: taskRegistry,
+		TaskRegistry: taskRegistry,
 	}
-	return e.run(repositoryNames, taskFiles)
+	return e.Run(repositoryNames, taskFiles)
 }
 
 func hasUpdatedTasks(cachedTasks []cache.CachedTask, tasks []task.Task) bool {
@@ -232,11 +232,11 @@ func discoverRepositoriesFromHosts(
 ) int {
 	expectedFinishes := len(hosts)
 	for _, host := range hosts {
-		slog.Info("Listing repositories", "updated_since", fmt.Sprintf("%v", since))
+		log.Log().Infof("Listing repositories since %v", since)
 		go host.ListRepositories(since, repoChan, errChan)
 		if since != nil {
 			expectedFinishes += 1
-			slog.Info("Listing repositories with open pull requests")
+			log.Log().Info("Listing repositories with open pull requests")
 			go host.ListRepositoriesWithOpenPullRequests(repoChan, errChan)
 		}
 	}
@@ -251,7 +251,7 @@ func discoverRepositoriesFromCLI(
 	repoChan chan []host.Repository,
 	errChan chan error,
 ) int {
-	slog.Info("Discovering repositories from CLI")
+	log.Log().Info("Discovering repositories from CLI")
 	go func() {
 		for _, repoName := range repositoryNames {
 			repo, err := findRepositoryInHosts(hosts, repoName)

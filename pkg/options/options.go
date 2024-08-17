@@ -3,7 +3,6 @@ package options
 import (
 	"errors"
 	"fmt"
-	"log/slog"
 	"os"
 	"path/filepath"
 	"time"
@@ -12,6 +11,7 @@ import (
 	"github.com/wndhydrnt/saturn-bot/pkg/config"
 	"github.com/wndhydrnt/saturn-bot/pkg/filter"
 	"github.com/wndhydrnt/saturn-bot/pkg/host"
+	"github.com/wndhydrnt/saturn-bot/pkg/log"
 	sLog "github.com/wndhydrnt/saturn-bot/pkg/log"
 )
 
@@ -128,11 +128,11 @@ func Initialize(opts *Opts) error {
 		dataDir = *opts.Config.DataDir
 	}
 
-	slog.Info(fmt.Sprintf("Using data directory %s", dataDir))
+	log.Log().Infof("Using data directory %s", dataDir)
 	info, err := os.Stat(dataDir)
 	if err != nil {
 		if errors.Is(err, os.ErrNotExist) {
-			slog.Info("Creating data directory", "path", *opts.Config.DataDir)
+			log.Log().Infof("Creating data directory %s", *opts.Config.DataDir)
 			mkdirErr := os.MkdirAll(*opts.Config.DataDir, 0700)
 			if mkdirErr != nil {
 				return fmt.Errorf("create data directory: %w", err)

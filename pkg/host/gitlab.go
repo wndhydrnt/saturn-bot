@@ -4,7 +4,6 @@ import (
 	"encoding/base64"
 	"errors"
 	"fmt"
-	"log/slog"
 	"net/http"
 	"net/url"
 	"path"
@@ -12,7 +11,9 @@ import (
 	"sync"
 	"time"
 
+	"github.com/wndhydrnt/saturn-bot/pkg/log"
 	"github.com/xanzy/go-gitlab"
+	"go.uber.org/zap"
 )
 
 // userCache caches GitLab users.
@@ -157,7 +158,8 @@ func (g *GitLabRepository) CreatePullRequest(branch string, data PullRequestData
 		for _, assignee := range data.Assignees {
 			user, err := g.userCache.get(assignee)
 			if err != nil {
-				slog.Warn("Cannot find assignee in GitLab to add to new merge request", "assignee", assignee, "err", err)
+				log.Log().Warnf("Cannot find assignee %s in GitLab to add to new merge request", assignee)
+				log.Log().Warnw("Failed to find assignee in GitLab to add to new merge request", zap.Error(err))
 				continue
 			}
 
@@ -172,7 +174,8 @@ func (g *GitLabRepository) CreatePullRequest(branch string, data PullRequestData
 		for _, reviewer := range data.Reviewers {
 			user, err := g.userCache.get(reviewer)
 			if err != nil {
-				slog.Warn("Cannot find reviewer in GitLab to add to new merge request", "reviewer", reviewer, "err", err)
+				log.Log().Warnf("Cannot find reviewer %s in GitLab to add to new merge request", reviewer)
+				log.Log().Warnw("Failed to find reviewer in GitLab to add to new merge request", zap.Error(err))
 				continue
 			}
 
@@ -279,7 +282,7 @@ func (g *GitLabRepository) HasFile(p string) (bool, error) {
 			var errResp *gitlab.ErrorResponse
 			if errors.As(err, &errResp) {
 				if errResp.Response.StatusCode == http.StatusNotFound {
-					slog.Warn("Tree not found - empty repository?")
+					log.Log().Warn("Tree not found - empty repository?")
 					return false, nil
 				}
 			}
@@ -509,7 +512,8 @@ func (g *GitLabRepository) diffUsers(assigned []*gitlab.BasicUser, in []string) 
 		} else {
 			user, err := g.userCache.get(name)
 			if err != nil {
-				slog.Warn("Cannot find user in GitLab", "user", name, "err", err)
+				log.Log().Warnf("Cannot find user %s in GitLab", name)
+				log.Log().Warnw("Failed to find user in GitLab", zap.Error(err))
 				continue
 			}
 
@@ -662,7 +666,7 @@ func (g *GitLabHost) ListRepositoriesWithOpenPullRequests(result chan []Reposito
 			}
 
 			if project.Archived {
-				slog.Debug("Ignore project because it has been archived", "project", project.ID)
+				log.Log().Debugf("Ignore project %d because it has been archived", project.ID)
 				continue
 			}
 

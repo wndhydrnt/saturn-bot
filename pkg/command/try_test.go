@@ -1,4 +1,4 @@
-package command
+package command_test
 
 import (
 	"bytes"
@@ -10,11 +10,11 @@ import (
 	"github.com/stretchr/testify/assert"
 	"github.com/stretchr/testify/require"
 	"github.com/wndhydrnt/saturn-bot/pkg/action"
+	"github.com/wndhydrnt/saturn-bot/pkg/command"
 	"github.com/wndhydrnt/saturn-bot/pkg/config"
 	"github.com/wndhydrnt/saturn-bot/pkg/filter"
 	"github.com/wndhydrnt/saturn-bot/pkg/git"
 	"github.com/wndhydrnt/saturn-bot/pkg/host"
-	"github.com/wndhydrnt/saturn-bot/pkg/mock"
 	"github.com/wndhydrnt/saturn-bot/pkg/options"
 	"github.com/wndhydrnt/saturn-bot/pkg/task"
 	"go.uber.org/mock/gomock"
@@ -29,14 +29,14 @@ var (
 
 func TestTryRunner_Run_FilesModified(t *testing.T) {
 	ctrl := gomock.NewController(t)
-	repoMock := mock.NewMockRepository(ctrl)
+	repoMock := NewMockRepository(ctrl)
 	repoMock.EXPECT().Host().Return("git.local")
 	repoMock.EXPECT().Owner().Return("unit")
 	repoMock.EXPECT().Name().Return("test")
-	hostMock := mock.NewMockHost(ctrl)
+	hostMock := NewMockHost(ctrl)
 	hostMock.EXPECT().CreateFromName("git.local/unit/test").Return(repoMock, nil)
 	registry := task.NewRegistry(tryTestOpts)
-	gitcMock := mock.NewMockGitClient(ctrl)
+	gitcMock := NewMockGitClient(ctrl)
 	gitcMock.EXPECT().Prepare(repoMock, false).Return("/checkout", nil)
 	gitcMock.EXPECT().UpdateTaskBranch("saturn-bot--unit-test", false, repoMock).Return(false, nil)
 	gitcMock.EXPECT().HasLocalChanges().Return(true, nil)
@@ -50,14 +50,14 @@ filters:
       name: test`
 	taskFile := createTempFile(content, "*.yaml")
 
-	underTest := &TryRunner{
-		applyActionsFunc: func(actions []action.Action, ctx context.Context, dir string) error { return nil },
-		gitc:             gitcMock,
-		hosts:            []host.Host{hostMock},
-		out:              out,
-		registry:         registry,
-		repositoryName:   "git.local/unit/test",
-		taskFile:         taskFile,
+	underTest := &command.TryRunner{
+		ApplyActionsFunc: func(actions []action.Action, ctx context.Context, dir string) error { return nil },
+		GitClient:        gitcMock,
+		Hosts:            []host.Host{hostMock},
+		Out:              out,
+		Registry:         registry,
+		RepositoryName:   "git.local/unit/test",
+		TaskFile:         taskFile,
 	}
 	err := underTest.Run()
 
@@ -69,28 +69,28 @@ filters:
 func TestTryRunner_Run_NoChanges(t *testing.T) {
 	repoName := "git.local/unit/test"
 	ctrl := gomock.NewController(t)
-	repoMock := mock.NewMockRepository(ctrl)
+	repoMock := NewMockRepository(ctrl)
 	repoMock.EXPECT().Host().Return("git.local")
 	repoMock.EXPECT().Owner().Return("unit")
 	repoMock.EXPECT().Name().Return("test")
-	hostMock := mock.NewMockHost(ctrl)
+	hostMock := NewMockHost(ctrl)
 	hostMock.EXPECT().CreateFromName(repoName).Return(repoMock, nil)
 	registry := task.NewRegistry(tryTestOpts)
-	gitcMock := mock.NewMockGitClient(ctrl)
+	gitcMock := NewMockGitClient(ctrl)
 	gitcMock.EXPECT().Prepare(repoMock, false).Return("/checkout", nil)
 	gitcMock.EXPECT().UpdateTaskBranch("saturn-bot--unit-test", false, repoMock).Return(false, nil)
 	gitcMock.EXPECT().HasLocalChanges().Return(false, nil)
 	out := &bytes.Buffer{}
 	taskFile := createTestTaskFile(createTestTask(repoName))
 
-	underTest := &TryRunner{
-		applyActionsFunc: func(actions []action.Action, ctx context.Context, dir string) error { return nil },
-		gitc:             gitcMock,
-		hosts:            []host.Host{hostMock},
-		out:              out,
-		registry:         registry,
-		repositoryName:   repoName,
-		taskFile:         taskFile,
+	underTest := &command.TryRunner{
+		ApplyActionsFunc: func(actions []action.Action, ctx context.Context, dir string) error { return nil },
+		GitClient:        gitcMock,
+		Hosts:            []host.Host{hostMock},
+		Out:              out,
+		Registry:         registry,
+		RepositoryName:   repoName,
+		TaskFile:         taskFile,
 	}
 	err := underTest.Run()
 
@@ -101,22 +101,22 @@ func TestTryRunner_Run_NoChanges(t *testing.T) {
 func TestTryRunner_Run_EmptyTaskFile(t *testing.T) {
 	repoName := "git.local/unit/test"
 	ctrl := gomock.NewController(t)
-	repoMock := mock.NewMockRepository(ctrl)
-	hostMock := mock.NewMockHost(ctrl)
+	repoMock := NewMockRepository(ctrl)
+	hostMock := NewMockHost(ctrl)
 	hostMock.EXPECT().CreateFromName(repoName).Return(repoMock, nil)
 	registry := task.NewRegistry(tryTestOpts)
-	gitcMock := mock.NewMockGitClient(ctrl)
+	gitcMock := NewMockGitClient(ctrl)
 	out := &bytes.Buffer{}
 	taskFile := createTempFile("", "*.yaml")
 
-	underTest := &TryRunner{
-		applyActionsFunc: func(actions []action.Action, ctx context.Context, dir string) error { return nil },
-		gitc:             gitcMock,
-		hosts:            []host.Host{hostMock},
-		out:              out,
-		registry:         registry,
-		repositoryName:   repoName,
-		taskFile:         taskFile,
+	underTest := &command.TryRunner{
+		ApplyActionsFunc: func(actions []action.Action, ctx context.Context, dir string) error { return nil },
+		GitClient:        gitcMock,
+		Hosts:            []host.Host{hostMock},
+		Out:              out,
+		Registry:         registry,
+		RepositoryName:   repoName,
+		TaskFile:         taskFile,
 	}
 	err := underTest.Run()
 
@@ -127,23 +127,23 @@ func TestTryRunner_Run_EmptyTaskFile(t *testing.T) {
 func TestTryRunner_Run_TaskName(t *testing.T) {
 	repoName := "git.local/unit/test"
 	ctrl := gomock.NewController(t)
-	repoMock := mock.NewMockRepository(ctrl)
-	hostMock := mock.NewMockHost(ctrl)
+	repoMock := NewMockRepository(ctrl)
+	hostMock := NewMockHost(ctrl)
 	hostMock.EXPECT().CreateFromName(repoName).Return(repoMock, nil)
 	registry := task.NewRegistry(tryTestOpts)
-	gitcMock := mock.NewMockGitClient(ctrl)
+	gitcMock := NewMockGitClient(ctrl)
 	out := &bytes.Buffer{}
 	taskFile := createTestTaskFile(createTestTask(repoName))
 
-	underTest := &TryRunner{
-		applyActionsFunc: func(actions []action.Action, ctx context.Context, dir string) error { return nil },
-		gitc:             gitcMock,
-		hosts:            []host.Host{hostMock},
-		out:              out,
-		registry:         registry,
-		repositoryName:   repoName,
-		taskFile:         taskFile,
-		taskName:         "Other",
+	underTest := &command.TryRunner{
+		ApplyActionsFunc: func(actions []action.Action, ctx context.Context, dir string) error { return nil },
+		GitClient:        gitcMock,
+		Hosts:            []host.Host{hostMock},
+		Out:              out,
+		Registry:         registry,
+		RepositoryName:   repoName,
+		TaskFile:         taskFile,
+		TaskName:         "Other",
 	}
 	err := underTest.Run()
 
@@ -153,14 +153,14 @@ func TestTryRunner_Run_TaskName(t *testing.T) {
 
 func TestTryRunner_Run_FilterDoesNotMatch(t *testing.T) {
 	ctrl := gomock.NewController(t)
-	repoMock := mock.NewMockRepository(ctrl)
+	repoMock := NewMockRepository(ctrl)
 	repoMock.EXPECT().Host().Return("git.local")
 	repoMock.EXPECT().Owner().Return("unit")
 	repoMock.EXPECT().Name().Return("test")
-	hostMock := mock.NewMockHost(ctrl)
+	hostMock := NewMockHost(ctrl)
 	hostMock.EXPECT().CreateFromName("git.local/unit/test").Return(repoMock, nil)
 	registry := task.NewRegistry(options.Opts{FilterFactories: filter.BuiltInFactories})
-	gitcMock := mock.NewMockGitClient(ctrl)
+	gitcMock := NewMockGitClient(ctrl)
 	out := &bytes.Buffer{}
 	content := `name: Unit Test
 filters:
@@ -171,14 +171,14 @@ filters:
       name: no-match`
 	taskFile := createTempFile(content, "*.yaml")
 
-	underTest := &TryRunner{
-		applyActionsFunc: func(actions []action.Action, ctx context.Context, dir string) error { return nil },
-		gitc:             gitcMock,
-		hosts:            []host.Host{hostMock},
-		out:              out,
-		registry:         registry,
-		repositoryName:   "git.local/unit/test",
-		taskFile:         taskFile,
+	underTest := &command.TryRunner{
+		ApplyActionsFunc: func(actions []action.Action, ctx context.Context, dir string) error { return nil },
+		GitClient:        gitcMock,
+		Hosts:            []host.Host{hostMock},
+		Out:              out,
+		Registry:         registry,
+		RepositoryName:   "git.local/unit/test",
+		TaskFile:         taskFile,
 	}
 	err := underTest.Run()
 
@@ -188,19 +188,19 @@ filters:
 
 func TestTryRunner_Run_UnsetRepositoryName(t *testing.T) {
 	ctrl := gomock.NewController(t)
-	hostMock := mock.NewMockHost(ctrl)
+	hostMock := NewMockHost(ctrl)
 	registry := task.NewRegistry(tryTestOpts)
-	gitcMock := mock.NewMockGitClient(ctrl)
+	gitcMock := NewMockGitClient(ctrl)
 	taskFile := createTestTaskFile(createTestTask("git.local/unit/test"))
 
-	underTest := &TryRunner{
-		applyActionsFunc: func(actions []action.Action, ctx context.Context, dir string) error { return nil },
-		gitc:             gitcMock,
-		hosts:            []host.Host{hostMock},
-		out:              &bytes.Buffer{},
-		registry:         registry,
-		repositoryName:   "",
-		taskFile:         taskFile,
+	underTest := &command.TryRunner{
+		ApplyActionsFunc: func(actions []action.Action, ctx context.Context, dir string) error { return nil },
+		GitClient:        gitcMock,
+		Hosts:            []host.Host{hostMock},
+		Out:              &bytes.Buffer{},
+		Registry:         registry,
+		RepositoryName:   "",
+		TaskFile:         taskFile,
 	}
 	err := underTest.Run()
 
@@ -209,18 +209,18 @@ func TestTryRunner_Run_UnsetRepositoryName(t *testing.T) {
 
 func TestTryRunner_Run_UnsetTaskFile(t *testing.T) {
 	ctrl := gomock.NewController(t)
-	hostMock := mock.NewMockHost(ctrl)
+	hostMock := NewMockHost(ctrl)
 	registry := task.NewRegistry(tryTestOpts)
-	gitcMock := mock.NewMockGitClient(ctrl)
+	gitcMock := NewMockGitClient(ctrl)
 
-	underTest := &TryRunner{
-		applyActionsFunc: func(actions []action.Action, ctx context.Context, dir string) error { return nil },
-		gitc:             gitcMock,
-		hosts:            []host.Host{hostMock},
-		out:              &bytes.Buffer{},
-		registry:         registry,
-		repositoryName:   "git.local/unit/test",
-		taskFile:         "",
+	underTest := &command.TryRunner{
+		ApplyActionsFunc: func(actions []action.Action, ctx context.Context, dir string) error { return nil },
+		GitClient:        gitcMock,
+		Hosts:            []host.Host{hostMock},
+		Out:              &bytes.Buffer{},
+		Registry:         registry,
+		RepositoryName:   "git.local/unit/test",
+		TaskFile:         "",
 	}
 	err := underTest.Run()
 
@@ -237,16 +237,16 @@ gitUserName: "unittest"`
 	opts, err := options.ToOptions(cfg)
 	require.NoError(t, err, "should convert configuration to options successfully")
 
-	runner, err := NewTryRunner(opts, "", "git.local/unit/test", "task.yaml", "Unit Test")
+	runner, err := command.NewTryRunner(opts, "", "git.local/unit/test", "task.yaml", "Unit Test")
 
 	require.NoError(t, err)
-	assert.NotNil(t, runner.applyActionsFunc)
-	assert.Implements(t, (*git.GitClient)(nil), runner.gitc)
-	assert.IsType(t, []host.Host{}, runner.hosts)
-	assert.Equal(t, runner.out, os.Stdout)
-	assert.IsType(t, &task.Registry{}, runner.registry)
-	assert.Equal(t, "git.local/unit/test", runner.repositoryName)
-	assert.Equal(t, "task.yaml", runner.taskFile)
-	assert.Equal(t, "Unit Test", runner.taskName)
+	assert.NotNil(t, runner.ApplyActionsFunc)
+	assert.Implements(t, (*git.GitClient)(nil), runner.GitClient)
+	assert.IsType(t, []host.Host{}, runner.Hosts)
+	assert.Equal(t, runner.Out, os.Stdout)
+	assert.IsType(t, &task.Registry{}, runner.Registry)
+	assert.Equal(t, "git.local/unit/test", runner.RepositoryName)
+	assert.Equal(t, "task.yaml", runner.TaskFile)
+	assert.Equal(t, "Unit Test", runner.TaskName)
 	assert.DirExists(t, filepath.Join(os.TempDir(), "saturn-bot"), "creates data directory because an empty value has been passed to NewTryRunner()")
 }

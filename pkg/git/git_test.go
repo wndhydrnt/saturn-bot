@@ -14,7 +14,6 @@ import (
 	"github.com/wndhydrnt/saturn-bot/pkg/git"
 	"github.com/wndhydrnt/saturn-bot/pkg/host"
 	"github.com/wndhydrnt/saturn-bot/pkg/log"
-	"github.com/wndhydrnt/saturn-bot/pkg/mock"
 	"go.uber.org/mock/gomock"
 )
 
@@ -101,7 +100,7 @@ func TestGit_Prepare_CloneRepository(t *testing.T) {
 	}()
 
 	ctrl := gomock.NewController(t)
-	repo := mock.NewMockRepository(ctrl)
+	repo := NewMockRepository(ctrl)
 	repo.EXPECT().FullName().Return("git.local/unit/test").AnyTimes()
 	repo.EXPECT().BaseBranch().Return("main").AnyTimes()
 	repo.EXPECT().CloneUrlHttp().Return("https://git.local/unit/test.git")
@@ -136,7 +135,7 @@ func TestGit_Prepare_CloneRepositorySsh(t *testing.T) {
 	}()
 
 	ctrl := gomock.NewController(t)
-	repo := mock.NewMockRepository(ctrl)
+	repo := NewMockRepository(ctrl)
 	repo.EXPECT().FullName().Return("git.local/unit/test").AnyTimes()
 	repo.EXPECT().BaseBranch().Return("main").AnyTimes()
 	repo.EXPECT().CloneUrlSsh().Return("git@git.local/unit/test.git")
@@ -174,7 +173,7 @@ func TestGit_Prepare_UpdateExistingRepository(t *testing.T) {
 	err = os.MkdirAll(dir, 0755)
 	require.NoError(t, err)
 	ctrl := gomock.NewController(t)
-	repo := mock.NewMockRepository(ctrl)
+	repo := NewMockRepository(ctrl)
 	repo.EXPECT().FullName().Return("git.local/unit/test").AnyTimes()
 	repo.EXPECT().BaseBranch().Return("main").AnyTimes()
 	em := &execMock{t: t}
@@ -212,7 +211,7 @@ func TestGit_Prepare_RetryOnCheckoutError(t *testing.T) {
 	err = os.MkdirAll(dir, 0755)
 	require.NoError(t, err)
 	ctrl := gomock.NewController(t)
-	repo := mock.NewMockRepository(ctrl)
+	repo := NewMockRepository(ctrl)
 	repo.EXPECT().FullName().Return("git.local/unit/test").AnyTimes()
 	repo.EXPECT().BaseBranch().Return("main").AnyTimes()
 	repo.EXPECT().CloneUrlHttp().Return("https://git.local/unit/test.git")
@@ -249,9 +248,9 @@ func TestGit_Prepare_EmptyGitAuthor(t *testing.T) {
 	}()
 
 	ctrl := gomock.NewController(t)
-	hostM := mock.NewMockHostDetail(ctrl)
+	hostM := NewMockHostDetail(ctrl)
 	hostM.EXPECT().AuthenticatedUser().Return(&host.UserInfo{Email: "unit@test.local", Name: "Unit Test"}, nil)
-	repo := mock.NewMockRepository(ctrl)
+	repo := NewMockRepository(ctrl)
 	repo.EXPECT().Host().Return(hostM)
 	repo.EXPECT().FullName().Return("git.local/unit/test").AnyTimes()
 	repo.EXPECT().BaseBranch().Return("main").AnyTimes()
@@ -443,7 +442,7 @@ func TestGit_UpdateTaskBranch_NewBranch(t *testing.T) {
 	em.withCall("git", "reset", "--hard", "abc123")
 	em.withCall("git", "rebase", "main")
 	ctrl := gomock.NewController(t)
-	repo := mock.NewMockRepository(ctrl)
+	repo := NewMockRepository(ctrl)
 	repo.EXPECT().BaseBranch().Return("main").AnyTimes()
 
 	g, err := git.New(config.Configuration{
@@ -474,7 +473,7 @@ func TestGit_UpdateTaskBranch_BranchExistsRemote(t *testing.T) {
 	em.withCall("git", "reset", "--hard", "abc123")
 	em.withCall("git", "rebase", "main")
 	ctrl := gomock.NewController(t)
-	repo := mock.NewMockRepository(ctrl)
+	repo := NewMockRepository(ctrl)
 	repo.EXPECT().BaseBranch().Return("main").AnyTimes()
 
 	g, err := git.New(config.Configuration{
@@ -504,7 +503,7 @@ func TestGit_UpdateTaskBranch_BranchModified(t *testing.T) {
 	em.withCall("git", "rev-list", "abc123..HEAD").withStdout("a1b2c3d4\n")
 	em.withCall("git", "show", "--format=%aE", "--no-patch", "a1b2c3d4").withStdout("user@test.local\n")
 	ctrl := gomock.NewController(t)
-	repo := mock.NewMockRepository(ctrl)
+	repo := NewMockRepository(ctrl)
 	repo.EXPECT().BaseBranch().Return("main").AnyTimes()
 
 	g, err := git.New(config.Configuration{

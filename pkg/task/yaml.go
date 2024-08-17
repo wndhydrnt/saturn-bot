@@ -2,8 +2,8 @@ package task
 
 import (
 	"fmt"
-	"log/slog"
 
+	"github.com/wndhydrnt/saturn-bot/pkg/log"
 	"github.com/wndhydrnt/saturn-bot/pkg/options"
 	"github.com/wndhydrnt/saturn-bot/pkg/task/schema"
 )
@@ -23,7 +23,7 @@ func readTasksYaml(
 	var result []Task
 	for idx, schemaTask := range schemaTasks {
 		if !schemaTask.Active {
-			slog.Warn("Task deactivated", "task", schemaTask.Name)
+			log.Log().Warnf("Task %s deactivated", schemaTask.Name)
 			continue
 		}
 
