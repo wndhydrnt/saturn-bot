@@ -8,13 +8,12 @@ import (
 	proto "github.com/wndhydrnt/saturn-bot-go/protocol/v1"
 	gsContext "github.com/wndhydrnt/saturn-bot/pkg/context"
 	"github.com/wndhydrnt/saturn-bot/pkg/host"
-	"github.com/wndhydrnt/saturn-bot/pkg/mock"
 	"github.com/wndhydrnt/saturn-bot/pkg/task"
 	"go.uber.org/mock/gomock"
 )
 
-func setupRepoPluginTest(ctrl *gomock.Controller) (repoMock *mock.MockRepository, payload *proto.Repository) {
-	repoMock = mock.NewMockRepository(ctrl)
+func setupRepoPluginTest(ctrl *gomock.Controller) (repoMock *MockRepository, payload *proto.Repository) {
+	repoMock = NewMockRepository(ctrl)
 	repoMock.EXPECT().FullName().Return("git.localhost/unit/test").AnyTimes()
 	repoMock.EXPECT().CloneUrlHttp().Return("https://git.localhost/unit/test.git").AnyTimes()
 	repoMock.EXPECT().CloneUrlSsh().Return("git@git.localhost/unit/test.git").AnyTimes()
@@ -33,7 +32,7 @@ func TestPluginAction_Apply(t *testing.T) {
 	ctrl := gomock.NewController(t)
 	repo, payload := setupRepoPluginTest(ctrl)
 	runData := map[string]string{"a": "1"}
-	provider := mock.NewMockProvider(ctrl)
+	provider := NewMockProvider(ctrl)
 	provider.EXPECT().ExecuteActions(&proto.ExecuteActionsRequest{
 		Context: &proto.Context{
 			RunData:    runData,
@@ -61,7 +60,7 @@ func TestPluginAction_Apply(t *testing.T) {
 func TestPluginAction_Apply_WithPullRequest(t *testing.T) {
 	ctrl := gomock.NewController(t)
 	repo, payload := setupRepoPluginTest(ctrl)
-	provider := mock.NewMockProvider(ctrl)
+	provider := NewMockProvider(ctrl)
 	provider.EXPECT().ExecuteActions(&proto.ExecuteActionsRequest{
 		Context: &proto.Context{
 			RunData:     make(map[string]string),
@@ -88,7 +87,7 @@ func TestPluginFilter_Do(t *testing.T) {
 	ctrl := gomock.NewController(t)
 	repo, payload := setupRepoPluginTest(ctrl)
 	runData := map[string]string{"a": "1"}
-	provider := mock.NewMockProvider(ctrl)
+	provider := NewMockProvider(ctrl)
 	provider.EXPECT().ExecuteFilters(&proto.ExecuteFiltersRequest{
 		Context: &proto.Context{
 			Repository: payload,
@@ -117,7 +116,7 @@ func TestPluginFilter_Do(t *testing.T) {
 func TestPluginFilter_Do_WithPullRequest(t *testing.T) {
 	ctrl := gomock.NewController(t)
 	repo, payload := setupRepoPluginTest(ctrl)
-	provider := mock.NewMockProvider(ctrl)
+	provider := NewMockProvider(ctrl)
 	provider.EXPECT().ExecuteFilters(&proto.ExecuteFiltersRequest{
 		Context: &proto.Context{
 			RunData:     make(map[string]string),

@@ -1,4 +1,4 @@
-package command
+package command_test
 
 import (
 	"bytes"
@@ -15,9 +15,9 @@ import (
 	"github.com/stretchr/testify/require"
 	"github.com/wndhydrnt/saturn-bot/pkg/action"
 	"github.com/wndhydrnt/saturn-bot/pkg/cache"
+	"github.com/wndhydrnt/saturn-bot/pkg/command"
 	"github.com/wndhydrnt/saturn-bot/pkg/filter"
 	"github.com/wndhydrnt/saturn-bot/pkg/host"
-	"github.com/wndhydrnt/saturn-bot/pkg/mock"
 	"github.com/wndhydrnt/saturn-bot/pkg/options"
 	"github.com/wndhydrnt/saturn-bot/pkg/processor"
 	"github.com/wndhydrnt/saturn-bot/pkg/task"
@@ -135,12 +135,12 @@ func createTempFile(content string, pattern string) string {
 
 func TestExecuteRunner_Run(t *testing.T) {
 	ctrl := gomock.NewController(t)
-	repo := mock.NewMockRepository(ctrl)
+	repo := NewMockRepository(ctrl)
 	repo.EXPECT().FullName().Return("git.local/unittest/repo").AnyTimes()
 	repo.EXPECT().Host().Return("git.local").AnyTimes()
 	repo.EXPECT().Owner().Return("unittest").AnyTimes()
 	repo.EXPECT().Name().Return("repo").AnyTimes()
-	repoWithPr := mock.NewMockRepository(ctrl)
+	repoWithPr := NewMockRepository(ctrl)
 	repoWithPr.EXPECT().FullName().Return("git.local/unittest/repoWithPr").AnyTimes()
 	repoWithPr.EXPECT().Host().Return("git.local").AnyTimes()
 	repoWithPr.EXPECT().Owner().Return("unittest").AnyTimes()
@@ -163,7 +163,7 @@ func TestExecuteRunner_Run(t *testing.T) {
 			panic(err)
 		}
 	}()
-	procMock := mock.NewMockRepositoryTaskProcessor(ctrl)
+	procMock := NewMockRepositoryTaskProcessor(ctrl)
 	var ctx = reflect.TypeOf((*context.Context)(nil)).Elem()
 	var anyTask task.Task = &task.Wrapper{}
 	procMock.EXPECT().
@@ -173,14 +173,14 @@ func TestExecuteRunner_Run(t *testing.T) {
 		Process(gomock.AssignableToTypeOf(ctx), false, repoWithPr, gomock.AssignableToTypeOf(anyTask), true).
 		Return(processor.ResultNoChanges, nil)
 
-	runner := &run{
-		cache:        cache,
-		dryRun:       false,
-		hosts:        []host.Host{hostm},
-		processor:    procMock,
-		taskRegistry: task.NewRegistry(runTestOpts),
+	runner := &command.Run{
+		Cache:        cache,
+		DryRun:       false,
+		Hosts:        []host.Host{hostm},
+		Processor:    procMock,
+		TaskRegistry: task.NewRegistry(runTestOpts),
 	}
-	_, err := runner.run([]string{}, []string{taskFile})
+	_, err := runner.Run([]string{}, []string{taskFile})
 
 	require.NoError(t, err)
 	assert.NotEqual(t, cacheLastExecutionBefore, cache.GetLastExecutionAt(), "Updates the lat execution time in the cache")
@@ -188,7 +188,7 @@ func TestExecuteRunner_Run(t *testing.T) {
 
 func TestExecuteRunner_Run_DryRun(t *testing.T) {
 	ctrl := gomock.NewController(t)
-	repo := mock.NewMockRepository(ctrl)
+	repo := NewMockRepository(ctrl)
 	repo.EXPECT().FullName().Return("git.local/unittest/repo").AnyTimes()
 	repo.EXPECT().Host().Return("git.local").AnyTimes()
 	repo.EXPECT().Owner().Return("unittest").AnyTimes()
@@ -211,21 +211,21 @@ func TestExecuteRunner_Run_DryRun(t *testing.T) {
 			panic(err)
 		}
 	}()
-	procMock := mock.NewMockRepositoryTaskProcessor(ctrl)
+	procMock := NewMockRepositoryTaskProcessor(ctrl)
 	var ctx = reflect.TypeOf((*context.Context)(nil)).Elem()
 	var anyTask task.Task = &task.Wrapper{}
 	procMock.EXPECT().
 		Process(gomock.AssignableToTypeOf(ctx), true, repo, gomock.AssignableToTypeOf(anyTask), true).
 		Return(processor.ResultNoChanges, nil)
 
-	runner := &run{
-		cache:        cache,
-		dryRun:       true,
-		hosts:        []host.Host{hostm},
-		processor:    procMock,
-		taskRegistry: task.NewRegistry(runTestOpts),
+	runner := &command.Run{
+		Cache:        cache,
+		DryRun:       true,
+		Hosts:        []host.Host{hostm},
+		Processor:    procMock,
+		TaskRegistry: task.NewRegistry(runTestOpts),
 	}
-	_, err := runner.run([]string{}, []string{taskFile})
+	_, err := runner.Run([]string{}, []string{taskFile})
 
 	require.NoError(t, err)
 	assert.Equal(t, cacheLastExecutionBefore, cache.GetLastExecutionAt(), "Does not update the last execution time because dryRun is true")
@@ -234,7 +234,7 @@ func TestExecuteRunner_Run_DryRun(t *testing.T) {
 
 func TestExecuteRunner_Run_RepositoriesCLI(t *testing.T) {
 	ctrl := gomock.NewController(t)
-	repo := mock.NewMockRepository(ctrl)
+	repo := NewMockRepository(ctrl)
 	repo.EXPECT().FullName().Return("git.local/unittest/repo").AnyTimes()
 	repo.EXPECT().Host().Return("git.local").AnyTimes()
 	repo.EXPECT().Owner().Return("unittest").AnyTimes()
@@ -256,21 +256,21 @@ func TestExecuteRunner_Run_RepositoriesCLI(t *testing.T) {
 			panic(err)
 		}
 	}()
-	procMock := mock.NewMockRepositoryTaskProcessor(ctrl)
+	procMock := NewMockRepositoryTaskProcessor(ctrl)
 	var ctx = reflect.TypeOf((*context.Context)(nil)).Elem()
 	var anyTask task.Task = &task.Wrapper{}
 	procMock.EXPECT().
 		Process(gomock.AssignableToTypeOf(ctx), false, repo, gomock.AssignableToTypeOf(anyTask), false).
 		Return(processor.ResultNoChanges, nil)
 
-	runner := &run{
-		cache:        cache,
-		dryRun:       false,
-		hosts:        []host.Host{hostm},
-		processor:    procMock,
-		taskRegistry: task.NewRegistry(runTestOpts),
+	runner := &command.Run{
+		Cache:        cache,
+		DryRun:       false,
+		Hosts:        []host.Host{hostm},
+		Processor:    procMock,
+		TaskRegistry: task.NewRegistry(runTestOpts),
 	}
-	_, err := runner.run([]string{"git.local/unittest/repo"}, []string{taskFile})
+	_, err := runner.Run([]string{"git.local/unittest/repo"}, []string{taskFile})
 
 	require.NoError(t, err)
 	assert.NotEqual(t, cacheLastExecutionBefore, cache.GetLastExecutionAt(), "Updates the lat execution time in the cache")

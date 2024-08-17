@@ -16,14 +16,14 @@ import (
 )
 
 type TryRunner struct {
-	applyActionsFunc func(actions []action.Action, ctx context.Context, dir string) error
-	gitc             git.GitClient
-	hosts            []host.Host
-	out              io.Writer
-	registry         *task.Registry
-	repositoryName   string
-	taskFile         string
-	taskName         string
+	ApplyActionsFunc func(actions []action.Action, ctx context.Context, dir string) error
+	GitClient        git.GitClient
+	Hosts            []host.Host
+	Out              io.Writer
+	Registry         *task.Registry
+	RepositoryName   string
+	TaskFile         string
+	TaskName         string
 }
 
 func NewTryRunner(opts options.Opts, dataDir string, repositoryName string, taskFile string, taskName string) (*TryRunner, error) {
@@ -44,30 +44,30 @@ func NewTryRunner(opts options.Opts, dataDir string, repositoryName string, task
 	}
 
 	return &TryRunner{
-		applyActionsFunc: applyActionsInDirectory,
-		gitc:             gitClient,
-		hosts:            opts.Hosts,
-		out:              os.Stdout,
-		registry:         task.NewRegistry(opts),
-		repositoryName:   repositoryName,
-		taskFile:         taskFile,
-		taskName:         taskName,
+		ApplyActionsFunc: applyActionsInDirectory,
+		GitClient:        gitClient,
+		Hosts:            opts.Hosts,
+		Out:              os.Stdout,
+		Registry:         task.NewRegistry(opts),
+		RepositoryName:   repositoryName,
+		TaskFile:         taskFile,
+		TaskName:         taskName,
 	}, nil
 }
 
 func (r *TryRunner) Run() error {
-	if r.repositoryName == "" {
+	if r.RepositoryName == "" {
 		return fmt.Errorf("required flag `--repository` is not set")
 	}
 
-	if r.taskFile == "" {
+	if r.TaskFile == "" {
 		return fmt.Errorf("required flag `--task-file` is not set")
 	}
 
 	var repository host.Repository
-	for _, host := range r.hosts {
+	for _, host := range r.Hosts {
 		var err error
-		repository, err = host.CreateFromName(r.repositoryName)
+		repository, err = host.CreateFromName(r.RepositoryName)
 		if err != nil {
 			return fmt.Errorf("create repository: %w", err)
 		}
@@ -81,20 +81,20 @@ func (r *TryRunner) Run() error {
 		return fmt.Errorf("no host supports the repository")
 	}
 
-	err := r.registry.ReadAll([]string{r.taskFile})
+	err := r.Registry.ReadAll([]string{r.TaskFile})
 	if err != nil {
 		return err
 	}
 
-	tasks := r.registry.GetTasks()
+	tasks := r.Registry.GetTasks()
 	if len(tasks) == 0 {
-		fmt.Fprintf(r.out, "⛔️ File %s does not contain any tasks\n", r.taskFile)
+		fmt.Fprintf(r.Out, "⛔️ File %s does not contain any tasks\n", r.TaskFile)
 		return nil
 	}
 
 	processed := false
 	for _, task := range tasks {
-		if r.taskName != "" && task.SourceTask().Name != r.taskName {
+		if r.TaskName != "" && task.SourceTask().Name != r.TaskName {
 			continue
 		}
 
@@ -104,14 +104,14 @@ func (r *TryRunner) Run() error {
 		for _, filter := range task.Filters() {
 			match, err := filter.Do(ctx)
 			if err != nil {
-				fmt.Fprintf(r.out, "⛔️ Filter %s of task %s failed: %s\n", filter.String(), task.SourceTask().Name, err)
+				fmt.Fprintf(r.Out, "⛔️ Filter %s of task %s failed: %s\n", filter.String(), task.SourceTask().Name, err)
 				continue
 			}
 
 			if match {
-				fmt.Fprintf(r.out, "✅ Filter %s of task %s matches\n", filter.String(), task.SourceTask().Name)
+				fmt.Fprintf(r.Out, "✅ Filter %s of task %s matches\n", filter.String(), task.SourceTask().Name)
 			} else {
-				fmt.Fprintf(r.out, "❌ Filter %s of task %s doesn't match\n", filter.String(), task.SourceTask().Name)
+				fmt.Fprintf(r.Out, "❌ Filter %s of task %s doesn't match\n", filter.String(), task.SourceTask().Name)
 				matched = false
 			}
 		}
@@ -120,47 +120,47 @@ func (r *TryRunner) Run() error {
 			continue
 		}
 
-		fmt.Fprintf(r.out, "🏗️ Cloning repository\n")
-		checkoutPath, err := r.gitc.Prepare(repository, false)
+		fmt.Fprintf(r.Out, "🏗️ Cloning repository\n")
+		checkoutPath, err := r.GitClient.Prepare(repository, false)
 		if err != nil {
-			fmt.Fprintf(r.out, "⛔️ Failed to prepare repository %s: %s\n", repository.FullName(), err)
+			fmt.Fprintf(r.Out, "⛔️ Failed to prepare repository %s: %s\n", repository.FullName(), err)
 			continue
 		}
 
-		hasMergeConflict, err := r.gitc.UpdateTaskBranch(task.BranchName(), false, repository)
+		hasMergeConflict, err := r.GitClient.UpdateTaskBranch(task.BranchName(), false, repository)
 		if err != nil {
-			fmt.Fprintf(r.out, "⛔️ Failed to prepare branch: %s\n", err)
+			fmt.Fprintf(r.Out, "⛔️ Failed to prepare branch: %s\n", err)
 			continue
 		}
 
 		if hasMergeConflict {
-			fmt.Fprintf(r.out, "⛔️ Merge conflict detected - view checkout in %s\n", checkoutPath)
+			fmt.Fprintf(r.Out, "⛔️ Merge conflict detected - view checkout in %s\n", checkoutPath)
 			continue
 		}
 
-		fmt.Fprintf(r.out, "🚜 Applying actions of task\n")
+		fmt.Fprintf(r.Out, "🚜 Applying actions of task\n")
 		ctx = context.WithValue(ctx, saturnContext.CheckoutPath{}, checkoutPath)
-		err = r.applyActionsFunc(task.Actions(), ctx, checkoutPath)
+		err = r.ApplyActionsFunc(task.Actions(), ctx, checkoutPath)
 		if err != nil {
-			fmt.Fprintf(r.out, "⛔️ %s\n", err)
+			fmt.Fprintf(r.Out, "⛔️ %s\n", err)
 			continue
 		}
 
-		result, err := r.gitc.HasLocalChanges()
+		result, err := r.GitClient.HasLocalChanges()
 		if err != nil {
-			fmt.Fprintf(r.out, "⛔️ Check of local changes failed: %s\n", err)
+			fmt.Fprintf(r.Out, "⛔️ Check of local changes failed: %s\n", err)
 			continue
 		}
 
 		if result {
-			fmt.Fprintf(r.out, "😍 Actions modified files - view checkout in %s\n", checkoutPath)
+			fmt.Fprintf(r.Out, "😍 Actions modified files - view checkout in %s\n", checkoutPath)
 		} else {
-			fmt.Fprintf(r.out, "⚠️  No changes after applying actions - view checkout in %s\n", checkoutPath)
+			fmt.Fprintf(r.Out, "⚠️  No changes after applying actions - view checkout in %s\n", checkoutPath)
 		}
 	}
 
 	if !processed {
-		fmt.Fprintf(r.out, "⛔️ Task %s not found in %s\n", r.taskName, r.taskFile)
+		fmt.Fprintf(r.Out, "⛔️ Task %s not found in %s\n", r.TaskName, r.TaskFile)
 	}
 
 	return nil
