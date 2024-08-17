@@ -207,16 +207,16 @@ func newConfig(format config.ConfigurationLogFormat) zap.Config {
 }
 
 func FieldDryRun(v bool) zap.Field {
-	const key = "saturn_bot.dryRun"
+	const key = "saturn-bot.dryRun"
 	return zap.Bool(key, v)
 }
 
 func FieldRepo(name string) zap.Field {
-	const key = "saturn_bot.repository"
+	const key = "saturn-bot.repository"
 	return zap.String(key, name)
 }
 
 func FieldTask(name string) zap.Field {
-	const key = "saturn_bot.task"
+	const key = "saturn-bot.task"
 	return zap.String(key, name)
 }
