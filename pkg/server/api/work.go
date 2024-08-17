@@ -3,12 +3,13 @@ package api
 import (
 	"context"
 	"errors"
-	"log/slog"
 	"net/http"
 
+	"github.com/wndhydrnt/saturn-bot/pkg/log"
 	"github.com/wndhydrnt/saturn-bot/pkg/server/api/openapi"
 	"github.com/wndhydrnt/saturn-bot/pkg/server/db"
 	"github.com/wndhydrnt/saturn-bot/pkg/server/service"
+	"go.uber.org/zap"
 )
 
 type WorkHandler struct {
@@ -23,7 +24,7 @@ func (wh *WorkHandler) GetWorkV1(_ context.Context) (openapi.ImplResponse, error
 			return openapi.Response(http.StatusOK, body), nil
 		}
 
-		slog.Error("Failed to get next run", "error", err)
+		log.Log().Errorw("Failed to get next run", zap.Error(err))
 		return openapi.Response(http.StatusInternalServerError, serverError), nil
 	}
 

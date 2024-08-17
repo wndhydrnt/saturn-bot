@@ -4,7 +4,6 @@ import (
 	"context"
 	"errors"
 	"fmt"
-	"log/slog"
 	"net/http"
 	"os"
 	"os/signal"
@@ -15,12 +14,14 @@ import (
 	"github.com/go-chi/chi/v5"
 	"github.com/go-chi/chi/v5/middleware"
 	"github.com/wndhydrnt/saturn-bot/pkg/config"
+	"github.com/wndhydrnt/saturn-bot/pkg/log"
 	"github.com/wndhydrnt/saturn-bot/pkg/options"
 	"github.com/wndhydrnt/saturn-bot/pkg/server/api"
 	"github.com/wndhydrnt/saturn-bot/pkg/server/api/openapi"
 	"github.com/wndhydrnt/saturn-bot/pkg/server/db"
 	"github.com/wndhydrnt/saturn-bot/pkg/server/service"
 	"github.com/wndhydrnt/saturn-bot/pkg/server/task"
+	"go.uber.org/zap"
 )
 
 type Server struct {
@@ -67,7 +68,7 @@ func (s *Server) Start(opts options.Opts, taskPaths []string) error {
 	go func(server *http.Server) {
 		err := server.ListenAndServe()
 		if err != nil && !errors.Is(err, http.ErrServerClosed) {
-			slog.Error("HTTP server failed - exiting", "err", err)
+			log.Log().Errorw("HTTP server failed - exiting", zap.Error(err))
 			os.Exit(2)
 		}
 	}(s.httpServer)
@@ -76,7 +77,7 @@ func (s *Server) Start(opts options.Opts, taskPaths []string) error {
 
 func (s *Server) Stop() error {
 	if s.httpServer != nil {
-		slog.Debug("Shutting down HTTP server")
+		log.Log().Debug("Shutting down HTTP server")
 		ctx := context.Background()
 		ctx, cancel := context.WithDeadline(ctx, time.Now().Add(1*time.Minute))
 		err := s.httpServer.Shutdown(ctx)
@@ -85,7 +86,7 @@ func (s *Server) Stop() error {
 			return fmt.Errorf("shutdown of http server failed: %w", err)
 		}
 
-		slog.Debug("Shutdown of HTTP server finished")
+		log.Log().Debug("Shutdown of HTTP server finished")
 		return nil
 	}
 
@@ -116,14 +117,14 @@ func Run(configPath string, taskPaths []string) error {
 		return err
 	}
 
-	slog.Info("Server started")
+	log.Log().Info("Server started")
 	sig := <-sigs
-	slog.Info("Shutting down", "signal", sig.String())
+	log.Log().Infof("Caught signal %s - shutting down", sig.String())
 	err = s.Stop()
 	if err == nil {
-		slog.Info("Server stopped")
+		log.Log().Info("Server stopped")
 	} else {
-		slog.Error("Server failed during stop", "error", err)
+		log.Log().Errorw("Server failed during stop", zap.Error(err))
 	}
 	return nil
 }

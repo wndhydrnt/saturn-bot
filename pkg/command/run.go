@@ -4,7 +4,6 @@ import (
 	"context"
 	"errors"
 	"fmt"
-	"log/slog"
 	"os"
 	"path"
 	"time"
@@ -14,6 +13,7 @@ import (
 	sContext "github.com/wndhydrnt/saturn-bot/pkg/context"
 	"github.com/wndhydrnt/saturn-bot/pkg/git"
 	"github.com/wndhydrnt/saturn-bot/pkg/host"
+	"github.com/wndhydrnt/saturn-bot/pkg/log"
 	"github.com/wndhydrnt/saturn-bot/pkg/options"
 	"github.com/wndhydrnt/saturn-bot/pkg/processor"
 	"github.com/wndhydrnt/saturn-bot/pkg/task"
@@ -61,7 +61,7 @@ func (r *Run) Run(repositoryNames, taskFiles []string) ([]RunResult, error) {
 
 	tasks := r.TaskRegistry.GetTasks()
 	if len(tasks) == 0 {
-		slog.Warn("0 tasks loaded from files - stopping")
+		log.Log().Warn("0 tasks loaded from files - stopping")
 		return nil, nil
 	}
 
@@ -86,10 +86,10 @@ func (r *Run) Run(repositoryNames, taskFiles []string) ([]RunResult, error) {
 		select {
 		case repoList := <-repos:
 			for _, repo := range repoList {
-				slog.Debug("Repository discovered", "repository", repo.FullName())
+				log.Log().Debugf("Discovered repository %s", repo.FullName())
 				_, exists := visitedRepositories[repo.FullName()]
 				if exists {
-					slog.Debug("Repository already visited", "repository", repo.FullName())
+					log.Log().Debugf("Repository %s already visited", repo.FullName())
 					continue
 				}
 
@@ -105,7 +105,7 @@ func (r *Run) Run(repositoryNames, taskFiles []string) ([]RunResult, error) {
 					result.Result, result.Error = r.Processor.Process(ctx, r.DryRun, repo, t, doFilter)
 					if result.Error != nil {
 						success = false
-						slog.Error("Task failed", "err", result.Error)
+						log.Log().Errorw("Task failed", "error", result.Error)
 					}
 
 					results = append(results, result)
@@ -139,7 +139,7 @@ func (r *Run) Run(repositoryNames, taskFiles []string) ([]RunResult, error) {
 	if !success {
 		return results, fmt.Errorf("errors occurred, check previous log messages")
 	}
-	slog.Info("Run finished")
+	log.Log().Info("Run finished")
 	return results, nil
 }
 
@@ -232,11 +232,11 @@ func discoverRepositoriesFromHosts(
 ) int {
 	expectedFinishes := len(hosts)
 	for _, host := range hosts {
-		slog.Info("Listing repositories", "updated_since", fmt.Sprintf("%v", since))
+		log.Log().Infof("Listing repositories since %v", since)
 		go host.ListRepositories(since, repoChan, errChan)
 		if since != nil {
 			expectedFinishes += 1
-			slog.Info("Listing repositories with open pull requests")
+			log.Log().Info("Listing repositories with open pull requests")
 			go host.ListRepositoriesWithOpenPullRequests(repoChan, errChan)
 		}
 	}
@@ -251,7 +251,7 @@ func discoverRepositoriesFromCLI(
 	repoChan chan []host.Repository,
 	errChan chan error,
 ) int {
-	slog.Info("Discovering repositories from CLI")
+	log.Log().Info("Discovering repositories from CLI")
 	go func() {
 		for _, repoName := range repositoryNames {
 			repo, err := findRepositoryInHosts(hosts, repoName)

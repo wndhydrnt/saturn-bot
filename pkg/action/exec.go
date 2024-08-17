@@ -4,11 +4,12 @@ import (
 	"context"
 	"errors"
 	"fmt"
-	"log/slog"
 	"os/exec"
 	"path/filepath"
 	"strings"
 	"time"
+
+	"github.com/wndhydrnt/saturn-bot/pkg/log"
 )
 
 type ExecFactory struct{}
@@ -118,6 +119,6 @@ type logAdapter struct {
 }
 
 func (la *logAdapter) Write(p []byte) (n int, err error) {
-	slog.Debug(strings.TrimSpace(string(p)), "command", la.name)
+	log.Log().Debugw(strings.TrimSpace(string(p)), "command", la.name)
 	return len(p), nil
 }
