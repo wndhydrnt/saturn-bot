@@ -198,8 +198,8 @@ func newConfig(format config.ConfigurationLogFormat) zap.Config {
 	}
 
 	if encoderFormat == "json" {
-		zapCfg.EncoderConfig.EncodeTime = zapcore.RFC3339TimeEncoder
-		zapCfg.EncoderConfig.TimeKey = "timestamp"
+		zapCfg.EncoderConfig.EncodeTime = zapcore.RFC3339NanoTimeEncoder
+		zapCfg.EncoderConfig.TimeKey = "time"
 	}
 
 	zapCfg.Encoding = encoderFormat
