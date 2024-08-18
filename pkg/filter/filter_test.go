@@ -1,4 +1,4 @@
-package filter
+package filter_test
 
 import (
 	"context"
@@ -7,41 +7,12 @@ import (
 
 	"github.com/stretchr/testify/require"
 	gsContext "github.com/wndhydrnt/saturn-bot/pkg/context"
-	"github.com/wndhydrnt/saturn-bot/pkg/host"
-	"github.com/wndhydrnt/saturn-bot/pkg/mock"
+	"github.com/wndhydrnt/saturn-bot/pkg/filter"
 	"go.uber.org/mock/gomock"
 )
 
-type repositoryMock struct {
-	getFileResult map[string]string
-	hasFileResult map[string]bool
-	host          host.HostDetail
-	name          string
-	owner         string
-}
-
-func (r *repositoryMock) GetFile(fileName string) (string, error) {
-	return r.getFileResult[fileName], nil
-}
-
-func (r *repositoryMock) HasFile(path string) (bool, error) {
-	return r.hasFileResult[path], nil
-}
-
-func (r *repositoryMock) Host() host.HostDetail {
-	return r.host
-}
-
-func (r *repositoryMock) Name() string {
-	return r.name
-}
-
-func (r *repositoryMock) Owner() string {
-	return r.owner
-}
-
 func TestFileFactory_Create(t *testing.T) {
-	fac := FileFactory{}
+	fac := filter.FileFactory{}
 	_, err := fac.Create(map[string]any{})
 	require.ErrorContains(t, err, "required parameter `paths` not set")
 
@@ -50,16 +21,16 @@ func TestFileFactory_Create(t *testing.T) {
 }
 
 func TestFile_Do(t *testing.T) {
-	repo := &repositoryMock{hasFileResult: map[string]bool{
-		"test.yaml":  true,
-		"test.json":  false,
-		"test.toml":  true,
-		"test.json5": false,
-	}}
+	ctrl := gomock.NewController(t)
+	repoMock := NewMockRepository(ctrl)
+	repoMock.EXPECT().HasFile("test.yaml").Return(true, nil).AnyTimes()
+	repoMock.EXPECT().HasFile("test.json").Return(false, nil).AnyTimes()
+	repoMock.EXPECT().HasFile("test.toml").Return(true, nil).AnyTimes()
+	repoMock.EXPECT().HasFile("test.json5").Return(false, nil).AnyTimes()
 	ctx := context.Background()
-	ctx = context.WithValue(ctx, gsContext.RepositoryKey{}, repo)
+	ctx = context.WithValue(ctx, gsContext.RepositoryKey{}, repoMock)
 
-	fac := FileFactory{}
+	fac := filter.FileFactory{}
 
 	// One file, exists
 	f, err := fac.Create(map[string]any{"paths": []any{"test.yaml"}})
@@ -105,7 +76,7 @@ func TestFile_Do(t *testing.T) {
 }
 
 func TestFileContentFactory_Create(t *testing.T) {
-	fac := FileContentFactory{}
+	fac := filter.FileContentFactory{}
 	_, err := fac.Create(map[string]any{})
 	require.ErrorContains(t, err, "required parameter `path` not set")
 
@@ -121,11 +92,16 @@ func TestFileContent_Do(t *testing.T) {
 def
 ghi
 `
-	repo := &repositoryMock{getFileResult: map[string]string{"test.txt": content}}
+	ctrl := gomock.NewController(t)
+	repoMock := NewMockRepository(ctrl)
+	repoMock.EXPECT().
+		GetFile("test.txt").
+		Return(content, nil).
+		Times(2)
 	ctx := context.Background()
-	ctx = context.WithValue(ctx, gsContext.RepositoryKey{}, repo)
+	ctx = context.WithValue(ctx, gsContext.RepositoryKey{}, repoMock)
 
-	fac := FileContentFactory{}
+	fac := filter.FileContentFactory{}
 
 	f, err := fac.Create(map[string]any{"path": "test.txt", "regexp": "d?f"})
 	require.NoError(t, err)
@@ -143,7 +119,7 @@ ghi
 }
 
 func TestRepositoryFactory_Create(t *testing.T) {
-	fac := RepositoryFactory{}
+	fac := filter.RepositoryFactory{}
 	_, err := fac.Create(map[string]any{})
 	require.ErrorContains(t, err, "required parameter `host` not set")
 
@@ -182,7 +158,7 @@ func TestRepositoryFactory_Create(t *testing.T) {
 }
 
 func TestRepository_Do(t *testing.T) {
-	fac := RepositoryFactory{}
+	fac := filter.RepositoryFactory{}
 
 	f, err := fac.Create(map[string]any{"host": "github.com", "owner": "wndhydrnt", "name": "rcmt"})
 	require.NoError(t, err)
@@ -217,13 +193,12 @@ func TestRepository_Do(t *testing.T) {
 		testName := fmt.Sprintf("%s/%s/%s", tc.host, tc.owner, tc.name)
 		t.Run(testName, func(t *testing.T) {
 			ctrl := gomock.NewController(t)
-			hostMock := mock.NewMockHostDetail(ctrl)
+			hostMock := NewMockHostDetail(ctrl)
 			hostMock.EXPECT().Name().Return(tc.host)
-			repoMock := &repositoryMock{
-				host:  hostMock,
-				name:  tc.name,
-				owner: tc.owner,
-			}
+			repoMock := NewMockRepository(ctrl)
+			repoMock.EXPECT().Host().Return(hostMock).AnyTimes()
+			repoMock.EXPECT().Name().Return(tc.name).AnyTimes()
+			repoMock.EXPECT().Owner().Return(tc.owner).AnyTimes()
 			ctx := context.Background()
 			ctx = context.WithValue(ctx, gsContext.RepositoryKey{}, repoMock)
 			result, err := f.Do(ctx)
@@ -244,7 +219,7 @@ func (m *mockFilter) Name() string { return "" }
 func (m *mockFilter) String() string { return "" }
 
 func TestReverse_Do(t *testing.T) {
-	f := NewReverse(&mockFilter{})
+	f := filter.NewReverse(&mockFilter{})
 	result, _ := f.Do(context.Background())
 	require.False(t, result)
 }

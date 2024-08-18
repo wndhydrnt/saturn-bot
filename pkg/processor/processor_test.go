@@ -38,9 +38,11 @@ func (t *falseFilter) String() string {
 }
 
 func setupRepoMock(ctrl *gomock.Controller) *MockRepository {
+	hostMock := NewMockHostDetail(ctrl)
+	hostMock.EXPECT().Name().Return("git.local").AnyTimes()
 	r := NewMockRepository(ctrl)
 	r.EXPECT().FullName().Return("git.local/unit/test").AnyTimes()
-	r.EXPECT().Host().Return("git.local").AnyTimes()
+	r.EXPECT().Host().Return(hostMock).AnyTimes()
 	r.EXPECT().Name().Return("test").AnyTimes()
 	r.EXPECT().Owner().Return("unit").AnyTimes()
 	r.EXPECT().WebUrl().Return("http://git.local/unit/test").AnyTimes()

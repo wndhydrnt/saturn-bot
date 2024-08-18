@@ -556,7 +556,7 @@ func (g *GitLabHost) AuthenticatedUser() (*UserInfo, error) {
 		return nil, fmt.Errorf("get current gitlab user: %w", err)
 	}
 
-	slog.Debug("Discovered authenticated user from GitLab")
+	log.Log().Debug("Discovered authenticated user from GitLab")
 	g.authenticatedUser = &UserInfo{
 		Email: user.Email,
 		Name:  user.Name,

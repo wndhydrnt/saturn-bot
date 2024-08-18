@@ -419,7 +419,7 @@ func newTemplateVars(ctx context.Context, repo host.Repository, tk task.Task) ma
 	}
 
 	vars["RepositoryFullName"] = repo.FullName()
-	vars["RepositoryHost"] = repo.Host()
+	vars["RepositoryHost"] = repo.Host().Name()
 	vars["RepositoryName"] = repo.Name()
 	vars["RepositoryOwner"] = repo.Owner()
 	vars["RepositoryWebUrl"] = repo.WebUrl()

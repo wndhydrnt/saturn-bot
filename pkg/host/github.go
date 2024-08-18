@@ -3,7 +3,6 @@ package host
 import (
 	"context"
 	"fmt"
-	"log/slog"
 	"net/http"
 	"net/url"
 	"path"
@@ -13,6 +12,7 @@ import (
 
 	"github.com/google/go-github/v59/github"
 	"github.com/gregjones/httpcache"
+	"github.com/wndhydrnt/saturn-bot/pkg/log"
 )
 
 var (
@@ -563,7 +563,7 @@ func (g *GitHubHost) AuthenticatedUser() (*UserInfo, error) {
 		return nil, fmt.Errorf("no public email address for user %s", user.GetLogin())
 	}
 
-	slog.Debug("Discovered authenticated user from GitHub")
+	log.Log().Debug("Discovered authenticated user from GitHub")
 	g.authenticatedUser = &UserInfo{
 		Email: userEmail,
 		Name:  user.GetLogin(),

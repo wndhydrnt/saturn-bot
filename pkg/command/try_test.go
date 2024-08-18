@@ -27,12 +27,19 @@ var (
 	}
 )
 
-func TestTryRunner_Run_FilesModified(t *testing.T) {
-	ctrl := gomock.NewController(t)
+func setupTryRepoMock(ctrl *gomock.Controller) *MockRepository {
+	hostDetailMock := NewMockHostDetail(ctrl)
+	hostDetailMock.EXPECT().Name().Return("git.local")
 	repoMock := NewMockRepository(ctrl)
-	repoMock.EXPECT().Host().Return("git.local")
+	repoMock.EXPECT().Host().Return(hostDetailMock)
 	repoMock.EXPECT().Owner().Return("unit")
 	repoMock.EXPECT().Name().Return("test")
+	return repoMock
+}
+
+func TestTryRunner_Run_FilesModified(t *testing.T) {
+	ctrl := gomock.NewController(t)
+	repoMock := setupTryRepoMock(ctrl)
 	hostMock := NewMockHost(ctrl)
 	hostMock.EXPECT().CreateFromName("git.local/unit/test").Return(repoMock, nil)
 	registry := task.NewRegistry(tryTestOpts)
@@ -69,10 +76,7 @@ filters:
 func TestTryRunner_Run_NoChanges(t *testing.T) {
 	repoName := "git.local/unit/test"
 	ctrl := gomock.NewController(t)
-	repoMock := NewMockRepository(ctrl)
-	repoMock.EXPECT().Host().Return("git.local")
-	repoMock.EXPECT().Owner().Return("unit")
-	repoMock.EXPECT().Name().Return("test")
+	repoMock := setupTryRepoMock(ctrl)
 	hostMock := NewMockHost(ctrl)
 	hostMock.EXPECT().CreateFromName(repoName).Return(repoMock, nil)
 	registry := task.NewRegistry(tryTestOpts)
@@ -153,10 +157,7 @@ func TestTryRunner_Run_TaskName(t *testing.T) {
 
 func TestTryRunner_Run_FilterDoesNotMatch(t *testing.T) {
 	ctrl := gomock.NewController(t)
-	repoMock := NewMockRepository(ctrl)
-	repoMock.EXPECT().Host().Return("git.local")
-	repoMock.EXPECT().Owner().Return("unit")
-	repoMock.EXPECT().Name().Return("test")
+	repoMock := setupTryRepoMock(ctrl)
 	hostMock := NewMockHost(ctrl)
 	hostMock.EXPECT().CreateFromName("git.local/unit/test").Return(repoMock, nil)
 	registry := task.NewRegistry(options.Opts{FilterFactories: filter.BuiltInFactories})
