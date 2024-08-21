@@ -135,7 +135,7 @@ func matchTaskToRepository(ctx context.Context, task task.Task) (bool, error) {
 		}
 
 		if !match {
-			log.Log().Debug("Filter %s does not match task %s", filter.String(), task.SourceTask().Name)
+			log.Log().Debugf("Filter %s does not match task %s", filter.String(), task.SourceTask().Name)
 			return false, nil
 		}
 	}
