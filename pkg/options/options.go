@@ -112,10 +112,6 @@ func createHostsFromConfig(cfg config.Configuration) ([]host.Host, error) {
 func Initialize(opts *Opts) error {
 	sLog.InitLog(opts.Config.LogFormat, opts.Config.LogLevel, opts.Config.GitLogLevel)
 
-	if opts.Config.DataDir == nil {
-		return fmt.Errorf("missing dataDir configuration setting")
-	}
-
 	var dataDir string
 	if opts.Config.DataDir == nil {
 		homeDir, err := os.UserHomeDir()
