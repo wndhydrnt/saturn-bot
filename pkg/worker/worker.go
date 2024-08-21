@@ -237,7 +237,7 @@ func mapRunResultsToTaskResults(runResults []command.RunResult) []client.ReportW
 
 		result := client.ReportWorkV1TaskResult{
 			RepositoryName: rr.RepositoryName,
-			Result:         int32(rr.Result),
+			Result:         int32(rr.Result), // #nosec G115 -- no info by gosec on how to fix this
 			TaskName:       rr.TaskName,
 		}
 		if rr.Error != nil {
