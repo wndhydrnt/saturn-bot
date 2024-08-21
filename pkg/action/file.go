@@ -90,7 +90,7 @@ func (f FileCreateFactory) Create(params map[string]any, taskPath string) (Actio
 			return nil, fmt.Errorf("parameter `mode` is of type %T not int", params["mode"])
 		}
 
-		mode = fs.FileMode(modeInt)
+		mode = fs.FileMode(uint32(modeInt))
 	}
 
 	var overwrite bool
