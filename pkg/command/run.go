@@ -152,7 +152,7 @@ func ExecuteRun(opts options.Opts, repositoryNames, taskFiles []string) ([]RunRe
 	cache := cache.NewJsonFile(path.Join(*opts.Config.DataDir, cache.DefaultJsonFileName))
 	taskRegistry := task.NewRegistry(opts)
 
-	gitClient, err := git.New(opts.Config)
+	gitClient, err := git.New(opts)
 	if err != nil {
 		return nil, fmt.Errorf("new git client for run: %w", err)
 	}

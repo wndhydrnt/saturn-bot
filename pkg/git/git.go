@@ -13,6 +13,7 @@ import (
 	"github.com/wndhydrnt/saturn-bot/pkg/config"
 	"github.com/wndhydrnt/saturn-bot/pkg/host"
 	"github.com/wndhydrnt/saturn-bot/pkg/log"
+	"github.com/wndhydrnt/saturn-bot/pkg/options"
 )
 
 type BranchModifiedError struct {
@@ -62,22 +63,22 @@ type Git struct {
 	userName         string
 }
 
-func New(cfg config.Configuration) (*Git, error) {
-	envVars, err := createGitEnvVars(cfg)
+func New(opts options.Opts) (*Git, error) {
+	envVars, err := createGitEnvVars(opts.Config)
 	if err != nil {
 		return nil, fmt.Errorf("create git auth env vars: %w", err)
 	}
 
 	return &Git{
-		cloneOpts:        cfg.GitCloneOptions,
-		dataDir:          *cfg.DataDir,
-		defaultCommitMsg: cfg.GitCommitMessage,
+		cloneOpts:        opts.Config.GitCloneOptions,
+		dataDir:          opts.DataDir(),
+		defaultCommitMsg: opts.Config.GitCommitMessage,
 		EnvVars:          envVars,
 		CmdExec:          execCmd,
-		gitPath:          cfg.GitPath,
-		gitUrl:           cfg.GitUrl,
-		userEmail:        cfg.GitUserEmail(),
-		userName:         cfg.GitUserName(),
+		gitPath:          opts.Config.GitPath,
+		gitUrl:           opts.Config.GitUrl,
+		userEmail:        opts.Config.GitUserEmail(),
+		userName:         opts.Config.GitUserName(),
 	}, nil
 }
 
