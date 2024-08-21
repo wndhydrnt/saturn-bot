@@ -5,7 +5,6 @@ import (
 	"fmt"
 	"io"
 	"os"
-	"path"
 
 	"github.com/wndhydrnt/saturn-bot/pkg/action"
 	saturnContext "github.com/wndhydrnt/saturn-bot/pkg/context"
@@ -27,18 +26,16 @@ type TryRunner struct {
 }
 
 func NewTryRunner(opts options.Opts, dataDir string, repositoryName string, taskFile string, taskName string) (*TryRunner, error) {
-	if dataDir == "" {
-		dataDir = path.Join(os.TempDir(), "saturn-bot")
+	if dataDir != "" {
+		// This code can set its own data dir.
+		opts.Config.DataDir = &dataDir
 	}
-
-	// This code sets its own data dir.
-	opts.Config.DataDir = &dataDir
 	err := options.Initialize(&opts)
 	if err != nil {
 		return nil, fmt.Errorf("initialize options: %w", err)
 	}
 
-	gitClient, err := git.New(opts.Config)
+	gitClient, err := git.New(opts)
 	if err != nil {
 		return nil, fmt.Errorf("new git client for try: %w", err)
 	}

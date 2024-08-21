@@ -553,7 +553,7 @@ func (g *GitHubHost) CreateFromName(name string) (Repository, error) {
 		return nil, fmt.Errorf("get github repository: %w", err)
 	}
 
-	return &GitHubRepository{repo: repo}, nil
+	return &GitHubRepository{client: g.client, repo: repo}, nil
 }
 
 func (g *GitHubHost) ListRepositories(since *time.Time, result chan []Repository, errChan chan error) {
