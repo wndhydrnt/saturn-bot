@@ -1,5 +1,14 @@
 # Changelog
 
+## [0.9.0](https://github.com/wndhydrnt/saturn-bot/compare/v0.8.1...v0.9.0) (2024-08-21)
+
+
+### Features
+
+* **command:** Use default data directroy in try command ([#58](https://github.com/wndhydrnt/saturn-bot/issues/58)) ([bf9d5bd](https://github.com/wndhydrnt/saturn-bot/commit/bf9d5bdd50b166dc9b75ac892bae4fc669abba16))
+* **git:** Add configuration option to clone via SSH ([#51](https://github.com/wndhydrnt/saturn-bot/issues/51)) ([a11e391](https://github.com/wndhydrnt/saturn-bot/commit/a11e391bc723aaff911ec972e6a61a988ab6ecdc))
+* **server:** Configure log level of database library ([069f003](https://github.com/wndhydrnt/saturn-bot/commit/069f0036af00d606286c6eb35993e04d22b82200))
+
 ## [0.8.1](https://github.com/wndhydrnt/saturn-bot/compare/v0.8.0...v0.8.1) (2024-08-11)
 
 
