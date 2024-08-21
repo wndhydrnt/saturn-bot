@@ -29,7 +29,7 @@ func (wh *WorkHandler) GetWorkV1(_ context.Context) (openapi.ImplResponse, error
 	}
 
 	body := openapi.GetWorkV1Response{
-		RunID: int32(run.ID),
+		RunID: int32(run.ID), // #nosec G115 -- no info by gosec on how to fix this
 		Tasks: []openapi.GetWorkV1Task{
 			{Hash: task.Hash, Name: task.TaskName},
 		},
@@ -59,6 +59,6 @@ func (wh *WorkHandler) ScheduleRunV1(_ context.Context, req openapi.ScheduleRunV
 		return openapi.Response(http.StatusInternalServerError, serverError), nil
 	}
 
-	body := openapi.ScheduleRunV1Response{RunID: int32(runID)}
+	body := openapi.ScheduleRunV1Response{RunID: int32(runID)} // #nosec G115 -- no info by gosec on how to fix this
 	return openapi.ImplResponse{Code: http.StatusCreated, Body: body}, nil
 }
