@@ -236,8 +236,9 @@ gitUserName: "unittest"`
 	require.NoError(t, err, "should parse configuration successfully")
 	opts, err := options.ToOptions(cfg)
 	require.NoError(t, err, "should convert configuration to options successfully")
+	dataDir := filepath.Join(os.TempDir(), "saturn-bot")
 
-	runner, err := command.NewTryRunner(opts, "", "git.local/unit/test", "task.yaml", "Unit Test")
+	runner, err := command.NewTryRunner(opts, dataDir, "git.local/unit/test", "task.yaml", "Unit Test")
 
 	require.NoError(t, err)
 	assert.NotNil(t, runner.ApplyActionsFunc)
@@ -248,5 +249,8 @@ gitUserName: "unittest"`
 	assert.Equal(t, "git.local/unit/test", runner.RepositoryName)
 	assert.Equal(t, "task.yaml", runner.TaskFile)
 	assert.Equal(t, "Unit Test", runner.TaskName)
-	assert.DirExists(t, filepath.Join(os.TempDir(), "saturn-bot"), "creates data directory because an empty value has been passed to NewTryRunner()")
+	assert.DirExists(t, dataDir, "creates data directory because an empty value has been passed to NewTryRunner()")
+	// Make sure to remove the directory to avoid false-positives
+	err = os.RemoveAll(dataDir)
+	require.NoError(t, err)
 }
