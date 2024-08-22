@@ -14,6 +14,7 @@ import (
 	"github.com/wndhydrnt/saturn-bot/pkg/host"
 	"github.com/wndhydrnt/saturn-bot/pkg/log"
 	"github.com/wndhydrnt/saturn-bot/pkg/options"
+	"go.uber.org/zap"
 )
 
 type BranchModifiedError struct {
@@ -321,11 +322,9 @@ func (g *Git) author(repo host.Repository) (string, string) {
 		return g.userName, g.userEmail
 	}
 
-	g.Execute("config", "--get", "user.name")
-	g.Execute("config", "--get", "user.email")
-
 	userInfo, err := repo.Host().AuthenticatedUser()
 	if err != nil {
+		log.Log().Warnw("Failed to discover git author", zap.Error(err))
 		return "", ""
 	}
 
@@ -333,6 +332,7 @@ func (g *Git) author(repo host.Repository) (string, string) {
 		return "", ""
 	}
 
+	log.Log().Debug("Using git author discovered from host")
 	return userInfo.Name, userInfo.Email
 }
 
