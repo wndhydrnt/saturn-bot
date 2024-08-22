@@ -44,7 +44,7 @@ func handleError(err error, out io.Writer) {
 		log.Log().Error("Configuration file contains errors:")
 		fmt.Fprintf(out, "%s\n", validationError.Error())
 	} else {
-		log.Log().Error("command failed", "error", err)
+		log.Log().Errorf("command failed: %v", err)
 	}
 
 	os.Exit(1)
