@@ -149,7 +149,7 @@ func ExecuteRun(opts options.Opts, repositoryNames, taskFiles []string) ([]RunRe
 		return nil, fmt.Errorf("initialize options: %w", err)
 	}
 
-	cache := cache.NewJsonFile(path.Join(*opts.Config.DataDir, cache.DefaultJsonFileName))
+	cache := cache.NewJsonFile(path.Join(opts.DataDir(), cache.DefaultJsonFileName))
 	taskRegistry := task.NewRegistry(opts)
 
 	gitClient, err := git.New(opts)
@@ -162,7 +162,7 @@ func ExecuteRun(opts options.Opts, repositoryNames, taskFiles []string) ([]RunRe
 		DryRun: opts.Config.DryRun,
 		Hosts:  opts.Hosts,
 		Processor: &processor.Processor{
-			DataDir: *opts.Config.DataDir,
+			DataDir: opts.DataDir(),
 			Git:     gitClient,
 		},
 		TaskRegistry: taskRegistry,
