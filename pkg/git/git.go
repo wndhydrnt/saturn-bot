@@ -151,19 +151,20 @@ func (g *Git) Prepare(repo host.Repository, retry bool) (string, error) {
 		}
 	}
 
-	userName, userEmail, err := g.author(repo)
-	if err != nil {
-		return "", fmt.Errorf("get git author info: %w", err)
+	userName, userEmail := g.author(repo)
+
+	if userEmail != "" {
+		_, _, err = g.Execute("config", "user.email", userEmail)
+		if err != nil {
+			return "", fmt.Errorf("set git user email: %w", err)
+		}
 	}
 
-	_, _, err = g.Execute("config", "user.email", userEmail)
-	if err != nil {
-		return "", fmt.Errorf("set git user email: %w", err)
-	}
-
-	_, _, err = g.Execute("config", "user.name", userName)
-	if err != nil {
-		return "", fmt.Errorf("set git user name: %w", err)
+	if userName != "" {
+		_, _, err = g.Execute("config", "user.name", userName)
+		if err != nil {
+			return "", fmt.Errorf("set git user name: %w", err)
+		}
 	}
 
 	return checkoutDir, nil
@@ -314,21 +315,25 @@ func (g *Git) UpdateTaskBranch(branchName string, forceRebase bool, repo host.Re
 	return hasMergeConflict, nil
 }
 
-func (g *Git) author(repo host.Repository) (string, string, error) {
+func (g *Git) author(repo host.Repository) (string, string) {
 	if g.userEmail != "" && g.userName != "" {
-		return g.userName, g.userEmail, nil
+		log.Log().Debug("Using git author set in configuration file")
+		return g.userName, g.userEmail
 	}
+
+	g.Execute("config", "--get", "user.name")
+	g.Execute("config", "--get", "user.email")
 
 	userInfo, err := repo.Host().AuthenticatedUser()
 	if err != nil {
-		return "", "", fmt.Errorf("get authenticated user: %w", err)
+		return "", ""
 	}
 
 	if userInfo == nil {
-		return "", "", fmt.Errorf("no git author set in configuration and host returned no data for current user")
+		return "", ""
 	}
 
-	return userInfo.Name, userInfo.Email, nil
+	return userInfo.Name, userInfo.Email
 }
 
 func (g *Git) branchExistsLocal(branchName string) (bool, error) {
@@ -374,9 +379,10 @@ func (g *Git) listForeignCommits(mergeBase string, repo host.Repository) ([]stri
 		return nil, nil
 	}
 
-	_, userEmail, err := g.author(repo)
-	if err != nil {
-		return nil, fmt.Errorf("get git author to check for foreign commits: %w", err)
+	_, userEmail := g.author(repo)
+	if userEmail == "" {
+		log.Log().Warn("No git author - cannot detect foreign commits")
+		return nil, nil
 	}
 
 	var foreignCommits []string
