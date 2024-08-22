@@ -23,7 +23,7 @@ var (
 type FilterRepository interface {
 	GetFile(fileName string) (string, error)
 	HasFile(path string) (bool, error)
-	Host() string
+	Host() host.HostDetail
 	Name() string
 	Owner() string
 }
@@ -242,7 +242,7 @@ func (r *Repository) Do(ctx context.Context) (bool, error) {
 		return false, errors.New("context passed to filter repositoryName does not contain a repository")
 	}
 
-	if !r.Host.MatchString(repo.Host()) {
+	if !r.Host.MatchString(repo.Host().Name()) {
 		return false, nil
 	}
 

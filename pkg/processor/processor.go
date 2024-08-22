@@ -135,7 +135,7 @@ func matchTaskToRepository(ctx context.Context, task task.Task) (bool, error) {
 		}
 
 		if !match {
-			log.Log().Debug("Filter %s does not match task %s", filter.String(), task.SourceTask().Name)
+			log.Log().Debugf("Filter %s does not match task %s", filter.String(), task.SourceTask().Name)
 			return false, nil
 		}
 	}
@@ -419,7 +419,7 @@ func newTemplateVars(ctx context.Context, repo host.Repository, tk task.Task) ma
 	}
 
 	vars["RepositoryFullName"] = repo.FullName()
-	vars["RepositoryHost"] = repo.Host()
+	vars["RepositoryHost"] = repo.Host().Name()
 	vars["RepositoryName"] = repo.Name()
 	vars["RepositoryOwner"] = repo.Owner()
 	vars["RepositoryWebUrl"] = repo.WebUrl()

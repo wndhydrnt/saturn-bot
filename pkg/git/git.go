@@ -14,6 +14,7 @@ import (
 	"github.com/wndhydrnt/saturn-bot/pkg/host"
 	"github.com/wndhydrnt/saturn-bot/pkg/log"
 	"github.com/wndhydrnt/saturn-bot/pkg/options"
+	"go.uber.org/zap"
 )
 
 type BranchModifiedError struct {
@@ -151,15 +152,17 @@ func (g *Git) Prepare(repo host.Repository, retry bool) (string, error) {
 		}
 	}
 
-	if g.userEmail != "" {
-		_, _, err = g.Execute("config", "user.email", g.userEmail)
+	userName, userEmail := g.author(repo)
+
+	if userEmail != "" {
+		_, _, err = g.Execute("config", "user.email", userEmail)
 		if err != nil {
 			return "", fmt.Errorf("set git user email: %w", err)
 		}
 	}
 
-	if g.userName != "" {
-		_, _, err = g.Execute("config", "user.name", g.userName)
+	if userName != "" {
+		_, _, err = g.Execute("config", "user.name", userName)
 		if err != nil {
 			return "", fmt.Errorf("set git user name: %w", err)
 		}
@@ -288,7 +291,7 @@ func (g *Git) UpdateTaskBranch(branchName string, forceRebase bool, repo host.Re
 
 	mergeBase = strings.TrimSpace(mergeBase)
 	if !forceRebase {
-		commits, err := g.listForeignCommits(mergeBase)
+		commits, err := g.listForeignCommits(mergeBase, repo)
 		if err != nil {
 			return false, fmt.Errorf("failed to detect foreign commits: %w", err)
 		}
@@ -311,6 +314,24 @@ func (g *Git) UpdateTaskBranch(branchName string, forceRebase bool, repo host.Re
 	}
 
 	return hasMergeConflict, nil
+}
+
+func (g *Git) author(repo host.Repository) (string, string) {
+	if g.userEmail != "" && g.userName != "" {
+		return g.userName, g.userEmail
+	}
+
+	userInfo, err := repo.Host().AuthenticatedUser()
+	if err != nil {
+		log.Log().Warnw("Failed to discover git author", zap.Error(err))
+		return "", ""
+	}
+
+	if userInfo == nil {
+		return "", ""
+	}
+
+	return userInfo.Name, userInfo.Email
 }
 
 func (g *Git) branchExistsLocal(branchName string) (bool, error) {
@@ -345,7 +366,7 @@ func (g *Git) branchExistsRemote(branchName string) (bool, error) {
 	return false, nil
 }
 
-func (g *Git) listForeignCommits(mergeBase string) ([]string, error) {
+func (g *Git) listForeignCommits(mergeBase string, repo host.Repository) ([]string, error) {
 	stdout, _, err := g.Execute("rev-list", mergeBase+"..HEAD")
 	if err != nil {
 		return nil, fmt.Errorf("list rev since merge base: %w", err)
@@ -353,6 +374,12 @@ func (g *Git) listForeignCommits(mergeBase string) ([]string, error) {
 
 	commitHashesRaw := strings.TrimSpace(stdout)
 	if commitHashesRaw == "" {
+		return nil, nil
+	}
+
+	_, userEmail := g.author(repo)
+	if userEmail == "" {
+		log.Log().Warn("No git author - cannot detect foreign commits")
 		return nil, nil
 	}
 
@@ -365,7 +392,7 @@ func (g *Git) listForeignCommits(mergeBase string) ([]string, error) {
 		}
 
 		authorEmail := strings.TrimSpace(stdout)
-		if authorEmail != g.userEmail {
+		if authorEmail != userEmail {
 			foreignCommits = append(foreignCommits, commitHash)
 		}
 	}

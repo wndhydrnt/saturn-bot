@@ -133,18 +133,21 @@ func createTempFile(content string, pattern string) string {
 	return f.Name()
 }
 
+func setupRunRepoMock(ctrl *gomock.Controller, name string) *MockRepository {
+	hostDetailMock := NewMockHostDetail(ctrl)
+	hostDetailMock.EXPECT().Name().Return("git.local").AnyTimes()
+	repo := NewMockRepository(ctrl)
+	repo.EXPECT().FullName().Return("git.local/unittest/" + name).AnyTimes()
+	repo.EXPECT().Host().Return(hostDetailMock).AnyTimes()
+	repo.EXPECT().Owner().Return("unittest").AnyTimes()
+	repo.EXPECT().Name().Return(name).AnyTimes()
+	return repo
+}
+
 func TestExecuteRunner_Run(t *testing.T) {
 	ctrl := gomock.NewController(t)
-	repo := NewMockRepository(ctrl)
-	repo.EXPECT().FullName().Return("git.local/unittest/repo").AnyTimes()
-	repo.EXPECT().Host().Return("git.local").AnyTimes()
-	repo.EXPECT().Owner().Return("unittest").AnyTimes()
-	repo.EXPECT().Name().Return("repo").AnyTimes()
-	repoWithPr := NewMockRepository(ctrl)
-	repoWithPr.EXPECT().FullName().Return("git.local/unittest/repoWithPr").AnyTimes()
-	repoWithPr.EXPECT().Host().Return("git.local").AnyTimes()
-	repoWithPr.EXPECT().Owner().Return("unittest").AnyTimes()
-	repoWithPr.EXPECT().Name().Return("repoWithPr").AnyTimes()
+	repo := setupRunRepoMock(ctrl, "repo")
+	repoWithPr := setupRunRepoMock(ctrl, "repoWithPr")
 	hostm := &mockHost{
 		repositories:                     []host.Repository{repo},
 		repositoriesWithOpenPullRequests: []host.Repository{repoWithPr},
@@ -188,11 +191,7 @@ func TestExecuteRunner_Run(t *testing.T) {
 
 func TestExecuteRunner_Run_DryRun(t *testing.T) {
 	ctrl := gomock.NewController(t)
-	repo := NewMockRepository(ctrl)
-	repo.EXPECT().FullName().Return("git.local/unittest/repo").AnyTimes()
-	repo.EXPECT().Host().Return("git.local").AnyTimes()
-	repo.EXPECT().Owner().Return("unittest").AnyTimes()
-	repo.EXPECT().Name().Return("repo").AnyTimes()
+	repo := setupRunRepoMock(ctrl, "repo")
 	hostm := &mockHost{
 		repositories: []host.Repository{repo},
 	}
@@ -234,11 +233,7 @@ func TestExecuteRunner_Run_DryRun(t *testing.T) {
 
 func TestExecuteRunner_Run_RepositoriesCLI(t *testing.T) {
 	ctrl := gomock.NewController(t)
-	repo := NewMockRepository(ctrl)
-	repo.EXPECT().FullName().Return("git.local/unittest/repo").AnyTimes()
-	repo.EXPECT().Host().Return("git.local").AnyTimes()
-	repo.EXPECT().Owner().Return("unittest").AnyTimes()
-	repo.EXPECT().Name().Return("repo").AnyTimes()
+	repo := setupRunRepoMock(ctrl, "repo")
 	hostm := &mockHost{
 		repositories: []host.Repository{repo},
 	}

@@ -48,6 +48,7 @@ func (u *userCache) get(name string) (*gitlab.User, error) {
 type GitLabRepository struct {
 	client    *gitlab.Client
 	fullName  string
+	host      *GitLabHost
 	project   *gitlab.Project
 	userCache *userCache
 }
@@ -360,8 +361,8 @@ func (g *GitLabRepository) HasSuccessfulPullRequestBuild(pr interface{}) (bool, 
 	return !failed, nil
 }
 
-func (g *GitLabRepository) Host() string {
-	return g.client.BaseURL().Host
+func (g *GitLabRepository) Host() HostDetail {
+	return g.host
 }
 
 func (g *GitLabRepository) IsPullRequestClosed(pr interface{}) bool {
@@ -525,8 +526,9 @@ func (g *GitLabRepository) diffUsers(assigned []*gitlab.BasicUser, in []string) 
 }
 
 type GitLabHost struct {
-	client    *gitlab.Client
-	userCache *userCache
+	authenticatedUser *UserInfo
+	client            *gitlab.Client
+	userCache         *userCache
 }
 
 func NewGitLabHost(addr, token string) (*GitLabHost, error) {
@@ -542,6 +544,25 @@ func NewGitLabHost(addr, token string) (*GitLabHost, error) {
 			data:   map[string]*gitlab.User{},
 		},
 	}, nil
+}
+
+func (g *GitLabHost) AuthenticatedUser() (*UserInfo, error) {
+	if g.authenticatedUser != nil {
+		return g.authenticatedUser, nil
+	}
+
+	user, _, err := g.client.Users.CurrentUser()
+	if err != nil {
+		return nil, fmt.Errorf("get current gitlab user: %w", err)
+	}
+
+	log.Log().Debug("Discovered authenticated user from GitLab")
+	g.authenticatedUser = &UserInfo{
+		Email: user.Email,
+		Name:  user.Name,
+	}
+
+	return g.authenticatedUser, nil
 }
 
 func (g *GitLabHost) CreateFromName(name string) (Repository, error) {
@@ -569,7 +590,11 @@ func (g *GitLabHost) CreateFromName(name string) (Repository, error) {
 		return nil, fmt.Errorf("get gitlab project: %w", err)
 	}
 
-	return &GitLabRepository{client: g.client, project: project, userCache: g.userCache}, nil
+	return &GitLabRepository{client: g.client, host: g, project: project, userCache: g.userCache}, nil
+}
+
+func (g *GitLabHost) Name() string {
+	return g.client.BaseURL().Host
 }
 
 func (g *GitLabHost) ListRepositories(since *time.Time, result chan []Repository, errChan chan error) {
@@ -591,7 +616,7 @@ func (g *GitLabHost) ListRepositories(since *time.Time, result chan []Repository
 
 		var batch []Repository
 		for _, project := range projects {
-			batch = append(batch, &GitLabRepository{client: g.client, project: project, userCache: g.userCache})
+			batch = append(batch, &GitLabRepository{client: g.client, host: g, project: project, userCache: g.userCache})
 		}
 
 		result <- batch
@@ -645,7 +670,7 @@ func (g *GitLabHost) ListRepositoriesWithOpenPullRequests(result chan []Reposito
 				continue
 			}
 
-			batch = append(batch, &GitLabRepository{client: g.client, project: project, userCache: g.userCache})
+			batch = append(batch, &GitLabRepository{client: g.client, host: g, project: project, userCache: g.userCache})
 		}
 
 		result <- batch
