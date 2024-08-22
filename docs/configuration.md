@@ -55,6 +55,8 @@ githubToken: xxxxx
 
 [json-path:../pkg/config/config.schema.json:$.properties.gitAuthor.description]
 
+If not set, saturn-bot tries to discover the author via the host of the repository.
+
 | Name    | Value                  |
 | ------- | ---------------------- |
 | Default | -                      |
