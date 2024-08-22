@@ -178,7 +178,7 @@ func (a *lineInsert) Apply(_ context.Context) error {
 		}
 
 		defer source.Close()
-		target, err := os.CreateTemp("", "*")
+		target, err := os.CreateTemp(filepath.Dir(path), "*")
 		if err != nil {
 			return fmt.Errorf("create temporary file: %w", err)
 		}
@@ -374,7 +374,7 @@ func forEachLine(filePath string, f func(line []byte) ([]byte, error)) error {
 	}
 
 	defer source.Close()
-	target, err := os.CreateTemp("", "*")
+	target, err := os.CreateTemp(filepath.Dir(filePath), "*")
 	if err != nil {
 		return fmt.Errorf("create temporary file: %w", err)
 	}
