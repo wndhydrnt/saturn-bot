@@ -193,6 +193,7 @@ func newConfig(format config.ConfigurationLogFormat) zap.Config {
 
 	if encoderFormat == "console" {
 		zapCfg.DisableCaller = true
+		zapCfg.DisableStacktrace = true
 		zapCfg.EncoderConfig.EncodeTime = zapcore.ISO8601TimeEncoder
 		zapCfg.EncoderConfig.EncodeLevel = zapcore.CapitalColorLevelEncoder
 	}
