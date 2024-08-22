@@ -318,7 +318,6 @@ func (g *Git) UpdateTaskBranch(branchName string, forceRebase bool, repo host.Re
 
 func (g *Git) author(repo host.Repository) (string, string) {
 	if g.userEmail != "" && g.userName != "" {
-		log.Log().Debug("Using git author set in configuration file")
 		return g.userName, g.userEmail
 	}
 
@@ -332,7 +331,6 @@ func (g *Git) author(repo host.Repository) (string, string) {
 		return "", ""
 	}
 
-	log.Log().Debug("Using git author discovered from host")
 	return userInfo.Name, userInfo.Email
 }
 
