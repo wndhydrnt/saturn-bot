@@ -1,5 +1,20 @@
 # Changelog
 
+## [0.10.0](https://github.com/wndhydrnt/saturn-bot/compare/v0.9.0...v0.10.0) (2024-08-22)
+
+
+### Features
+
+* **command:** Align args and flags of command "try" with "run" ([#63](https://github.com/wndhydrnt/saturn-bot/issues/63)) ([f36cdcc](https://github.com/wndhydrnt/saturn-bot/commit/f36cdcc9b3f8d5695609833bef335118788b285f))
+* **git:** Discover git author from host ([#55](https://github.com/wndhydrnt/saturn-bot/issues/55)) ([b0d098c](https://github.com/wndhydrnt/saturn-bot/commit/b0d098c1d6e3cd55926d4a3c87b66b42d887e648))
+
+
+### Bug Fixes
+
+* **action:** line* actions fail if temp directory and data directory aren't on the same device ([#62](https://github.com/wndhydrnt/saturn-bot/issues/62)) ([77d1c2e](https://github.com/wndhydrnt/saturn-bot/commit/77d1c2e620da53caed6bd0f51ee576cd83bf4af1))
+* **command:** Get data directory via options in run command to fix nil-pointer ([#59](https://github.com/wndhydrnt/saturn-bot/issues/59)) ([b8e598d](https://github.com/wndhydrnt/saturn-bot/commit/b8e598d4278ad52781459b0d9f9b60f708438c73))
+* **log:** Log message and error concatenated at the end of a run ([#61](https://github.com/wndhydrnt/saturn-bot/issues/61)) ([26a70c2](https://github.com/wndhydrnt/saturn-bot/commit/26a70c23f6dbcc5608337f71dbefa3afab80d454))
+
 ## [0.9.0](https://github.com/wndhydrnt/saturn-bot/compare/v0.8.1...v0.9.0) (2024-08-21)
 
 
