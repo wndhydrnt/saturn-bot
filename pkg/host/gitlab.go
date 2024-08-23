@@ -442,8 +442,9 @@ func (g *GitLabRepository) PullRequest(pr any) *PullRequest {
 	}
 
 	return &PullRequest{
-		Number: int64(mr.IID),
-		WebURL: mr.WebURL,
+		CreatedAt: mr.CreatedAt,
+		Number:    int64(mr.IID),
+		WebURL:    mr.WebURL,
 	}
 }
 

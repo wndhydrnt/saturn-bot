@@ -587,3 +587,56 @@ func TestProcessor_Process_NoFilters(t *testing.T) {
 	require.NoError(t, err)
 	assert.Equal(t, processor.ResultNoMatch, result)
 }
+
+func TestProcessor_Process_AutoCloseAfter_Close(t *testing.T) {
+	prID := "prID"
+	ctrl := gomock.NewController(t)
+	repo := setupRepoMock(ctrl)
+	repo.EXPECT().FindPullRequest("saturn-bot--unittest").Return(prID, nil)
+	repo.EXPECT().IsPullRequestClosed(prID).Return(false)
+	repo.EXPECT().IsPullRequestMerged(prID).Return(false)
+	repo.EXPECT().IsPullRequestOpen(prID).Return(true)
+	createdAt := time.Now().Add(-1 * time.Hour)
+	repo.EXPECT().PullRequest(prID).Return(&host.PullRequest{CreatedAt: &createdAt})
+	msg := "Pull request has been open for longer than 30s. Closing automatically."
+	repo.EXPECT().ClosePullRequest(msg, prID).Return(nil)
+	gitc := NewMockGitClient(ctrl)
+	gitc.EXPECT().Prepare(repo, false).Return("/tmp", nil)
+	tw := &task.Wrapper{Task: schema.Task{AutoCloseAfter: 30, Name: "unittest"}}
+	tw.AddFilters(&trueFilter{})
+
+	p := &processor.Processor{Git: gitc}
+	result, err := p.Process(context.Background(), false, repo, tw, true)
+
+	require.NoError(t, err)
+	assert.Equal(t, processor.ResultPrClosed, result)
+}
+
+func TestProcessor_Process_AutoCloseAfter_NotTimeYet(t *testing.T) {
+	prID := "prID"
+	ctrl := gomock.NewController(t)
+	repo := setupRepoMock(ctrl)
+	repo.EXPECT().FindPullRequest("saturn-bot--unittest").Return(prID, nil)
+	repo.EXPECT().IsPullRequestClosed(prID).Return(false)
+	repo.EXPECT().IsPullRequestMerged(prID).Return(false)
+	repo.EXPECT().IsPullRequestOpen(prID).Return(true).Times(2)
+	createdAt := time.Now().Add(-1 * time.Hour)
+	repo.EXPECT().PullRequest(prID).Return(&host.PullRequest{CreatedAt: &createdAt})
+	repo.EXPECT().GetPullRequestBody(prID).Return("").AnyTimes()
+	repo.EXPECT().BaseBranch().Return("main").AnyTimes()
+	repo.EXPECT().UpdatePullRequest(gomock.Any(), prID).Return(nil)
+	gitc := NewMockGitClient(ctrl)
+	gitc.EXPECT().Prepare(repo, false).Return("/tmp", nil)
+	gitc.EXPECT().UpdateTaskBranch("saturn-bot--unittest", false, repo)
+	gitc.EXPECT().HasLocalChanges().Return(false, nil)
+	gitc.EXPECT().HasRemoteChanges("main").Return(true, nil)
+	gitc.EXPECT().HasRemoteChanges("saturn-bot--unittest").Return(false, nil)
+	tw := &task.Wrapper{Task: schema.Task{AutoCloseAfter: 86_400, Name: "unittest"}}
+	tw.AddFilters(&trueFilter{})
+
+	p := &processor.Processor{Git: gitc}
+	result, err := p.Process(context.Background(), false, repo, tw, true)
+
+	require.NoError(t, err)
+	assert.Equal(t, processor.ResultPrOpen, result)
+}

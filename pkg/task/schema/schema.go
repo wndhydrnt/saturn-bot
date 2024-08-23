@@ -172,6 +172,10 @@ type Task struct {
 	// A list of usernames to set as assignees of a pull request.
 	Assignees []string `json:"assignees,omitempty" yaml:"assignees,omitempty" mapstructure:"assignees,omitempty"`
 
+	// Automatically close a pull request if it is still open after the duration has
+	// passed. Format is seconds. Set to `0`, the default, to deactivate.
+	AutoCloseAfter int `json:"autoCloseAfter,omitempty" yaml:"autoCloseAfter,omitempty" mapstructure:"autoCloseAfter,omitempty"`
+
 	// Merge a pull request automatically if all checks have passed and all approvals
 	// have been given.
 	AutoMerge bool `json:"autoMerge,omitempty" yaml:"autoMerge,omitempty" mapstructure:"autoMerge,omitempty"`
@@ -248,6 +252,9 @@ func (j *Task) UnmarshalJSON(b []byte) error {
 	if v, ok := raw["active"]; !ok || v == nil {
 		plain.Active = true
 	}
+	if v, ok := raw["autoCloseAfter"]; !ok || v == nil {
+		plain.AutoCloseAfter = 0.0
+	}
 	if v, ok := raw["autoMerge"]; !ok || v == nil {
 		plain.AutoMerge = false
 	}
@@ -301,6 +308,9 @@ func (j *Task) UnmarshalYAML(value *yaml.Node) error {
 	}
 	if v, ok := raw["active"]; !ok || v == nil {
 		plain.Active = true
+	}
+	if v, ok := raw["autoCloseAfter"]; !ok || v == nil {
+		plain.AutoCloseAfter = 0.0
 	}
 	if v, ok := raw["autoMerge"]; !ok || v == nil {
 		plain.AutoMerge = false

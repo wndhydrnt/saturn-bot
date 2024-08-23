@@ -334,8 +334,9 @@ func (g *GitHubRepository) PullRequest(pr any) *PullRequest {
 	}
 
 	return &PullRequest{
-		Number: int64(gpr.GetNumber()),
-		WebURL: gpr.GetHTMLURL(),
+		CreatedAt: &gpr.CreatedAt.Time,
+		Number:    int64(gpr.GetNumber()),
+		WebURL:    gpr.GetHTMLURL(),
 	}
 }
 

@@ -22,6 +22,8 @@ var (
 
 // PullRequest holds data on an existing pull request.
 type PullRequest struct {
+	// CreatedAt is the time and date at which the pull request has been created.
+	CreatedAt *time.Time
 	// Number is the identifier of the pull request.
 	Number int64
 	// WebURL is the URL humans visit to view the pull request.
