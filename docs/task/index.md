@@ -41,6 +41,20 @@ active: true
 active: false
 ```
 
+## autoCloseAfter
+
+[json-path:../../pkg/task/schema/task.schema.json:$.properties.autoCloseAfter.description]
+
+Examples
+
+```yaml title="Close pull request after being open for 14 days"
+autoCloseAfter: 1209600
+```
+
+```yaml title="Deactivate auto-close, the default"
+autoCloseAfter: 0
+```
+
 ## autoMerge
 
 [json-path:../../pkg/task/schema/task.schema.json:$.properties.autoMerge.description]
