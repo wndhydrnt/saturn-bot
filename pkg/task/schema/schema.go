@@ -202,7 +202,7 @@ type Task struct {
 	// subsequent run.
 	CreateOnly bool `json:"createOnly,omitempty" yaml:"createOnly,omitempty" mapstructure:"createOnly,omitempty"`
 
-	// Filters allow targeting a specific repositories.
+	// Filters make saturn-bot pick the repositories to which it applies the task.
 	Filters []Filter `json:"filters,omitempty" yaml:"filters,omitempty" mapstructure:"filters,omitempty"`
 
 	// If `true`, keep the branch after a pull request has been merged.

@@ -60,7 +60,7 @@
     },
     "filters": {
       "type": "array",
-      "description": "Filters allow targeting a specific repositories.",
+      "description": "Filters make saturn-bot pick the repositories to which it applies the task.",
       "items": {
         "$ref": "#/$defs/filter"
       }

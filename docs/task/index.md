@@ -25,6 +25,12 @@ actions:
       path: "hello-world.txt"
 ```
 
+## actions
+
+[json-path:../../pkg/task/schema/task.schema.json:$.properties.actions.description]
+
+All available actions can be found [here](./actions/index.md).
+
 ## active
 
 [json-path:../../pkg/task/schema/task.schema.json:$.properties.active.description]
@@ -117,6 +123,12 @@ changeLimit: 0
 ## createOnly
 
 [json-path:../../pkg/task/schema/task.schema.json:$.properties.createOnly.description]
+
+## filters
+
+[json-path:../../pkg/task/schema/task.schema.json:$.properties.filters.description]
+
+All available filters can be found [here](./filters/index.md).
 
 ## keepBranchAfterMerge
 
