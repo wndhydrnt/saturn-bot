@@ -47,7 +47,7 @@ active: false
 
 Examples
 
-```yaml title="Close pull request after being open for 14 days"
+```yaml title="Close pull request after it being open for 14 days"
 autoCloseAfter: 1209600
 ```
 

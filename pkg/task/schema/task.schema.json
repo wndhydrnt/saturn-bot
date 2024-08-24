@@ -25,7 +25,7 @@
     },
     "autoCloseAfter": {
       "default": 0,
-      "description": "Automatically close a pull request if it is still open after the duration has passed. Format is seconds. Set to `0`, the default, to deactivate.",
+      "description": "Automatically close a pull request if it has been unmerged for the duration. Format is seconds. Set to `0`, the default, to deactivate.",
       "type": "integer"
     },
     "autoMerge": {

@@ -172,8 +172,8 @@ type Task struct {
 	// A list of usernames to set as assignees of a pull request.
 	Assignees []string `json:"assignees,omitempty" yaml:"assignees,omitempty" mapstructure:"assignees,omitempty"`
 
-	// Automatically close a pull request if it is still open after the duration has
-	// passed. Format is seconds. Set to `0`, the default, to deactivate.
+	// Automatically close a pull request if it has been unmerged for the duration.
+	// Format is seconds. Set to `0`, the default, to deactivate.
 	AutoCloseAfter int `json:"autoCloseAfter,omitempty" yaml:"autoCloseAfter,omitempty" mapstructure:"autoCloseAfter,omitempty"`
 
 	// Merge a pull request automatically if all checks have passed and all approvals
