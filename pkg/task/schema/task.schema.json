@@ -23,6 +23,11 @@
         "type": "string"
       }
     },
+    "autoCloseAfter": {
+      "default": 0,
+      "description": "Automatically close a pull request if it has been unmerged for the duration. Format is seconds. Set to `0`, the default, to deactivate.",
+      "type": "integer"
+    },
     "autoMerge": {
       "default": false,
       "description": "Merge a pull request automatically if all checks have passed and all approvals have been given.",

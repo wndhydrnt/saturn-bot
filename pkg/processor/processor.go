@@ -170,6 +170,22 @@ func applyTaskToRepository(ctx context.Context, dryRun bool, gitc git.GitClient,
 		if prInfo != nil {
 			ctx = context.WithValue(ctx, sContext.PullRequestKey{}, *prInfo)
 		}
+
+		if task.SourceTask().AutoCloseAfter > 0 && prInfo.CreatedAt != nil {
+			dur := time.Duration(task.SourceTask().AutoCloseAfter) * time.Second
+			if time.Now().After(prInfo.CreatedAt.Add(dur)) {
+				logger.Info("Auto-closing pull request")
+				if !dryRun {
+					msg := fmt.Sprintf("Pull request has been open for longer than %s. Closing automatically.", dur.String())
+					err := repo.ClosePullRequest(msg, prID)
+					if err != nil {
+						return ResultUnknown, fmt.Errorf("auto-close pull request: %w", err)
+					}
+				}
+
+				return ResultPrClosed, nil
+			}
+		}
 	}
 
 	forceRebase := prID != nil && needsRebaseByUser(repo, prID)
