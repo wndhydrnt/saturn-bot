@@ -170,10 +170,10 @@ func TestExecuteRunner_Run(t *testing.T) {
 	var ctx = reflect.TypeOf((*context.Context)(nil)).Elem()
 	var anyTask task.Task = &task.Wrapper{}
 	procMock.EXPECT().
-		Process(gomock.AssignableToTypeOf(ctx), false, repo, gomock.AssignableToTypeOf(anyTask), true).
+		Process(gomock.AssignableToTypeOf(ctx), false, repo, gomock.AssignableToTypeOf(anyTask), true, gomock.Any()).
 		Return(processor.ResultNoChanges, nil)
 	procMock.EXPECT().
-		Process(gomock.AssignableToTypeOf(ctx), false, repoWithPr, gomock.AssignableToTypeOf(anyTask), true).
+		Process(gomock.AssignableToTypeOf(ctx), false, repoWithPr, gomock.AssignableToTypeOf(anyTask), true, gomock.Any()).
 		Return(processor.ResultNoChanges, nil)
 
 	runner := &command.Run{
@@ -214,7 +214,7 @@ func TestExecuteRunner_Run_DryRun(t *testing.T) {
 	var ctx = reflect.TypeOf((*context.Context)(nil)).Elem()
 	var anyTask task.Task = &task.Wrapper{}
 	procMock.EXPECT().
-		Process(gomock.AssignableToTypeOf(ctx), true, repo, gomock.AssignableToTypeOf(anyTask), true).
+		Process(gomock.AssignableToTypeOf(ctx), true, repo, gomock.AssignableToTypeOf(anyTask), true, gomock.Any()).
 		Return(processor.ResultNoChanges, nil)
 
 	runner := &command.Run{
@@ -255,7 +255,7 @@ func TestExecuteRunner_Run_RepositoriesCLI(t *testing.T) {
 	var ctx = reflect.TypeOf((*context.Context)(nil)).Elem()
 	var anyTask task.Task = &task.Wrapper{}
 	procMock.EXPECT().
-		Process(gomock.AssignableToTypeOf(ctx), false, repo, gomock.AssignableToTypeOf(anyTask), false).
+		Process(gomock.AssignableToTypeOf(ctx), false, repo, gomock.AssignableToTypeOf(anyTask), false, gomock.Any()).
 		Return(processor.ResultNoChanges, nil)
 
 	runner := &command.Run{
