@@ -83,6 +83,7 @@ type Task interface {
 	OnPrCreated(host.Repository) error
 	OnPrMerged(host.Repository) error
 	PrTitle() string
+	SetLogger(*zap.SugaredLogger)
 	SourceTask() schema.Task
 	Stop()
 }
@@ -165,6 +166,16 @@ func (tw *Wrapper) IncOpenPRsCount() {
 
 func (tw *Wrapper) PrTitle() string {
 	return cmp.Or(tw.Task.PrTitle, "Apply task "+tw.Task.Name)
+}
+
+func (tw *Wrapper) SetLogger(l *zap.SugaredLogger) {
+	if l == nil {
+		return
+	}
+
+	for _, p := range tw.plugins {
+		p.setLogger(l)
+	}
 }
 
 func (tw *Wrapper) SourceTask() schema.Task {

@@ -61,6 +61,7 @@ func (p *Processor) Process(
 			log.FieldTask(task.SourceTask().Name),
 		))
 	logger.Debug("Processing repository")
+	task.SetLogger(logger)
 	if task.HasReachMaxOpenPRs() {
 		logger.Debug("Skipping task because Max Open PRs have been reached")
 		return ResultSkip, nil
