@@ -1,5 +1,18 @@
 # Changelog
 
+## [0.11.0](https://github.com/wndhydrnt/saturn-bot/compare/v0.10.0...v0.11.0) (2024-08-28)
+
+
+### Features
+
+* **task:** Auto-close a pull request after a duration has passed ([#64](https://github.com/wndhydrnt/saturn-bot/issues/64)) ([c9e3c60](https://github.com/wndhydrnt/saturn-bot/commit/c9e3c60a7d58b8f8cda5cfe16cbc88f15435bcc0))
+* **task:** Log stdout and stderr of plugin ([#66](https://github.com/wndhydrnt/saturn-bot/issues/66)) ([305d07c](https://github.com/wndhydrnt/saturn-bot/commit/305d07c029ba4fd7f2463a2f2c02931e2e273dda))
+
+
+### Bug Fixes
+
+* **command:** No information about which task failed ([#67](https://github.com/wndhydrnt/saturn-bot/issues/67)) ([8a5a2aa](https://github.com/wndhydrnt/saturn-bot/commit/8a5a2aae8af1eff534c85046eb08b3f8fd4236b6))
+
 ## [0.10.0](https://github.com/wndhydrnt/saturn-bot/compare/v0.9.0...v0.10.0) (2024-08-22)
 
 
