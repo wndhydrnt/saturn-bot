@@ -13,7 +13,23 @@ import (
 	"github.com/wndhydrnt/saturn-bot/pkg/host"
 	"github.com/wndhydrnt/saturn-bot/pkg/log"
 	gsLog "github.com/wndhydrnt/saturn-bot/pkg/log"
+	"go.uber.org/zap"
 )
+
+type stdioAdapter struct {
+	logger *zap.SugaredLogger
+	name   string
+	stream string
+}
+
+// Write implements io.Writer
+func (s *stdioAdapter) Write(d []byte) (int, error) {
+	if s.logger != nil && string(d) != "\n" {
+		s.logger.Infof("Plugin %s %s: %s", s.name, s.stream, string(d))
+	}
+
+	return len(d), nil
+}
 
 type startPluginOptions struct {
 	config     map[string]string
@@ -23,10 +39,12 @@ type startPluginOptions struct {
 }
 
 type pluginWrapper struct {
-	action   *PluginAction
-	client   *goPlugin.Client
-	filter   *PluginFilter
-	provider plugin.Provider
+	action        *PluginAction
+	client        *goPlugin.Client
+	filter        *PluginFilter
+	provider      plugin.Provider
+	stderrAdapter *stdioAdapter
+	stdoutAdapter *stdioAdapter
 }
 
 func newPluginWrapper(opts startPluginOptions) (*pluginWrapper, error) {
@@ -46,6 +64,8 @@ func newPluginWrapper(opts startPluginOptions) (*pluginWrapper, error) {
 		return nil, fmt.Errorf("unsupported plugin extension '%s'", ext)
 	}
 
+	stderrAdapter := &stdioAdapter{stream: "stderr"}
+	stdoutAdapter := &stdioAdapter{stream: "stdout"}
 	client := goPlugin.NewClient(&goPlugin.ClientConfig{
 		HandshakeConfig: plugin.Handshake,
 		Logger:          gsLog.DefaultHclogAdapter(),
@@ -54,6 +74,8 @@ func newPluginWrapper(opts startPluginOptions) (*pluginWrapper, error) {
 		},
 		Cmd:              exec.Command(executable, args...), // #nosec G204 -- arguments are controlled by saturn-bot
 		AllowedProtocols: []goPlugin.Protocol{goPlugin.ProtocolGRPC},
+		SyncStdout:       stdoutAdapter,
+		SyncStderr:       stderrAdapter,
 	})
 
 	rpcClient, err := client.Client()
@@ -73,11 +95,15 @@ func newPluginWrapper(opts startPluginOptions) (*pluginWrapper, error) {
 	}
 
 	log.Log().Debugf("Registered plugin %s", getPluginResp.GetName())
+	stderrAdapter.name = getPluginResp.GetName()
+	stdoutAdapter.name = getPluginResp.GetName()
 	return &pluginWrapper{
-		action:   &PluginAction{Provider: provider},
-		client:   client,
-		filter:   &PluginFilter{Provider: provider},
-		provider: provider,
+		action:        &PluginAction{Provider: provider},
+		client:        client,
+		filter:        &PluginFilter{Provider: provider},
+		provider:      provider,
+		stderrAdapter: stderrAdapter,
+		stdoutAdapter: stdoutAdapter,
 	}, nil
 }
 
@@ -145,6 +171,11 @@ func (pw *pluginWrapper) onPrMerged(repo host.Repository) error {
 	}
 
 	return nil
+}
+
+func (pw *pluginWrapper) setLogger(l *zap.SugaredLogger) {
+	pw.stderrAdapter.logger = l
+	pw.stdoutAdapter.logger = l
 }
 
 func (pw *pluginWrapper) stop() {
