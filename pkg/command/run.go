@@ -17,6 +17,7 @@ import (
 	"github.com/wndhydrnt/saturn-bot/pkg/options"
 	"github.com/wndhydrnt/saturn-bot/pkg/processor"
 	"github.com/wndhydrnt/saturn-bot/pkg/task"
+	"go.uber.org/zap"
 )
 
 var (
@@ -102,10 +103,16 @@ func (r *Run) Run(repositoryNames, taskFiles []string) ([]RunResult, error) {
 						RepositoryName: repo.FullName(),
 						TaskName:       t.SourceTask().Name,
 					}
-					result.Result, result.Error = r.Processor.Process(ctx, r.DryRun, repo, t, doFilter)
+					logger := log.Log().
+						WithOptions(zap.Fields(
+							log.FieldDryRun(r.DryRun),
+							log.FieldRepo(repo.FullName()),
+							log.FieldTask(t.SourceTask().Name),
+						))
+					result.Result, result.Error = r.Processor.Process(ctx, r.DryRun, repo, t, doFilter, logger)
 					if result.Error != nil {
 						success = false
-						log.Log().Errorw("Task failed", "error", result.Error)
+						logger.Errorw("Task failed", "error", result.Error)
 					}
 
 					results = append(results, result)

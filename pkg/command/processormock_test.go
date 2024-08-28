@@ -17,6 +17,7 @@ import (
 	processor "github.com/wndhydrnt/saturn-bot/pkg/processor"
 	task "github.com/wndhydrnt/saturn-bot/pkg/task"
 	gomock "go.uber.org/mock/gomock"
+	zap "go.uber.org/zap"
 )
 
 //go:generate mockgen -package command_test -source ../processor/processor.go -destination processormock_test.go -write_generate_directive
@@ -45,16 +46,16 @@ func (m *MockRepositoryTaskProcessor) EXPECT() *MockRepositoryTaskProcessorMockR
 }
 
 // Process mocks base method.
-func (m *MockRepositoryTaskProcessor) Process(ctx context.Context, dryRun bool, repo host.Repository, task task.Task, doFilter bool) (processor.Result, error) {
+func (m *MockRepositoryTaskProcessor) Process(ctx context.Context, dryRun bool, repo host.Repository, task task.Task, doFilter bool, logger *zap.SugaredLogger) (processor.Result, error) {
 	m.ctrl.T.Helper()
-	ret := m.ctrl.Call(m, "Process", ctx, dryRun, repo, task, doFilter)
+	ret := m.ctrl.Call(m, "Process", ctx, dryRun, repo, task, doFilter, logger)
 	ret0, _ := ret[0].(processor.Result)
 	ret1, _ := ret[1].(error)
 	return ret0, ret1
 }
 
 // Process indicates an expected call of Process.
-func (mr *MockRepositoryTaskProcessorMockRecorder) Process(ctx, dryRun, repo, task, doFilter any) *gomock.Call {
+func (mr *MockRepositoryTaskProcessorMockRecorder) Process(ctx, dryRun, repo, task, doFilter, logger any) *gomock.Call {
 	mr.mock.ctrl.T.Helper()
-	return mr.mock.ctrl.RecordCallWithMethodType(mr.mock, "Process", reflect.TypeOf((*MockRepositoryTaskProcessor)(nil).Process), ctx, dryRun, repo, task, doFilter)
+	return mr.mock.ctrl.RecordCallWithMethodType(mr.mock, "Process", reflect.TypeOf((*MockRepositoryTaskProcessor)(nil).Process), ctx, dryRun, repo, task, doFilter, logger)
 }

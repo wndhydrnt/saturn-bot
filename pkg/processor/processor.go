@@ -44,7 +44,7 @@ type Processor struct {
 }
 
 type RepositoryTaskProcessor interface {
-	Process(ctx context.Context, dryRun bool, repo host.Repository, task task.Task, doFilter bool) (Result, error)
+	Process(ctx context.Context, dryRun bool, repo host.Repository, task task.Task, doFilter bool, logger *zap.SugaredLogger) (Result, error)
 }
 
 func (p *Processor) Process(
@@ -53,13 +53,8 @@ func (p *Processor) Process(
 	repo host.Repository,
 	task task.Task,
 	doFilter bool,
+	logger *zap.SugaredLogger,
 ) (Result, error) {
-	logger := log.Log().
-		WithOptions(zap.Fields(
-			log.FieldDryRun(dryRun),
-			log.FieldRepo(repo.FullName()),
-			log.FieldTask(task.SourceTask().Name),
-		))
 	logger.Debug("Processing repository")
 	task.SetLogger(logger)
 	if task.HasReachMaxOpenPRs() {
