@@ -25,6 +25,12 @@ func (e *BranchModifiedError) Error() string {
 	return "branch contains other commits"
 }
 
+type EmptyRepositoryError struct{}
+
+func (e EmptyRepositoryError) Error() string {
+	return "empty repository"
+}
+
 type GitCommandError struct {
 	err      error
 	exitCode int
@@ -233,6 +239,13 @@ func (g *Git) Push(branchName string) error {
 func (g *Git) UpdateTaskBranch(branchName string, forceRebase bool, repo host.Repository) (bool, error) {
 	_, _, err := g.Execute("checkout", repo.BaseBranch())
 	if err != nil {
+		var gitErr *GitCommandError
+		if errors.As(err, &gitErr) {
+			if strings.Contains(gitErr.stderr, "did not match any file(s) known to git") {
+				return false, EmptyRepositoryError{}
+			}
+		}
+
 		return false, fmt.Errorf("checkout base branch %s: %w", repo.BaseBranch(), err)
 	}
 
