@@ -6,18 +6,16 @@ import (
 )
 
 func createWorkerCommand() *cobra.Command {
-	var taskFiles []string
-
 	var cmd = &cobra.Command{
-		Use:   "worker",
+		Use:   "worker FILE [FILE...]",
 		Short: "Start the worker",
 		Long:  "Start the worker.",
+		Args:  cobra.MinimumNArgs(1),
 		Run: func(cmd *cobra.Command, args []string) {
-			err := worker.Run(cfgFile, taskFiles)
+			err := worker.Run(cfgFile, args)
 			handleError(err, cmd.ErrOrStderr())
 		},
 	}
 	cmd.Flags().StringVar(&cfgFile, "config", "", "Path to config file")
-	cmd.Flags().StringArrayVar(&taskFiles, "task", []string{}, "")
 	return cmd
 }

@@ -6,18 +6,16 @@ import (
 )
 
 func createServerCommand() *cobra.Command {
-	var taskFiles []string
-
 	var cmd = &cobra.Command{
-		Use:   "server",
+		Use:   "server FILE [FILE...]",
 		Short: "Start the server",
 		Long:  "Start the server.",
+		Args:  cobra.MinimumNArgs(1),
 		Run: func(cmd *cobra.Command, args []string) {
-			err := server.Run(cfgFile, taskFiles)
+			err := server.Run(cfgFile, args)
 			handleError(err, cmd.ErrOrStderr())
 		},
 	}
 	cmd.Flags().StringVar(&cfgFile, "config", "", "Path to config file")
-	cmd.Flags().StringArrayVar(&taskFiles, "task", []string{}, "")
 	return cmd
 }
