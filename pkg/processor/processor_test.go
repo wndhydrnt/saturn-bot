@@ -645,3 +645,34 @@ func TestProcessor_Process_AutoCloseAfter_NotTimeYet(t *testing.T) {
 	require.NoError(t, err)
 	assert.Equal(t, processor.ResultPrOpen, result)
 }
+
+func TestProcessor_Process_EmptyRepository(t *testing.T) {
+	tempDir, err := os.MkdirTemp("", "")
+	require.NoError(t, err)
+	defer func() {
+		_ = os.RemoveAll(tempDir)
+	}()
+
+	prID := "prID"
+	ctrl := gomock.NewController(t)
+	repo := setupRepoMock(ctrl)
+	repo.EXPECT().FindPullRequest("saturn-bot--unittest").Return(prID, nil)
+	repo.EXPECT().IsPullRequestClosed(prID).Return(false).AnyTimes()
+	repo.EXPECT().IsPullRequestMerged(prID).Return(false).AnyTimes()
+	repo.EXPECT().GetPullRequestBody(prID).Return("")
+	repo.EXPECT().IsPullRequestOpen(prID).Return(true).AnyTimes()
+	repo.EXPECT().PullRequest(prID).Return(nil)
+	gitc := NewMockGitClient(ctrl)
+	gitc.EXPECT().Prepare(repo, false).Return(tempDir, nil)
+	gitc.EXPECT().
+		UpdateTaskBranch("saturn-bot--unittest", false, repo).
+		Return(false, git.EmptyRepositoryError{})
+	tw := &task.Wrapper{Task: schema.Task{Name: "unittest"}}
+	tw.AddFilters(&trueFilter{})
+
+	p := &processor.Processor{Git: gitc}
+	result, err := p.Process(context.Background(), false, repo, tw, true, testLogger)
+
+	require.NoError(t, err)
+	assert.Equal(t, processor.ResultUnknown, result)
+}

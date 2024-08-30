@@ -31,6 +31,7 @@ func setupOpts(cfg config.Configuration) options.Opts {
 type execCall struct {
 	cmd    *exec.Cmd
 	err    error
+	stderr *string
 	stdout *string
 }
 
@@ -41,6 +42,11 @@ func (ec *execCall) withDir(dir string) *execCall {
 
 func (ec *execCall) withErrorMsg(msg string) *execCall {
 	ec.err = errors.New(msg)
+	return ec
+}
+
+func (ec *execCall) withStderr(text string) *execCall {
+	ec.stderr = &text
 	return ec
 }
 
@@ -71,6 +77,10 @@ func (m *execMock) exec(c *exec.Cmd) error {
 	call := m.calls[0]
 	if reflect.DeepEqual(call.cmd.Args, c.Args) && call.cmd.Dir == c.Dir {
 		m.calls = append(m.calls[:0], m.calls[1:]...)
+		if call.stderr != nil {
+			_, _ = c.Stderr.Write([]byte(*call.stderr))
+		}
+
 		if call.stdout != nil {
 			_, _ = c.Stdout.Write([]byte(*call.stdout))
 		}
@@ -527,6 +537,29 @@ func TestGit_UpdateTaskBranch_BranchModified(t *testing.T) {
 
 	var expectedErr *git.BranchModifiedError
 	assert.ErrorAs(t, err, &expectedErr)
+	assert.False(t, conflict)
+	assert.True(t, em.finished())
+}
+
+func TestGit_UpdateTaskBranch_EmptyRepository(t *testing.T) {
+	em := &execMock{t: t}
+	em.withCall("git", "checkout", "main").
+		withStderr("error: pathspec 'main' did not match any file(s) known to git").
+		withErrorMsg("git failed")
+	ctrl := gomock.NewController(t)
+	repo := NewMockRepository(ctrl)
+	repo.EXPECT().BaseBranch().Return("main").AnyTimes()
+
+	g, err := git.New(setupOpts(config.Configuration{
+		DataDir:   toPtr("/tmp"),
+		GitAuthor: "unittest <unit@test.local>",
+		GitPath:   "git",
+	}))
+	require.NoError(t, err)
+	g.CmdExec = em.exec
+	conflict, err := g.UpdateTaskBranch("unittest", false, repo)
+
+	assert.ErrorIs(t, err, git.EmptyRepositoryError{})
 	assert.False(t, conflict)
 	assert.True(t, em.finished())
 }

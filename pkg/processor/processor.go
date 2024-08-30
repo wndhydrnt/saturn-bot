@@ -220,6 +220,12 @@ func applyTaskToRepository(ctx context.Context, dryRun bool, gitc git.GitClient,
 			return ResultBranchModified, nil
 		}
 
+		var emptyErr git.EmptyRepositoryError
+		if errors.Is(err, emptyErr) {
+			logger.Warn("Repository is empty")
+			return ResultUnknown, nil
+		}
+
 		return ResultUnknown, fmt.Errorf("update of git branch of task failed: %w", err)
 	}
 
