@@ -121,6 +121,7 @@ func (ws *WorkerService) NextRun() (db.Run, task.Task, error) {
 }
 
 func (ws *WorkerService) ReportRun(req openapi.ReportWorkV1Request) error {
+	log.Log().Debugf("Report of run %d", req.RunID)
 	var runCurrent db.Run
 	tx := ws.db.First(&runCurrent, req.RunID)
 	if tx.Error != nil {

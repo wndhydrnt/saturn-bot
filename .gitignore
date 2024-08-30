@@ -9,3 +9,4 @@ site/
 __pycache__/
 docs/schemas/
 gorm.db
+saturn-bot.db

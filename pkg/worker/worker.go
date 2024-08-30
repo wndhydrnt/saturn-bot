@@ -64,6 +64,7 @@ func (a *APIExecutionSource) Report(result Result) error {
 		payload.Error = client.PtrString(result.RunError.Error())
 	}
 
+	log.Log().Debugf("Reporting run %d", result.Execution.RunID)
 	req := a.client.
 		ReportWorkV1(ctx).
 		ReportWorkV1Request(payload)
@@ -132,7 +133,7 @@ func (w *Worker) Start() {
 				continue
 			}
 
-			log.Log().Debug("%d parallel executions", executionCounter)
+			log.Log().Debugf("Parallel executions: %d", executionCounter)
 			if executionCounter >= parallelExecutions {
 				log.Log().Debug("Max number of parallel executions reached")
 				continue
@@ -141,7 +142,7 @@ func (w *Worker) Start() {
 			exec, err := w.Exec.Next()
 			if err != nil {
 				if errors.Is(err, ErrNoExec) {
-					log.Log().Info("No new executions")
+					log.Log().Debug("No new executions")
 				} else {
 					log.Log().Errorw("Failed to get next execution", zap.Error(err))
 				}
@@ -149,11 +150,13 @@ func (w *Worker) Start() {
 				continue
 			}
 
+			log.Log().Debugf("Processing run %d", exec.RunID)
 			// Process in a Go routine
 			go w.executeRun(exec, w.resultChan)
 			executionCounter += 1
 
 		case result := <-w.resultChan:
+			log.Log().Debugf("Received result of run %d", result.Execution.RunID)
 			if result.RunError != nil {
 				log.Log().Errorw("Run failed", zap.Error(fmt.Errorf("ID %d: %w", result.Execution.RunID, result.RunError)))
 			}
