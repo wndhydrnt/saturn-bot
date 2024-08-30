@@ -163,7 +163,7 @@ func (w *Worker) Start() {
 
 			err := w.Exec.Report(result)
 			if err != nil {
-				log.Log().Errorw("Failed to report run", zap.Error(fmt.Errorf("ID %d: %w", result.Execution.RunID, result.RunError)))
+				log.Log().Errorw("Failed to report run", zap.Error(fmt.Errorf("ID %d: %w", result.Execution.RunID, err)))
 			}
 			executionCounter -= 1
 
