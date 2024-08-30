@@ -22,11 +22,10 @@ var rootCmd = &cobra.Command{
 }
 
 func Execute() int {
+	rootCmd.AddCommand(createExperimentalCommand())
 	rootCmd.AddCommand(createRunCommand())
-	rootCmd.AddCommand(createServerCommand())
 	rootCmd.AddCommand(createTryCommand())
 	rootCmd.AddCommand(createVersionCommand())
-	rootCmd.AddCommand(createWorkerCommand())
 	if err := rootCmd.Execute(); err != nil {
 		return 1
 	}
