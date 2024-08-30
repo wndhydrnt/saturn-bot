@@ -8,22 +8,47 @@ import (
 	"hash"
 	"io"
 	"os"
+	"path/filepath"
 
 	"github.com/wndhydrnt/saturn-bot/pkg/log"
 	"gopkg.in/yaml.v3"
 )
 
+type ReadResult struct {
+	Hash hash.Hash
+	Path string
+	Task Task
+}
+
 // Read return all Tasks from the file at `path`.
 // It also calculates the hash of the file.
-func Read(path string) ([]Task, []hash.Hash, error) {
+func Read(path string) ([]ReadResult, error) {
+	var results []ReadResult
+	globs, err := filepath.Glob(path)
+	if err != nil {
+		return nil, fmt.Errorf("globbing task file '%s': %w", path, err)
+	}
+
+	for _, name := range globs {
+		readResults, err := readFile(name)
+		if err != nil {
+			return nil, err
+		}
+
+		results = append(results, readResults...)
+	}
+
+	return results, nil
+}
+
+func readFile(path string) ([]ReadResult, error) {
 	log.Log().Debugf("Reading task file %s", path)
 	b, err := os.ReadFile(path)
 	if err != nil {
-		return nil, nil, fmt.Errorf("read task file '%s': %w", path, err)
+		return nil, fmt.Errorf("read task file '%s': %w", path, err)
 	}
+	var result []ReadResult
 	dec := yaml.NewDecoder(bytes.NewReader(b))
-	var result []Task
-	var hashes []hash.Hash
 	// Decode in a loop to account for multiple documents in one file
 	for {
 		var task Task
@@ -33,7 +58,7 @@ func Read(path string) ([]Task, []hash.Hash, error) {
 		}
 
 		if err != nil {
-			return nil, nil, fmt.Errorf("decode task file from YAML: %w", err)
+			return nil, fmt.Errorf("decode task file from YAML: %w", err)
 		}
 
 		// Encode to YAML again. Calculates the hash of the task,
@@ -41,34 +66,37 @@ func Read(path string) ([]Task, []hash.Hash, error) {
 		checksum := sha256.New()
 		enc := yaml.NewEncoder(checksum)
 		if err := enc.Encode(&task); err != nil {
-			return nil, nil, fmt.Errorf("encode task for hash: %w", err)
+			return nil, fmt.Errorf("encode task for hash: %w", err)
 		}
 
 		if err := enc.Close(); err != nil {
-			return nil, nil, fmt.Errorf("close yaml encoder for hash: %w", err)
+			return nil, fmt.Errorf("close yaml encoder for hash: %w", err)
 		}
 
 		if err := Validate(&task); err != nil {
-			return nil, nil, fmt.Errorf("validation failed: %w", err)
+			return nil, fmt.Errorf("validation failed: %w", err)
 		}
 
 		for _, plugin := range task.Plugins {
 			pluginFile, err := os.Open(plugin.PathAbs(path))
 			if err != nil {
-				return nil, nil, fmt.Errorf("open plugin file: %w", err)
+				return nil, fmt.Errorf("open plugin file: %w", err)
 			}
 
 			defer pluginFile.Close()
 			_, err = io.Copy(checksum, pluginFile)
 			if err != nil {
-				return nil, nil, fmt.Errorf("calculating hash of plugin: %w", err)
+				return nil, fmt.Errorf("calculating hash of plugin: %w", err)
 			}
 		}
 
 		log.Log().Debugf("Found task %s", task.Name)
-		result = append(result, task)
-		hashes = append(hashes, checksum)
+		result = append(result, ReadResult{
+			Hash: checksum,
+			Path: path,
+			Task: task,
+		})
 	}
 
-	return result, hashes, nil
+	return result, nil
 }

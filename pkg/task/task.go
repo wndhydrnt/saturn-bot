@@ -4,7 +4,6 @@ import (
 	"cmp"
 	"fmt"
 	"path"
-	"path/filepath"
 	"time"
 
 	"github.com/gosimple/slug"
@@ -247,25 +246,10 @@ func (tr *Registry) GetTasks() []Task {
 
 // ReadAll takes a list of paths to task files and reads all tasks from the files.
 func (tr *Registry) ReadAll(taskFiles []string) error {
-	var names []string
 	for _, path := range taskFiles {
-		globs, err := filepath.Glob(path)
+		err := tr.readTasks(path)
 		if err != nil {
-			return fmt.Errorf("globbing task file '%s': %w", path, err)
-		}
-
-		names = append(names, globs...)
-	}
-
-	for _, file := range names {
-		fileAbs, err := filepath.Abs(file)
-		if err != nil {
-			return fmt.Errorf("create absolute path of task file: %w", err)
-		}
-
-		err = tr.readTasks(fileAbs)
-		if err != nil {
-			return fmt.Errorf("failed to read tasks from file %s: %w", file, err)
+			return fmt.Errorf("failed to read tasks from file %s: %w", path, err)
 		}
 	}
 

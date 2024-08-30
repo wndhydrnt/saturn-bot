@@ -15,34 +15,34 @@ func readTasksYaml(
 	pathPython string,
 	taskFile string,
 ) ([]Task, error) {
-	schemaTasks, hashes, err := schema.Read(taskFile)
+	results, err := schema.Read(taskFile)
 	if err != nil {
 		return nil, err
 	}
 
-	var result []Task
-	for idx, schemaTask := range schemaTasks {
-		if !schemaTask.Active {
-			log.Log().Warnf("Task %s deactivated", schemaTask.Name)
+	var tasks []Task
+	for _, entry := range results {
+		if !entry.Task.Active {
+			log.Log().Warnf("Task %s deactivated", entry.Task.Name)
 			continue
 		}
 
 		wrapper := &Wrapper{}
-		wrapper.Task = schemaTask
-		wrapper.actions, err = createActionsForTask(wrapper.Task.Actions, actionFactories, taskFile)
+		wrapper.Task = entry.Task
+		wrapper.actions, err = createActionsForTask(wrapper.Task.Actions, actionFactories, entry.Path)
 		if err != nil {
 			return nil, fmt.Errorf("parse actions of task: %w", err)
 		}
 
 		wrapper.filters, err = createFiltersForTask(wrapper.Task.Filters, filterFactories)
 		if err != nil {
-			return nil, fmt.Errorf("parse filters of task file '%s': %w", taskFile, err)
+			return nil, fmt.Errorf("parse filters of task file '%s': %w", entry.Path, err)
 		}
 
-		for idx, plugin := range schemaTask.Plugins {
+		for idx, plugin := range entry.Task.Plugins {
 			pw, err := newPluginWrapper(startPluginOptions{
 				config:     plugin.Configuration,
-				filePath:   plugin.PathAbs(taskFile),
+				filePath:   plugin.PathAbs(entry.Path),
 				pathJava:   pathJava,
 				pathPython: pathPython,
 			})
@@ -55,9 +55,9 @@ func readTasksYaml(
 			wrapper.plugins = append(wrapper.plugins, pw)
 		}
 
-		wrapper.checksum = fmt.Sprintf("%x", hashes[idx].Sum(nil))
-		result = append(result, wrapper)
+		wrapper.checksum = fmt.Sprintf("%x", entry.Hash.Sum(nil))
+		tasks = append(tasks, wrapper)
 	}
 
-	return result, nil
+	return tasks, nil
 }
