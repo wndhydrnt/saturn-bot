@@ -133,7 +133,10 @@ func (w *Worker) Start() {
 				continue
 			}
 
-			log.Log().Debugf("Parallel executions: %d", executionCounter)
+			if executionCounter > 0 {
+				log.Log().Debugf("Parallel executions %d", executionCounter)
+			}
+
 			if executionCounter >= parallelExecutions {
 				log.Log().Debug("Max number of parallel executions reached")
 				continue
@@ -141,9 +144,7 @@ func (w *Worker) Start() {
 
 			exec, err := w.Exec.Next()
 			if err != nil {
-				if errors.Is(err, ErrNoExec) {
-					log.Log().Debug("No new executions")
-				} else {
+				if !errors.Is(err, ErrNoExec) {
 					log.Log().Errorw("Failed to get next execution", zap.Error(err))
 				}
 
