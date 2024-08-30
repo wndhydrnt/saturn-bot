@@ -23,67 +23,79 @@ type ReadResult struct {
 // Read return all Tasks from the file at `path`.
 // It also calculates the hash of the file.
 func Read(path string) ([]ReadResult, error) {
-	var result []ReadResult
+	var results []ReadResult
 	globs, err := filepath.Glob(path)
 	if err != nil {
 		return nil, fmt.Errorf("globbing task file '%s': %w", path, err)
 	}
 
 	for _, name := range globs {
-		log.Log().Debugf("Reading task file %s", name)
-		b, err := os.ReadFile(name)
+		readResults, err := readFile(name)
 		if err != nil {
-			return nil, fmt.Errorf("read task file '%s': %w", name, err)
+			return nil, err
 		}
-		dec := yaml.NewDecoder(bytes.NewReader(b))
-		// Decode in a loop to account for multiple documents in one file
-		for {
-			var task Task
-			err := dec.Decode(&task)
-			if errors.Is(err, io.EOF) {
-				break
-			}
 
+		results = append(results, readResults...)
+	}
+
+	return results, nil
+}
+
+func readFile(path string) ([]ReadResult, error) {
+	log.Log().Debugf("Reading task file %s", path)
+	b, err := os.ReadFile(path)
+	if err != nil {
+		return nil, fmt.Errorf("read task file '%s': %w", path, err)
+	}
+	var result []ReadResult
+	dec := yaml.NewDecoder(bytes.NewReader(b))
+	// Decode in a loop to account for multiple documents in one file
+	for {
+		var task Task
+		err := dec.Decode(&task)
+		if errors.Is(err, io.EOF) {
+			break
+		}
+
+		if err != nil {
+			return nil, fmt.Errorf("decode task file from YAML: %w", err)
+		}
+
+		// Encode to YAML again. Calculates the hash of the task,
+		// not of the file, which can contain more than one task.
+		checksum := sha256.New()
+		enc := yaml.NewEncoder(checksum)
+		if err := enc.Encode(&task); err != nil {
+			return nil, fmt.Errorf("encode task for hash: %w", err)
+		}
+
+		if err := enc.Close(); err != nil {
+			return nil, fmt.Errorf("close yaml encoder for hash: %w", err)
+		}
+
+		if err := Validate(&task); err != nil {
+			return nil, fmt.Errorf("validation failed: %w", err)
+		}
+
+		for _, plugin := range task.Plugins {
+			pluginFile, err := os.Open(plugin.PathAbs(path))
 			if err != nil {
-				return nil, fmt.Errorf("decode task file from YAML: %w", err)
+				return nil, fmt.Errorf("open plugin file: %w", err)
 			}
 
-			// Encode to YAML again. Calculates the hash of the task,
-			// not of the file, which can contain more than one task.
-			checksum := sha256.New()
-			enc := yaml.NewEncoder(checksum)
-			if err := enc.Encode(&task); err != nil {
-				return nil, fmt.Errorf("encode task for hash: %w", err)
+			defer pluginFile.Close()
+			_, err = io.Copy(checksum, pluginFile)
+			if err != nil {
+				return nil, fmt.Errorf("calculating hash of plugin: %w", err)
 			}
-
-			if err := enc.Close(); err != nil {
-				return nil, fmt.Errorf("close yaml encoder for hash: %w", err)
-			}
-
-			if err := Validate(&task); err != nil {
-				return nil, fmt.Errorf("validation failed: %w", err)
-			}
-
-			for _, plugin := range task.Plugins {
-				pluginFile, err := os.Open(plugin.PathAbs(name))
-				if err != nil {
-					return nil, fmt.Errorf("open plugin file: %w", err)
-				}
-
-				defer pluginFile.Close()
-				_, err = io.Copy(checksum, pluginFile)
-				if err != nil {
-					return nil, fmt.Errorf("calculating hash of plugin: %w", err)
-				}
-			}
-
-			log.Log().Debugf("Found task %s", task.Name)
-			result = append(result, ReadResult{
-				Hash: checksum,
-				Path: name,
-				Task: task,
-			})
 		}
+
+		log.Log().Debugf("Found task %s", task.Name)
+		result = append(result, ReadResult{
+			Hash: checksum,
+			Path: path,
+			Task: task,
+		})
 	}
 
 	return result, nil
