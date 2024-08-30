@@ -15,6 +15,7 @@ import (
 	"github.com/wndhydrnt/saturn-bot/pkg/options"
 	"github.com/wndhydrnt/saturn-bot/pkg/processor"
 	"github.com/wndhydrnt/saturn-bot/pkg/server/task"
+	"github.com/wndhydrnt/saturn-bot/pkg/version"
 	"github.com/wndhydrnt/saturn-bot/pkg/worker/client"
 	"go.uber.org/zap"
 )
@@ -263,7 +264,7 @@ func Run(configPath string, taskPaths []string) error {
 	}
 
 	go s.Start()
-	log.Log().Info("Worker started")
+	log.Log().Infof("Worker started %s", version.String())
 	sig := <-sigs
 	log.Log().Infof("Caught signal %s - shutting down", sig.String())
 	<-s.Stop()
