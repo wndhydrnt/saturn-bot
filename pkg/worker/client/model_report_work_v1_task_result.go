@@ -26,7 +26,7 @@ type ReportWorkV1TaskResult struct {
 	// Name of the repository.
 	RepositoryName string `json:"repositoryName"`
 	// Identifier of the result.
-	Result int32 `json:"result"`
+	Result *int32 `json:"result,omitempty"`
 	// Name of the task.
 	TaskName string `json:"taskName"`
 }
@@ -37,10 +37,9 @@ type _ReportWorkV1TaskResult ReportWorkV1TaskResult
 // This constructor will assign default values to properties that have it defined,
 // and makes sure properties required by API are set, but the set of arguments
 // will change when the set of required properties is changed
-func NewReportWorkV1TaskResult(repositoryName string, result int32, taskName string) *ReportWorkV1TaskResult {
+func NewReportWorkV1TaskResult(repositoryName string, taskName string) *ReportWorkV1TaskResult {
 	this := ReportWorkV1TaskResult{}
 	this.RepositoryName = repositoryName
-	this.Result = result
 	this.TaskName = taskName
 	return &this
 }
@@ -109,28 +108,36 @@ func (o *ReportWorkV1TaskResult) SetRepositoryName(v string) {
 	o.RepositoryName = v
 }
 
-// GetResult returns the Result field value
+// GetResult returns the Result field value if set, zero value otherwise.
 func (o *ReportWorkV1TaskResult) GetResult() int32 {
-	if o == nil {
+	if o == nil || IsNil(o.Result) {
 		var ret int32
 		return ret
 	}
-
-	return o.Result
+	return *o.Result
 }
 
-// GetResultOk returns a tuple with the Result field value
+// GetResultOk returns a tuple with the Result field value if set, nil otherwise
 // and a boolean to check if the value has been set.
 func (o *ReportWorkV1TaskResult) GetResultOk() (*int32, bool) {
-	if o == nil {
+	if o == nil || IsNil(o.Result) {
 		return nil, false
 	}
-	return &o.Result, true
+	return o.Result, true
 }
 
-// SetResult sets field value
+// HasResult returns a boolean if a field has been set.
+func (o *ReportWorkV1TaskResult) HasResult() bool {
+	if o != nil && !IsNil(o.Result) {
+		return true
+	}
+
+	return false
+}
+
+// SetResult gets a reference to the given int32 and assigns it to the Result field.
 func (o *ReportWorkV1TaskResult) SetResult(v int32) {
-	o.Result = v
+	o.Result = &v
 }
 
 // GetTaskName returns the TaskName field value
@@ -171,7 +178,9 @@ func (o ReportWorkV1TaskResult) ToMap() (map[string]interface{}, error) {
 		toSerialize["error"] = o.Error
 	}
 	toSerialize["repositoryName"] = o.RepositoryName
-	toSerialize["result"] = o.Result
+	if !IsNil(o.Result) {
+		toSerialize["result"] = o.Result
+	}
 	toSerialize["taskName"] = o.TaskName
 	return toSerialize, nil
 }
@@ -182,7 +191,6 @@ func (o *ReportWorkV1TaskResult) UnmarshalJSON(data []byte) (err error) {
 	// that every required field exists as a key in the generic map.
 	requiredProperties := []string{
 		"repositoryName",
-		"result",
 		"taskName",
 	}
 

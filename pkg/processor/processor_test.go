@@ -674,5 +674,5 @@ func TestProcessor_Process_EmptyRepository(t *testing.T) {
 	result, err := p.Process(context.Background(), false, repo, tw, true, testLogger)
 
 	require.NoError(t, err)
-	assert.Equal(t, processor.ResultUnknown, result)
+	assert.Equal(t, processor.ResultNoMatch, result)
 }

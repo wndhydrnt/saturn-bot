@@ -202,7 +202,7 @@ components:
         taskName:
           description: Name of the task.
           type: string
-      required: ["repositoryName", "result", "taskName"]
+      required: ["repositoryName", "taskName"]
     ListTasksV1Response:
       type: object
       properties:

@@ -19,7 +19,7 @@ import (
 )
 
 //go:generate stringer -type=Result
-type Result int
+type Result int32
 
 const (
 	ResultUnknown Result = iota
@@ -222,8 +222,8 @@ func applyTaskToRepository(ctx context.Context, dryRun bool, gitc git.GitClient,
 
 		var emptyErr git.EmptyRepositoryError
 		if errors.Is(err, emptyErr) {
-			logger.Warn("Repository is empty")
-			return ResultUnknown, nil
+			logger.Debug("Repository is empty")
+			return ResultNoMatch, nil
 		}
 
 		return ResultUnknown, fmt.Errorf("update of git branch of task failed: %w", err)

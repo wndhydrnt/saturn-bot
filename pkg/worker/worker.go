@@ -1,6 +1,7 @@
 package worker
 
 import (
+	"bytes"
 	"context"
 	"errors"
 	"fmt"
@@ -25,6 +26,19 @@ var (
 	ErrNoExec = errors.New("no execution")
 )
 
+func handleApiError(err error) error {
+	var apiError *client.GenericOpenAPIError
+	if errors.As(err, &apiError) {
+		return fmt.Errorf(
+			"%s - %s",
+			apiError.Error(),
+			string(bytes.TrimSpace(apiError.Body())),
+		)
+	}
+
+	return err
+}
+
 type Execution client.GetWorkV1Response
 
 type Result struct {
@@ -46,7 +60,7 @@ func (a *APIExecutionSource) Next() (Execution, error) {
 	req := a.client.GetWorkV1(ctx)
 	resp, _, err := a.client.GetWorkV1Execute(req)
 	if err != nil {
-		return Execution{}, fmt.Errorf("api request to get work: %w", err)
+		return Execution{}, fmt.Errorf("api request to get work: %w", handleApiError(err))
 	}
 
 	if len(resp.Tasks) == 0 {
@@ -71,7 +85,7 @@ func (a *APIExecutionSource) Report(result Result) error {
 		ReportWorkV1Request(payload)
 	_, _, err := a.client.ReportWorkV1Execute(req)
 	if err != nil {
-		return fmt.Errorf("send execution result to API: %w", err)
+		return fmt.Errorf("send execution result to API: %w", handleApiError(err))
 	}
 
 	return nil
@@ -242,7 +256,7 @@ func mapRunResultsToTaskResults(runResults []command.RunResult) []client.ReportW
 
 		result := client.ReportWorkV1TaskResult{
 			RepositoryName: rr.RepositoryName,
-			Result:         int32(rr.Result), // #nosec G115 -- no info by gosec on how to fix this
+			Result:         client.PtrInt32(int32(rr.Result)), // #nosec G115 -- no info by gosec on how to fix this
 			TaskName:       rr.TaskName,
 		}
 		if rr.Error != nil {

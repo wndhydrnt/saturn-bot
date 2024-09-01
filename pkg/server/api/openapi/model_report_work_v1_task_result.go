@@ -23,7 +23,7 @@ type ReportWorkV1TaskResult struct {
 	RepositoryName string `json:"repositoryName"`
 
 	// Identifier of the result.
-	Result int32 `json:"result"`
+	Result int32 `json:"result,omitempty"`
 
 	// Name of the task.
 	TaskName string `json:"taskName"`
@@ -33,7 +33,6 @@ type ReportWorkV1TaskResult struct {
 func AssertReportWorkV1TaskResultRequired(obj ReportWorkV1TaskResult) error {
 	elements := map[string]interface{}{
 		"repositoryName": obj.RepositoryName,
-		"result": obj.Result,
 		"taskName": obj.TaskName,
 	}
 	for name, el := range elements {
