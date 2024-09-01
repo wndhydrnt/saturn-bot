@@ -183,6 +183,8 @@ func nextSchedule(r processor.Result) *time.Time {
 		return ptr(time.Now().Add(15 * time.Minute))
 	case processor.ResultPrOpen:
 		return ptr(time.Now().Add(15 * time.Minute))
+	case processor.ResultNoChanges:
+		return ptr(time.Now().Add(60 * time.Minute))
 	default:
 		return nil
 	}
