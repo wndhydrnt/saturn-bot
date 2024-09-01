@@ -1,5 +1,13 @@
 # Changelog
 
+## [0.11.1](https://github.com/wndhydrnt/saturn-bot/compare/v0.11.0...v0.11.1) (2024-09-01)
+
+
+### Bug Fixes
+
+* **run:** Do not error when an empty repository has been cloned ([#68](https://github.com/wndhydrnt/saturn-bot/issues/68)) ([0af890f](https://github.com/wndhydrnt/saturn-bot/commit/0af890fd04785a3490e231216a01f5f2fb76c706))
+* **server:** Support globbing in paths to task files ([#70](https://github.com/wndhydrnt/saturn-bot/issues/70)) ([7155375](https://github.com/wndhydrnt/saturn-bot/commit/715537518d3e7208ac3b0a7de09401416ced111f))
+
 ## [0.11.0](https://github.com/wndhydrnt/saturn-bot/compare/v0.10.0...v0.11.0) (2024-08-28)
 
 
