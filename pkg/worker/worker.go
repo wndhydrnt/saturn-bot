@@ -289,7 +289,7 @@ func Run(configPath string, taskPaths []string) error {
 	go s.Start()
 
 	hs := &httpServer{}
-	hs.handle("/health", http.HandlerFunc(healthHandler))
+	hs.handle("/healthz", http.HandlerFunc(healthHandler))
 	hs.handle("/metrics", promhttp.Handler())
 	go hs.start()
 

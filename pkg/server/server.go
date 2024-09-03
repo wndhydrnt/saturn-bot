@@ -13,12 +13,14 @@ import (
 
 	"github.com/go-chi/chi/v5"
 	"github.com/go-chi/chi/v5/middleware"
+	chiprometheus "github.com/toshi0607/chi-prometheus"
 	"github.com/wndhydrnt/saturn-bot/pkg/config"
 	"github.com/wndhydrnt/saturn-bot/pkg/log"
 	"github.com/wndhydrnt/saturn-bot/pkg/options"
 	"github.com/wndhydrnt/saturn-bot/pkg/server/api"
 	"github.com/wndhydrnt/saturn-bot/pkg/server/api/openapi"
 	"github.com/wndhydrnt/saturn-bot/pkg/server/db"
+	"github.com/wndhydrnt/saturn-bot/pkg/server/metrics"
 	"github.com/wndhydrnt/saturn-bot/pkg/server/service"
 	"github.com/wndhydrnt/saturn-bot/pkg/server/task"
 	"github.com/wndhydrnt/saturn-bot/pkg/version"
@@ -60,6 +62,8 @@ func (s *Server) Start(opts options.Opts, taskPaths []string) error {
 	if err != nil {
 		return fmt.Errorf("failed to register OpenAPI definition route: %w", err)
 	}
+	api.RegisterHealthRoute(router)
+	metrics.RegisterPrometheusRoute(router)
 
 	s.httpServer = &http.Server{
 		ReadHeaderTimeout: 10 * time.Millisecond,
@@ -110,6 +114,8 @@ func Run(configPath string, taskPaths []string) error {
 		return err
 	}
 
+	metrics.Init()
+
 	sigs := make(chan os.Signal, 1)
 	signal.Notify(sigs, syscall.SIGINT, syscall.SIGTERM)
 	s := &Server{}
@@ -141,6 +147,10 @@ func newRouter(opts options.Opts, routers ...openapi.Router) chi.Router {
 	if opts.Config.ServerAccessLog {
 		router.Use(middleware.Logger)
 	}
+
+	pm := chiprometheus.New("saturn-bot")
+	pm.MustRegisterDefault()
+	router.Use(pm.Handler)
 
 	for _, api := range routers {
 		for _, route := range api.Routes() {

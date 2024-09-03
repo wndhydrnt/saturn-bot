@@ -11,6 +11,7 @@ import (
 )
 
 func healthHandler(w http.ResponseWriter, _ *http.Request) {
+	w.Header().Set("Content-Type", "text/plain")
 	w.WriteHeader(http.StatusOK)
 	const up = "UP"
 	_, _ = fmt.Fprint(w, up)

@@ -134,6 +134,8 @@ github.com/stretchr/testify v1.9.0 h1:HtqpIVDClZ4nwg75+f6Lvsy/wHu+3BoSGCbBAcpTsT
 github.com/stretchr/testify v1.9.0/go.mod h1:r2ic/lqez/lEtzL7wO/rwa5dbSLXVDPFyf8C91i36aY=
 github.com/tetratelabs/wazero v1.7.3 h1:PBH5KVahrt3S2AHgEjKu4u+LlDbbk+nsGE3KLucy6Rw=
 github.com/tetratelabs/wazero v1.7.3/go.mod h1:ytl6Zuh20R/eROuyDaGPkp82O9C/DJfXAwJfQ3X6/7Y=
+github.com/toshi0607/chi-prometheus v0.1.4 h1:5KpqJrmdvMvbfU0JiL9ghOTbe8S9sgHDCCQvXgnyoJo=
+github.com/toshi0607/chi-prometheus v0.1.4/go.mod h1:E++tBjqpDsvGWjLYdcFd5rvqJ7HG8wwBux+M6gyIL/Q=
 github.com/wndhydrnt/saturn-bot-go v0.5.0 h1:ZWgRoxbueRcuue20qdlXrTZ++3QeqvfF1jaNdQ5ZhcM=
 github.com/wndhydrnt/saturn-bot-go v0.5.0/go.mod h1:kgjTySVkesKSYKP2e8xfwOZbfeU12c8A4U7DGWPjUUo=
 github.com/xanzy/go-gitlab v0.97.0 h1:StMqJ1Kvt00X43pYIBBjj52dFlghwSeBhRDRfzaZ7xY=

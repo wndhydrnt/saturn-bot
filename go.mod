@@ -24,6 +24,7 @@ require (
 	github.com/santhosh-tekuri/jsonschema/v5 v5.3.1
 	github.com/spf13/cobra v1.8.0
 	github.com/stretchr/testify v1.9.0
+	github.com/toshi0607/chi-prometheus v0.1.4
 	github.com/wndhydrnt/saturn-bot-go v0.5.0
 	github.com/xanzy/go-gitlab v0.97.0
 	go.uber.org/mock v0.4.0

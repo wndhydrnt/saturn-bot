@@ -59,3 +59,12 @@ func NewOpenApiDefinitionHandler(baseURL string) (http.HandlerFunc, error) {
 		_, _ = w.Write(content)
 	}, nil
 }
+
+func RegisterHealthRoute(router chi.Router) {
+	router.Get("/healthz", func(w http.ResponseWriter, _ *http.Request) {
+		w.Header().Set("Content-Type", "text/plain")
+		w.WriteHeader(http.StatusOK)
+		const up = "UP"
+		_, _ = fmt.Fprint(w, up)
+	})
+}
