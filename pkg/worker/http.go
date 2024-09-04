@@ -5,6 +5,7 @@ import (
 	"errors"
 	"fmt"
 	"net/http"
+	"time"
 
 	"github.com/wndhydrnt/saturn-bot/pkg/log"
 	"go.uber.org/zap"
@@ -41,8 +42,9 @@ func (h *httpServer) start() {
 	}
 
 	h.server = &http.Server{
-		Addr:    h.addr,
-		Handler: h.mux,
+		Addr:              h.addr,
+		Handler:           h.mux,
+		ReadHeaderTimeout: 10 * time.Millisecond,
 	}
 
 	if err := h.server.ListenAndServe(); err != nil {
