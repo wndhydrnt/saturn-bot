@@ -5,11 +5,13 @@ import (
 	"context"
 	"errors"
 	"fmt"
+	"net/http"
 	"os"
 	"os/signal"
 	"syscall"
 	"time"
 
+	"github.com/prometheus/client_golang/prometheus/promhttp"
 	"github.com/wndhydrnt/saturn-bot/pkg/command"
 	"github.com/wndhydrnt/saturn-bot/pkg/config"
 	"github.com/wndhydrnt/saturn-bot/pkg/log"
@@ -60,6 +62,7 @@ func (a *APIExecutionSource) Next() (Execution, error) {
 	req := a.client.GetWorkV1(ctx)
 	resp, _, err := a.client.GetWorkV1Execute(req)
 	if err != nil {
+		metricServerRequestsFailed.WithLabelValues(metricLabelOpGetWorkV1).Inc()
 		return Execution{}, fmt.Errorf("api request to get work: %w", handleApiError(err))
 	}
 
@@ -85,6 +88,7 @@ func (a *APIExecutionSource) Report(result Result) error {
 		ReportWorkV1Request(payload)
 	_, _, err := a.client.ReportWorkV1Execute(req)
 	if err != nil {
+		metricServerRequestsFailed.WithLabelValues(metricLabelOpReportWorkV1).Inc()
 		return fmt.Errorf("send execution result to API: %w", handleApiError(err))
 	}
 
@@ -140,6 +144,7 @@ func (w *Worker) Start() {
 	w.stopChan = make(chan chan struct{})
 	t := time.NewTicker(w.opts.WorkerLoopInterval())
 	parallelExecutions := w.opts.Config.WorkerParallelExecutions
+	metricRunsMax.Set(float64(parallelExecutions))
 	executionCounter := 0
 	for {
 		select {
@@ -170,10 +175,12 @@ func (w *Worker) Start() {
 			// Process in a Go routine
 			go w.executeRun(exec, w.resultChan)
 			executionCounter += 1
+			metricRuns.Inc()
 
 		case result := <-w.resultChan:
 			log.Log().Debugf("Received result of run %d", result.Execution.RunID)
 			if result.RunError != nil {
+				metricRunsFailed.Inc()
 				log.Log().Errorw("Run failed", zap.Error(fmt.Errorf("ID %d: %w", result.Execution.RunID, result.RunError)))
 			}
 
@@ -182,6 +189,7 @@ func (w *Worker) Start() {
 				log.Log().Errorw("Failed to report run", zap.Error(fmt.Errorf("ID %d: %w", result.Execution.RunID, err)))
 			}
 			executionCounter -= 1
+			metricRuns.Dec()
 
 		case wait := <-w.stopChan:
 			w.stopped = true
@@ -277,10 +285,18 @@ func Run(configPath string, taskPaths []string) error {
 		return fmt.Errorf("start worker: %w", err)
 	}
 
+	initMetrics()
 	go s.Start()
+
+	hs := &httpServer{}
+	hs.handle("/healthz", http.HandlerFunc(healthHandler))
+	hs.handle("/metrics", promhttp.Handler())
+	go hs.start()
+
 	log.Log().Infof("Worker started %s", version.String())
 	sig := <-sigs
 	log.Log().Infof("Caught signal %s - shutting down", sig.String())
+	hs.stop()
 	<-s.Stop()
 	log.Log().Info("Worker stopped")
 	return nil
