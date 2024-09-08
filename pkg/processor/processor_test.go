@@ -691,7 +691,7 @@ func TestProcessor_Process_OutsideSchedule(t *testing.T) {
 schedule: "* * %d * *"`, future.Day())
 	taskFile, err := os.CreateTemp("", "*.yaml")
 	require.NoError(t, err)
-	err = os.WriteFile(taskFile.Name(), []byte(content), 0644)
+	err = os.WriteFile(taskFile.Name(), []byte(content), 0600)
 	require.NoError(t, err)
 	_ = taskFile.Close()
 
