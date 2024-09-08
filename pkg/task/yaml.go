@@ -3,6 +3,7 @@ package task
 import (
 	"fmt"
 
+	"github.com/robfig/cron"
 	"github.com/wndhydrnt/saturn-bot/pkg/log"
 	"github.com/wndhydrnt/saturn-bot/pkg/options"
 	"github.com/wndhydrnt/saturn-bot/pkg/task/schema"
@@ -54,6 +55,12 @@ func readTasksYaml(
 			wrapper.filters = append(wrapper.filters, pw.filter)
 			wrapper.plugins = append(wrapper.plugins, pw)
 		}
+
+		schedule, err := cron.ParseStandard(entry.Task.Schedule)
+		if err != nil {
+			return nil, fmt.Errorf("parse schedule: %w", err)
+		}
+		wrapper.schedule = schedule
 
 		wrapper.checksum = fmt.Sprintf("%x", entry.Hash.Sum(nil))
 		tasks = append(tasks, wrapper)

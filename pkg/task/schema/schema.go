@@ -233,6 +233,9 @@ type Task struct {
 
 	// A list of usernames to set as reviewers of the pull request.
 	Reviewers []string `json:"reviewers,omitempty" yaml:"reviewers,omitempty" mapstructure:"reviewers,omitempty"`
+
+	// Define times of week or month for when saturn-bot executes the task.
+	Schedule string `json:"schedule,omitempty" yaml:"schedule,omitempty" mapstructure:"schedule,omitempty"`
 }
 
 // UnmarshalJSON implements json.Unmarshaler.
@@ -287,6 +290,9 @@ func (j *Task) UnmarshalJSON(b []byte) error {
 	}
 	if v, ok := raw["prTitle"]; !ok || v == nil {
 		plain.PrTitle = ""
+	}
+	if v, ok := raw["schedule"]; !ok || v == nil {
+		plain.Schedule = "* * * * *"
 	}
 	*j = Task(plain)
 	return nil
@@ -344,6 +350,9 @@ func (j *Task) UnmarshalYAML(value *yaml.Node) error {
 	}
 	if v, ok := raw["prTitle"]; !ok || v == nil {
 		plain.PrTitle = ""
+	}
+	if v, ok := raw["schedule"]; !ok || v == nil {
+		plain.Schedule = "* * * * *"
 	}
 	*j = Task(plain)
 	return nil

@@ -115,6 +115,11 @@
       "items": {
         "type": "string"
       }
+    },
+    "schedule": {
+      "default": "* * * * *",
+      "description": "Define times of week or month for when saturn-bot executes the task.",
+      "type": "string"
     }
   },
   "required": ["name"],

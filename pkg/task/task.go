@@ -7,6 +7,7 @@ import (
 	"time"
 
 	"github.com/gosimple/slug"
+	"github.com/robfig/cron"
 	"github.com/wndhydrnt/saturn-bot/pkg/action"
 	"github.com/wndhydrnt/saturn-bot/pkg/filter"
 	"github.com/wndhydrnt/saturn-bot/pkg/host"
@@ -78,6 +79,7 @@ type Task interface {
 	HasReachMaxOpenPRs() bool
 	IncChangeLimitCount()
 	IncOpenPRsCount()
+	IsWithinSchedule() bool
 	OnPrClosed(host.Repository) error
 	OnPrCreated(host.Repository) error
 	OnPrMerged(host.Repository) error
@@ -95,6 +97,7 @@ type Wrapper struct {
 	filters                []filter.Filter
 	openPRs                int
 	plugins                []*pluginWrapper
+	schedule               cron.Schedule
 	Task                   schema.Task
 }
 
@@ -161,6 +164,16 @@ func (tw *Wrapper) IncOpenPRsCount() {
 	if tw.Task.MaxOpenPRs > 0 {
 		tw.openPRs++
 	}
+}
+
+func (tw *Wrapper) IsWithinSchedule() bool {
+	if tw.schedule == nil {
+		return true
+	}
+
+	now := time.Now()
+	zero := time.Date(now.Year(), now.Month(), now.Day(), 0, 0, 0, 0, now.Location())
+	return tw.schedule.Next(zero).Before(now)
 }
 
 func (tw *Wrapper) PrTitle() string {
