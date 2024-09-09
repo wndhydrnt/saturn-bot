@@ -2,6 +2,7 @@ saturn-bot
 saturn
 cover.html
 cover.out
+cover.out.tmp
 saturn-bot-*
 sha256sums.txt
 venv/
