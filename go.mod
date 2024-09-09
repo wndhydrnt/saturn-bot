@@ -21,6 +21,7 @@ require (
 	github.com/ncruces/go-sqlite3/gormlite v0.16.3
 	github.com/prometheus/client_golang v1.20.2
 	github.com/prometheus/common v0.55.0
+	github.com/robfig/cron v1.2.0
 	github.com/santhosh-tekuri/jsonschema/v5 v5.3.1
 	github.com/spf13/cobra v1.8.0
 	github.com/stretchr/testify v1.9.0

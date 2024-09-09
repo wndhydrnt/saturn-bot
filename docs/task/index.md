@@ -179,3 +179,26 @@ Learn more about how to create plugins in the [documentation](plugins/index.md).
 ## prTitle
 
 [json-path:../../pkg/task/schema/task.schema.json:$.properties.prTitle.description]
+
+## schedule
+
+[json-path:../../pkg/task/schema/task.schema.json:$.properties.schedule.description]
+
+Helps constrain the number of executions of a task. For example, if the task is too "noisy" or should run only once a week or once a month.
+
+!!! note
+
+    This setting uses Cron syntax to define a time range within which a task can be executed.
+    It doesn't define the exact point in time at which the task gets executed.
+
+```yaml title="Allow execution at any time on a Wednesday"
+schedule: "* * * * WED"
+```
+
+```yaml title="Allow execution at any time on the 7th day of each month"
+schedule: "* * 7 * *"
+```
+
+```yaml title="Allow execution every day after 14:00"
+schedule: "* 14 * * *"
+```

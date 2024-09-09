@@ -57,6 +57,11 @@ func (p *Processor) Process(
 ) (Result, error) {
 	logger.Debug("Processing repository")
 	task.SetLogger(logger)
+	if !task.IsWithinSchedule() {
+		logger.Debug("Skipping task because it is outside of schedule")
+		return ResultSkip, nil
+	}
+
 	if task.HasReachMaxOpenPRs() {
 		logger.Debug("Skipping task because Max Open PRs have been reached")
 		return ResultSkip, nil

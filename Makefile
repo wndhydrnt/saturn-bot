@@ -59,9 +59,10 @@ endif
 	mdox fmt --soft-wraps ./docs/commands/*.md
 
 test_cover:
-	go test -coverprofile cover.out ./...
+	go test -coverpkg=./... -coverprofile cover.out.tmp ./...
+	grep -v -E ".*/pkg\/server\/.*|.*\/pkg\/worker\/.*" cover.out.tmp > cover.out
 	go tool cover -html cover.out -o cover.html
-	rm cover.out
+	rm cover.out.tmp cover.out
 
 docker_build:
 	docker build -t ghcr.io/wndhydrnt/saturn-bot:${VERSION} .
