@@ -70,26 +70,6 @@ func createFiltersForTask(filterDefs []schema.Filter, factories options.FilterFa
 	return result, nil
 }
 
-// type Task interface {
-// 	Actions() []action.Action
-// 	AutoMergeAfter() time.Duration
-// 	BranchName(template.Data) (string, error)
-// 	Checksum() string
-// 	Filters() []filter.Filter
-// 	HasReachedChangeLimit() bool
-// 	HasReachMaxOpenPRs() bool
-// 	IncChangeLimitCount()
-// 	IncOpenPRsCount()
-// 	IsWithinSchedule() bool
-// 	OnPrClosed(host.Repository) error
-// 	OnPrCreated(host.Repository) error
-// 	OnPrMerged(host.Repository) error
-// 	PrTitle(template.Data) (string, error)
-// 	SetLogger(*zap.SugaredLogger)
-// 	SourceTask() schema.Task
-// 	Stop()
-// }
-
 type Task struct {
 	schema.Task
 	actions                []action.Action
