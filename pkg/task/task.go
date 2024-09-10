@@ -4,7 +4,6 @@ import (
 	"bytes"
 	"fmt"
 	htmlTemplate "html/template"
-	"path"
 	"time"
 
 	"github.com/gosimple/slug"
@@ -310,22 +309,56 @@ func (tr *Registry) ReadAll(taskFiles []string) error {
 }
 
 func (tr *Registry) readTasks(taskFile string) error {
-	ext := path.Ext(taskFile)
-	switch ext {
-	case ".yml":
-	case ".yaml":
-		tasks, err := readTasksYaml(tr.actionFactories, tr.filterFactories, tr.pathJava, tr.pathPython, taskFile)
-		if err != nil {
-			return err
-		}
-
-		tr.tasks = append(tr.tasks, tasks...)
-		return nil
-	default:
-		return fmt.Errorf("unsupported extension: %s", ext)
+	results, err := schema.Read(taskFile)
+	if err != nil {
+		return err
 	}
 
-	return fmt.Errorf("unsupported extension: %s", ext)
+	for _, entry := range results {
+		if !entry.Task.Active {
+			log.Log().Warnf("Task %s deactivated", entry.Task.Name)
+			continue
+		}
+
+		wrapper := &Task{}
+		wrapper.Task = entry.Task
+		wrapper.actions, err = createActionsForTask(wrapper.Task.Actions, tr.actionFactories, entry.Path)
+		if err != nil {
+			return fmt.Errorf("parse actions of task: %w", err)
+		}
+
+		wrapper.filters, err = createFiltersForTask(wrapper.Task.Filters, tr.filterFactories)
+		if err != nil {
+			return fmt.Errorf("parse filters of task file '%s': %w", entry.Path, err)
+		}
+
+		for idx, plugin := range entry.Task.Plugins {
+			pw, err := newPluginWrapper(startPluginOptions{
+				config:     plugin.Configuration,
+				filePath:   plugin.PathAbs(entry.Path),
+				pathJava:   tr.pathJava,
+				pathPython: tr.pathPython,
+			})
+			if err != nil {
+				return fmt.Errorf("initialize plugin #%d: %w", idx, err)
+			}
+
+			wrapper.actions = append(wrapper.actions, pw.action)
+			wrapper.filters = append(wrapper.filters, pw.filter)
+			wrapper.plugins = append(wrapper.plugins, pw)
+		}
+
+		schedule, err := cron.ParseStandard(entry.Task.Schedule)
+		if err != nil {
+			return fmt.Errorf("parse schedule: %w", err)
+		}
+		wrapper.schedule = schedule
+
+		wrapper.checksum = fmt.Sprintf("%x", entry.Hash.Sum(nil))
+		tr.tasks = append(tr.tasks, wrapper)
+	}
+
+	return nil
 }
 
 // Stop notifies every task that this Registry is being stopped.

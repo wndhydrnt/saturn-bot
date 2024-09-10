@@ -43,30 +43,6 @@ name: Task Two
 	assert.Equal(t, "Task Two", tr.GetTasks()[1].Name)
 }
 
-func TestRegistry_ReadAll_Unsupported(t *testing.T) {
-	tasksRaw := `
-name: Task One
----
-name: Task Two
-`
-
-	f, err := os.CreateTemp("", "*.yamll")
-	require.NoError(t, err)
-	_, err = f.WriteString(tasksRaw)
-	require.NoError(t, err)
-	f.Close()
-	defer func() {
-		err := os.Remove(f.Name())
-		require.NoError(t, err)
-	}()
-
-	tr := &task.Registry{}
-	err = tr.ReadAll([]string{f.Name()})
-
-	assert.EqualError(t, err, fmt.Sprintf("failed to read tasks from file %s: unsupported extension: .yamll", f.Name()))
-	assert.Len(t, tr.GetTasks(), 0)
-}
-
 func TestRegistry_ReadAll_AllBuiltInActions(t *testing.T) {
 	tasksRaw := `
 name: Task
