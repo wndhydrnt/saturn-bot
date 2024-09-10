@@ -1,8 +1,9 @@
 package task
 
 import (
-	"cmp"
+	"bytes"
 	"fmt"
+	htmlTemplate "html/template"
 	"path"
 	"time"
 
@@ -14,6 +15,7 @@ import (
 	"github.com/wndhydrnt/saturn-bot/pkg/log"
 	"github.com/wndhydrnt/saturn-bot/pkg/options"
 	"github.com/wndhydrnt/saturn-bot/pkg/task/schema"
+	"github.com/wndhydrnt/saturn-bot/pkg/template"
 	"go.uber.org/zap"
 )
 
@@ -72,7 +74,7 @@ func createFiltersForTask(filterDefs []schema.Filter, factories options.FilterFa
 type Task interface {
 	Actions() []action.Action
 	AutoMergeAfter() time.Duration
-	BranchName() string
+	BranchName(template.Data) (string, error)
 	Checksum() string
 	Filters() []filter.Filter
 	HasReachedChangeLimit() bool
@@ -83,7 +85,7 @@ type Task interface {
 	OnPrClosed(host.Repository) error
 	OnPrCreated(host.Repository) error
 	OnPrMerged(host.Repository) error
-	PrTitle() string
+	PrTitle(template.Data) (string, error)
 	SetLogger(*zap.SugaredLogger)
 	SourceTask() schema.Task
 	Stop()
@@ -98,6 +100,8 @@ type Wrapper struct {
 	openPRs                int
 	plugins                []*pluginWrapper
 	schedule               cron.Schedule
+	templateBranchName     *htmlTemplate.Template
+	templatePrTitle        *htmlTemplate.Template
 	Task                   schema.Task
 }
 
@@ -113,8 +117,26 @@ func (tw *Wrapper) Filters() []filter.Filter {
 	return tw.filters
 }
 
-func (tw *Wrapper) BranchName() string {
-	return cmp.Or(tw.Task.BranchName, "saturn-bot--"+slug.Make(tw.Task.Name))
+func (tw *Wrapper) BranchName(data template.Data) (string, error) {
+	if tw.Task.BranchName == "" {
+		return "saturn-bot--" + slug.Make(tw.Task.Name), nil
+	}
+
+	if tw.templateBranchName == nil {
+		var parseErr error
+		tw.templateBranchName, parseErr = htmlTemplate.New("").Parse(tw.Task.BranchName)
+		if parseErr != nil {
+			return "", fmt.Errorf("parse branch name template: %w", parseErr)
+		}
+	}
+
+	buf := &bytes.Buffer{}
+	err := tw.templateBranchName.Execute(buf, data)
+	if err != nil {
+		return "", fmt.Errorf("render branch name template: %w", err)
+	}
+
+	return buf.String(), nil
 }
 
 func (tw *Wrapper) Checksum() string {
@@ -176,8 +198,30 @@ func (tw *Wrapper) IsWithinSchedule() bool {
 	return tw.schedule.Next(zero).Before(now)
 }
 
-func (tw *Wrapper) PrTitle() string {
-	return cmp.Or(tw.Task.PrTitle, "Apply task "+tw.Task.Name)
+var (
+	tplPrTitleDefault = htmlTemplate.Must(htmlTemplate.New("titleDefault").Parse("saturn-bot: task {{.TaskName}}"))
+)
+
+func (tw *Wrapper) PrTitle(data template.Data) (string, error) {
+	if tw.templatePrTitle == nil {
+		if tw.Task.PrTitle == "" {
+			tw.templatePrTitle = tplPrTitleDefault
+		} else {
+			var parseErr error
+			tw.templatePrTitle, parseErr = htmlTemplate.New("").Parse(tw.Task.PrTitle)
+			if parseErr != nil {
+				return "", fmt.Errorf("parse pr title template: %w", parseErr)
+			}
+		}
+	}
+
+	buf := &bytes.Buffer{}
+	err := tw.templatePrTitle.Execute(buf, data)
+	if err != nil {
+		return "", fmt.Errorf("render pr title template: %w", err)
+	}
+
+	return buf.String(), nil
 }
 
 func (tw *Wrapper) SetLogger(l *zap.SugaredLogger) {

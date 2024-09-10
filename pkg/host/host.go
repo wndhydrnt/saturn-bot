@@ -4,20 +4,19 @@ import (
 	"bytes"
 	"errors"
 	"fmt"
-	"html/template"
+	htmlTemplate "html/template"
 	"strings"
 	"time"
 
 	"github.com/wndhydrnt/saturn-bot/pkg/log"
-	gsTemplate "github.com/wndhydrnt/saturn-bot/pkg/template"
+	"github.com/wndhydrnt/saturn-bot/pkg/template"
 )
 
 var (
 	ErrFileNotFound        = errors.New("file not found")
 	ErrPullRequestNotFound = errors.New("pull request not found")
 
-	tplPrBodyDefault  = template.Must(template.New("bodyDefault").Parse("Apply changes from task {{.TaskName}}."))
-	tplPrTitleDefault = template.Must(template.New("titleDefault").Parse("saturn-bot: task {{.TaskName}}"))
+	tplPrBodyDefault = htmlTemplate.Must(htmlTemplate.New("bodyDefault").Parse("Apply changes from task {{.TaskName}}."))
 )
 
 // PullRequest holds data on an existing pull request.
@@ -44,17 +43,17 @@ type PullRequestData struct {
 	MergeOnce      bool
 	Reviewers      []string
 	TaskName       string
-	TemplateData   map[string]any
+	TemplateData   template.Data
 	Title          string
 }
 
 func (prd PullRequestData) GetBody() (string, error) {
-	var bodyTpl *template.Template
+	var bodyTpl *htmlTemplate.Template
 	if prd.Body == "" {
 		bodyTpl = tplPrBodyDefault
 	} else {
 		var err error
-		bodyTpl, err = template.New("body").Parse(prd.Body)
+		bodyTpl, err = htmlTemplate.New("body").Parse(prd.Body)
 		if err != nil {
 			return "", fmt.Errorf("parse body template of task %s: %w", prd.TaskName, err)
 		}
@@ -84,7 +83,7 @@ func (prd PullRequestData) GetBody() (string, error) {
 		ignoreText = "This PR will be recreated if closed."
 	}
 
-	content, err := gsTemplate.RenderPullRequestDescription(gsTemplate.PullRequestDescriptionInput{
+	content, err := template.RenderPullRequestDescription(template.PullRequestDescriptionInput{
 		AutoMergeText: autoMergeText,
 		Body:          buf.String(),
 		IgnoreText:    ignoreText,
@@ -94,27 +93,6 @@ func (prd PullRequestData) GetBody() (string, error) {
 	}
 
 	return content, nil
-}
-
-func (prd PullRequestData) GetTitle() (string, error) {
-	var tpl *template.Template
-	if prd.Title == "" {
-		tpl = tplPrTitleDefault
-	} else {
-		var err error
-		tpl, err = template.New("title").Parse(prd.Title)
-		if err != nil {
-			return "", fmt.Errorf("parse title template of task %s: %w", prd.TaskName, err)
-		}
-	}
-
-	buf := &bytes.Buffer{}
-	err := tpl.Execute(buf, prd.TemplateData)
-	if err != nil {
-		return "", fmt.Errorf("execute title template of task %s: %w", prd.TaskName, err)
-	}
-
-	return buf.String(), nil
 }
 
 type Repository interface {

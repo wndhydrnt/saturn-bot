@@ -145,7 +145,7 @@ func (ws *WorkerService) ReportRun(req openapi.ReportWorkV1Request) error {
 		for _, taskResult := range req.TaskResults {
 			result := db.TaskResult{
 				RepositoryName: taskResult.RepositoryName,
-				Result:         uint(taskResult.Result),
+				Result:         uint(taskResult.Result), // #nosec G115 -- no info by gosec on how to fix this
 				RunID:          runCurrent.ID,
 				TaskName:       taskResult.TaskName,
 			}

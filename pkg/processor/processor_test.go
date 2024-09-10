@@ -16,6 +16,7 @@ import (
 	"github.com/wndhydrnt/saturn-bot/pkg/processor"
 	"github.com/wndhydrnt/saturn-bot/pkg/task"
 	"github.com/wndhydrnt/saturn-bot/pkg/task/schema"
+	"github.com/wndhydrnt/saturn-bot/pkg/template"
 	"go.uber.org/mock/gomock"
 	"go.uber.org/zap"
 )
@@ -384,15 +385,18 @@ func TestProcessor_Process_UpdatePullRequest(t *testing.T) {
 	prData := host.PullRequestData{
 		AutoMergeAfter: &autoMergeAfter,
 		TaskName:       "unittest",
-		TemplateData: map[string]any{
-			"RepositoryFullName": "git.local/unit/test",
-			"RepositoryHost":     "git.local",
-			"RepositoryName":     "test",
-			"RepositoryOwner":    "unit",
-			"RepositoryWebUrl":   "http://git.local/unit/test",
-			"TaskName":           "unittest",
-			"Greeting":           "Hello",
+		TemplateData: template.Data{
+			Run: map[string]string{"Greeting": "Hello"},
+			Repository: template.DataRepository{
+				FullName: "git.local/unit/test",
+				Host:     "git.local",
+				Name:     "test",
+				Owner:    "unit",
+				WebUrl:   "http://git.local/unit/test",
+			},
+			TaskName: "unittest",
 		},
+		Title: "saturn-bot: task unittest",
 	}
 	repo.EXPECT().UpdatePullRequest(prData, prID).Return(nil)
 	repo.EXPECT().PullRequest(prID).Return(nil)
@@ -407,7 +411,7 @@ func TestProcessor_Process_UpdatePullRequest(t *testing.T) {
 	tw := &task.Wrapper{Task: schema.Task{Name: "unittest"}}
 	tw.AddFilters(&trueFilter{})
 	ctx := context.Background()
-	ctx = context.WithValue(ctx, sContext.RunDataKey{}, map[string]string{"Greeting": "Hello", "TaskName": "other"})
+	ctx = context.WithValue(ctx, sContext.RunDataKey{}, map[string]string{"Greeting": "Hello"})
 
 	p := &processor.Processor{Git: gitc}
 	result, err := p.Process(ctx, false, repo, tw, true, testLogger)

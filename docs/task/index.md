@@ -97,11 +97,16 @@ autoMerge: false
 
 [json-path:../../pkg/task/schema/task.schema.json:$.properties.branchName.description]
 
+Supports [templating](../features/templating.md).
+
 Examples
 
-```yaml
-# Set a custom name.
+```yaml title="Set a custom branch"
 branchName: "feature/hello-world"
+```
+
+```yaml title="Use a template variable"
+branchName: "feature/{{.TaskName}}"
 ```
 
 ## changeLimit
@@ -176,9 +181,37 @@ Learn more about how to create plugins in the [documentation](plugins/index.md).
 
 [json-path:../../pkg/task/schema/task.schema.json:$.properties.prBody.description]
 
+Supports [templating](../features/templating.md).
+
+Examples
+
+```yaml title="Custom pull request body"
+prBody: |
+  Describe what the change does.
+
+  Supports multi-lines.
+```
+
+```yaml title="Use a template variable"
+prBody: |
+  This pull request modifies repository {{.Repository.FullName}}.
+```
+
 ## prTitle
 
 [json-path:../../pkg/task/schema/task.schema.json:$.properties.prTitle.description]
+
+Supports [templating](../features/templating.md).
+
+Examples
+
+```yaml title="Custom pull request title"
+prTitle: "feat: Custom title"
+```
+
+```yaml title="Use a template variable"
+prTitle: "Apply task {{.TaskName}}"
+```
 
 ## schedule
 

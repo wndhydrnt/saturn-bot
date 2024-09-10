@@ -80,17 +80,12 @@ func (g *GitHubRepository) CreatePullRequest(branch string, data PullRequestData
 		return err
 	}
 
-	title, err := data.GetTitle()
-	if err != nil {
-		return err
-	}
-
 	gpr := &github.NewPullRequest{
 		Base:                g.repo.DefaultBranch,
 		Body:                github.String(body),
 		Head:                github.String(branch),
 		MaintainerCanModify: github.Bool(true),
-		Title:               github.String(title),
+		Title:               github.String(data.Title),
 	}
 	pr, _, err := g.client.PullRequests.Create(ctx, g.repo.GetOwner().GetLogin(), g.repo.GetName(), gpr)
 	if err != nil {
@@ -343,14 +338,9 @@ func (g *GitHubRepository) PullRequest(pr any) *PullRequest {
 func (g *GitHubRepository) UpdatePullRequest(data PullRequestData, pr interface{}) error {
 	gpr := pr.(*github.PullRequest)
 	needsUpdate := false
-	title, err := data.GetTitle()
-	if err != nil {
-		return err
-	}
-
-	if gpr.GetTitle() != title {
+	if gpr.GetTitle() != data.Title {
 		needsUpdate = true
-		gpr.Title = github.String(title)
+		gpr.Title = github.String(data.Title)
 	}
 
 	body, err := data.GetBody()

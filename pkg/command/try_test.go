@@ -29,11 +29,13 @@ var (
 
 func setupTryRepoMock(ctrl *gomock.Controller) *MockRepository {
 	hostDetailMock := NewMockHostDetail(ctrl)
-	hostDetailMock.EXPECT().Name().Return("git.local")
+	hostDetailMock.EXPECT().Name().Return("git.local").AnyTimes()
 	repoMock := NewMockRepository(ctrl)
-	repoMock.EXPECT().Host().Return(hostDetailMock)
-	repoMock.EXPECT().Owner().Return("unit")
-	repoMock.EXPECT().Name().Return("test")
+	repoMock.EXPECT().FullName().Return("git.local/unit/test").AnyTimes()
+	repoMock.EXPECT().Host().Return(hostDetailMock).AnyTimes()
+	repoMock.EXPECT().Owner().Return("unit").AnyTimes()
+	repoMock.EXPECT().Name().Return("test").AnyTimes()
+	repoMock.EXPECT().WebUrl().Return("http://git.local/unit/test").AnyTimes()
 	return repoMock
 }
 

@@ -12,6 +12,7 @@ import (
 	"github.com/wndhydrnt/saturn-bot/pkg/host"
 	"github.com/wndhydrnt/saturn-bot/pkg/options"
 	"github.com/wndhydrnt/saturn-bot/pkg/task"
+	"github.com/wndhydrnt/saturn-bot/pkg/template"
 )
 
 type TryRunner struct {
@@ -124,7 +125,24 @@ func (r *TryRunner) Run() error {
 			continue
 		}
 
-		hasMergeConflict, err := r.GitClient.UpdateTaskBranch(task.BranchName(), false, repository)
+		templateData := template.Data{
+			Run: make(map[string]string),
+			Repository: template.DataRepository{
+				FullName: repository.FullName(),
+				Host:     repository.Host().Name(),
+				Name:     repository.Name(),
+				Owner:    repository.Owner(),
+				WebUrl:   repository.WebUrl(),
+			},
+			TaskName: task.SourceTask().Name,
+		}
+		branchName, err := task.BranchName(templateData)
+		if err != nil {
+			fmt.Fprintf(r.Out, "⛔️ Failed to render branch name template %s: %s\n", task.SourceTask().BranchName, err)
+			continue
+		}
+
+		hasMergeConflict, err := r.GitClient.UpdateTaskBranch(branchName, false, repository)
 		if err != nil {
 			fmt.Fprintf(r.Out, "⛔️ Failed to prepare branch: %s\n", err)
 			continue
