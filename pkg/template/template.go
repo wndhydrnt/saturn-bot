@@ -32,6 +32,22 @@ func RenderBranchModified(in BranchModifiedInput) (string, error) {
 	return buf.String(), nil
 }
 
+// Data is the root structure passed to templates.
+type Data struct {
+	Run        map[string]string
+	Repository DataRepository
+	TaskName   string
+}
+
+// DataRepository is the sub-resource in templates that exposes info about a repository.
+type DataRepository struct {
+	FullName string
+	Host     string
+	Name     string
+	Owner    string
+	WebUrl   string
+}
+
 type PullRequestDescriptionInput struct {
 	AutoMergeText string
 	Body          string

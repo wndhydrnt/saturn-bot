@@ -146,12 +146,7 @@ func (g *GitLabRepository) CreatePullRequest(branch string, data PullRequestData
 		return fmt.Errorf("create merge request for gitlab: %w", err)
 	}
 	opts.Description = gitlab.Ptr(description)
-
-	title, err := data.GetTitle()
-	if err != nil {
-		return fmt.Errorf("create merge request for gitlab: %w", err)
-	}
-	opts.Title = gitlab.Ptr(title)
+	opts.Title = gitlab.Ptr(data.Title)
 
 	if len(data.Assignees) > 0 {
 		var assigneeIDs []int
@@ -451,12 +446,7 @@ func (g *GitLabRepository) PullRequest(pr any) *PullRequest {
 func (g *GitLabRepository) UpdatePullRequest(data PullRequestData, pr interface{}) error {
 	needsUpdate := false
 	mr := pr.(*gitlab.MergeRequest)
-	title, err := data.GetTitle()
-	if err != nil {
-		return fmt.Errorf("get title to update gitlab merge request: %w", err)
-	}
-
-	if mr.Title != title {
+	if mr.Title != data.Title {
 		needsUpdate = true
 	}
 
@@ -487,7 +477,7 @@ func (g *GitLabRepository) UpdatePullRequest(data PullRequestData, pr interface{
 				AssigneeIDs: gitlab.Ptr(assigneeIDs),
 				Description: gitlab.Ptr(body),
 				ReviewerIDs: gitlab.Ptr(reviewerIDs),
-				Title:       gitlab.Ptr(title),
+				Title:       gitlab.Ptr(data.Title),
 			},
 		)
 		if err != nil {

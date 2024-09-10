@@ -146,7 +146,14 @@ func matchTaskToRepository(ctx context.Context, task task.Task) (bool, error) {
 
 func applyTaskToRepository(ctx context.Context, dryRun bool, gitc git.GitClient, logger *zap.SugaredLogger, repo host.Repository, task task.Task, workDir string) (Result, error) {
 	logger.Debug("Applying actions of task to repository")
-	prID, err := repo.FindPullRequest(task.BranchName())
+	templateData := template.Data{}
+	updateTemplateVars(&templateData, ctx, repo, task)
+	branchName, err := task.BranchName(templateData)
+	if err != nil {
+		return ResultUnknown, fmt.Errorf("get branch name: %w", err)
+	}
+
+	prID, err := repo.FindPullRequest(branchName)
 	if err != nil && !errors.Is(err, host.ErrPullRequestNotFound) {
 		return ResultUnknown, fmt.Errorf("find pull request: %w", err)
 	}
@@ -201,7 +208,7 @@ func applyTaskToRepository(ctx context.Context, dryRun bool, gitc git.GitClient,
 		}
 	}
 
-	hasConflict, err := gitc.UpdateTaskBranch(task.BranchName(), forceRebase, repo)
+	hasConflict, err := gitc.UpdateTaskBranch(branchName, forceRebase, repo)
 	if err != nil {
 		var branchModifiedErr *git.BranchModifiedError
 		if errors.As(err, &branchModifiedErr) && prID != nil && repo.IsPullRequestOpen(prID) {
@@ -282,7 +289,7 @@ func applyTaskToRepository(ctx context.Context, dryRun bool, gitc git.GitClient,
 		return ResultPrClosed, nil
 	}
 
-	hasRemoteChanges, err := gitc.HasRemoteChanges(task.BranchName())
+	hasRemoteChanges, err := gitc.HasRemoteChanges(branchName)
 	if err != nil {
 		return ResultUnknown, fmt.Errorf("check for remote changes failed: %w", err)
 	}
@@ -291,7 +298,7 @@ func applyTaskToRepository(ctx context.Context, dryRun bool, gitc git.GitClient,
 	if hasChanges {
 		logger.Debug("Pushing changes")
 		if !dryRun {
-			err := gitc.Push(task.BranchName())
+			err := gitc.Push(branchName)
 			if err != nil {
 				return ResultUnknown, fmt.Errorf("push failed: %w", err)
 			}
@@ -301,6 +308,12 @@ func applyTaskToRepository(ctx context.Context, dryRun bool, gitc git.GitClient,
 	}
 
 	autoMergeAfter := task.AutoMergeAfter()
+	updateTemplateVars(&templateData, ctx, repo, task)
+	prTitle, err := task.PrTitle(templateData)
+	if err != nil {
+		return ResultUnknown, err
+	}
+
 	prData := host.PullRequestData{
 		Assignees:      task.SourceTask().Assignees,
 		AutoMerge:      task.SourceTask().AutoMerge,
@@ -310,8 +323,8 @@ func applyTaskToRepository(ctx context.Context, dryRun bool, gitc git.GitClient,
 		MergeOnce:      task.SourceTask().MergeOnce,
 		Reviewers:      task.SourceTask().Reviewers,
 		TaskName:       task.SourceTask().Name,
-		TemplateData:   newTemplateVars(ctx, repo, task),
-		Title:          task.SourceTask().PrTitle,
+		TemplateData:   templateData,
+		Title:          prTitle,
 	}
 
 	// Always create if branch of task contains changes compared to default branch and no PR has been created yet.
@@ -319,7 +332,7 @@ func applyTaskToRepository(ctx context.Context, dryRun bool, gitc git.GitClient,
 	if (hasChangesInRemoteDefaultBranch && prID == nil) || (hasChanges && (prID == nil || repo.IsPullRequestMerged(prID) || repo.IsPullRequestClosed(prID))) {
 		logger.Info("Creating pull request")
 		if !dryRun {
-			err := repo.CreatePullRequest(task.BranchName(), prData)
+			err := repo.CreatePullRequest(branchName, prData)
 			if err != nil {
 				return ResultUnknown, fmt.Errorf("failed to create pull request: %w", err)
 			}
@@ -434,18 +447,20 @@ func inDirectory(dir string, f func() error) error {
 	return funcErr
 }
 
-func newTemplateVars(ctx context.Context, repo host.Repository, tk task.Task) map[string]any {
-	vars := make(map[string]any)
-	runData := sContext.RunData(ctx)
-	for k, v := range runData {
-		vars[k] = v
+func updateTemplateVars(data *template.Data, ctx context.Context, repo host.Repository, tk task.Task) {
+	if data.Run == nil {
+		data.Run = make(map[string]string)
 	}
 
-	vars["RepositoryFullName"] = repo.FullName()
-	vars["RepositoryHost"] = repo.Host().Name()
-	vars["RepositoryName"] = repo.Name()
-	vars["RepositoryOwner"] = repo.Owner()
-	vars["RepositoryWebUrl"] = repo.WebUrl()
-	vars["TaskName"] = tk.SourceTask().Name
-	return vars
+	runData := sContext.RunData(ctx)
+	for k, v := range runData {
+		data.Run[k] = v
+	}
+
+	data.Repository.FullName = repo.FullName()
+	data.Repository.Host = repo.Host().Name()
+	data.Repository.Name = repo.Name()
+	data.Repository.Owner = repo.Owner()
+	data.Repository.WebUrl = repo.WebUrl()
+	data.TaskName = tk.SourceTask().Name
 }
