@@ -138,7 +138,7 @@ func (r *TryRunner) Run() error {
 		}
 		branchName, err := task.RenderBranchName(templateData)
 		if err != nil {
-			fmt.Fprintf(r.Out, "⛔️ Failed to render branch name template %s: %s\n", task.RenderBranchName, err)
+			fmt.Fprintf(r.Out, "⛔️ Failed to render branch name template %s: %s\n", task.BranchName, err)
 			continue
 		}
 
