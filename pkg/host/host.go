@@ -16,8 +16,7 @@ var (
 	ErrFileNotFound        = errors.New("file not found")
 	ErrPullRequestNotFound = errors.New("pull request not found")
 
-	tplPrBodyDefault  = htmlTemplate.Must(htmlTemplate.New("bodyDefault").Parse("Apply changes from task {{.TaskName}}."))
-	tplPrTitleDefault = htmlTemplate.Must(htmlTemplate.New("titleDefault").Parse("saturn-bot: task {{.TaskName}}"))
+	tplPrBodyDefault = htmlTemplate.Must(htmlTemplate.New("bodyDefault").Parse("Apply changes from task {{.TaskName}}."))
 )
 
 // PullRequest holds data on an existing pull request.
