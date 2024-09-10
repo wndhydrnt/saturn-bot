@@ -101,13 +101,13 @@ func (r *Run) Run(repositoryNames, taskFiles []string) ([]RunResult, error) {
 				for _, t := range tasks {
 					result := RunResult{
 						RepositoryName: repo.FullName(),
-						TaskName:       t.SourceTask().Name,
+						TaskName:       t.Name,
 					}
 					logger := log.Log().
 						WithOptions(zap.Fields(
 							log.FieldDryRun(r.DryRun),
 							log.FieldRepo(repo.FullName()),
-							log.FieldTask(t.SourceTask().Name),
+							log.FieldTask(t.Name),
 						))
 					result.Result, result.Error = r.Processor.Process(ctx, r.DryRun, repo, t, doFilter, logger)
 					if result.Error != nil {
@@ -181,7 +181,7 @@ func hasUpdatedTasks(cachedTasks []cache.CachedTask, tasks []*task.Task) bool {
 	for _, t := range tasks {
 		found := false
 		for _, ct := range cachedTasks {
-			if t.SourceTask().Name == ct.Name {
+			if t.Name == ct.Name {
 				found = true
 				if t.Checksum() != ct.Checksum {
 					return true

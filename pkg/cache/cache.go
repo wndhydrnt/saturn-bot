@@ -66,7 +66,7 @@ func (c *jsonFile) GetCachedTasks() []CachedTask {
 func (c *jsonFile) UpdateCachedTasks(tasks []*task.Task) {
 	var cachedTasks []CachedTask
 	for _, t := range tasks {
-		cachedTasks = append(cachedTasks, CachedTask{Checksum: t.Checksum(), Name: t.SourceTask().Name})
+		cachedTasks = append(cachedTasks, CachedTask{Checksum: t.Checksum(), Name: t.Name})
 	}
 
 	c.Tasks = cachedTasks

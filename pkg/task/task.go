@@ -117,14 +117,14 @@ func (tw *Task) Filters() []filter.Filter {
 	return tw.filters
 }
 
-func (tw *Task) BranchName(data template.Data) (string, error) {
-	if tw.Task.BranchName == "" {
-		return "saturn-bot--" + slug.Make(tw.Task.Name), nil
+func (tw *Task) RenderBranchName(data template.Data) (string, error) {
+	if tw.BranchName == "" {
+		return "saturn-bot--" + slug.Make(tw.Name), nil
 	}
 
 	if tw.templateBranchName == nil {
 		var parseErr error
-		tw.templateBranchName, parseErr = htmlTemplate.New("").Parse(tw.Task.BranchName)
+		tw.templateBranchName, parseErr = htmlTemplate.New("").Parse(tw.BranchName)
 		if parseErr != nil {
 			return "", fmt.Errorf("parse branch name template: %w", parseErr)
 		}
@@ -143,15 +143,15 @@ func (tw *Task) Checksum() string {
 	return tw.checksum
 }
 
-func (tw *Task) AutoMergeAfter() time.Duration {
-	if tw.Task.AutoMergeAfter == "" {
+func (tw *Task) CalcAutoMergeAfter() time.Duration {
+	if tw.AutoMergeAfter == "" {
 		return 0
 	}
 
 	if tw.autoMergeAfterDuration == nil {
-		d, err := time.ParseDuration(tw.Task.AutoMergeAfter)
+		d, err := time.ParseDuration(tw.AutoMergeAfter)
 		if err != nil {
-			panic(fmt.Sprintf("value of field `autoMergeAfter` of task %s is not a duration: %s", tw.Task.Name, err))
+			panic(fmt.Sprintf("value of field `autoMergeAfter` of task %s is not a duration: %s", tw.Name, err))
 		}
 
 		tw.autoMergeAfterDuration = &d
@@ -161,29 +161,29 @@ func (tw *Task) AutoMergeAfter() time.Duration {
 }
 
 func (tw *Task) HasReachedChangeLimit() bool {
-	if tw.Task.ChangeLimit == 0 {
+	if tw.ChangeLimit == 0 {
 		return false
 	}
 
-	return tw.changeLimitCount >= tw.Task.ChangeLimit
+	return tw.changeLimitCount >= tw.ChangeLimit
 }
 
 func (tw *Task) HasReachMaxOpenPRs() bool {
-	if tw.Task.MaxOpenPRs == 0 {
+	if tw.MaxOpenPRs == 0 {
 		return false
 	}
 
-	return tw.openPRs >= tw.Task.MaxOpenPRs
+	return tw.openPRs >= tw.MaxOpenPRs
 }
 
 func (tw *Task) IncChangeLimitCount() {
-	if tw.Task.ChangeLimit > 0 {
+	if tw.ChangeLimit > 0 {
 		tw.changeLimitCount++
 	}
 }
 
 func (tw *Task) IncOpenPRsCount() {
-	if tw.Task.MaxOpenPRs > 0 {
+	if tw.MaxOpenPRs > 0 {
 		tw.openPRs++
 	}
 }
@@ -202,13 +202,13 @@ var (
 	tplPrTitleDefault = htmlTemplate.Must(htmlTemplate.New("titleDefault").Parse("saturn-bot: task {{.TaskName}}"))
 )
 
-func (tw *Task) PrTitle(data template.Data) (string, error) {
+func (tw *Task) RenderPrTitle(data template.Data) (string, error) {
 	if tw.templatePrTitle == nil {
-		if tw.Task.PrTitle == "" {
+		if tw.PrTitle == "" {
 			tw.templatePrTitle = tplPrTitleDefault
 		} else {
 			var parseErr error
-			tw.templatePrTitle, parseErr = htmlTemplate.New("").Parse(tw.Task.PrTitle)
+			tw.templatePrTitle, parseErr = htmlTemplate.New("").Parse(tw.PrTitle)
 			if parseErr != nil {
 				return "", fmt.Errorf("parse pr title template: %w", parseErr)
 			}
@@ -232,10 +232,6 @@ func (tw *Task) SetLogger(l *zap.SugaredLogger) {
 	for _, p := range tw.plugins {
 		p.setLogger(l)
 	}
-}
-
-func (tw *Task) SourceTask() schema.Task {
-	return tw.Task
 }
 
 func (tw *Task) OnPrClosed(repository host.Repository) error {
