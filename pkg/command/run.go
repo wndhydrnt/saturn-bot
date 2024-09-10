@@ -177,7 +177,7 @@ func ExecuteRun(opts options.Opts, repositoryNames, taskFiles []string) ([]RunRe
 	return e.Run(repositoryNames, taskFiles)
 }
 
-func hasUpdatedTasks(cachedTasks []cache.CachedTask, tasks []task.Task) bool {
+func hasUpdatedTasks(cachedTasks []cache.CachedTask, tasks []*task.Task) bool {
 	for _, t := range tasks {
 		found := false
 		for _, ct := range cachedTasks {

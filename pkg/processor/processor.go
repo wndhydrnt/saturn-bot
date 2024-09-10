@@ -44,14 +44,14 @@ type Processor struct {
 }
 
 type RepositoryTaskProcessor interface {
-	Process(ctx context.Context, dryRun bool, repo host.Repository, task task.Task, doFilter bool, logger *zap.SugaredLogger) (Result, error)
+	Process(ctx context.Context, dryRun bool, repo host.Repository, task *task.Task, doFilter bool, logger *zap.SugaredLogger) (Result, error)
 }
 
 func (p *Processor) Process(
 	ctx context.Context,
 	dryRun bool,
 	repo host.Repository,
-	task task.Task,
+	task *task.Task,
 	doFilter bool,
 	logger *zap.SugaredLogger,
 ) (Result, error) {
@@ -121,7 +121,7 @@ func (p *Processor) Process(
 	return result, nil
 }
 
-func matchTaskToRepository(ctx context.Context, task task.Task) (bool, error) {
+func matchTaskToRepository(ctx context.Context, task *task.Task) (bool, error) {
 	if len(task.Filters()) == 0 {
 		// A task without filters is considered not matching.
 		// Avoids accidentally applying a task to all repositories
@@ -144,7 +144,7 @@ func matchTaskToRepository(ctx context.Context, task task.Task) (bool, error) {
 	return true, nil
 }
 
-func applyTaskToRepository(ctx context.Context, dryRun bool, gitc git.GitClient, logger *zap.SugaredLogger, repo host.Repository, task task.Task, workDir string) (Result, error) {
+func applyTaskToRepository(ctx context.Context, dryRun bool, gitc git.GitClient, logger *zap.SugaredLogger, repo host.Repository, task *task.Task, workDir string) (Result, error) {
 	logger.Debug("Applying actions of task to repository")
 	templateData := template.Data{}
 	updateTemplateVars(&templateData, ctx, repo, task)
@@ -447,7 +447,7 @@ func inDirectory(dir string, f func() error) error {
 	return funcErr
 }
 
-func updateTemplateVars(data *template.Data, ctx context.Context, repo host.Repository, tk task.Task) {
+func updateTemplateVars(data *template.Data, ctx context.Context, repo host.Repository, tk *task.Task) {
 	if data.Run == nil {
 		data.Run = make(map[string]string)
 	}
@@ -462,5 +462,7 @@ func updateTemplateVars(data *template.Data, ctx context.Context, repo host.Repo
 	data.Repository.Name = repo.Name()
 	data.Repository.Owner = repo.Owner()
 	data.Repository.WebUrl = repo.WebUrl()
-	data.TaskName = tk.SourceTask().Name
+	if tk != nil {
+		data.TaskName = tk.Name
+	}
 }

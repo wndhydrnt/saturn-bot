@@ -71,27 +71,28 @@ func createFiltersForTask(filterDefs []schema.Filter, factories options.FilterFa
 	return result, nil
 }
 
-type Task interface {
-	Actions() []action.Action
-	AutoMergeAfter() time.Duration
-	BranchName(template.Data) (string, error)
-	Checksum() string
-	Filters() []filter.Filter
-	HasReachedChangeLimit() bool
-	HasReachMaxOpenPRs() bool
-	IncChangeLimitCount()
-	IncOpenPRsCount()
-	IsWithinSchedule() bool
-	OnPrClosed(host.Repository) error
-	OnPrCreated(host.Repository) error
-	OnPrMerged(host.Repository) error
-	PrTitle(template.Data) (string, error)
-	SetLogger(*zap.SugaredLogger)
-	SourceTask() schema.Task
-	Stop()
-}
+// type Task interface {
+// 	Actions() []action.Action
+// 	AutoMergeAfter() time.Duration
+// 	BranchName(template.Data) (string, error)
+// 	Checksum() string
+// 	Filters() []filter.Filter
+// 	HasReachedChangeLimit() bool
+// 	HasReachMaxOpenPRs() bool
+// 	IncChangeLimitCount()
+// 	IncOpenPRsCount()
+// 	IsWithinSchedule() bool
+// 	OnPrClosed(host.Repository) error
+// 	OnPrCreated(host.Repository) error
+// 	OnPrMerged(host.Repository) error
+// 	PrTitle(template.Data) (string, error)
+// 	SetLogger(*zap.SugaredLogger)
+// 	SourceTask() schema.Task
+// 	Stop()
+// }
 
-type Wrapper struct {
+type Task struct {
+	schema.Task
 	actions                []action.Action
 	autoMergeAfterDuration *time.Duration
 	changeLimitCount       int
@@ -102,22 +103,21 @@ type Wrapper struct {
 	schedule               cron.Schedule
 	templateBranchName     *htmlTemplate.Template
 	templatePrTitle        *htmlTemplate.Template
-	Task                   schema.Task
 }
 
-func (tw *Wrapper) Actions() []action.Action {
+func (tw *Task) Actions() []action.Action {
 	return tw.actions
 }
 
-func (tw *Wrapper) AddFilters(f ...filter.Filter) {
+func (tw *Task) AddFilters(f ...filter.Filter) {
 	tw.filters = append(tw.filters, f...)
 }
 
-func (tw *Wrapper) Filters() []filter.Filter {
+func (tw *Task) Filters() []filter.Filter {
 	return tw.filters
 }
 
-func (tw *Wrapper) BranchName(data template.Data) (string, error) {
+func (tw *Task) BranchName(data template.Data) (string, error) {
 	if tw.Task.BranchName == "" {
 		return "saturn-bot--" + slug.Make(tw.Task.Name), nil
 	}
@@ -139,11 +139,11 @@ func (tw *Wrapper) BranchName(data template.Data) (string, error) {
 	return buf.String(), nil
 }
 
-func (tw *Wrapper) Checksum() string {
+func (tw *Task) Checksum() string {
 	return tw.checksum
 }
 
-func (tw *Wrapper) AutoMergeAfter() time.Duration {
+func (tw *Task) AutoMergeAfter() time.Duration {
 	if tw.Task.AutoMergeAfter == "" {
 		return 0
 	}
@@ -160,7 +160,7 @@ func (tw *Wrapper) AutoMergeAfter() time.Duration {
 	return *tw.autoMergeAfterDuration
 }
 
-func (tw *Wrapper) HasReachedChangeLimit() bool {
+func (tw *Task) HasReachedChangeLimit() bool {
 	if tw.Task.ChangeLimit == 0 {
 		return false
 	}
@@ -168,7 +168,7 @@ func (tw *Wrapper) HasReachedChangeLimit() bool {
 	return tw.changeLimitCount >= tw.Task.ChangeLimit
 }
 
-func (tw *Wrapper) HasReachMaxOpenPRs() bool {
+func (tw *Task) HasReachMaxOpenPRs() bool {
 	if tw.Task.MaxOpenPRs == 0 {
 		return false
 	}
@@ -176,19 +176,19 @@ func (tw *Wrapper) HasReachMaxOpenPRs() bool {
 	return tw.openPRs >= tw.Task.MaxOpenPRs
 }
 
-func (tw *Wrapper) IncChangeLimitCount() {
+func (tw *Task) IncChangeLimitCount() {
 	if tw.Task.ChangeLimit > 0 {
 		tw.changeLimitCount++
 	}
 }
 
-func (tw *Wrapper) IncOpenPRsCount() {
+func (tw *Task) IncOpenPRsCount() {
 	if tw.Task.MaxOpenPRs > 0 {
 		tw.openPRs++
 	}
 }
 
-func (tw *Wrapper) IsWithinSchedule() bool {
+func (tw *Task) IsWithinSchedule() bool {
 	if tw.schedule == nil {
 		return true
 	}
@@ -202,7 +202,7 @@ var (
 	tplPrTitleDefault = htmlTemplate.Must(htmlTemplate.New("titleDefault").Parse("saturn-bot: task {{.TaskName}}"))
 )
 
-func (tw *Wrapper) PrTitle(data template.Data) (string, error) {
+func (tw *Task) PrTitle(data template.Data) (string, error) {
 	if tw.templatePrTitle == nil {
 		if tw.Task.PrTitle == "" {
 			tw.templatePrTitle = tplPrTitleDefault
@@ -224,7 +224,7 @@ func (tw *Wrapper) PrTitle(data template.Data) (string, error) {
 	return buf.String(), nil
 }
 
-func (tw *Wrapper) SetLogger(l *zap.SugaredLogger) {
+func (tw *Task) SetLogger(l *zap.SugaredLogger) {
 	if l == nil {
 		return
 	}
@@ -234,11 +234,11 @@ func (tw *Wrapper) SetLogger(l *zap.SugaredLogger) {
 	}
 }
 
-func (tw *Wrapper) SourceTask() schema.Task {
+func (tw *Task) SourceTask() schema.Task {
 	return tw.Task
 }
 
-func (tw *Wrapper) OnPrClosed(repository host.Repository) error {
+func (tw *Task) OnPrClosed(repository host.Repository) error {
 	for _, p := range tw.plugins {
 		err := p.onPrClosed(repository)
 		if err != nil {
@@ -249,7 +249,7 @@ func (tw *Wrapper) OnPrClosed(repository host.Repository) error {
 	return nil
 }
 
-func (tw *Wrapper) OnPrCreated(repository host.Repository) error {
+func (tw *Task) OnPrCreated(repository host.Repository) error {
 	for _, p := range tw.plugins {
 		err := p.onPrCreated(repository)
 		if err != nil {
@@ -260,7 +260,7 @@ func (tw *Wrapper) OnPrCreated(repository host.Repository) error {
 	return nil
 }
 
-func (tw *Wrapper) OnPrMerged(repository host.Repository) error {
+func (tw *Task) OnPrMerged(repository host.Repository) error {
 	for _, p := range tw.plugins {
 		err := p.onPrMerged(repository)
 		if err != nil {
@@ -271,7 +271,7 @@ func (tw *Wrapper) OnPrMerged(repository host.Repository) error {
 	return nil
 }
 
-func (tw *Wrapper) Stop() {
+func (tw *Task) Stop() {
 	for _, p := range tw.plugins {
 		p.stop()
 	}
@@ -283,7 +283,7 @@ type Registry struct {
 	filterFactories options.FilterFactories
 	pathJava        string
 	pathPython      string
-	tasks           []Task
+	tasks           []*Task
 }
 
 func NewRegistry(opts options.Opts) *Registry {
@@ -297,7 +297,7 @@ func NewRegistry(opts options.Opts) *Registry {
 
 // GetTasks returns all tasks registered with the Registry.
 // Should be called only after ReadAll() has been called at least once.
-func (tr *Registry) GetTasks() []Task {
+func (tr *Registry) GetTasks() []*Task {
 	return tr.tasks
 }
 

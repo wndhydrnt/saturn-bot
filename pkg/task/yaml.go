@@ -15,20 +15,20 @@ func readTasksYaml(
 	pathJava string,
 	pathPython string,
 	taskFile string,
-) ([]Task, error) {
+) ([]*Task, error) {
 	results, err := schema.Read(taskFile)
 	if err != nil {
 		return nil, err
 	}
 
-	var tasks []Task
+	var tasks []*Task
 	for _, entry := range results {
 		if !entry.Task.Active {
 			log.Log().Warnf("Task %s deactivated", entry.Task.Name)
 			continue
 		}
 
-		wrapper := &Wrapper{}
+		wrapper := &Task{}
 		wrapper.Task = entry.Task
 		wrapper.actions, err = createActionsForTask(wrapper.Task.Actions, actionFactories, entry.Path)
 		if err != nil {

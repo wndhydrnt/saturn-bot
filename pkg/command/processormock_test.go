@@ -46,7 +46,7 @@ func (m *MockRepositoryTaskProcessor) EXPECT() *MockRepositoryTaskProcessorMockR
 }
 
 // Process mocks base method.
-func (m *MockRepositoryTaskProcessor) Process(ctx context.Context, dryRun bool, repo host.Repository, task task.Task, doFilter bool, logger *zap.SugaredLogger) (processor.Result, error) {
+func (m *MockRepositoryTaskProcessor) Process(ctx context.Context, dryRun bool, repo host.Repository, task *task.Task, doFilter bool, logger *zap.SugaredLogger) (processor.Result, error) {
 	m.ctrl.T.Helper()
 	ret := m.ctrl.Call(m, "Process", ctx, dryRun, repo, task, doFilter, logger)
 	ret0, _ := ret[0].(processor.Result)
