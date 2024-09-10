@@ -12,7 +12,6 @@ import (
 	gsContext "github.com/wndhydrnt/saturn-bot/pkg/context"
 	"github.com/wndhydrnt/saturn-bot/pkg/host"
 	"github.com/wndhydrnt/saturn-bot/pkg/log"
-	gsLog "github.com/wndhydrnt/saturn-bot/pkg/log"
 	"go.uber.org/zap"
 )
 
@@ -68,7 +67,7 @@ func newPluginWrapper(opts startPluginOptions) (*pluginWrapper, error) {
 	stdoutAdapter := &stdioAdapter{stream: "stdout"}
 	client := goPlugin.NewClient(&goPlugin.ClientConfig{
 		HandshakeConfig: plugin.Handshake,
-		Logger:          gsLog.DefaultHclogAdapter(),
+		Logger:          log.DefaultHclogAdapter(),
 		Plugins: map[string]goPlugin.Plugin{
 			plugin.ID: &plugin.ProviderPlugin{},
 		},
