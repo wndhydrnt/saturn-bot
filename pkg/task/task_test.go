@@ -39,32 +39,8 @@ name: Task Two
 	require.NoError(t, err)
 
 	assert.Len(t, tr.GetTasks(), 2)
-	assert.Equal(t, "Task One", tr.GetTasks()[0].SourceTask().Name)
-	assert.Equal(t, "Task Two", tr.GetTasks()[1].SourceTask().Name)
-}
-
-func TestRegistry_ReadAll_Unsupported(t *testing.T) {
-	tasksRaw := `
-name: Task One
----
-name: Task Two
-`
-
-	f, err := os.CreateTemp("", "*.yamll")
-	require.NoError(t, err)
-	_, err = f.WriteString(tasksRaw)
-	require.NoError(t, err)
-	f.Close()
-	defer func() {
-		err := os.Remove(f.Name())
-		require.NoError(t, err)
-	}()
-
-	tr := &task.Registry{}
-	err = tr.ReadAll([]string{f.Name()})
-
-	assert.EqualError(t, err, fmt.Sprintf("failed to read tasks from file %s: unsupported extension: .yamll", f.Name()))
-	assert.Len(t, tr.GetTasks(), 0)
+	assert.Equal(t, "Task One", tr.GetTasks()[0].Name)
+	assert.Equal(t, "Task Two", tr.GetTasks()[1].Name)
 }
 
 func TestRegistry_ReadAll_AllBuiltInActions(t *testing.T) {
@@ -124,7 +100,7 @@ actions:
 
 	require.Len(t, tr.GetTasks(), 1)
 	task := tr.GetTasks()[0]
-	assert.Equal(t, "Task", task.SourceTask().Name)
+	assert.Equal(t, "Task", task.Name)
 	wantActions := []string{
 		"fileCreate(mode=644,overwrite=true,path=unit-test.txt)",
 		"fileCreate(mode=644,overwrite=true,path=unit-test-content.txt)",
@@ -182,7 +158,7 @@ func TestRegistry_ReadAll_AllBuiltInFilters(t *testing.T) {
 
 	require.Len(t, tr.GetTasks(), 1)
 	task := tr.GetTasks()[0]
-	assert.Equal(t, "Task", task.SourceTask().Name)
+	assert.Equal(t, "Task", task.Name)
 	wantFilters := []string{
 		"repository(host=^git.localhost$,owner=^unit$,name=^test|test2$)",
 		"file(op=and,paths=[unit-test.txt])",
@@ -220,7 +196,7 @@ name: Task Two
 	require.NoError(t, err)
 
 	assert.Len(t, tr.GetTasks(), 1)
-	assert.Equal(t, "Task Two", tr.GetTasks()[0].SourceTask().Name)
+	assert.Equal(t, "Task Two", tr.GetTasks()[0].Name)
 }
 
 func TestRegistry_ReadAll_InvalidSchedule(t *testing.T) {

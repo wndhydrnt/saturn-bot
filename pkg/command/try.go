@@ -92,7 +92,7 @@ func (r *TryRunner) Run() error {
 
 	processed := false
 	for _, task := range tasks {
-		if r.TaskName != "" && task.SourceTask().Name != r.TaskName {
+		if r.TaskName != "" && task.Name != r.TaskName {
 			continue
 		}
 
@@ -102,14 +102,14 @@ func (r *TryRunner) Run() error {
 		for _, filter := range task.Filters() {
 			match, err := filter.Do(ctx)
 			if err != nil {
-				fmt.Fprintf(r.Out, "⛔️ Filter %s of task %s failed: %s\n", filter.String(), task.SourceTask().Name, err)
+				fmt.Fprintf(r.Out, "⛔️ Filter %s of task %s failed: %s\n", filter.String(), task.Name, err)
 				continue
 			}
 
 			if match {
-				fmt.Fprintf(r.Out, "✅ Filter %s of task %s matches\n", filter.String(), task.SourceTask().Name)
+				fmt.Fprintf(r.Out, "✅ Filter %s of task %s matches\n", filter.String(), task.Name)
 			} else {
-				fmt.Fprintf(r.Out, "❌ Filter %s of task %s doesn't match\n", filter.String(), task.SourceTask().Name)
+				fmt.Fprintf(r.Out, "❌ Filter %s of task %s doesn't match\n", filter.String(), task.Name)
 				matched = false
 			}
 		}
@@ -134,11 +134,11 @@ func (r *TryRunner) Run() error {
 				Owner:    repository.Owner(),
 				WebUrl:   repository.WebUrl(),
 			},
-			TaskName: task.SourceTask().Name,
+			TaskName: task.Name,
 		}
-		branchName, err := task.BranchName(templateData)
+		branchName, err := task.RenderBranchName(templateData)
 		if err != nil {
-			fmt.Fprintf(r.Out, "⛔️ Failed to render branch name template %s: %s\n", task.SourceTask().BranchName, err)
+			fmt.Fprintf(r.Out, "⛔️ Failed to render branch name template %s: %s\n", task.BranchName, err)
 			continue
 		}
 

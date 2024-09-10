@@ -18,7 +18,7 @@ type Cache interface {
 	GetCachedTasks() []CachedTask
 	Read() error
 	SetLastExecutionAt(at int64)
-	UpdateCachedTasks(tasks []task.Task)
+	UpdateCachedTasks(tasks []*task.Task)
 	Write() error
 }
 
@@ -63,10 +63,10 @@ func (c *jsonFile) GetCachedTasks() []CachedTask {
 	return c.Tasks
 }
 
-func (c *jsonFile) UpdateCachedTasks(tasks []task.Task) {
+func (c *jsonFile) UpdateCachedTasks(tasks []*task.Task) {
 	var cachedTasks []CachedTask
 	for _, t := range tasks {
-		cachedTasks = append(cachedTasks, CachedTask{Checksum: t.Checksum(), Name: t.SourceTask().Name})
+		cachedTasks = append(cachedTasks, CachedTask{Checksum: t.Checksum(), Name: t.Name})
 	}
 
 	c.Tasks = cachedTasks

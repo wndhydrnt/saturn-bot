@@ -4,7 +4,6 @@ import (
 	"bytes"
 	"fmt"
 	htmlTemplate "html/template"
-	"path"
 	"time"
 
 	"github.com/gosimple/slug"
@@ -71,27 +70,8 @@ func createFiltersForTask(filterDefs []schema.Filter, factories options.FilterFa
 	return result, nil
 }
 
-type Task interface {
-	Actions() []action.Action
-	AutoMergeAfter() time.Duration
-	BranchName(template.Data) (string, error)
-	Checksum() string
-	Filters() []filter.Filter
-	HasReachedChangeLimit() bool
-	HasReachMaxOpenPRs() bool
-	IncChangeLimitCount()
-	IncOpenPRsCount()
-	IsWithinSchedule() bool
-	OnPrClosed(host.Repository) error
-	OnPrCreated(host.Repository) error
-	OnPrMerged(host.Repository) error
-	PrTitle(template.Data) (string, error)
-	SetLogger(*zap.SugaredLogger)
-	SourceTask() schema.Task
-	Stop()
-}
-
-type Wrapper struct {
+type Task struct {
+	schema.Task
 	actions                []action.Action
 	autoMergeAfterDuration *time.Duration
 	changeLimitCount       int
@@ -102,29 +82,28 @@ type Wrapper struct {
 	schedule               cron.Schedule
 	templateBranchName     *htmlTemplate.Template
 	templatePrTitle        *htmlTemplate.Template
-	Task                   schema.Task
 }
 
-func (tw *Wrapper) Actions() []action.Action {
+func (tw *Task) Actions() []action.Action {
 	return tw.actions
 }
 
-func (tw *Wrapper) AddFilters(f ...filter.Filter) {
+func (tw *Task) AddFilters(f ...filter.Filter) {
 	tw.filters = append(tw.filters, f...)
 }
 
-func (tw *Wrapper) Filters() []filter.Filter {
+func (tw *Task) Filters() []filter.Filter {
 	return tw.filters
 }
 
-func (tw *Wrapper) BranchName(data template.Data) (string, error) {
-	if tw.Task.BranchName == "" {
-		return "saturn-bot--" + slug.Make(tw.Task.Name), nil
+func (tw *Task) RenderBranchName(data template.Data) (string, error) {
+	if tw.BranchName == "" {
+		return "saturn-bot--" + slug.Make(tw.Name), nil
 	}
 
 	if tw.templateBranchName == nil {
 		var parseErr error
-		tw.templateBranchName, parseErr = htmlTemplate.New("").Parse(tw.Task.BranchName)
+		tw.templateBranchName, parseErr = htmlTemplate.New("").Parse(tw.BranchName)
 		if parseErr != nil {
 			return "", fmt.Errorf("parse branch name template: %w", parseErr)
 		}
@@ -139,19 +118,19 @@ func (tw *Wrapper) BranchName(data template.Data) (string, error) {
 	return buf.String(), nil
 }
 
-func (tw *Wrapper) Checksum() string {
+func (tw *Task) Checksum() string {
 	return tw.checksum
 }
 
-func (tw *Wrapper) AutoMergeAfter() time.Duration {
-	if tw.Task.AutoMergeAfter == "" {
+func (tw *Task) CalcAutoMergeAfter() time.Duration {
+	if tw.AutoMergeAfter == "" {
 		return 0
 	}
 
 	if tw.autoMergeAfterDuration == nil {
-		d, err := time.ParseDuration(tw.Task.AutoMergeAfter)
+		d, err := time.ParseDuration(tw.AutoMergeAfter)
 		if err != nil {
-			panic(fmt.Sprintf("value of field `autoMergeAfter` of task %s is not a duration: %s", tw.Task.Name, err))
+			panic(fmt.Sprintf("value of field `autoMergeAfter` of task %s is not a duration: %s", tw.Name, err))
 		}
 
 		tw.autoMergeAfterDuration = &d
@@ -160,35 +139,35 @@ func (tw *Wrapper) AutoMergeAfter() time.Duration {
 	return *tw.autoMergeAfterDuration
 }
 
-func (tw *Wrapper) HasReachedChangeLimit() bool {
-	if tw.Task.ChangeLimit == 0 {
+func (tw *Task) HasReachedChangeLimit() bool {
+	if tw.ChangeLimit == 0 {
 		return false
 	}
 
-	return tw.changeLimitCount >= tw.Task.ChangeLimit
+	return tw.changeLimitCount >= tw.ChangeLimit
 }
 
-func (tw *Wrapper) HasReachMaxOpenPRs() bool {
-	if tw.Task.MaxOpenPRs == 0 {
+func (tw *Task) HasReachMaxOpenPRs() bool {
+	if tw.MaxOpenPRs == 0 {
 		return false
 	}
 
-	return tw.openPRs >= tw.Task.MaxOpenPRs
+	return tw.openPRs >= tw.MaxOpenPRs
 }
 
-func (tw *Wrapper) IncChangeLimitCount() {
-	if tw.Task.ChangeLimit > 0 {
+func (tw *Task) IncChangeLimitCount() {
+	if tw.ChangeLimit > 0 {
 		tw.changeLimitCount++
 	}
 }
 
-func (tw *Wrapper) IncOpenPRsCount() {
-	if tw.Task.MaxOpenPRs > 0 {
+func (tw *Task) IncOpenPRsCount() {
+	if tw.MaxOpenPRs > 0 {
 		tw.openPRs++
 	}
 }
 
-func (tw *Wrapper) IsWithinSchedule() bool {
+func (tw *Task) IsWithinSchedule() bool {
 	if tw.schedule == nil {
 		return true
 	}
@@ -202,13 +181,13 @@ var (
 	tplPrTitleDefault = htmlTemplate.Must(htmlTemplate.New("titleDefault").Parse("saturn-bot: task {{.TaskName}}"))
 )
 
-func (tw *Wrapper) PrTitle(data template.Data) (string, error) {
+func (tw *Task) RenderPrTitle(data template.Data) (string, error) {
 	if tw.templatePrTitle == nil {
-		if tw.Task.PrTitle == "" {
+		if tw.PrTitle == "" {
 			tw.templatePrTitle = tplPrTitleDefault
 		} else {
 			var parseErr error
-			tw.templatePrTitle, parseErr = htmlTemplate.New("").Parse(tw.Task.PrTitle)
+			tw.templatePrTitle, parseErr = htmlTemplate.New("").Parse(tw.PrTitle)
 			if parseErr != nil {
 				return "", fmt.Errorf("parse pr title template: %w", parseErr)
 			}
@@ -224,7 +203,7 @@ func (tw *Wrapper) PrTitle(data template.Data) (string, error) {
 	return buf.String(), nil
 }
 
-func (tw *Wrapper) SetLogger(l *zap.SugaredLogger) {
+func (tw *Task) SetLogger(l *zap.SugaredLogger) {
 	if l == nil {
 		return
 	}
@@ -234,11 +213,7 @@ func (tw *Wrapper) SetLogger(l *zap.SugaredLogger) {
 	}
 }
 
-func (tw *Wrapper) SourceTask() schema.Task {
-	return tw.Task
-}
-
-func (tw *Wrapper) OnPrClosed(repository host.Repository) error {
+func (tw *Task) OnPrClosed(repository host.Repository) error {
 	for _, p := range tw.plugins {
 		err := p.onPrClosed(repository)
 		if err != nil {
@@ -249,7 +224,7 @@ func (tw *Wrapper) OnPrClosed(repository host.Repository) error {
 	return nil
 }
 
-func (tw *Wrapper) OnPrCreated(repository host.Repository) error {
+func (tw *Task) OnPrCreated(repository host.Repository) error {
 	for _, p := range tw.plugins {
 		err := p.onPrCreated(repository)
 		if err != nil {
@@ -260,7 +235,7 @@ func (tw *Wrapper) OnPrCreated(repository host.Repository) error {
 	return nil
 }
 
-func (tw *Wrapper) OnPrMerged(repository host.Repository) error {
+func (tw *Task) OnPrMerged(repository host.Repository) error {
 	for _, p := range tw.plugins {
 		err := p.onPrMerged(repository)
 		if err != nil {
@@ -271,7 +246,7 @@ func (tw *Wrapper) OnPrMerged(repository host.Repository) error {
 	return nil
 }
 
-func (tw *Wrapper) Stop() {
+func (tw *Task) Stop() {
 	for _, p := range tw.plugins {
 		p.stop()
 	}
@@ -283,7 +258,7 @@ type Registry struct {
 	filterFactories options.FilterFactories
 	pathJava        string
 	pathPython      string
-	tasks           []Task
+	tasks           []*Task
 }
 
 func NewRegistry(opts options.Opts) *Registry {
@@ -297,7 +272,7 @@ func NewRegistry(opts options.Opts) *Registry {
 
 // GetTasks returns all tasks registered with the Registry.
 // Should be called only after ReadAll() has been called at least once.
-func (tr *Registry) GetTasks() []Task {
+func (tr *Registry) GetTasks() []*Task {
 	return tr.tasks
 }
 
@@ -314,22 +289,56 @@ func (tr *Registry) ReadAll(taskFiles []string) error {
 }
 
 func (tr *Registry) readTasks(taskFile string) error {
-	ext := path.Ext(taskFile)
-	switch ext {
-	case ".yml":
-	case ".yaml":
-		tasks, err := readTasksYaml(tr.actionFactories, tr.filterFactories, tr.pathJava, tr.pathPython, taskFile)
-		if err != nil {
-			return err
-		}
-
-		tr.tasks = append(tr.tasks, tasks...)
-		return nil
-	default:
-		return fmt.Errorf("unsupported extension: %s", ext)
+	results, err := schema.Read(taskFile)
+	if err != nil {
+		return err
 	}
 
-	return fmt.Errorf("unsupported extension: %s", ext)
+	for _, entry := range results {
+		if !entry.Task.Active {
+			log.Log().Warnf("Task %s deactivated", entry.Task.Name)
+			continue
+		}
+
+		wrapper := &Task{}
+		wrapper.Task = entry.Task
+		wrapper.actions, err = createActionsForTask(wrapper.Task.Actions, tr.actionFactories, entry.Path)
+		if err != nil {
+			return fmt.Errorf("parse actions of task: %w", err)
+		}
+
+		wrapper.filters, err = createFiltersForTask(wrapper.Task.Filters, tr.filterFactories)
+		if err != nil {
+			return fmt.Errorf("parse filters of task file '%s': %w", entry.Path, err)
+		}
+
+		for idx, plugin := range entry.Task.Plugins {
+			pw, err := newPluginWrapper(startPluginOptions{
+				config:     plugin.Configuration,
+				filePath:   plugin.PathAbs(entry.Path),
+				pathJava:   tr.pathJava,
+				pathPython: tr.pathPython,
+			})
+			if err != nil {
+				return fmt.Errorf("initialize plugin #%d: %w", idx, err)
+			}
+
+			wrapper.actions = append(wrapper.actions, pw.action)
+			wrapper.filters = append(wrapper.filters, pw.filter)
+			wrapper.plugins = append(wrapper.plugins, pw)
+		}
+
+		schedule, err := cron.ParseStandard(entry.Task.Schedule)
+		if err != nil {
+			return fmt.Errorf("parse schedule: %w", err)
+		}
+		wrapper.schedule = schedule
+
+		wrapper.checksum = fmt.Sprintf("%x", entry.Hash.Sum(nil))
+		tr.tasks = append(tr.tasks, wrapper)
+	}
+
+	return nil
 }
 
 // Stop notifies every task that this Registry is being stopped.

@@ -81,7 +81,7 @@ func TestProcessor_Process_CreatePullRequestLocalChanges(t *testing.T) {
 	gitc.EXPECT().HasRemoteChanges("main").Return(false, nil)
 	gitc.EXPECT().HasRemoteChanges("saturn-bot--unittest").Return(true, nil)
 	gitc.EXPECT().Push("saturn-bot--unittest").Return(nil)
-	tw := &task.Wrapper{Task: schema.Task{CommitMessage: "commit test", Name: "unittest"}}
+	tw := &task.Task{Task: schema.Task{CommitMessage: "commit test", Name: "unittest"}}
 	tw.AddFilters(&trueFilter{})
 
 	p := &processor.Processor{Git: gitc}
@@ -114,7 +114,7 @@ func TestProcessor_Process_CreatePullRequestRemoteChanges(t *testing.T) {
 	gitc.EXPECT().CommitChanges("commit test").Return(nil)
 	gitc.EXPECT().HasRemoteChanges("main").Return(true, nil)
 	gitc.EXPECT().HasRemoteChanges("saturn-bot--unittest").Return(false, nil)
-	tw := &task.Wrapper{Task: schema.Task{CommitMessage: "commit test", Name: "unittest"}}
+	tw := &task.Task{Task: schema.Task{CommitMessage: "commit test", Name: "unittest"}}
 	tw.AddFilters(&trueFilter{})
 
 	p := &processor.Processor{Git: gitc}
@@ -132,7 +132,7 @@ func TestProcessor_Process_PullRequestClosedAndMergeOnceActive(t *testing.T) {
 	repo.EXPECT().IsPullRequestClosed(prID).Return(true)
 	gitc := NewMockGitClient(ctrl)
 	gitc.EXPECT().Prepare(repo, false).Return("/tmp", nil)
-	tw := &task.Wrapper{Task: schema.Task{MergeOnce: true, Name: "unittest"}}
+	tw := &task.Task{Task: schema.Task{MergeOnce: true, Name: "unittest"}}
 	tw.AddFilters(&trueFilter{})
 
 	p := &processor.Processor{Git: gitc}
@@ -151,7 +151,7 @@ func TestProcessor_Process_PullRequestMergedAndMergeOnceActive(t *testing.T) {
 	repo.EXPECT().IsPullRequestMerged(prID).Return(true)
 	gitc := NewMockGitClient(ctrl)
 	gitc.EXPECT().Prepare(repo, false).Return("/tmp", nil)
-	tw := &task.Wrapper{Task: schema.Task{MergeOnce: true, Name: "unittest"}}
+	tw := &task.Task{Task: schema.Task{MergeOnce: true, Name: "unittest"}}
 	tw.AddFilters(&trueFilter{})
 
 	p := &processor.Processor{Git: gitc}
@@ -170,7 +170,7 @@ func TestProcessor_Process_CreateOnly(t *testing.T) {
 	repo.EXPECT().IsPullRequestMerged(prID).Return(false)
 	gitc := NewMockGitClient(ctrl)
 	gitc.EXPECT().Prepare(repo, false).Return("/tmp", nil)
-	tw := &task.Wrapper{Task: schema.Task{CreateOnly: true, Name: "unittest"}}
+	tw := &task.Task{Task: schema.Task{CreateOnly: true, Name: "unittest"}}
 	tw.AddFilters(&trueFilter{})
 
 	p := &processor.Processor{Git: gitc}
@@ -206,7 +206,7 @@ func TestProcessor_Process_ClosePullRequestIfChangesExistInBaseBranch(t *testing
 	gitc.EXPECT().HasLocalChanges().Return(true, nil)
 	gitc.EXPECT().CommitChanges("").Return(nil)
 	gitc.EXPECT().HasRemoteChanges("main").Return(false, nil)
-	tw := &task.Wrapper{Task: schema.Task{Name: "unittest"}}
+	tw := &task.Task{Task: schema.Task{Name: "unittest"}}
 	tw.AddFilters(&trueFilter{})
 
 	p := &processor.Processor{Git: gitc}
@@ -243,7 +243,7 @@ func TestProcessor_Process_MergePullRequest(t *testing.T) {
 	gitc.EXPECT().HasLocalChanges().Return(false, nil)
 	gitc.EXPECT().HasRemoteChanges("main").Return(true, nil)
 	gitc.EXPECT().HasRemoteChanges("saturn-bot--unittest").Return(false, nil)
-	tw := &task.Wrapper{Task: schema.Task{AutoMerge: true, Name: "unittest"}}
+	tw := &task.Task{Task: schema.Task{AutoMerge: true, Name: "unittest"}}
 	tw.AddFilters(&trueFilter{})
 
 	p := &processor.Processor{Git: gitc}
@@ -277,7 +277,7 @@ func TestProcessor_Process_MergePullRequest_FailedMergeChecks(t *testing.T) {
 	gitc.EXPECT().HasLocalChanges().Return(false, nil)
 	gitc.EXPECT().HasRemoteChanges("main").Return(true, nil)
 	gitc.EXPECT().HasRemoteChanges("saturn-bot--unittest").Return(false, nil)
-	tw := &task.Wrapper{Task: schema.Task{AutoMerge: true, Name: "unittest"}}
+	tw := &task.Task{Task: schema.Task{AutoMerge: true, Name: "unittest"}}
 	tw.AddFilters(&trueFilter{})
 
 	p := &processor.Processor{Git: gitc}
@@ -312,7 +312,7 @@ func TestProcessor_Process_MergePullRequest_AutoMergeAfter(t *testing.T) {
 	gitc.EXPECT().HasLocalChanges().Return(false, nil)
 	gitc.EXPECT().HasRemoteChanges("main").Return(true, nil)
 	gitc.EXPECT().HasRemoteChanges("saturn-bot--unittest").Return(false, nil)
-	tw := &task.Wrapper{Task: schema.Task{
+	tw := &task.Task{Task: schema.Task{
 		AutoMerge:      true,
 		AutoMergeAfter: "48h",
 		Name:           "unittest",
@@ -352,7 +352,7 @@ func TestProcessor_Process_MergePullRequest_MergeConflict(t *testing.T) {
 	gitc.EXPECT().HasLocalChanges().Return(false, nil)
 	gitc.EXPECT().HasRemoteChanges("main").Return(true, nil)
 	gitc.EXPECT().HasRemoteChanges("saturn-bot--unittest").Return(false, nil)
-	tw := &task.Wrapper{Task: schema.Task{
+	tw := &task.Task{Task: schema.Task{
 		AutoMerge: true,
 		Name:      "unittest",
 	}}
@@ -408,7 +408,7 @@ func TestProcessor_Process_UpdatePullRequest(t *testing.T) {
 	gitc.EXPECT().Push("saturn-bot--unittest").Return(nil)
 	gitc.EXPECT().HasRemoteChanges("main").Return(true, nil)
 	gitc.EXPECT().HasRemoteChanges("saturn-bot--unittest").Return(true, nil)
-	tw := &task.Wrapper{Task: schema.Task{Name: "unittest"}}
+	tw := &task.Task{Task: schema.Task{Name: "unittest"}}
 	tw.AddFilters(&trueFilter{})
 	ctx := context.Background()
 	ctx = context.WithValue(ctx, sContext.RunDataKey{}, map[string]string{"Greeting": "Hello"})
@@ -442,7 +442,7 @@ func TestProcessor_Process_NoChanges(t *testing.T) {
 	gitc.EXPECT().HasLocalChanges().Return(false, nil)
 	gitc.EXPECT().HasRemoteChanges("main").Return(false, nil)
 	gitc.EXPECT().HasRemoteChanges("saturn-bot--unittest").Return(false, nil)
-	tw := &task.Wrapper{Task: schema.Task{Name: "unittest"}}
+	tw := &task.Task{Task: schema.Task{Name: "unittest"}}
 	tw.AddFilters(&trueFilter{})
 
 	p := &processor.Processor{Git: gitc}
@@ -494,7 +494,7 @@ The commit(s) that modified the pull request:
 	gitc.EXPECT().
 		UpdateTaskBranch("saturn-bot--unittest", false, repo).
 		Return(false, &git.BranchModifiedError{Checksums: []string{"abc", "def"}})
-	tw := &task.Wrapper{Task: schema.Task{Name: "unittest"}}
+	tw := &task.Task{Task: schema.Task{Name: "unittest"}}
 	tw.AddFilters(&trueFilter{})
 
 	p := &processor.Processor{Git: gitc}
@@ -534,7 +534,7 @@ func TestProcessor_Process_ForceRebaseByUser(t *testing.T) {
 	gitc.EXPECT().CommitChanges("").Return(nil)
 	gitc.EXPECT().HasRemoteChanges("main").Return(true, nil)
 	gitc.EXPECT().HasRemoteChanges("saturn-bot--unittest").Return(false, nil)
-	tw := &task.Wrapper{Task: schema.Task{Name: "unittest"}}
+	tw := &task.Task{Task: schema.Task{Name: "unittest"}}
 	tw.AddFilters(&trueFilter{})
 
 	p := &processor.Processor{Git: gitc}
@@ -548,7 +548,7 @@ func TestProcessor_Process_ChangeLimit(t *testing.T) {
 	ctrl := gomock.NewController(t)
 	gitc := NewMockGitClient(ctrl)
 	repo := setupRepoMock(ctrl)
-	tw := &task.Wrapper{Task: schema.Task{ChangeLimit: 1, Name: "unittest"}}
+	tw := &task.Task{Task: schema.Task{ChangeLimit: 1, Name: "unittest"}}
 	tw.IncChangeLimitCount()
 
 	p := &processor.Processor{Git: gitc}
@@ -562,7 +562,7 @@ func TestProcessor_Process_MaxOpenPRs(t *testing.T) {
 	ctrl := gomock.NewController(t)
 	gitc := NewMockGitClient(ctrl)
 	repo := setupRepoMock(ctrl)
-	tw := &task.Wrapper{Task: schema.Task{MaxOpenPRs: 1, Name: "unittest"}}
+	tw := &task.Task{Task: schema.Task{MaxOpenPRs: 1, Name: "unittest"}}
 	tw.IncOpenPRsCount()
 
 	p := &processor.Processor{Git: gitc}
@@ -576,7 +576,7 @@ func TestProcessor_Process_FilterNotMatching(t *testing.T) {
 	ctrl := gomock.NewController(t)
 	gitc := NewMockGitClient(ctrl)
 	repo := setupRepoMock(ctrl)
-	tw := &task.Wrapper{Task: schema.Task{Name: "unittest"}}
+	tw := &task.Task{Task: schema.Task{Name: "unittest"}}
 	tw.AddFilters(&falseFilter{})
 
 	p := &processor.Processor{Git: gitc}
@@ -590,7 +590,7 @@ func TestProcessor_Process_NoFilters(t *testing.T) {
 	ctrl := gomock.NewController(t)
 	gitc := NewMockGitClient(ctrl)
 	repo := setupRepoMock(ctrl)
-	tw := &task.Wrapper{Task: schema.Task{Name: "unittest"}}
+	tw := &task.Task{Task: schema.Task{Name: "unittest"}}
 
 	p := &processor.Processor{Git: gitc}
 	result, err := p.Process(context.Background(), false, repo, tw, true, testLogger)
@@ -613,7 +613,7 @@ func TestProcessor_Process_AutoCloseAfter_Close(t *testing.T) {
 	repo.EXPECT().ClosePullRequest(msg, prID).Return(nil)
 	gitc := NewMockGitClient(ctrl)
 	gitc.EXPECT().Prepare(repo, false).Return("/tmp", nil)
-	tw := &task.Wrapper{Task: schema.Task{AutoCloseAfter: 30, Name: "unittest"}}
+	tw := &task.Task{Task: schema.Task{AutoCloseAfter: 30, Name: "unittest"}}
 	tw.AddFilters(&trueFilter{})
 
 	p := &processor.Processor{Git: gitc}
@@ -642,7 +642,7 @@ func TestProcessor_Process_AutoCloseAfter_NotTimeYet(t *testing.T) {
 	gitc.EXPECT().HasLocalChanges().Return(false, nil)
 	gitc.EXPECT().HasRemoteChanges("main").Return(true, nil)
 	gitc.EXPECT().HasRemoteChanges("saturn-bot--unittest").Return(false, nil)
-	tw := &task.Wrapper{Task: schema.Task{AutoCloseAfter: 86_400, Name: "unittest"}}
+	tw := &task.Task{Task: schema.Task{AutoCloseAfter: 86_400, Name: "unittest"}}
 	tw.AddFilters(&trueFilter{})
 
 	p := &processor.Processor{Git: gitc}
@@ -673,7 +673,7 @@ func TestProcessor_Process_EmptyRepository(t *testing.T) {
 	gitc.EXPECT().
 		UpdateTaskBranch("saturn-bot--unittest", false, repo).
 		Return(false, git.EmptyRepositoryError{})
-	tw := &task.Wrapper{Task: schema.Task{Name: "unittest"}}
+	tw := &task.Task{Task: schema.Task{Name: "unittest"}}
 	tw.AddFilters(&trueFilter{})
 
 	p := &processor.Processor{Git: gitc}
