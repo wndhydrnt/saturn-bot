@@ -32,7 +32,7 @@ func createActionsForTask(actionDefs []schema.Action, factories options.ActionFa
 			return nil, fmt.Errorf("no action registered for identifier %s", def.Action)
 		}
 
-		action, err := factory.Create(def.Params, taskPath)
+		action, err := factory.Create(action.Params(def.Params), taskPath)
 		if err != nil {
 			return nil, fmt.Errorf("failed to initialize action %s at %d: %w", def.Action, idx, err)
 		}

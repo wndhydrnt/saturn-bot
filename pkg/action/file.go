@@ -33,7 +33,7 @@ func createContentReader(taskPath, value string) (io.ReadCloser, error) {
 
 type FileCreateFactory struct{}
 
-func (f FileCreateFactory) Create(params map[string]any, taskPath string) (Action, error) {
+func (f FileCreateFactory) Create(params Params, taskPath string) (Action, error) {
 	var content string
 	if params["content"] != nil {
 		contentCast, ok := params["content"].(string)
@@ -175,7 +175,7 @@ func (a *fileCreate) String() string {
 
 type FileDeleteFactory struct{}
 
-func (f FileDeleteFactory) Create(params map[string]any, _ string) (Action, error) {
+func (f FileDeleteFactory) Create(params Params, _ string) (Action, error) {
 	if params["path"] == nil {
 		return nil, fmt.Errorf("required parameter `path` not set")
 	}

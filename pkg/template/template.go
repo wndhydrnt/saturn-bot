@@ -2,6 +2,7 @@ package template
 
 import (
 	"bytes"
+	"context"
 	"embed"
 	"fmt"
 	htmlTemplate "html/template"
@@ -62,4 +63,21 @@ func RenderPullRequestDescription(in PullRequestDescriptionInput) (string, error
 	}
 
 	return buf.String(), nil
+}
+
+type templateDataKey struct{}
+
+func FromContext(ctx context.Context) Data {
+	data, ok := ctx.Value(templateDataKey{}).(Data)
+	if !ok {
+		return Data{
+			Run: make(map[string]string),
+		}
+	}
+
+	return data
+}
+
+func UpdateContext(ctx context.Context, data Data) context.Context {
+	return context.WithValue(ctx, templateDataKey{}, data)
 }

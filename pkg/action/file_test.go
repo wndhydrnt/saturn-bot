@@ -28,7 +28,7 @@ func TestFileCreate_Apply(t *testing.T) {
 		{
 			name:  "When parameter `contentFile` is set and the file does not exist then it creates the file",
 			files: map[string]string{},
-			bootstrap: func() string {
+			bootstrap: func(ctx context.Context) (string, context.Context) {
 				tmpDir, err := os.MkdirTemp("", "*")
 				require.NoError(t, err)
 				contentFilePath := "content.txt"
@@ -37,7 +37,7 @@ func TestFileCreate_Apply(t *testing.T) {
 				_, err = f.WriteString("abc\n")
 				require.NoError(t, err)
 				_ = f.Close()
-				return filepath.Join(tmpDir, "task.yaml")
+				return filepath.Join(tmpDir, "task.yaml"), ctx
 			},
 			factory: FileCreateFactory{},
 			params: map[string]any{

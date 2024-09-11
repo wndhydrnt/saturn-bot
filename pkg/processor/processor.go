@@ -146,9 +146,8 @@ func matchTaskToRepository(ctx context.Context, task *task.Task) (bool, error) {
 
 func applyTaskToRepository(ctx context.Context, dryRun bool, gitc git.GitClient, logger *zap.SugaredLogger, repo host.Repository, task *task.Task, workDir string) (Result, error) {
 	logger.Debug("Applying actions of task to repository")
-	templateData := template.Data{}
-	updateTemplateVars(&templateData, ctx, repo, task)
-	branchName, err := task.RenderBranchName(templateData)
+	ctx = updateTemplateVars(ctx, repo, task)
+	branchName, err := task.RenderBranchName(template.FromContext(ctx))
 	if err != nil {
 		return ResultUnknown, fmt.Errorf("get branch name: %w", err)
 	}
@@ -308,8 +307,8 @@ func applyTaskToRepository(ctx context.Context, dryRun bool, gitc git.GitClient,
 	}
 
 	autoMergeAfter := task.CalcAutoMergeAfter()
-	updateTemplateVars(&templateData, ctx, repo, task)
-	prTitle, err := task.RenderPrTitle(templateData)
+	ctx = updateTemplateVars(ctx, repo, task)
+	prTitle, err := task.RenderPrTitle(template.FromContext(ctx))
 	if err != nil {
 		return ResultUnknown, err
 	}
@@ -323,7 +322,7 @@ func applyTaskToRepository(ctx context.Context, dryRun bool, gitc git.GitClient,
 		MergeOnce:      task.MergeOnce,
 		Reviewers:      task.Reviewers,
 		TaskName:       task.Name,
-		TemplateData:   templateData,
+		TemplateData:   template.FromContext(ctx),
 		Title:          prTitle,
 	}
 
@@ -447,11 +446,8 @@ func inDirectory(dir string, f func() error) error {
 	return funcErr
 }
 
-func updateTemplateVars(data *template.Data, ctx context.Context, repo host.Repository, tk *task.Task) {
-	if data.Run == nil {
-		data.Run = make(map[string]string)
-	}
-
+func updateTemplateVars(ctx context.Context, repo host.Repository, tk *task.Task) context.Context {
+	data := template.FromContext(ctx)
 	runData := sContext.RunData(ctx)
 	for k, v := range runData {
 		data.Run[k] = v
@@ -465,4 +461,6 @@ func updateTemplateVars(data *template.Data, ctx context.Context, repo host.Repo
 	if tk != nil {
 		data.TaskName = tk.Name
 	}
+
+	return template.UpdateContext(ctx, data)
 }

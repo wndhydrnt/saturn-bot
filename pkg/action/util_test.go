@@ -14,13 +14,14 @@ import (
 )
 
 type testCase struct {
-	name      string
-	bootstrap func() string
-	files     map[string]string
-	factory   Factory
-	params    map[string]any
-	wantError error
-	wantFiles map[string]string
+	name           string
+	bootstrap      func(ctx context.Context) (string, context.Context)
+	files          map[string]string
+	factory        Factory
+	params         map[string]any
+	wantError      error
+	wantErrorApply error
+	wantFiles      map[string]string
 }
 
 func collectFilesInDirectory(dir string) (map[string]string, error) {
@@ -71,9 +72,10 @@ func runTestCase(t *testing.T, tc testCase) {
 		workDir, err := setupTestFiles(tc.files)
 		require.NoError(t, err)
 
+		ctx := context.Background()
 		taskPath := ""
 		if tc.bootstrap != nil {
-			taskPath = tc.bootstrap()
+			taskPath, ctx = tc.bootstrap(ctx)
 		}
 
 		a, err := tc.factory.Create(tc.params, taskPath)
@@ -85,9 +87,14 @@ func runTestCase(t *testing.T, tc testCase) {
 		}
 
 		err = inDirectory(workDir, func() error {
-			return a.Apply(context.Background())
+			return a.Apply(ctx)
 		})
-		require.NoError(t, err)
+		if tc.wantErrorApply == nil {
+			require.NoError(t, err)
+		} else {
+			require.ErrorContains(t, err, tc.wantErrorApply.Error())
+			return
+		}
 
 		actualFiles, err := collectFilesInDirectory(workDir)
 		require.NoError(t, err)
