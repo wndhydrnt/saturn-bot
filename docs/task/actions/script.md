@@ -12,6 +12,8 @@ To execute a script file located in a repository, use the [exec action](exec.md)
 
 The script to execute. Mutually exclusive with [`scriptFromFile`](#scriptfromfile).
 
+Supports [template variables](../../features/templating.md).
+
 | Name     | Value    |
 | -------- | -------- |
 | Type     | `string` |
@@ -21,6 +23,8 @@ The script to execute. Mutually exclusive with [`scriptFromFile`](#scriptfromfil
 ### `scriptFromFile`
 
 The script to execute. Reads the content from a file. The path to the file can be an absolute path or relative to the task file. Mutually exclusive with [`script`](#script).
+
+Supports [template variables](../../features/templating.md).
 
 | Name     | Value    |
 | -------- | -------- |
@@ -52,8 +56,7 @@ The value is a Go [duration string](https://pkg.go.dev/time#ParseDuration).
 
 ## Examples
 
-```yaml
-# Execute the script.
+```yaml title="Inline script"
 actions:
   - action: script
     params:
@@ -61,7 +64,7 @@ actions:
         echo 'hello world' > hello-world.txt
 ```
 
-```yaml
+```yaml title="Script file"
 # Execute the script "example.sh".
 # The script "example.sh" is located in the same directory as the Task file.
 actions:
@@ -70,7 +73,15 @@ actions:
       scriptFromFile: "./example.sh"
 ```
 
-```yaml
+```yaml title="Template variables"
+actions:
+  - action: script
+    params:
+      script: |
+        echo '{{.TaskName}}' > task-name.txt
+```
+
+```yaml title="Shell"
 # Use "bash" to execute the script
 actions:
   - action: script
@@ -80,13 +91,13 @@ actions:
       shell: "/bin/bash"
 ```
 
-```yaml
-# Increase the timeout.
+```yaml title="Timeout"
 actions:
   - action: script
     params:
       script: |
         sleep 30
         echo 'hello world' > hello-world.txt
+      # Increase the timeout.
       timeout: "1m"
 ```
