@@ -105,7 +105,7 @@ func (a *scriptAction) Apply(ctx context.Context) error {
 		return fmt.Errorf("render script: %w", err)
 	}
 
-	cmd := exec.Command(a.shell, scriptFile.Name())
+	cmd := exec.Command(a.shell, scriptFile.Name()) // #nosec G204
 	cmdCtx, cmdCancel := context.WithTimeout(context.Background(), a.timeout)
 	defer cmdCancel()
 	errChan := make(chan error)
