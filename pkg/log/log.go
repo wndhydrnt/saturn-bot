@@ -1,6 +1,8 @@
 package log
 
 import (
+	"bytes"
+	"fmt"
 	"io"
 	"log"
 	"os"
@@ -39,27 +41,28 @@ type hclogAdapter struct {
 
 func (l *hclogAdapter) Log(level hclog.Level, msg string, args ...interface{}) {
 	lvl := mapHclogToLevel(level)
-	l.logger.Logw(lvl, msg, args...)
+	argStr := convertArgsToMsg(args)
+	l.logger.Logf(lvl, msg+argStr)
 }
 
 func (l *hclogAdapter) Trace(msg string, args ...interface{}) {
-	l.logger.Debugf(msg, args...)
+	l.Log(hclog.Trace, msg, args...)
 }
 
 func (l *hclogAdapter) Debug(msg string, args ...interface{}) {
-	l.logger.Debugf(msg, args...)
+	l.Log(hclog.Debug, msg, args...)
 }
 
 func (l *hclogAdapter) Info(msg string, args ...interface{}) {
-	l.logger.Infof(msg, args...)
+	l.Log(hclog.Info, msg, args...)
 }
 
 func (l *hclogAdapter) Warn(msg string, args ...interface{}) {
-	l.logger.Warnf(msg, args...)
+	l.Log(hclog.Warn, msg, args...)
 }
 
 func (l *hclogAdapter) Error(msg string, args ...interface{}) {
-	l.logger.Errorf(msg, args...)
+	l.Log(hclog.Error, msg, args...)
 }
 
 func (l *hclogAdapter) IsTrace() bool {
@@ -117,6 +120,27 @@ func (l *hclogAdapter) StandardLogger(_ *hclog.StandardLoggerOptions) *log.Logge
 
 func (l *hclogAdapter) StandardWriter(_ *hclog.StandardLoggerOptions) io.Writer {
 	return os.Stderr
+}
+
+// convertArgsToMsg takes a list of arbitrary data where each odd element is
+// the key and each even element the value.
+// It turns the data into a string that contains the key/value pairs.
+// This is done to avoid extra fields in the log message.
+func convertArgsToMsg(args []interface{}) string {
+	if len(args) == 0 {
+		return ""
+	}
+
+	if len(args)%2 != 0 {
+		return ""
+	}
+
+	buf := &bytes.Buffer{}
+	for i := 0; i < len(args); i = i + 2 {
+		_, _ = fmt.Fprintf(buf, " %v=%v", args[i], args[i+1])
+	}
+
+	return buf.String()
 }
 
 func mapHclogToLevel(in hclog.Level) zapcore.Level {
