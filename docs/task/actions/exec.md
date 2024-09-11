@@ -4,6 +4,8 @@ Execute a command.
 
 saturn-bot sets the current working directory of the command to the checkout of a repository.
 
+To define a script as part of a task, use the [script action](script.md).
+
 ## Parameters
 
 ### `args`

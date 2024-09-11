@@ -19,7 +19,7 @@ const (
 
 type LineDeleteFactory struct{}
 
-func (f LineDeleteFactory) Create(params map[string]any, _ string) (Action, error) {
+func (f LineDeleteFactory) Create(params Params, _ string) (Action, error) {
 	if params["path"] == nil {
 		return nil, fmt.Errorf("required parameter `path` not set")
 	}
@@ -116,7 +116,7 @@ func (d *lineDelete) String() string {
 
 type LineInsertFactory struct{}
 
-func (f LineInsertFactory) Create(params map[string]any, _ string) (Action, error) {
+func (f LineInsertFactory) Create(params Params, _ string) (Action, error) {
 	insertAt := "EOF"
 	if params["insertAt"] != nil {
 		insertAtCast, ok := params["insertAt"].(string)
@@ -261,7 +261,7 @@ func (a *lineInsert) String() string {
 
 type LineReplaceFactory struct{}
 
-func (f LineReplaceFactory) Create(params map[string]any, _ string) (Action, error) {
+func (f LineReplaceFactory) Create(params Params, _ string) (Action, error) {
 	if params["path"] == nil {
 		return nil, fmt.Errorf("required parameter `path` not set")
 	}

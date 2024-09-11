@@ -14,7 +14,7 @@ import (
 
 type ExecFactory struct{}
 
-func (f ExecFactory) Create(params map[string]any, taskPath string) (Action, error) {
+func (f ExecFactory) Create(params Params, taskPath string) (Action, error) {
 	var args []string
 	if params["args"] != nil {
 		argsGeneric, ok := params["args"].([]any)

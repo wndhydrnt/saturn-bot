@@ -1,6 +1,7 @@
 package action
 
 import (
+	"context"
 	"errors"
 	"os"
 	"path/filepath"
@@ -21,7 +22,7 @@ func TestExec_Apply(t *testing.T) {
 	testCases := []testCase{
 		{
 			name: "When a command is defined then it executes the command",
-			bootstrap: func() string {
+			bootstrap: func(ctx context.Context) (string, context.Context) {
 				tmpDir, err := os.MkdirTemp("", "*")
 				require.NoError(t, err)
 				scriptFile := "test.sh"
@@ -31,7 +32,7 @@ func TestExec_Apply(t *testing.T) {
 				require.NoError(t, err)
 				_ = f.Chmod(0755)
 				_ = f.Close()
-				return filepath.Join(tmpDir, "task.yaml")
+				return filepath.Join(tmpDir, "task.yaml"), ctx
 			},
 			factory: ExecFactory{},
 			params: map[string]any{
@@ -44,10 +45,10 @@ func TestExec_Apply(t *testing.T) {
 		},
 		{
 			name: "When the command points to a name then it executes the command",
-			bootstrap: func() string {
+			bootstrap: func(ctx context.Context) (string, context.Context) {
 				tmpDir, err := os.MkdirTemp("", "*")
 				require.NoError(t, err)
-				return filepath.Join(tmpDir, "task.yaml")
+				return filepath.Join(tmpDir, "task.yaml"), ctx
 			},
 			factory: ExecFactory{},
 			params: map[string]any{
@@ -60,10 +61,10 @@ func TestExec_Apply(t *testing.T) {
 		},
 		{
 			name: "When the command point to an absolute path then it executes the command",
-			bootstrap: func() string {
+			bootstrap: func(ctx context.Context) (string, context.Context) {
 				tmpDir, err := os.MkdirTemp("", "*")
 				require.NoError(t, err)
-				return filepath.Join(tmpDir, "task.yaml")
+				return filepath.Join(tmpDir, "task.yaml"), ctx
 			},
 			factory: ExecFactory{},
 			params: map[string]any{
