@@ -14,8 +14,10 @@ import (
 	sbtemplate "github.com/wndhydrnt/saturn-bot/pkg/template"
 )
 
+// ScriptFactory initializes a new script action.
 type ScriptFactory struct{}
 
+// Create implements Factory.
 func (f ScriptFactory) Create(params Params, taskPath string) (Action, error) {
 	script, err := params.String("script", "")
 	if err != nil {
@@ -82,6 +84,7 @@ func (f ScriptFactory) Create(params Params, taskPath string) (Action, error) {
 	}, nil
 }
 
+// Name implements Factory.
 func (f ScriptFactory) Name() string {
 	return "script"
 }
@@ -92,6 +95,7 @@ type scriptAction struct {
 	timeout   time.Duration
 }
 
+// Apply implements Action.
 func (a *scriptAction) Apply(ctx context.Context) error {
 	scriptFile, err := os.CreateTemp("", "*.sh")
 	if err != nil {
@@ -126,6 +130,7 @@ func (a *scriptAction) Apply(ctx context.Context) error {
 	}
 }
 
+// String implements Action.
 func (a *scriptAction) String() string {
 	return fmt.Sprintf("script(shell=%s, timeout=%s)", a.shell, a.timeout)
 }
