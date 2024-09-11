@@ -67,6 +67,8 @@ func RenderPullRequestDescription(in PullRequestDescriptionInput) (string, error
 
 type templateDataKey struct{}
 
+// FromContext reads template data from the given context.
+// It initializes the template data if the context doesn't contain it.
 func FromContext(ctx context.Context) Data {
 	data, ok := ctx.Value(templateDataKey{}).(Data)
 	if !ok {
@@ -78,6 +80,7 @@ func FromContext(ctx context.Context) Data {
 	return data
 }
 
+// UpdateContext sets or overwrites the template data in the given context.
 func UpdateContext(ctx context.Context, data Data) context.Context {
 	return context.WithValue(ctx, templateDataKey{}, data)
 }

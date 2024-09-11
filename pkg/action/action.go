@@ -28,8 +28,10 @@ type Factory interface {
 	Name() string
 }
 
+// Params is the data container that holds the parameters set for an action.
 type Params map[string]any
 
+// Duration parses a parameter into a Go duration.
 func (p Params) Duration(key string, def time.Duration) (time.Duration, error) {
 	if p[key] == nil {
 		return def, nil
@@ -48,6 +50,7 @@ func (p Params) Duration(key string, def time.Duration) (time.Duration, error) {
 	return d, nil
 }
 
+// String parses a parameter into a string.
 func (p Params) String(key string, def string) (string, error) {
 	if p[key] == nil {
 		return def, nil
