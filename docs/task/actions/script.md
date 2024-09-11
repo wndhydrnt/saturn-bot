@@ -4,6 +4,8 @@ Execute a script.
 
 saturn-bot sets the current working directory of the script to the checkout of a repository.
 
+To execute a script file located in a repository, use the [exec action](exec.md).
+
 ## Parameters
 
 ### `script`
