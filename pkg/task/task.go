@@ -2,17 +2,19 @@ package task
 
 import (
 	"bytes"
+	"context"
 	"fmt"
 	htmlTemplate "html/template"
 	"time"
 
 	"github.com/gosimple/slug"
 	"github.com/robfig/cron"
+	protoV1 "github.com/wndhydrnt/saturn-bot-go/protocol/v1"
 	"github.com/wndhydrnt/saturn-bot/pkg/action"
 	"github.com/wndhydrnt/saturn-bot/pkg/filter"
-	"github.com/wndhydrnt/saturn-bot/pkg/host"
 	"github.com/wndhydrnt/saturn-bot/pkg/log"
 	"github.com/wndhydrnt/saturn-bot/pkg/options"
+	"github.com/wndhydrnt/saturn-bot/pkg/plugin"
 	"github.com/wndhydrnt/saturn-bot/pkg/task/schema"
 	"github.com/wndhydrnt/saturn-bot/pkg/template"
 	"go.uber.org/zap"
@@ -78,7 +80,7 @@ type Task struct {
 	checksum               string
 	filters                []filter.Filter
 	openPRs                int
-	plugins                []*pluginWrapper
+	plugins                []*plugin.Plugin
 	schedule               cron.Schedule
 	templateBranchName     *htmlTemplate.Template
 	templatePrTitle        *htmlTemplate.Template
@@ -203,19 +205,9 @@ func (tw *Task) RenderPrTitle(data template.Data) (string, error) {
 	return buf.String(), nil
 }
 
-func (tw *Task) SetLogger(l *zap.SugaredLogger) {
-	if l == nil {
-		return
-	}
-
+func (tw *Task) OnPrClosed(ctx context.Context) error {
 	for _, p := range tw.plugins {
-		p.setLogger(l)
-	}
-}
-
-func (tw *Task) OnPrClosed(repository host.Repository) error {
-	for _, p := range tw.plugins {
-		err := p.onPrClosed(repository)
+		_, err := p.OnPrClosed(&protoV1.OnPrClosedRequest{Context: plugin.NewContext(ctx)})
 		if err != nil {
 			log.Log().Errorw("OnPrClosed event of plugin failed", zap.Error(err))
 		}
@@ -224,9 +216,9 @@ func (tw *Task) OnPrClosed(repository host.Repository) error {
 	return nil
 }
 
-func (tw *Task) OnPrCreated(repository host.Repository) error {
+func (tw *Task) OnPrCreated(ctx context.Context) error {
 	for _, p := range tw.plugins {
-		err := p.onPrCreated(repository)
+		_, err := p.OnPrCreated(&protoV1.OnPrCreatedRequest{Context: plugin.NewContext(ctx)})
 		if err != nil {
 			log.Log().Errorw("OnPrCreated event of plugin failed", zap.Error(err))
 		}
@@ -235,9 +227,9 @@ func (tw *Task) OnPrCreated(repository host.Repository) error {
 	return nil
 }
 
-func (tw *Task) OnPrMerged(repository host.Repository) error {
+func (tw *Task) OnPrMerged(ctx context.Context) error {
 	for _, p := range tw.plugins {
-		err := p.onPrMerged(repository)
+		_, err := p.OnPrMerged(&protoV1.OnPrMergedRequest{Context: plugin.NewContext(ctx)})
 		if err != nil {
 			log.Log().Errorw("OnPrMerged event of plugin failed", zap.Error(err))
 		}
@@ -248,7 +240,7 @@ func (tw *Task) OnPrMerged(repository host.Repository) error {
 
 func (tw *Task) Stop() {
 	for _, p := range tw.plugins {
-		p.stop()
+		p.Stop()
 	}
 }
 
@@ -312,20 +304,21 @@ func (tr *Registry) readTasks(taskFile string) error {
 			return fmt.Errorf("parse filters of task file '%s': %w", entry.Path, err)
 		}
 
-		for idx, plugin := range entry.Task.Plugins {
-			pw, err := newPluginWrapper(startPluginOptions{
-				config:     plugin.Configuration,
-				filePath:   plugin.PathAbs(entry.Path),
-				pathJava:   tr.pathJava,
-				pathPython: tr.pathPython,
-			})
+		for idx, taskPlugin := range entry.Task.Plugins {
+			opts := plugin.StartOptions{
+				Config: taskPlugin.Configuration,
+				Exec:   plugin.GetPluginExec(taskPlugin.PathAbs(entry.Path), tr.pathJava, tr.pathPython),
+			}
+
+			p := &plugin.Plugin{}
+			err := p.Start(opts)
 			if err != nil {
 				return fmt.Errorf("initialize plugin #%d: %w", idx, err)
 			}
 
-			wrapper.actions = append(wrapper.actions, pw.action)
-			wrapper.filters = append(wrapper.filters, pw.filter)
-			wrapper.plugins = append(wrapper.plugins, pw)
+			wrapper.actions = append(wrapper.actions, p)
+			wrapper.filters = append(wrapper.filters, p)
+			wrapper.plugins = append(wrapper.plugins, p)
 		}
 
 		schedule, err := cron.ParseStandard(entry.Task.Schedule)
