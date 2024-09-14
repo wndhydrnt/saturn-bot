@@ -56,7 +56,6 @@ func (p *Processor) Process(
 	logger *zap.SugaredLogger,
 ) (Result, error) {
 	logger.Debug("Processing repository")
-	task.SetLogger(logger)
 	if !task.IsWithinSchedule() {
 		logger.Debug("Skipping task because it is outside of schedule")
 		return ResultSkip, nil
@@ -280,7 +279,7 @@ func applyTaskToRepository(ctx context.Context, dryRun bool, gitc git.GitClient,
 			}
 		}
 
-		err = task.OnPrClosed(repo)
+		err = task.OnPrClosed(ctx)
 		if err != nil {
 			return ResultUnknown, fmt.Errorf("pr closed event failed: %w", err)
 		}
@@ -337,7 +336,7 @@ func applyTaskToRepository(ctx context.Context, dryRun bool, gitc git.GitClient,
 			}
 		}
 
-		err = task.OnPrCreated(repo)
+		err = task.OnPrCreated(ctx)
 		if err != nil {
 			return ResultUnknown, fmt.Errorf("pr created event failed: %w", err)
 		}
@@ -379,7 +378,7 @@ func applyTaskToRepository(ctx context.Context, dryRun bool, gitc git.GitClient,
 			}
 		}
 
-		err = task.OnPrMerged(repo)
+		err = task.OnPrMerged(ctx)
 		if err != nil {
 			return ResultUnknown, fmt.Errorf("pr merged event failed: %w", err)
 		}
