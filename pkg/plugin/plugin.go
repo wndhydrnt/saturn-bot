@@ -4,8 +4,11 @@ import (
 	"context"
 	"errors"
 	"fmt"
+	"net"
 	"os/exec"
 	"path/filepath"
+	"strconv"
+	"strings"
 
 	goPlugin "github.com/hashicorp/go-plugin"
 	"github.com/wndhydrnt/saturn-bot-go/plugin"
@@ -16,6 +19,7 @@ import (
 )
 
 type StartOptions struct {
+	Address     string
 	Config      map[string]string
 	Exec        ExecOptions
 	OnMsgStderr func(string)
@@ -171,17 +175,28 @@ func (p *Plugin) String() string {
 func (p *Plugin) init(opts StartOptions) error {
 	p.stderrAdapter = &stdioAdapter{stream: streamStderr}
 	p.stdoutAdapter = &stdioAdapter{stream: streamStdout}
-	p.client = goPlugin.NewClient(&goPlugin.ClientConfig{
+	clientCfg := &goPlugin.ClientConfig{
 		HandshakeConfig: plugin.Handshake,
 		Logger:          log.DefaultHclogAdapter(),
 		Plugins: map[string]goPlugin.Plugin{
 			plugin.ID: &plugin.ProviderPlugin{},
 		},
-		Cmd:              exec.Command(opts.Exec.Executable, opts.Exec.Args...), // #nosec G204 -- arguments are controlled by saturn-bot
 		AllowedProtocols: []goPlugin.Protocol{goPlugin.ProtocolGRPC},
 		SyncStdout:       p.stdoutAdapter,
 		SyncStderr:       p.stderrAdapter,
-	})
+	}
+	if opts.Address == "" {
+		clientCfg.Cmd = exec.Command(opts.Exec.Executable, opts.Exec.Args...) // #nosec G204 -- arguments are controlled by saturn-bot
+	} else {
+		reattachCfg, err := parseAddr(opts.Address)
+		if err != nil {
+			return fmt.Errorf("parse plugin address: %w", err)
+		}
+
+		clientCfg.Reattach = reattachCfg
+	}
+
+	p.client = goPlugin.NewClient(clientCfg)
 
 	rpcClient, err := p.client.Client()
 	if err != nil {
@@ -247,4 +262,34 @@ func updateRunData(current, received map[string]string) {
 	for k, v := range received {
 		current[k] = v
 	}
+}
+
+// parseAddr parses a go-plugin connection string.
+// The format is: <go-plugin protocol version>|<plugin protocol version>|<net protocol>|<address>|<encoding>
+// Example: 1|1|tcp|127.0.0.1:11049|grpc
+// See https://github.com/hashicorp/go-plugin/blob/06afb6d7ae99fca0002c4eecfd7b973073982672/docs/internals.md
+func parseAddr(addr string) (*goPlugin.ReattachConfig, error) {
+	parts := strings.Split(addr, "|")
+	protocolVersion, _ := strconv.Atoi(parts[1])
+	var address net.Addr
+	switch parts[2] {
+	case "tcp":
+		var err error
+		address, err = net.ResolveTCPAddr("tcp", parts[3])
+		if err != nil {
+			return nil, fmt.Errorf("resolve tcp address: %w", err)
+		}
+	case "unix":
+		var err error
+		address, err = net.ResolveUnixAddr("unix", parts[3])
+		if err != nil {
+			return nil, fmt.Errorf("resolve unix address: %w", err)
+		}
+	}
+	cfg := &goPlugin.ReattachConfig{
+		Protocol:        goPlugin.Protocol(parts[4]),
+		ProtocolVersion: protocolVersion,
+		Addr:            address,
+	}
+	return cfg, nil
 }
