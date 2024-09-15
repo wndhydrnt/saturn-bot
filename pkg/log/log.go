@@ -209,6 +209,8 @@ func newConfig(format config.ConfigurationLogFormat) zap.Config {
 		} else {
 			encoderFormat = "json"
 		}
+	} else {
+		encoderFormat = string(format)
 	}
 
 	if encoderFormat != "console" && encoderFormat != "json" {
