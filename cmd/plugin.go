@@ -1,12 +1,18 @@
 package cmd
 
 import (
+	"encoding/json"
+	"fmt"
+	"strings"
+
 	"github.com/spf13/cobra"
+	protoV1 "github.com/wndhydrnt/saturn-bot-go/protocol/v1"
 	"github.com/wndhydrnt/saturn-bot/pkg/command"
 )
 
 var (
-	execPluginOpts = command.ExecPluginOptions{}
+	execPluginOpts    = command.ExecPluginOptions{}
+	pluginContextJSON string
 )
 
 var pluginCommandHelp = `Commands to debug and test plugins.
@@ -47,7 +53,7 @@ Mutually exclusive with --address.`)
 Supply multiple times to add additional key/value pairs.`)
 	pluginCmd.PersistentFlags().StringVar(&execPluginOpts.WorkDir, "workdir", "", `Path to the directory that contains files the apply function can modify.
 Uses a temporary directory if not set.`)
-	pluginCmd.Flags().StringVar(&execPluginOpts.Context, "context", command.DefaultContext, "Context data to send to the plugin.")
+	pluginCmd.Flags().StringVar(&pluginContextJSON, "context", "", "Context data to send to the plugin.")
 
 	for funcName := range command.PluginFuncs {
 		funcCmd := createPluginFuncCommand(funcName)
@@ -63,6 +69,13 @@ func createPluginFuncCommand(name string) *cobra.Command {
 		Short: "Test the " + name + " function of a plugin",
 		Long:  "Test the " + name + " function of a plugin.",
 		Run: func(cmd *cobra.Command, args []string) {
+			if pluginContextJSON != "" {
+				execPluginOpts.Context = &protoV1.Context{}
+				dec := json.NewDecoder(strings.NewReader(pluginContextJSON))
+				err := dec.Decode(&execPluginOpts.Context)
+				handleError(fmt.Errorf("decode plugin context from JSON: %w", err), cmd.ErrOrStderr())
+			}
+
 			execPluginOpts.Out = cmd.OutOrStdout()
 			err := command.ExecPlugin(name, execPluginOpts)
 			handleError(err, cmd.ErrOrStderr())

@@ -36,7 +36,7 @@ Flags:
                                 Mutually exclusive with --path.
       --config stringToString   Key/value pairs to pass as configuration to the plugin.
                                 Supply multiple times to add additional key/value pairs. (default [])
-      --context string          Context data to send to the plugin. (default "{\"repository\":{\"full_name\":\"git.localhost/plugin/debug\",\"clone_url_http\":\"https://git.localhost/plugin/debug.git\",\"clone_url_ssh\":\"git@git.localhost/plugin/debug.git\",\"web_url\":\"https://git.localhost/plugin/debug\"}}")
+      --context string          Context data to send to the plugin.
   -h, --help                    help for plugin
       --log-format string       Log format of saturn-bot (auto,console,json). (default "auto")
       --log-level string        Log level of saturn-bot. (default "error")

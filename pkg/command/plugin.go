@@ -5,7 +5,6 @@ import (
 	"fmt"
 	"io"
 	"os"
-	"strings"
 
 	protoV1 "github.com/wndhydrnt/saturn-bot-go/protocol/v1"
 	"github.com/wndhydrnt/saturn-bot/pkg/config"
@@ -23,8 +22,7 @@ var (
 		},
 		RunData: make(map[string]string),
 	}
-	DefaultContext = mustMarshalString(json.Marshal(defaultContext))
-	PluginFuncs    = map[string]func(ExecPluginOptions, *plugin.Plugin) (any, error){
+	PluginFuncs = map[string]func(ExecPluginOptions, *plugin.Plugin) (any, error){
 		"apply":       applyPlugin,
 		"filter":      filterPlugin,
 		"onPrClosed":  onPrClosedPlugin,
@@ -35,55 +33,45 @@ var (
 
 func applyPlugin(opts ExecPluginOptions, p *plugin.Plugin) (any, error) {
 	return p.ExecuteActions(&protoV1.ExecuteActionsRequest{
-		Context: opts.decodedContext,
+		Context: opts.Context,
 		Path:    opts.WorkDir,
 	})
 }
 
 func filterPlugin(opts ExecPluginOptions, p *plugin.Plugin) (any, error) {
 	return p.ExecuteFilters(&protoV1.ExecuteFiltersRequest{
-		Context: opts.decodedContext,
+		Context: opts.Context,
 	})
 }
 
 func onPrClosedPlugin(opts ExecPluginOptions, p *plugin.Plugin) (any, error) {
 	return p.OnPrClosed(&protoV1.OnPrClosedRequest{
-		Context: opts.decodedContext,
+		Context: opts.Context,
 	})
 }
 
 func onPrCreatedPlugin(opts ExecPluginOptions, p *plugin.Plugin) (any, error) {
 	return p.OnPrCreated(&protoV1.OnPrCreatedRequest{
-		Context: opts.decodedContext,
+		Context: opts.Context,
 	})
 }
 
 func onPrMergedPlugin(opts ExecPluginOptions, p *plugin.Plugin) (any, error) {
 	return p.OnPrMerged(&protoV1.OnPrMergedRequest{
-		Context: opts.decodedContext,
+		Context: opts.Context,
 	})
-}
-
-func mustMarshalString(b []byte, err error) string {
-	if err != nil {
-		panic(err)
-	}
-
-	return string(b)
 }
 
 // ExecPluginOptions defines all options expected by function ExecPlugin.
 type ExecPluginOptions struct {
 	Addr      string
 	Config    map[string]string
-	Context   string
+	Context   *protoV1.Context
 	LogFormat string
 	LogLevel  string
 	Out       io.Writer
 	Path      string
 	WorkDir   string
-
-	decodedContext *protoV1.Context
 }
 
 // ExecPlugin executes the function of a plugin specified by `funcName`.
@@ -101,19 +89,16 @@ func ExecPlugin(funcName string, opts ExecPluginOptions) error {
 		config.ConfigurationGitLogLevelError,
 	)
 
+	if opts.Context == nil {
+		opts.Context = defaultContext
+	}
+
 	if opts.WorkDir == "" {
 		var err error
 		opts.WorkDir, err = os.MkdirTemp("", "")
 		if err != nil {
 			return fmt.Errorf("create temporary working directory: %w", err)
 		}
-	}
-
-	dec := json.NewDecoder(strings.NewReader(opts.Context))
-	opts.decodedContext = &protoV1.Context{}
-	err := dec.Decode(opts.decodedContext)
-	if err != nil {
-		return fmt.Errorf("decode context from input: %w", err)
 	}
 
 	startOpts := plugin.StartOptions{
@@ -126,7 +111,7 @@ func ExecPlugin(funcName string, opts ExecPluginOptions) error {
 	}
 
 	p := &plugin.Plugin{}
-	err = p.Start(startOpts)
+	err := p.Start(startOpts)
 	if err != nil {
 		return fmt.Errorf("start plugin: %w", err)
 	}
