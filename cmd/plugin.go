@@ -53,7 +53,7 @@ Mutually exclusive with --address.`)
 Supply multiple times to add additional key/value pairs.`)
 	pluginCmd.PersistentFlags().StringVar(&execPluginOpts.WorkDir, "workdir", "", `Path to the directory that contains files the apply function can modify.
 Uses a temporary directory if not set.`)
-	pluginCmd.Flags().StringVar(&pluginContextJSON, "context", "", "Context data to send to the plugin.")
+	pluginCmd.PersistentFlags().StringVar(&pluginContextJSON, "context", "", "Context data to send to the plugin.")
 
 	for funcName := range command.PluginFuncs {
 		funcCmd := createPluginFuncCommand(funcName)
@@ -73,7 +73,9 @@ func createPluginFuncCommand(name string) *cobra.Command {
 				execPluginOpts.Context = &protoV1.Context{}
 				dec := json.NewDecoder(strings.NewReader(pluginContextJSON))
 				err := dec.Decode(&execPluginOpts.Context)
-				handleError(fmt.Errorf("decode plugin context from JSON: %w", err), cmd.ErrOrStderr())
+				if err != nil {
+					handleError(fmt.Errorf("decode plugin context from JSON: %w", err), cmd.ErrOrStderr())
+				}
 			}
 
 			execPluginOpts.Out = cmd.OutOrStdout()
