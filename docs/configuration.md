@@ -189,6 +189,17 @@ Set to `ssh` to clone repositories via SSH.
 | Env Var | `SATURN_BOT_JAVAPATH` |
 | Type    | `string`              |
 
+## pluginLogLevel
+
+[json-path:../pkg/config/config.schema.json:$.properties.pluginLogLevel.description]
+
+| Name    | Value                            |
+| ------- | -------------------------------- |
+| Default | `debug`                          |
+| Env Var | `SATURN_BOT_PLUGINLOGLEVEL`      |
+| Type    | `string`                         |
+| Values  | `debug`, `error`, `info`, `warn` |
+
 ## pythonPath
 
 [json-path:../pkg/config/config.schema.json:$.properties.pythonPath.description]

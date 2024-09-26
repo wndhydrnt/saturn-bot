@@ -24,6 +24,8 @@ markdown_extensions:
           format: !!python/name:pymdownx.superfences.fence_code_format
   - admonition
   - pymdownx.details
+  - pymdownx.tabbed:
+      alternate_style: true
 hooks:
   - mkdocs-hooks/json_path.py
 plugins:

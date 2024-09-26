@@ -60,6 +60,10 @@ type Configuration struct {
 	// Log level of the application.
 	LogLevel ConfigurationLogLevel `json:"logLevel,omitempty" yaml:"logLevel,omitempty" mapstructure:"logLevel,omitempty"`
 
+	// Level of logs sent by plugins. Set this to the same value as `logLevel` in
+	// order to display the logs of a plugin.
+	PluginLogLevel ConfigurationPluginLogLevel `json:"pluginLogLevel,omitempty" yaml:"pluginLogLevel,omitempty" mapstructure:"pluginLogLevel,omitempty"`
+
 	// Path to the Python binary to execute plugins. If not set explicitly, then
 	// saturn-bot searches for the binary in $PATH.
 	PythonPath string `json:"pythonPath,omitempty" yaml:"pythonPath,omitempty" mapstructure:"pythonPath,omitempty"`
@@ -109,10 +113,10 @@ var enumValues_ConfigurationGitLogLevel = []interface{}{
 	"warn",
 }
 
-// UnmarshalYAML implements yaml.Unmarshaler.
-func (j *ConfigurationGitLogLevel) UnmarshalYAML(value *yaml.Node) error {
+// UnmarshalJSON implements json.Unmarshaler.
+func (j *ConfigurationGitLogLevel) UnmarshalJSON(b []byte) error {
 	var v string
-	if err := value.Decode(&v); err != nil {
+	if err := json.Unmarshal(b, &v); err != nil {
 		return err
 	}
 	var ok bool
@@ -129,10 +133,10 @@ func (j *ConfigurationGitLogLevel) UnmarshalYAML(value *yaml.Node) error {
 	return nil
 }
 
-// UnmarshalJSON implements json.Unmarshaler.
-func (j *ConfigurationGitLogLevel) UnmarshalJSON(b []byte) error {
+// UnmarshalYAML implements yaml.Unmarshaler.
+func (j *ConfigurationGitLogLevel) UnmarshalYAML(value *yaml.Node) error {
 	var v string
-	if err := json.Unmarshal(b, &v); err != nil {
+	if err := value.Decode(&v); err != nil {
 		return err
 	}
 	var ok bool
@@ -305,6 +309,60 @@ func (j *ConfigurationLogLevel) UnmarshalYAML(value *yaml.Node) error {
 	return nil
 }
 
+type ConfigurationPluginLogLevel string
+
+const ConfigurationPluginLogLevelDebug ConfigurationPluginLogLevel = "debug"
+const ConfigurationPluginLogLevelError ConfigurationPluginLogLevel = "error"
+const ConfigurationPluginLogLevelInfo ConfigurationPluginLogLevel = "info"
+const ConfigurationPluginLogLevelWarn ConfigurationPluginLogLevel = "warn"
+
+var enumValues_ConfigurationPluginLogLevel = []interface{}{
+	"debug",
+	"error",
+	"info",
+	"warn",
+}
+
+// UnmarshalJSON implements json.Unmarshaler.
+func (j *ConfigurationPluginLogLevel) UnmarshalJSON(b []byte) error {
+	var v string
+	if err := json.Unmarshal(b, &v); err != nil {
+		return err
+	}
+	var ok bool
+	for _, expected := range enumValues_ConfigurationPluginLogLevel {
+		if reflect.DeepEqual(v, expected) {
+			ok = true
+			break
+		}
+	}
+	if !ok {
+		return fmt.Errorf("invalid value (expected one of %#v): %#v", enumValues_ConfigurationPluginLogLevel, v)
+	}
+	*j = ConfigurationPluginLogLevel(v)
+	return nil
+}
+
+// UnmarshalYAML implements yaml.Unmarshaler.
+func (j *ConfigurationPluginLogLevel) UnmarshalYAML(value *yaml.Node) error {
+	var v string
+	if err := value.Decode(&v); err != nil {
+		return err
+	}
+	var ok bool
+	for _, expected := range enumValues_ConfigurationPluginLogLevel {
+		if reflect.DeepEqual(v, expected) {
+			ok = true
+			break
+		}
+	}
+	if !ok {
+		return fmt.Errorf("invalid value (expected one of %#v): %#v", enumValues_ConfigurationPluginLogLevel, v)
+	}
+	*j = ConfigurationPluginLogLevel(v)
+	return nil
+}
+
 // UnmarshalJSON implements json.Unmarshaler.
 func (j *Configuration) UnmarshalJSON(b []byte) error {
 	var raw map[string]interface{}
@@ -354,6 +412,9 @@ func (j *Configuration) UnmarshalJSON(b []byte) error {
 	}
 	if v, ok := raw["logLevel"]; !ok || v == nil {
 		plain.LogLevel = "info"
+	}
+	if v, ok := raw["pluginLogLevel"]; !ok || v == nil {
+		plain.PluginLogLevel = "debug"
 	}
 	if v, ok := raw["pythonPath"]; !ok || v == nil {
 		plain.PythonPath = "python"
@@ -438,6 +499,9 @@ func (j *Configuration) UnmarshalYAML(value *yaml.Node) error {
 	}
 	if v, ok := raw["logLevel"]; !ok || v == nil {
 		plain.LogLevel = "info"
+	}
+	if v, ok := raw["pluginLogLevel"]; !ok || v == nil {
+		plain.PluginLogLevel = "debug"
 	}
 	if v, ok := raw["pythonPath"]; !ok || v == nil {
 		plain.PythonPath = "python"

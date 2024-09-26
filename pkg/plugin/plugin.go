@@ -22,8 +22,8 @@ type StartOptions struct {
 	Address     string
 	Config      map[string]string
 	Exec        ExecOptions
-	OnMsgStderr func(string)
-	OnMsgStdout func(string)
+	OnMsgStderr func(pluginName string, msg string)
+	OnMsgStdout func(pluginName string, msg string)
 }
 
 type ExecOptions struct {
@@ -173,8 +173,8 @@ func (p *Plugin) String() string {
 }
 
 func (p *Plugin) init(opts StartOptions) error {
-	p.stderrAdapter = &stdioAdapter{stream: streamStderr}
-	p.stdoutAdapter = &stdioAdapter{stream: streamStdout}
+	p.stderrAdapter = &stdioAdapter{onMessage: opts.OnMsgStderr}
+	p.stdoutAdapter = &stdioAdapter{onMessage: opts.OnMsgStdout}
 	clientCfg := &goPlugin.ClientConfig{
 		HandshakeConfig: plugin.Handshake,
 		Logger:          log.DefaultHclogAdapter(),
