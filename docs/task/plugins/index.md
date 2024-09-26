@@ -71,7 +71,7 @@ The main process then writes the output to its logs:
 When saturn-bot calls the plugin as part of a task, it logs the following message:
 
 ```text
-2024-09-26T10:01:19.369+0200	DEBUG	PLUGIN [log-example stdout] Hello plugin
+PLUGIN [log-example stdout] Hello plugin
 ```
 
 The pattern of the log message is:
@@ -79,6 +79,11 @@ The pattern of the log message is:
 ```text
 PLUGIN [<name of plugin> <stderr|stdout> <message>]
 ```
+
+!!! info
+
+    By default, saturn-bot uses the `debug` level to write log messages.
+    Either set the [global log level](../../configuration.md#loglevel) to `debug` to see log messages or change the [log level of plugins](../../configuration.md#pluginloglevel).
 
 ## Debug a plugin
 
