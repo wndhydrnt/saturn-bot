@@ -18,6 +18,7 @@ import (
 	"github.com/wndhydrnt/saturn-bot/pkg/task/schema"
 	"github.com/wndhydrnt/saturn-bot/pkg/template"
 	"go.uber.org/zap"
+	"go.uber.org/zap/zapcore"
 )
 
 //go:generate go-jsonschema --extra-imports -p schema -t ./schema/task.schema.json --output ./schema/schema.go
@@ -250,15 +251,22 @@ type Registry struct {
 	filterFactories options.FilterFactories
 	pathJava        string
 	pathPython      string
+	pluginLogLevel  zapcore.Level
 	tasks           []*Task
 }
 
 func NewRegistry(opts options.Opts) *Registry {
+	lvl, err := zapcore.ParseLevel(string(opts.Config.PluginLogLevel))
+	if err != nil {
+		lvl = zapcore.DebugLevel
+	}
+
 	return &Registry{
 		actionFactories: opts.ActionFactories,
 		filterFactories: opts.FilterFactories,
 		pathJava:        opts.Config.JavaPath,
 		pathPython:      opts.Config.PythonPath,
+		pluginLogLevel:  lvl,
 	}
 }
 
@@ -306,8 +314,10 @@ func (tr *Registry) readTasks(taskFile string) error {
 
 		for idx, taskPlugin := range entry.Task.Plugins {
 			opts := plugin.StartOptions{
-				Config: taskPlugin.Configuration,
-				Exec:   plugin.GetPluginExec(taskPlugin.PathAbs(entry.Path), tr.pathJava, tr.pathPython),
+				Config:      taskPlugin.Configuration,
+				Exec:        plugin.GetPluginExec(taskPlugin.PathAbs(entry.Path), tr.pathJava, tr.pathPython),
+				OnMsgStderr: newStdioHandler(tr.pluginLogLevel, "stderr"),
+				OnMsgStdout: newStdioHandler(tr.pluginLogLevel, "stdout"),
 			}
 
 			p := &plugin.Plugin{}
@@ -340,5 +350,11 @@ func (tr *Registry) readTasks(taskFile string) error {
 func (tr *Registry) Stop() {
 	for _, t := range tr.tasks {
 		t.Stop()
+	}
+}
+
+func newStdioHandler(level zapcore.Level, stream string) func(string, string) {
+	return func(pluginName string, msg string) {
+		log.Log().Logf(level, "PLUGIN [%s %s] %s", pluginName, stream, msg)
 	}
 }

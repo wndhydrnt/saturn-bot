@@ -28,6 +28,7 @@ func TestReadConfig(t *testing.T) {
 				LogFormat:                "auto",
 				LogLevel:                 "info",
 				JavaPath:                 "java",
+				PluginLogLevel:           "debug",
 				PythonPath:               "python",
 				ServerAddr:               ":3035",
 				ServerBaseUrl:            "http://localhost:3035",

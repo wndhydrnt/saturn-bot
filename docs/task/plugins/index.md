@@ -10,7 +10,7 @@ saturn-bot starts each plugin of a task in a new sub-process. It communicates wi
 
 ```mermaid
 sequenceDiagram
-    saturn-bot->>Plugin: start
+    saturn-bot->>Plugin: start plugin in sub-process
     saturn-bot->>Plugin: send configuration
     saturn-bot->>saturn-bot: list repositories
     loop for each repository
@@ -24,13 +24,78 @@ sequenceDiagram
     saturn-bot->>Plugin: stop
 ```
 
+## Logs of a plugin
+
+A plugin captures its `stdout` and `stderr` streams and sends any output to the main process of saturn-bot.
+The main process then writes the output to its logs:
+
+=== "Go"
+
+    ```go
+    // Other code omitted for brevity
+    type LogExample struct{
+        saturnbot.BasePlugin
+    }
+
+    func (p *LogExample) Apply(ctx saturnbot.Context) error {
+        fmt.Println("Hello plugin")
+        // ...
+    }
+    // ...
+    ```
+
+=== "Kotlin"
+
+    ```kotlin
+    // Other code omitted for brevity
+    class LogExample : Plugin() {
+        override fun apply(ctx: Context) {
+            System.out.println("Hello plugin")
+            // ...
+        }
+    }
+    // ...
+    ```
+
+=== "Python"
+
+    ```python
+    # Other code omitted for brevity
+    class LogExample(Plugin):
+        def apply(self, ctx: Context) -> None:
+            print("Hello plugin")
+            # ...
+    # ...
+    ```
+
+When saturn-bot calls the plugin as part of a task, it logs the following message:
+
+```text
+PLUGIN [log-example stdout] Hello plugin
+```
+
+The pattern of the log message is:
+
+```text
+PLUGIN [<name of plugin> <stderr|stdout> <message>]
+```
+
+!!! info
+
+    By default, saturn-bot uses the `debug` level to write log messages.
+    Either set the [global log level](../../configuration.md#loglevel) to `debug` to see log messages or change the [log level of plugins](../../configuration.md#pluginloglevel).
+
 ## Debug a plugin
+
+If [logs](#logs-of-plugins) aren't enough to understand what a plugin is doing, it is possible to start the plugin process separately and attach a debugger:
 
 1. [Install](../../installation.md) saturn-bot
 1. Start the plugin in a debug process. How to do this depends on the IDE.
 
     - [Debugging in Visual Studio Code](https://code.visualstudio.com/docs/editor/debugging)
-    - [Debug code](https://www.jetbrains.com/help/idea/debugging-code.html) in the IntelliJ IDEA documentation. The plugin prints a connection string to the standard output.
+    - [Debug code](https://www.jetbrains.com/help/idea/debugging-code.html) in the IntelliJ IDEA documentation.
+
+    The plugin prints a connection string to the standard output.
 
     Example:
 
@@ -44,3 +109,5 @@ sequenceDiagram
     ```shell
     saturn-bot plugin apply --address '1|1|tcp|127.0.0.1:11049|grpc'
     ```
+
+[plugin](../../commands/plugin.md) describes all available options of the command `saturn-bot plugin`.
