@@ -175,8 +175,19 @@ func InitLog(format config.ConfigurationLogFormat, level config.ConfigurationLog
 	defaultHclogAdapter.logger = DefaultLogger
 	defaultHclogAdapter.name = "plugin"
 	lvlGit := logStringToLevel(string(levelGit))
-	gitLogger = DefaultLogger.
-		WithOptions(zap.IncreaseLevel(lvlGit))
+	var optsGit []zap.Option
+	// If log level of DefaultLogger is low, for example "debug" or "info",
+	// increase the log level, for example to "warn".
+	// Don't increase the log level if DefaultLogger has a higher level, for example "error".
+	// Doing so would lead to the message:
+	// "failed to IncreaseLevel: invalid increase level, as level "warn" is allowed by increased level, but not by existing core"
+	// zap doesn't support decreasing the log level.
+	// See https://github.com/wndhydrnt/saturn-bot/issues/80
+	if lvlGit > DefaultLogger.Level() {
+		optsGit = append(optsGit, zap.IncreaseLevel(lvlGit))
+	}
+
+	gitLogger = DefaultLogger.WithOptions(optsGit...)
 }
 
 func DefaultHclogAdapter() hclog.Logger {
