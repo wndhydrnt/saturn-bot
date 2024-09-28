@@ -16,16 +16,25 @@ import (
 	sbcontext "github.com/wndhydrnt/saturn-bot/pkg/context"
 	"github.com/wndhydrnt/saturn-bot/pkg/host"
 	"github.com/wndhydrnt/saturn-bot/pkg/log"
+	"go.uber.org/zap/zapcore"
 )
 
+// StartOptions define options to connect to a plugin.
+// Config contains configuration sent to the plugin right after the connection is established.
+// If Address is empty, then Exec is used to start the plugin before connecting to it.
+// If Address is not empty, then the code connects to that address directly.
+// OnDataStderr and OnDataStdout capture the stderr and stdout streams of the plugin. Writes the output of the streams to the log if unset.
 type StartOptions struct {
-	Address     string
-	Config      map[string]string
-	Exec        ExecOptions
-	OnMsgStderr func(pluginName string, msg string)
-	OnMsgStdout func(pluginName string, msg string)
+	Address      string
+	Config       map[string]string
+	Exec         ExecOptions
+	OnDataStderr StdioHandler
+	OnDataStdout StdioHandler
 }
 
+// ExecOptions define how to start the plugin in a sub-process.
+// Args contains all arguments to pass to the command.
+// Executable is the executable to execute.
 type ExecOptions struct {
 	Args       []string
 	Executable string
@@ -173,8 +182,17 @@ func (p *Plugin) String() string {
 }
 
 func (p *Plugin) init(opts StartOptions) error {
-	p.stderrAdapter = &stdioAdapter{onMessage: opts.OnMsgStderr}
-	p.stdoutAdapter = &stdioAdapter{onMessage: opts.OnMsgStdout}
+	// Ensure that default handlers for stdio are set up.
+	if opts.OnDataStderr == nil {
+		opts.OnDataStderr = NewStderrHandler(zapcore.DebugLevel)
+	}
+
+	if opts.OnDataStdout == nil {
+		opts.OnDataStdout = NewStdoutHandler(zapcore.DebugLevel)
+	}
+
+	p.stderrAdapter = &stdioAdapter{onMessage: opts.OnDataStderr}
+	p.stdoutAdapter = &stdioAdapter{onMessage: opts.OnDataStdout}
 	clientCfg := &goPlugin.ClientConfig{
 		HandshakeConfig: plugin.Handshake,
 		Logger:          log.DefaultHclogAdapter(),
@@ -256,6 +274,28 @@ func NewContext(ctx context.Context) *protoV1.Context {
 	}
 
 	return pluginCtx
+}
+
+// StdioHandler describes a function that receives data sent by a plugin to stdout/stderr.
+type StdioHandler func(pluginName string, msg []byte)
+
+// NewStdioHandler returns a StdioHandler that adds a message to the log when it receives data.
+// `level` denotes the log level at which the data received is logged.
+// `stream` is the identifier of the stream from which the data was read.
+func NewStdioHandler(level zapcore.Level, stream string) StdioHandler {
+	return func(pluginName string, msg []byte) {
+		log.Log().Logf(level, "PLUGIN [%s %s] %s", pluginName, stream, msg)
+	}
+}
+
+// NewStderrHandler returns an StdioHandler for the stream "stderr".
+func NewStderrHandler(level zapcore.Level) StdioHandler {
+	return NewStdioHandler(level, "stderr")
+}
+
+// NewStdoutHandler returns an StdioHandler for the stream "stdout".
+func NewStdoutHandler(level zapcore.Level) StdioHandler {
+	return NewStdioHandler(level, "stdout")
 }
 
 func updateRunData(current, received map[string]string) {

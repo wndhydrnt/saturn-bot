@@ -314,10 +314,10 @@ func (tr *Registry) readTasks(taskFile string) error {
 
 		for idx, taskPlugin := range entry.Task.Plugins {
 			opts := plugin.StartOptions{
-				Config:      taskPlugin.Configuration,
-				Exec:        plugin.GetPluginExec(taskPlugin.PathAbs(entry.Path), tr.pathJava, tr.pathPython),
-				OnMsgStderr: newStdioHandler(tr.pluginLogLevel, "stderr"),
-				OnMsgStdout: newStdioHandler(tr.pluginLogLevel, "stdout"),
+				Config:       taskPlugin.Configuration,
+				Exec:         plugin.GetPluginExec(taskPlugin.PathAbs(entry.Path), tr.pathJava, tr.pathPython),
+				OnDataStderr: plugin.NewStderrHandler(tr.pluginLogLevel),
+				OnDataStdout: plugin.NewStdoutHandler(tr.pluginLogLevel),
 			}
 
 			p := &plugin.Plugin{}
@@ -350,11 +350,5 @@ func (tr *Registry) readTasks(taskFile string) error {
 func (tr *Registry) Stop() {
 	for _, t := range tr.tasks {
 		t.Stop()
-	}
-}
-
-func newStdioHandler(level zapcore.Level, stream string) func(string, string) {
-	return func(pluginName string, msg string) {
-		log.Log().Logf(level, "PLUGIN [%s %s] %s", pluginName, stream, msg)
 	}
 }
