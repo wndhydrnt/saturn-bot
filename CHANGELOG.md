@@ -1,5 +1,22 @@
 # Changelog
 
+## [0.12.0](https://github.com/wndhydrnt/saturn-bot/compare/v0.11.1...v0.12.0) (2024-09-28)
+
+
+### Features
+
+* **action:** Add new action `script` ([#76](https://github.com/wndhydrnt/saturn-bot/issues/76)) ([9e70ed8](https://github.com/wndhydrnt/saturn-bot/commit/9e70ed8a3e43ea2586dc8222a9fef41ff33a6a54))
+* **command:** Add commands to test and debug a plugin ([#78](https://github.com/wndhydrnt/saturn-bot/issues/78)) ([7c34635](https://github.com/wndhydrnt/saturn-bot/commit/7c346358fb2caec968f6ff4a85a38621c75b7475))
+* **plugin:** Write messages of plugin to log ([#79](https://github.com/wndhydrnt/saturn-bot/issues/79)) ([8c8e670](https://github.com/wndhydrnt/saturn-bot/commit/8c8e6707f36264e14434e1abf3e60106759dabf2))
+* **task:** Add schedule setting ([#72](https://github.com/wndhydrnt/saturn-bot/issues/72)) ([3945e1a](https://github.com/wndhydrnt/saturn-bot/commit/3945e1ae68b8242830e4d7eb921e06da2f14325f))
+* **task:** Support template in branch name and PR title ([#74](https://github.com/wndhydrnt/saturn-bot/issues/74)) ([4e33cc9](https://github.com/wndhydrnt/saturn-bot/commit/4e33cc94c2f47274d67feaa164d50b810452ff58))
+
+
+### Bug Fixes
+
+* **log:** Work around warning of zap when `logLevel` is `error` ([#81](https://github.com/wndhydrnt/saturn-bot/issues/81)) ([203815a](https://github.com/wndhydrnt/saturn-bot/commit/203815ae35c1ceded55995209cbdb5f7e5927d6e))
+* **task:** Log messages of plugins not formatted correctly ([9a169ed](https://github.com/wndhydrnt/saturn-bot/commit/9a169ed65adc4f9bfaf93eaadae0ac88a5444141))
+
 ## [0.11.1](https://github.com/wndhydrnt/saturn-bot/compare/v0.11.0...v0.11.1) (2024-09-01)
 
 
