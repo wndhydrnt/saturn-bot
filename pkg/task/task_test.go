@@ -137,6 +137,10 @@ func TestRegistry_ReadAll_AllBuiltInFilters(t *testing.T) {
       params:
         paths: [test.txt]
       reverse: true
+    - filter: xpath
+      params:
+        expression: "//project"
+        path: pom.xml
 `
 	tempDir, err := os.MkdirTemp("", "")
 	require.NoError(t, err)
@@ -164,6 +168,7 @@ func TestRegistry_ReadAll_AllBuiltInFilters(t *testing.T) {
 		"file(op=and,paths=[unit-test.txt])",
 		"fileContent(path=hello-world.txt,regexp=Hello World)",
 		"!file(op=and,paths=[test.txt])",
+		"xpath(expression=//project,path=pom.xml)",
 	}
 	var actualFilters []string
 	for _, a := range task.Filters() {
