@@ -1,6 +1,7 @@
 # xpath
 
-Downloads an XML document from a repository and queries it via an XPath expression. Matches if the query returns at least one XML node.
+Downloads an XML document from a repository and queries it via an XPath expression.
+Matches if the query returns at least one XML node.
 
 ## Parameters
 

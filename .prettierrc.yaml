@@ -5,4 +5,4 @@ overrides:
     options:
       tabWidth: 4
 
-proseWrap: "never"
+proseWrap: "preserve"
