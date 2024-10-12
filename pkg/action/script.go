@@ -11,6 +11,7 @@ import (
 	"time"
 
 	"github.com/wndhydrnt/saturn-bot/pkg/log"
+	"github.com/wndhydrnt/saturn-bot/pkg/params"
 	sbtemplate "github.com/wndhydrnt/saturn-bot/pkg/template"
 )
 
@@ -18,7 +19,7 @@ import (
 type ScriptFactory struct{}
 
 // Create implements Factory.
-func (f ScriptFactory) Create(params Params, taskPath string) (Action, error) {
+func (f ScriptFactory) Create(params params.Params, taskPath string) (Action, error) {
 	script, err := params.String("script", "")
 	if err != nil {
 		return nil, err

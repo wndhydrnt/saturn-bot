@@ -8,6 +8,7 @@ import (
 	"testing"
 
 	"github.com/stretchr/testify/require"
+	"github.com/wndhydrnt/saturn-bot/pkg/params"
 	"github.com/wndhydrnt/saturn-bot/pkg/template"
 )
 
@@ -118,7 +119,7 @@ func TestScript_Apply(t *testing.T) {
 
 func TestScript_String(t *testing.T) {
 	f := ScriptFactory{}
-	a, err := f.Create(Params{"script": "echo 'test'"}, "")
+	a, err := f.Create(params.Params{"script": "echo 'test'"}, "")
 	require.NoError(t, err)
 	require.Equal(t, "script(shell=sh, timeout=10s)", a.String())
 }

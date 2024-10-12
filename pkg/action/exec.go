@@ -10,11 +10,12 @@ import (
 	"time"
 
 	"github.com/wndhydrnt/saturn-bot/pkg/log"
+	"github.com/wndhydrnt/saturn-bot/pkg/params"
 )
 
 type ExecFactory struct{}
 
-func (f ExecFactory) Create(params Params, taskPath string) (Action, error) {
+func (f ExecFactory) Create(params params.Params, taskPath string) (Action, error) {
 	var args []string
 	if params["args"] != nil {
 		argsGeneric, ok := params["args"].([]any)

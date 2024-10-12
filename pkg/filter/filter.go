@@ -9,6 +9,7 @@ import (
 
 	gsContext "github.com/wndhydrnt/saturn-bot/pkg/context"
 	"github.com/wndhydrnt/saturn-bot/pkg/host"
+	"github.com/wndhydrnt/saturn-bot/pkg/params"
 	"github.com/wndhydrnt/saturn-bot/pkg/str"
 )
 
@@ -34,7 +35,7 @@ type Filter interface {
 }
 
 type Factory interface {
-	Create(params map[string]any) (Filter, error)
+	Create(params params.Params) (Filter, error)
 	Name() string
 }
 
@@ -44,7 +45,7 @@ func (f FileFactory) Name() string {
 	return "file"
 }
 
-func (f FileFactory) Create(params map[string]any) (Filter, error) {
+func (f FileFactory) Create(params params.Params) (Filter, error) {
 	if params["paths"] == nil {
 		return nil, fmt.Errorf("required parameter `paths` not set")
 	}
@@ -122,7 +123,7 @@ func (f FileContentFactory) Name() string {
 	return "fileContent"
 }
 
-func (f FileContentFactory) Create(params map[string]any) (Filter, error) {
+func (f FileContentFactory) Create(params params.Params) (Filter, error) {
 	if params["path"] == nil {
 		return nil, fmt.Errorf("required parameter `path` not set")
 	}
@@ -193,7 +194,7 @@ func (f RepositoryFactory) Name() string {
 	return "repository"
 }
 
-func (f RepositoryFactory) Create(params map[string]any) (Filter, error) {
+func (f RepositoryFactory) Create(params params.Params) (Filter, error) {
 	if params["host"] == nil {
 		return nil, fmt.Errorf("required parameter `host` not set")
 	}
