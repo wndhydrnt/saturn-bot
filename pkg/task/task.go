@@ -14,6 +14,7 @@ import (
 	"github.com/wndhydrnt/saturn-bot/pkg/filter"
 	"github.com/wndhydrnt/saturn-bot/pkg/log"
 	"github.com/wndhydrnt/saturn-bot/pkg/options"
+	"github.com/wndhydrnt/saturn-bot/pkg/params"
 	"github.com/wndhydrnt/saturn-bot/pkg/plugin"
 	"github.com/wndhydrnt/saturn-bot/pkg/task/schema"
 	"github.com/wndhydrnt/saturn-bot/pkg/template"
@@ -35,7 +36,7 @@ func createActionsForTask(actionDefs []schema.Action, factories options.ActionFa
 			return nil, fmt.Errorf("no action registered for identifier %s", def.Action)
 		}
 
-		action, err := factory.Create(action.Params(def.Params), taskPath)
+		action, err := factory.Create(params.Params(def.Params), taskPath)
 		if err != nil {
 			return nil, fmt.Errorf("failed to initialize action %s at %d: %w", def.Action, idx, err)
 		}
@@ -58,7 +59,7 @@ func createFiltersForTask(filterDefs []schema.Filter, factories options.FilterFa
 			return nil, fmt.Errorf("no filter registered for identifier %s", def.Filter)
 		}
 
-		fl, err := factory.Create(def.Params)
+		fl, err := factory.Create(params.Params(def.Params))
 		if err != nil {
 			return nil, fmt.Errorf("failed to initialize filter %s at %d: %w", def.Filter, idx, err)
 		}
