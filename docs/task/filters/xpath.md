@@ -35,7 +35,7 @@ filters:
   - filter: xpath
     params:
       expression: '/project/dependencies/dependency/artifactId[text()="kotlin-stdlib"]'
-      path: "pom.xml
+      path: pom.xml
 ```
 
 ```yaml
@@ -44,6 +44,6 @@ filters:
   - filter: xpath
     params:
       expression: '/project/dependencies/dependency/artifactId[text()="kotlin-stdlib"]'
-      path: "pom.xml
+      path: pom.xml
     reverse: true
 ```
