@@ -15,13 +15,13 @@ Run the Docker container:
 <!-- x-release-please-start-version -->
 
 ```shell
-docker run --rm -it ghcr.io/wndhydrnt/saturn-bot:v0.12.0 version
+docker run --rm -it ghcr.io/wndhydrnt/saturn-bot:v0.13.0 version
 ```
 
 The tag `<version>-full` contains runtimes for Java and Python to execute plugins:
 
 ```shell
-docker run --rm -it ghcr.io/wndhydrnt/saturn-bot:v0.12.0-full version
+docker run --rm -it ghcr.io/wndhydrnt/saturn-bot:v0.13.0 version
 ```
 
 <!-- x-release-please-end -->
