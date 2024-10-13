@@ -29,8 +29,7 @@ func Log() *zap.SugaredLogger {
 
 func init() {
 	// Ensure that a logger is always present
-	logger := zap.Must(zap.NewProduction())
-	DefaultLogger = logger.Sugar()
+	InitLog("auto", "error", "error")
 }
 
 type hclogAdapter struct {
