@@ -6,7 +6,6 @@ import (
 	"testing"
 
 	"github.com/stretchr/testify/require"
-	gsContext "github.com/wndhydrnt/saturn-bot/pkg/context"
 	sbcontext "github.com/wndhydrnt/saturn-bot/pkg/context"
 	"github.com/wndhydrnt/saturn-bot/pkg/filter"
 	"github.com/wndhydrnt/saturn-bot/pkg/params"
@@ -66,7 +65,7 @@ func TestFile_Do(t *testing.T) {
 	repoMock.EXPECT().HasFile("test.toml").Return(true, nil).AnyTimes()
 	repoMock.EXPECT().HasFile("test.json5").Return(false, nil).AnyTimes()
 	ctx := context.Background()
-	ctx = context.WithValue(ctx, gsContext.RepositoryKey{}, repoMock)
+	ctx = context.WithValue(ctx, sbcontext.RepositoryKey{}, repoMock)
 
 	fac := filter.FileFactory{}
 
@@ -115,14 +114,32 @@ func TestFile_Do(t *testing.T) {
 
 func TestFileContentFactory_Create(t *testing.T) {
 	fac := filter.FileContentFactory{}
-	_, err := fac.Create(map[string]any{})
-	require.ErrorContains(t, err, "required parameter `path` not set")
+	testCases := []testCase{
+		{
+			name:             "missing parameter path",
+			factory:          fac,
+			params:           params.Params{},
+			wantFactoryError: "required parameter `path` not set",
+		},
+		{
+			name:             "missing parameter regexp",
+			factory:          fac,
+			params:           params.Params{"path": "path.txt"},
+			wantFactoryError: "required parameter `regexp` not set",
+		},
+		{
+			name:             "invalid regexp",
+			factory:          fac,
+			params:           params.Params{"path": "path.txt", "regexp": "[a-z"},
+			wantFactoryError: "compile parameter `regexp` to regular expression: error parsing regexp: missing closing ]: `[a-z`",
+		},
+	}
 
-	_, err = fac.Create(map[string]any{"path": "path.txt"})
-	require.ErrorContains(t, err, "required parameter `regexp` not set")
-
-	_, err = fac.Create(map[string]any{"path": "path.txt", "regexp": "[a-z"})
-	require.ErrorContains(t, err, "compile parameter `regexp` to regular expression: error parsing regexp: missing closing ]: `[a-z`")
+	for _, tc := range testCases {
+		t.Run(tc.name, func(t *testing.T) {
+			runTestCase(t, tc)
+		})
+	}
 }
 
 func TestFileContent_Do(t *testing.T) {
@@ -130,30 +147,39 @@ func TestFileContent_Do(t *testing.T) {
 def
 ghi
 `
-	ctrl := gomock.NewController(t)
-	repoMock := NewMockRepository(ctrl)
-	repoMock.EXPECT().
-		GetFile("test.txt").
-		Return(content, nil).
-		Times(2)
-	ctx := context.Background()
-	ctx = context.WithValue(ctx, gsContext.RepositoryKey{}, repoMock)
-
 	fac := filter.FileContentFactory{}
+	testCases := []testCase{
+		{
+			name:    "returns true when regexp matches content",
+			factory: fac,
+			params:  params.Params{"path": "test.txt", "regexp": "d?f"},
+			repoMockFunc: func(mr *MockRepository) {
+				mr.EXPECT().
+					GetFile("test.txt").
+					Return(content, nil).
+					Times(1)
+			},
+			wantMatch: true,
+		},
+		{
+			name:    "returns false when regexp does not match content",
+			factory: fac,
+			params:  params.Params{"path": "test.txt", "regexp": "jkl"},
+			repoMockFunc: func(mr *MockRepository) {
+				mr.EXPECT().
+					GetFile("test.txt").
+					Return(content, nil).
+					Times(1)
+			},
+			wantMatch: false,
+		},
+	}
 
-	f, err := fac.Create(map[string]any{"path": "test.txt", "regexp": "d?f"})
-	require.NoError(t, err)
-	result, err := f.Do(ctx)
-
-	require.NoError(t, err)
-	require.True(t, result)
-
-	f, err = fac.Create(map[string]any{"path": "test.txt", "regexp": "jkl"})
-	require.NoError(t, err)
-	result, err = f.Do(ctx)
-
-	require.NoError(t, err)
-	require.False(t, result)
+	for _, tc := range testCases {
+		t.Run(tc.name, func(t *testing.T) {
+			runTestCase(t, tc)
+		})
+	}
 }
 
 func TestRepositoryFactory_Create(t *testing.T) {
@@ -238,7 +264,7 @@ func TestRepository_Do(t *testing.T) {
 			repoMock.EXPECT().Name().Return(tc.name).AnyTimes()
 			repoMock.EXPECT().Owner().Return(tc.owner).AnyTimes()
 			ctx := context.Background()
-			ctx = context.WithValue(ctx, gsContext.RepositoryKey{}, repoMock)
+			ctx = context.WithValue(ctx, sbcontext.RepositoryKey{}, repoMock)
 			result, err := f.Do(ctx)
 			require.NoError(t, err)
 			require.Equal(t, tc.want, result)

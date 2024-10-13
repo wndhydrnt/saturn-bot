@@ -5,7 +5,6 @@ import (
 	"errors"
 	"fmt"
 	"regexp"
-	"strings"
 
 	gsContext "github.com/wndhydrnt/saturn-bot/pkg/context"
 	"github.com/wndhydrnt/saturn-bot/pkg/host"
@@ -158,7 +157,7 @@ type FileContent struct {
 func (fcl *FileContent) Do(ctx context.Context) (bool, error) {
 	repo, ok := ctx.Value(gsContext.RepositoryKey{}).(FilterRepository)
 	if !ok {
-		return false, errors.New("context passed to filter lineInFile does not contain a repository")
+		return false, errors.New("context does not contain a repository")
 	}
 
 	content, err := repo.GetFile(fcl.Path)
@@ -167,17 +166,10 @@ func (fcl *FileContent) Do(ctx context.Context) (bool, error) {
 			return false, nil
 		}
 
-		return false, fmt.Errorf("fileContent: get file from repository: %w", err)
+		return false, fmt.Errorf("download file from repository: %w", err)
 	}
 
-	for _, line := range strings.Split(content, "\n") {
-		match := fcl.Regexp.MatchString(line)
-		if match {
-			return true, nil
-		}
-	}
-
-	return false, nil
+	return fcl.Regexp.MatchString(content), nil
 }
 
 func (fcl *FileContent) String() string {
