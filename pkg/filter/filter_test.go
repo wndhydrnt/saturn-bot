@@ -7,9 +7,47 @@ import (
 
 	"github.com/stretchr/testify/require"
 	gsContext "github.com/wndhydrnt/saturn-bot/pkg/context"
+	sbcontext "github.com/wndhydrnt/saturn-bot/pkg/context"
 	"github.com/wndhydrnt/saturn-bot/pkg/filter"
+	"github.com/wndhydrnt/saturn-bot/pkg/params"
 	"go.uber.org/mock/gomock"
 )
+
+type testCase struct {
+	name             string
+	factory          filter.Factory
+	params           params.Params
+	repoMockFunc     func(*MockRepository)
+	wantMatch        bool
+	wantFactoryError string
+	wantFilterError  string
+}
+
+func runTestCase(t *testing.T, tc testCase) {
+	ctrl := gomock.NewController(t)
+	repoMock := NewMockRepository(ctrl)
+	if tc.repoMockFunc != nil {
+		tc.repoMockFunc(repoMock)
+	}
+
+	f, err := tc.factory.Create(tc.params)
+	if tc.wantFactoryError == "" {
+		require.NoError(t, err)
+	} else {
+		require.EqualError(t, err, tc.wantFactoryError)
+		return
+	}
+
+	ctx := context.Background()
+	ctx = context.WithValue(ctx, sbcontext.RepositoryKey{}, repoMock)
+	result, err := f.Do(ctx)
+	if tc.wantFilterError == "" {
+		require.NoError(t, err)
+		require.Equal(t, tc.wantMatch, result)
+	} else {
+		require.EqualError(t, err, tc.wantFilterError)
+	}
+}
 
 func TestFileFactory_Create(t *testing.T) {
 	fac := filter.FileFactory{}
