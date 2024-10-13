@@ -93,6 +93,10 @@ func Read(cfgFile string) (cfg Configuration, err error) {
 		return cfg, fmt.Errorf("schema validation failed: %w", err)
 	}
 
+	if cfg.GithubToken == nil && cfg.GitlabToken == nil {
+		return cfg, fmt.Errorf("no GitHub token or GitLab token configured")
+	}
+
 	if cfg.GitAuthor != "" {
 		_, err = mail.ParseAddress(cfg.GitAuthor)
 		if err != nil {
