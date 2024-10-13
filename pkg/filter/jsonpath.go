@@ -16,6 +16,7 @@ import (
 // JsonPathFactory creates JsonPath filters.
 type JsonPathFactory struct{}
 
+// Create implements Factory.
 func (f JsonPathFactory) Create(params params.Params) (Filter, error) {
 	exprRaw, err := params.String("expression", "")
 	if err != nil {
@@ -46,15 +47,20 @@ func (f JsonPathFactory) Create(params params.Params) (Filter, error) {
 	}, nil
 }
 
+// Name implements Factory.
 func (f JsonPathFactory) Name() string {
 	return "jsonpath"
 }
 
+// JsonPath is a filter that applies a JSONPath expression to a file in the repository.
 type JsonPath struct {
 	Expr jp.Expr
 	Path string
 }
 
+// Do implements Filter.
+// It downloads a file from a repository and queries it via a JSONPath expression.
+// It returns true if the query returns at least one node.
 func (f *JsonPath) Do(ctx context.Context) (bool, error) {
 	repo, ok := ctx.Value(sbcontext.RepositoryKey{}).(FilterRepository)
 	if !ok {
@@ -81,6 +87,7 @@ func (f *JsonPath) Do(ctx context.Context) (bool, error) {
 	return len(result) > 0, nil
 }
 
+// String implements Filter.
 func (jp *JsonPath) String() string {
 	return fmt.Sprintf("jsonpath(expression=%s,path=%s)", jp.Expr, jp.Path)
 }
