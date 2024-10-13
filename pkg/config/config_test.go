@@ -5,23 +5,28 @@ import (
 	"testing"
 
 	"github.com/stretchr/testify/require"
+	"github.com/wndhydrnt/saturn-bot/pkg/ptr"
 	"gopkg.in/yaml.v3"
 )
 
 func TestReadConfig(t *testing.T) {
 	testCases := []struct {
-		name string
-		in   Configuration
-		out  Configuration
+		name    string
+		in      Configuration
+		out     Configuration
+		readErr string
 	}{
 		{
 			name: "default and required values",
-			in:   Configuration{},
+			in: Configuration{
+				GitlabToken: ptr.To("abc"),
+			},
 			out: Configuration{
 				DataDir:                  nil,
 				GitCloneOptions:          []string{"--filter", "blob:none"},
 				GitCommitMessage:         "changes by saturn-bot",
 				GitlabAddress:            "https://gitlab.com",
+				GitlabToken:              ptr.To("abc"),
 				GitLogLevel:              "warn",
 				GitPath:                  "git",
 				GitUrl:                   "https",
@@ -38,6 +43,14 @@ func TestReadConfig(t *testing.T) {
 				WorkerServerAPIBaseURL:   "http://localhost:3035",
 			},
 		},
+		{
+			name: "github token or gitlab token required",
+			in: Configuration{
+				GithubToken: nil,
+				GitlabToken: nil,
+			},
+			readErr: "no GitHub token or GitLab token configured",
+		},
 	}
 
 	for _, tc := range testCases {
@@ -51,9 +64,12 @@ func TestReadConfig(t *testing.T) {
 			require.NoError(t, err)
 
 			readCfg, err := Read(f.Name())
-			require.NoError(t, err)
-
-			require.EqualValues(t, tc.out, readCfg)
+			if tc.readErr == "" {
+				require.NoError(t, err)
+				require.EqualValues(t, tc.out, readCfg)
+			} else {
+				require.EqualError(t, err, tc.readErr)
+			}
 		})
 	}
 }
