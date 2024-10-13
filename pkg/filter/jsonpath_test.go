@@ -109,7 +109,7 @@ func TestJsonPath_Do(t *testing.T) {
 			name:             "factory errors when value of param expression is an invalid JSONPath expression",
 			factory:          filter.JsonPathFactory{},
 			params:           params.Params{"expression": "$$.dependencies", "path": "package.json"},
-			wantFactoryError: "parse JSONPath expression: invalid syntax (position=1, reason=unrecognized input, near=$.dependencies)",
+			wantFactoryError: "parse JSONPath expression: parse error at 3 in $$.dependencies",
 		},
 		{
 			name:             "factory errors when param path is not set",
