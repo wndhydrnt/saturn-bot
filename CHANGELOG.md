@@ -1,5 +1,20 @@
 # Changelog
 
+## [0.13.0](https://github.com/wndhydrnt/saturn-bot/compare/v0.12.0...v0.13.0) (2024-10-13)
+
+
+### Features
+
+* **docker:** Install JRE in full version of Docker image ([4eb786f](https://github.com/wndhydrnt/saturn-bot/commit/4eb786f490d300e6374f8a755995464706327bdc))
+* **filter:** Add jsonpath filter ([#84](https://github.com/wndhydrnt/saturn-bot/issues/84)) ([2123cfe](https://github.com/wndhydrnt/saturn-bot/commit/2123cfe969da5abdace8896a3b068c57d832f170))
+* **filter:** Add xpath filter ([#82](https://github.com/wndhydrnt/saturn-bot/issues/82)) ([925421b](https://github.com/wndhydrnt/saturn-bot/commit/925421b72960d9ea1353cbb39c3f7a21025ab322))
+* **filter:** Make filter fileContent match against whole content of file ([756e86c](https://github.com/wndhydrnt/saturn-bot/commit/756e86c10d3c40450a6a57a0c433512ab69e873c))
+
+
+### Bug Fixes
+
+* **config:** Fail early if no GitHub token or GitLab token has been defined ([#86](https://github.com/wndhydrnt/saturn-bot/issues/86)) ([0f6423a](https://github.com/wndhydrnt/saturn-bot/commit/0f6423aec65e870204dab300dff3e078f9dc3a9c))
+
 ## [0.12.0](https://github.com/wndhydrnt/saturn-bot/compare/v0.11.1...v0.12.0) (2024-09-28)
 
 
