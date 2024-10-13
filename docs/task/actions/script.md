@@ -4,8 +4,6 @@ Execute a script.
 
 saturn-bot sets the current working directory of the script to the checkout of a repository.
 
-To execute a script file located in a repository, use the [exec action](exec.md).
-
 ## Parameters
 
 ### `script`
@@ -64,8 +62,18 @@ actions:
         echo 'hello world' > hello-world.txt
 ```
 
+```yaml title="Execute script file in repository"
+actions:
+  - action: script
+    params:
+      # Path to file must be relative.
+      # Otherwise the shell searches in locations of $PATH.
+      script: |
+        ./file-in-repo.sh
+```
+
 ```yaml title="Script file"
-# Execute the script "example.sh".
+# Load the content of the script from a file.
 # The script "example.sh" is located in the same directory as the Task file.
 actions:
   - action: script
