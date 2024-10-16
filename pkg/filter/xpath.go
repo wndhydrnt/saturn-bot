@@ -10,6 +10,7 @@ import (
 	"github.com/antchfx/xpath"
 	sbcontext "github.com/wndhydrnt/saturn-bot/pkg/context"
 	"github.com/wndhydrnt/saturn-bot/pkg/host"
+	"github.com/wndhydrnt/saturn-bot/pkg/log"
 	"github.com/wndhydrnt/saturn-bot/pkg/params"
 )
 
@@ -18,31 +19,35 @@ type XpathFactory struct{}
 
 // Create implements Factory.
 func (f XpathFactory) Create(params params.Params) (Filter, error) {
-	exprRaw, err := params.String("expression", "")
+	expressionsRaw, err := params.StringSlice("expressions", []string{})
 	if err != nil {
 		return nil, err
 	}
 
-	if exprRaw == "" {
-		return nil, fmt.Errorf("required parameter `expression` not set")
+	if len(expressionsRaw) == 0 {
+		return nil, fmt.Errorf("required parameter `expressions` not set")
 	}
 
-	// Compile expression here to return early if it is invalid.
-	expr, err := xpath.Compile(exprRaw)
-	if err != nil {
-		return nil, fmt.Errorf("invalid XPath expression: %w", err)
+	xp := &Xpath{}
+	for idx, exprRaw := range expressionsRaw {
+		expr, err := xpath.Compile(exprRaw)
+		if err != nil {
+			return nil, fmt.Errorf("compile `expressions[%d]` XPath expression: %w", idx, err)
+		}
+
+		xp.Exprs = append(xp.Exprs, expr)
 	}
 
-	path, err := params.String("path", "")
+	xp.Path, err = params.String("path", "")
 	if err != nil {
 		return nil, err
 	}
 
-	if path == "" {
+	if xp.Path == "" {
 		return nil, fmt.Errorf("required parameter `path` not set")
 	}
 
-	return &Xpath{Expr: expr, Path: path}, nil
+	return xp, nil
 }
 
 // Name implements Factory.
@@ -52,8 +57,8 @@ func (f XpathFactory) Name() string {
 
 // Xpath filters repositories by applying an XPath expression to a file in the repository.
 type Xpath struct {
-	Expr *xpath.Expr
-	Path string
+	Exprs []*xpath.Expr
+	Path  string
 }
 
 // Do implements Filter.
@@ -76,14 +81,25 @@ func (x *Xpath) Do(ctx context.Context) (bool, error) {
 
 	doc, err := xmlquery.Parse(strings.NewReader(content))
 	if err != nil {
-		return false, fmt.Errorf("parse XML document: %w", err)
+		log.Log().Warnf("Failed to parse XML file %s: %s", x.Path, err)
+		return false, nil
 	}
 
-	nodes := xmlquery.QuerySelectorAll(doc, x.Expr)
-	return len(nodes) > 0, nil
+	for _, expr := range x.Exprs {
+		nodes := xmlquery.QuerySelectorAll(doc, expr)
+		if len(nodes) == 0 {
+			return false, nil
+		}
+	}
+
+	return true, nil
 }
 
 // String implements Filter.
 func (x *Xpath) String() string {
-	return fmt.Sprintf("xpath(expression=%s,path=%s)", x.Expr, x.Path)
+	var expressions []string
+	for _, expr := range x.Exprs {
+		expressions = append(expressions, expr.String())
+	}
+	return fmt.Sprintf("xpath(expressions=%s,path=%s)", expressions, x.Path)
 }

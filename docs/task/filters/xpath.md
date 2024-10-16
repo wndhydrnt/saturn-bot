@@ -1,22 +1,22 @@
 # xpath
 
-Downloads an XML document from a repository and queries it via an XPath expression.
-Matches if the query returns at least one XML node.
+Downloads an XML document from a repository and queries it via one or more XPath expressions.
+Matches if every query returns at least one XML node.
 
 ## Parameters
 
-### `expression`
+### `expressions`
 
-The XPath expression to use for querying the XML document.
+List of XPath expressions to query the XML document.
 
 Use an online tool such as [XPather](http://xpather.com/) to test the expression.
 
 The [XPath cheatsheet](https://devhints.io/xpath) can be a valuable reference.
 
-| Name     | Value    |
-| -------- | -------- |
-| Type     | `string` |
-| Required | **Yes**  |
+| Name     | Value      |
+| -------- | ---------- |
+| Type     | `string[]` |
+| Required | **Yes**    |
 
 ### `path`
 
@@ -34,7 +34,19 @@ Path to the XML document in a repository.
 filters:
   - filter: xpath
     params:
-      expression: '/project/dependencies/dependency/artifactId[text()="kotlin-stdlib"]'
+      expressions: ['/project/dependencies/dependency/artifactId[text()="kotlin-stdlib"]']
+      path: pom.xml
+```
+
+```yaml
+# Match if the file pom.xml defines a dependency
+# on the library kotlin-stdlib and kotlinx.coroutines.
+filters:
+  - filter: xpath
+    params:
+      expressions:
+        - '/project/dependencies/dependency/artifactId[text()="kotlin-stdlib"]'
+        - '/project/dependencies/dependency/artifactId[text()="kotlinx-coroutines-core"]'
       path: pom.xml
 ```
 
@@ -43,7 +55,7 @@ filters:
 filters:
   - filter: xpath
     params:
-      expression: '/project/dependencies/dependency/artifactId[text()="kotlin-stdlib"]'
+      expressions: ['/project/dependencies/dependency/artifactId[text()="kotlin-stdlib"]']
       path: pom.xml
     reverse: true
 ```

@@ -40,3 +40,26 @@ func (p Params) String(key string, def string) (string, error) {
 
 	return val, nil
 }
+
+func (p Params) StringSlice(key string, def []string) ([]string, error) {
+	if p[key] == nil {
+		return def, nil
+	}
+
+	rawV, ok := p[key].([]interface{})
+	if !ok {
+		return def, fmt.Errorf("parameter `%s` is of type %T not slice", key, p[key])
+	}
+
+	var vals []string
+	for idx, rawItem := range rawV {
+		v, ok := rawItem.(string)
+		if !ok {
+			return def, fmt.Errorf("parameter `%s[%d]` is of type %T not string", key, idx, rawItem)
+		}
+
+		vals = append(vals, v)
+	}
+
+	return vals, nil
+}
