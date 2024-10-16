@@ -143,7 +143,7 @@ func TestRegistry_ReadAll_AllBuiltInFilters(t *testing.T) {
         path: package.json
     - filter: xpath
       params:
-        expression: "//project"
+        expressions: ["//project"]
         path: pom.xml
 `
 	tempDir, err := os.MkdirTemp("", "")
@@ -173,7 +173,7 @@ func TestRegistry_ReadAll_AllBuiltInFilters(t *testing.T) {
 		"fileContent(path=hello-world.txt,regexp=Hello World)",
 		"!file(op=and,paths=[test.txt])",
 		"jsonpath(expression=$.dependencies,path=package.json)",
-		"xpath(expression=//project,path=pom.xml)",
+		"xpath(expressions=[//project],path=pom.xml)",
 	}
 	var actualFilters []string
 	for _, a := range task.Filters() {
