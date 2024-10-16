@@ -139,7 +139,7 @@ func TestRegistry_ReadAll_AllBuiltInFilters(t *testing.T) {
       reverse: true
     - filter: jsonpath
       params:
-        expression: "$.dependencies"
+        expressions: ["$.dependencies"]
         path: package.json
     - filter: xpath
       params:
@@ -172,7 +172,7 @@ func TestRegistry_ReadAll_AllBuiltInFilters(t *testing.T) {
 		"file(op=and,paths=[unit-test.txt])",
 		"fileContent(path=hello-world.txt,regexp=Hello World)",
 		"!file(op=and,paths=[test.txt])",
-		"jsonpath(expression=$.dependencies,path=package.json)",
+		"jsonpath(expressions=[$.dependencies],path=package.json)",
 		"xpath(expressions=[//project],path=pom.xml)",
 	}
 	var actualFilters []string

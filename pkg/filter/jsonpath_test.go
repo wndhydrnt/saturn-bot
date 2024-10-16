@@ -24,7 +24,7 @@ func TestJsonPath_Do(t *testing.T) {
 		{
 			name:    "returns true when JSONPath expression matches",
 			factory: filter.JsonPathFactory{},
-			params:  params.Params{"expression": `$.dependencies["@commitlint/cli"]`, "path": "package.json"},
+			params:  params.Params{"expressions": []any{`$.dependencies["@commitlint/cli"]`}, "path": "package.json"},
 			repoMockFunc: func(repoMock *MockRepository) {
 				repoMock.EXPECT().
 					GetFile("package.json").
@@ -36,7 +36,7 @@ func TestJsonPath_Do(t *testing.T) {
 		{
 			name:    "returns true when JSONPath expression contains match filter",
 			factory: filter.JsonPathFactory{},
-			params:  params.Params{"expression": `$[?(@['@commitlint/cli'] == '19.5.0')]`, "path": "package.json"},
+			params:  params.Params{"expressions": []any{`$[?(@['@commitlint/cli'] == '19.5.0')]`}, "path": "package.json"},
 			repoMockFunc: func(repoMock *MockRepository) {
 				repoMock.EXPECT().
 					GetFile("package.json").
@@ -48,7 +48,7 @@ func TestJsonPath_Do(t *testing.T) {
 		{
 			name:    "returns false when JSONPath expression doesn't match",
 			factory: filter.JsonPathFactory{},
-			params:  params.Params{"expression": `$.dependencies["other"]`, "path": "package.json"},
+			params:  params.Params{"expressions": []any{`$.dependencies["other"]`}, "path": "package.json"},
 			repoMockFunc: func(repoMock *MockRepository) {
 				repoMock.EXPECT().
 					GetFile("package.json").
@@ -60,7 +60,7 @@ func TestJsonPath_Do(t *testing.T) {
 		{
 			name:    "returns false when file doesn't exist in repository",
 			factory: filter.JsonPathFactory{},
-			params:  params.Params{"expression": `$.dependencies`, "path": "other.json"},
+			params:  params.Params{"expressions": []any{`$.dependencies`}, "path": "other.json"},
 			repoMockFunc: func(repoMock *MockRepository) {
 				repoMock.EXPECT().
 					GetFile("other.json").
@@ -72,7 +72,7 @@ func TestJsonPath_Do(t *testing.T) {
 		{
 			name:    "errors when download of file fails",
 			factory: filter.JsonPathFactory{},
-			params:  params.Params{"expression": `$.dependencies`, "path": "package.json"},
+			params:  params.Params{"expressions": []any{`$.dependencies`}, "path": "package.json"},
 			repoMockFunc: func(repoMock *MockRepository) {
 				repoMock.EXPECT().
 					GetFile("package.json").
@@ -84,7 +84,7 @@ func TestJsonPath_Do(t *testing.T) {
 		{
 			name:    "errors when file contains invalid content",
 			factory: filter.JsonPathFactory{},
-			params:  params.Params{"expression": `$.dependencies`, "path": "package.json"},
+			params:  params.Params{"expressions": []any{`$.dependencies`}, "path": "package.json"},
 			repoMockFunc: func(repoMock *MockRepository) {
 				repoMock.EXPECT().
 					GetFile("package.json").
@@ -94,33 +94,33 @@ func TestJsonPath_Do(t *testing.T) {
 			wantFilterError: "decode file for JSONPath filter: yaml: line 1: did not find expected ',' or '}'",
 		},
 		{
-			name:             "factory errors when param expression is not set",
+			name:             "factory errors when param expressions is not set",
 			factory:          filter.JsonPathFactory{},
 			params:           params.Params{"path": "package.json"},
-			wantFactoryError: "required parameter `expression` not set",
+			wantFactoryError: "required parameter `expressions` not set",
 		},
 		{
-			name:             "factory errors when param expression has wrong type",
+			name:             "factory errors when param expressions has wrong type",
 			factory:          filter.JsonPathFactory{},
-			params:           params.Params{"expression": 123, "path": "package.json"},
-			wantFactoryError: "parameter `expression` is of type int not string",
+			params:           params.Params{"expressions": 123, "path": "package.json"},
+			wantFactoryError: "parameter `expressions` is of type int not slice",
 		},
 		{
-			name:             "factory errors when value of param expression is an invalid JSONPath expression",
+			name:             "factory errors when value of param expressions is an invalid JSONPath expression",
 			factory:          filter.JsonPathFactory{},
-			params:           params.Params{"expression": "$$.dependencies", "path": "package.json"},
-			wantFactoryError: "parse JSONPath expression: parse error at 3 in $$.dependencies",
+			params:           params.Params{"expressions": []any{"$$.dependencies"}, "path": "package.json"},
+			wantFactoryError: "parse `expressions[0]` JSONPath expression: parse error at 3 in $$.dependencies",
 		},
 		{
 			name:             "factory errors when param path is not set",
 			factory:          filter.JsonPathFactory{},
-			params:           params.Params{"expression": "$.dependencies"},
+			params:           params.Params{"expressions": []any{"$.dependencies"}},
 			wantFactoryError: "required parameter `path` not set",
 		},
 		{
 			name:             "factory errors when param path has wrong type",
 			factory:          filter.JsonPathFactory{},
-			params:           params.Params{"expression": "$.dependencies", "path": 123},
+			params:           params.Params{"expressions": []any{"$.dependencies"}, "path": 123},
 			wantFactoryError: "parameter `path` is of type int not string",
 		},
 	}

@@ -18,33 +18,35 @@ type JsonPathFactory struct{}
 
 // Create implements Factory.
 func (f JsonPathFactory) Create(params params.Params) (Filter, error) {
-	exprRaw, err := params.String("expression", "")
+	expressionsRaw, err := params.StringSlice("expressions", []string{})
 	if err != nil {
 		return nil, err
 	}
 
-	if exprRaw == "" {
-		return nil, fmt.Errorf("required parameter `expression` not set")
+	if len(expressionsRaw) == 0 {
+		return nil, fmt.Errorf("required parameter `expressions` not set")
 	}
 
-	expr, err := jp.ParseString(exprRaw)
-	if err != nil {
-		return nil, fmt.Errorf("parse JSONPath expression: %w", err)
+	jpf := &JsonPath{}
+	for idx, exprRaw := range expressionsRaw {
+		expr, err := jp.ParseString(exprRaw)
+		if err != nil {
+			return nil, fmt.Errorf("parse `expressions[%d]` JSONPath expression: %w", idx, err)
+		}
+
+		jpf.Exprs = append(jpf.Exprs, expr)
 	}
 
-	path, err := params.String("path", "")
+	jpf.Path, err = params.String("path", "")
 	if err != nil {
 		return nil, err
 	}
 
-	if path == "" {
+	if jpf.Path == "" {
 		return nil, fmt.Errorf("required parameter `path` not set")
 	}
 
-	return &JsonPath{
-		Expr: expr,
-		Path: path,
-	}, nil
+	return jpf, err
 }
 
 // Name implements Factory.
@@ -54,8 +56,8 @@ func (f JsonPathFactory) Name() string {
 
 // JsonPath is a filter that applies a JSONPath expression to a file in the repository.
 type JsonPath struct {
-	Expr jp.Expr
-	Path string
+	Exprs []jp.Expr
+	Path  string
 }
 
 // Do implements Filter.
@@ -83,11 +85,21 @@ func (f *JsonPath) Do(ctx context.Context) (bool, error) {
 		return false, fmt.Errorf("decode file for JSONPath filter: %w", err)
 	}
 
-	result := f.Expr.Get(data)
-	return len(result) > 0, nil
+	for _, expr := range f.Exprs {
+		result := expr.Get(data)
+		if len(result) == 0 {
+			return false, nil
+		}
+	}
+
+	return true, nil
 }
 
 // String implements Filter.
-func (jp *JsonPath) String() string {
-	return fmt.Sprintf("jsonpath(expression=%s,path=%s)", jp.Expr, jp.Path)
+func (f *JsonPath) String() string {
+	var expressions []string
+	for _, expr := range f.Exprs {
+		expressions = append(expressions, expr.String())
+	}
+	return fmt.Sprintf("jsonpath(expressions=%s,path=%s)", expressions, f.Path)
 }
