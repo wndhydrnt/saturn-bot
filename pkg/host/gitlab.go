@@ -581,7 +581,8 @@ func (g *GitLabHost) CreateFromName(name string) (Repository, error) {
 		return nil, fmt.Errorf("get gitlab project: %w", err)
 	}
 
-	return &GitLabRepository{client: g.client, host: g, project: project, userCache: g.userCache}, nil
+	repo := &GitLabRepository{client: g.client, host: g, project: project, userCache: g.userCache}
+	return NewRepositoryProxy(repo, nil), nil
 }
 
 func (g *GitLabHost) Name() string {
@@ -607,7 +608,8 @@ func (g *GitLabHost) ListRepositories(since *time.Time, result chan []Repository
 
 		var batch []Repository
 		for _, project := range projects {
-			batch = append(batch, &GitLabRepository{client: g.client, host: g, project: project, userCache: g.userCache})
+			glr := &GitLabRepository{client: g.client, host: g, project: project, userCache: g.userCache}
+			batch = append(batch, NewRepositoryProxy(glr, nil))
 		}
 
 		result <- batch
@@ -661,7 +663,11 @@ func (g *GitLabHost) ListRepositoriesWithOpenPullRequests(result chan []Reposito
 				continue
 			}
 
-			batch = append(batch, &GitLabRepository{client: g.client, host: g, project: project, userCache: g.userCache})
+			repo := NewRepositoryProxy(
+				&GitLabRepository{client: g.client, host: g, project: project, userCache: g.userCache},
+				nil,
+			)
+			batch = append(batch, repo)
 		}
 
 		result <- batch
