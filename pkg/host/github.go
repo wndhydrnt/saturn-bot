@@ -593,7 +593,7 @@ func (g *GitHubHost) CreateFromName(name string) (Repository, error) {
 		return nil, fmt.Errorf("get github repository: %w", err)
 	}
 
-	return &GitHubRepository{client: g.client, host: g, repo: repo}, nil
+	return NewRepositoryProxy(&GitHubRepository{client: g.client, host: g, repo: repo}, nil), nil
 }
 
 func (g *GitHubHost) ListRepositories(since *time.Time, result chan []Repository, errChan chan error) {
@@ -623,7 +623,10 @@ func (g *GitHubHost) ListRepositories(since *time.Time, result chan []Repository
 				return
 			}
 
-			batch = append(batch, &GitHubRepository{client: g.client, host: g, repo: repo})
+			batch = append(
+				batch,
+				NewRepositoryProxy(&GitHubRepository{client: g.client, host: g, repo: repo}, nil),
+			)
 		}
 
 		result <- batch
@@ -676,7 +679,10 @@ func (g *GitHubHost) ListRepositoriesWithOpenPullRequests(result chan []Reposito
 					return
 				}
 
-				batch = append(batch, &GitHubRepository{client: g.client, host: g, repo: repo})
+				batch = append(
+					batch,
+					NewRepositoryProxy(&GitHubRepository{client: g.client, host: g, repo: repo}, nil),
+				)
 			}
 		}
 

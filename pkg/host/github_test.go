@@ -931,6 +931,7 @@ func TestGitHubHost_CreateFromName(t *testing.T) {
 
 			require.NoError(t, err)
 			assert.Equal(t, tc.want, repo.FullName())
+			assert.IsType(t, &RepositoryProxy{}, repo)
 		})
 	}
 }
@@ -983,7 +984,9 @@ func TestGitHubHost_ListRepositories(t *testing.T) {
 	require.NoError(t, wantErr)
 	assert.Len(t, result, 2)
 	assert.Equal(t, "github.com/unittest/first", result[0].FullName())
+	assert.IsType(t, &RepositoryProxy{}, result[0])
 	assert.Equal(t, "github.com/unittest/second", result[1].FullName())
+	assert.IsType(t, &RepositoryProxy{}, result[1])
 	assert.True(t, gock.IsDone())
 }
 
@@ -1037,7 +1040,9 @@ func TestGitHubHost_ListRepositories_Since(t *testing.T) {
 	require.NoError(t, wantErr)
 	require.Len(t, result, 2)
 	assert.Equal(t, "github.com/unittest/first", result[0].FullName())
+	assert.IsType(t, &RepositoryProxy{}, result[0])
 	assert.Equal(t, "github.com/unittest/second", result[1].FullName())
+	assert.IsType(t, &RepositoryProxy{}, result[1])
 	assert.True(t, gock.IsDone())
 }
 
@@ -1109,7 +1114,9 @@ func TestGitHubHost_ListRepositoriesWithOpenPullRequests(t *testing.T) {
 	require.NoError(t, wantErr)
 	require.Len(t, result, 2)
 	assert.Equal(t, "github.com/unittest/first", result[0].FullName())
+	assert.IsType(t, &RepositoryProxy{}, result[0])
 	assert.Equal(t, "github.com/unittest/second", result[1].FullName())
+	assert.IsType(t, &RepositoryProxy{}, result[1])
 	assert.True(t, gock.IsDone())
 }
 
