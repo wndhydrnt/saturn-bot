@@ -15,9 +15,9 @@ type RepositoryProxy struct {
 	downloadCache *gocache.Cache
 }
 
-// NewRepositoryProxy returns a new RepositoryCache.
+// NewRepositoryProxy returns a new RepositoryProxy.
 // If cache is nil, then it uses a default cache that keeps entries for 15 seconds
-// and cleans expired entries every 20 seconds.
+// and cleans up expired entries every 20 seconds.
 func NewRepositoryProxy(wrapped Repository, cache *gocache.Cache) Repository {
 	if cache == nil {
 		cache = defaultDownloadCache
