@@ -7,7 +7,7 @@ Matches if every query returns at least one XML node.
 
 ### `expressions`
 
-List of XPath expressions to use for querying the XML document.
+List of XPath expressions to query the XML document.
 
 Use an online tool such as [XPather](http://xpather.com/) to test the expression.
 
