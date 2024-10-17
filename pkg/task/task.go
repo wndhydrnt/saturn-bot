@@ -5,6 +5,7 @@ import (
 	"context"
 	"fmt"
 	htmlTemplate "html/template"
+	"slices"
 	"time"
 
 	"github.com/gosimple/slug"
@@ -70,6 +71,27 @@ func createFiltersForTask(filterDefs []schema.Filter, factories options.FilterFa
 
 		result = append(result, fl)
 	}
+
+	slices.SortStableFunc(result, func(a filter.Filter, b filter.Filter) int {
+		_, aOk := a.(*filter.Repository)
+		_, bOk := b.(*filter.Repository)
+		// Both of type Repository. Keep order.
+		if aOk && bOk {
+			return 0
+		}
+		// None of type Repository. Keep order.
+		if !aOk && !bOk {
+			return 0
+		}
+		// a is of type Repository.
+		// Put it before b.
+		if aOk && !bOk {
+			return -1
+		}
+		// b is of type Repository.
+		// Put it before a.
+		return 1
+	})
 
 	return result, nil
 }
