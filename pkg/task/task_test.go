@@ -229,3 +229,43 @@ schedule: "* * * *"
 	err = tr.ReadAll([]string{f.Name()})
 	require.Errorf(t, err, "failed to read tasks from file %s: parse schedule: Expected exactly 5 fields, found 4: * * * *", f.Name())
 }
+
+func TestRegistry_ReadAll_SortRepositoryFilterFirst(t *testing.T) {
+	tasksRaw := `
+  name: Task
+  filters:
+    - filter: file
+      params:
+        paths: [unit-test.txt]
+    - filter: repository
+      params:
+        host: git.localhost
+        owner: unit
+        name: test
+    - filter: repository
+      params:
+        host: git.localhost
+        owner: unit
+        name: test2
+`
+
+	f, err := os.CreateTemp("", "*.yaml")
+	require.NoError(t, err)
+	_, err = f.WriteString(tasksRaw)
+	require.NoError(t, err)
+	f.Close()
+	defer func() {
+		err := os.Remove(f.Name())
+		require.NoError(t, err)
+	}()
+
+	tr := task.NewRegistry(options.Opts{FilterFactories: filter.BuiltInFactories})
+	err = tr.ReadAll([]string{f.Name()})
+	require.NoError(t, err)
+
+	assert.Len(t, tr.GetTasks(), 1)
+	task := tr.GetTasks()[0]
+	assert.Equal(t, task.Filters()[0].String(), "repository(host=^git.localhost$,owner=^unit$,name=^test$)")
+	assert.Equal(t, task.Filters()[1].String(), "repository(host=^git.localhost$,owner=^unit$,name=^test2$)")
+	assert.Equal(t, task.Filters()[2].String(), "file(op=and,paths=[unit-test.txt])")
+}
