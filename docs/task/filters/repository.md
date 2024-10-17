@@ -4,8 +4,8 @@ Match a repository if its host, owner and name match.
 
 !!! note
 
-    The repository filter is very cheap to execute because it doesn't make additional API calls.
-    saturn-bot always executes it before all other filters of a task.
+    The repository filter is cheap to execute because it doesn't make additional API calls.
+    saturn-bot executes it before all other filters of a task.
 
 ## Parameters
 
