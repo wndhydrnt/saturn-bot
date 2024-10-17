@@ -4,7 +4,7 @@ Execute a script.
 
 saturn-bot sets the current working directory of the script to the checkout of a repository.
 
-The script has access to the environment variable `TASK_DIR`, which contains the absolute
+The script has access to the environment variable `TASK_DIR`, which is set to the absolute
 path to the directory that contains the task file.
 It allows the script to load additional files stored next to the task file.
 
