@@ -110,6 +110,17 @@ func TestScript_Apply(t *testing.T) {
 			},
 			wantError: errors.New("either parameter `script` or `scriptFromFile` need to be set, not both"),
 		},
+		{
+			name: "When the script is executed then it has access to the env var TASK_DIR",
+			bootstrap: func(ctx context.Context) (string, context.Context) {
+				return "/tmp/task/unittest.yaml", ctx
+			},
+			factory: ScriptFactory{},
+			params: map[string]any{
+				"script": "echo $TASK_DIR > test.txt",
+			},
+			wantFiles: map[string]string{"test.txt": "/tmp/task\n"},
+		},
 	}
 
 	for _, tc := range testCases {

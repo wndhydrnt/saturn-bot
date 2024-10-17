@@ -4,6 +4,10 @@ Execute a script.
 
 saturn-bot sets the current working directory of the script to the checkout of a repository.
 
+The script has access to the environment variable `TASK_DIR`, which contains the absolute
+path to the directory that contains the task file.
+It allows the script to load additional files stored next to the task file.
+
 ## Parameters
 
 ### `script`
@@ -70,6 +74,18 @@ actions:
       # Otherwise the shell searches in locations of $PATH.
       script: |
         ./file-in-repo.sh
+```
+
+```yaml title="Load a file using the TASK_DIR environment variable"
+actions:
+  - action: script
+    params:
+      # Read the file "hello.txt", which is located
+      # next to the task file and
+      # write it to file "hello-repo.txt"
+      # in the repository.
+      script: |
+        cat "${TASK_DIR}/hello.txt" > hello-repo.txt
 ```
 
 ```yaml title="Script file"

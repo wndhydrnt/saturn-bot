@@ -48,19 +48,18 @@ func (f ScriptFactory) Create(params params.Params, taskPath string) (Action, er
 		return nil, fmt.Errorf("either parameter `script` or `scriptFromFile` need to be set, not both")
 	}
 
+	taskDirAbs, err := filepath.Abs(filepath.Dir(taskPath))
+	if err != nil {
+		return nil, fmt.Errorf("turn path of task directory into absolute path: %w", err)
+	}
+
 	var scriptContent string
 	if scriptFromFile != "" {
 		var path string
 		if filepath.IsAbs(scriptFromFile) {
 			path = scriptFromFile
 		} else {
-			taskDir := filepath.Dir(taskPath)
-			pathAbs, err := filepath.Abs(filepath.Join(taskDir, scriptFromFile))
-			if err != nil {
-				return nil, fmt.Errorf("make path to script file absolute: %w", err)
-			}
-
-			path = pathAbs
+			path = filepath.Join(taskDirAbs, scriptFromFile)
 		}
 
 		b, err := os.ReadFile(path)
@@ -81,6 +80,7 @@ func (f ScriptFactory) Create(params params.Params, taskPath string) (Action, er
 	return &scriptAction{
 		scriptTpl: tpl,
 		shell:     shell,
+		taskDir:   taskDirAbs,
 		timeout:   timeout,
 	}, nil
 }
@@ -93,6 +93,7 @@ func (f ScriptFactory) Name() string {
 type scriptAction struct {
 	scriptTpl *template.Template
 	shell     string
+	taskDir   string
 	timeout   time.Duration
 }
 
@@ -111,6 +112,9 @@ func (a *scriptAction) Apply(ctx context.Context) error {
 	}
 
 	cmd := exec.Command(a.shell, scriptFile.Name()) // #nosec G204
+	env := cmd.Environ()
+	env = append(env, "TASK_DIR="+a.taskDir)
+	cmd.Env = env
 	cmdCtx, cmdCancel := context.WithTimeout(context.Background(), a.timeout)
 	defer cmdCancel()
 	errChan := make(chan error)
