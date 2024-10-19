@@ -53,7 +53,8 @@ active: false
 
 !!! note
 
-    saturn-bot doesn't remove assignees when the value is set back to an empty list.
+    If the task previously defined assignees and the list is set back to empty
+    then saturn-bot doesn't remove the assignees from a pull request.
 
 Examples
 
@@ -235,7 +236,8 @@ prTitle: "Apply task {{.TaskName}}"
 
 !!! note
 
-    saturn-bot doesn't remove reviewers when the value is set back to an empty list.
+    If the task previously defined reviewers and the list is set back to empty
+    then saturn-bot doesn't remove the reviewers from a pull request.
 
 Examples
 
