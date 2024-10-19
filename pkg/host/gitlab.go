@@ -445,8 +445,10 @@ func (g *GitLabRepository) PullRequest(pr any) *PullRequest {
 
 func (g *GitLabRepository) UpdatePullRequest(data PullRequestData, pr interface{}) error {
 	needsUpdate := false
+	opts := &gitlab.UpdateMergeRequestOptions{}
 	mr := pr.(*gitlab.MergeRequest)
 	if mr.Title != data.Title {
+		opts.Title = gitlab.Ptr(data.Title)
 		needsUpdate = true
 	}
 
@@ -456,29 +458,31 @@ func (g *GitLabRepository) UpdatePullRequest(data PullRequestData, pr interface{
 	}
 
 	if mr.Description != body {
+		opts.Description = gitlab.Ptr(body)
 		needsUpdate = true
 	}
 
-	assigneeIDs, hasChanges := g.diffUsers(mr.Assignees, data.Assignees)
-	if hasChanges {
-		needsUpdate = true
+	if len(data.Assignees) > 0 {
+		assigneeIDs, hasChanges := g.diffUsers(mr.Assignees, data.Assignees)
+		if hasChanges {
+			opts.AssigneeIDs = gitlab.Ptr(assigneeIDs)
+			needsUpdate = true
+		}
 	}
 
-	reviewerIDs, hasChanges := g.diffUsers(mr.Reviewers, data.Reviewers)
-	if hasChanges {
-		needsUpdate = true
+	if len(data.Reviewers) > 0 {
+		reviewerIDs, hasChanges := g.diffUsers(mr.Reviewers, data.Reviewers)
+		if hasChanges {
+			opts.ReviewerIDs = gitlab.Ptr(reviewerIDs)
+			needsUpdate = true
+		}
 	}
 
 	if needsUpdate {
 		_, _, err = g.client.MergeRequests.UpdateMergeRequest(
 			g.project.ID,
 			mr.IID,
-			&gitlab.UpdateMergeRequestOptions{
-				AssigneeIDs: gitlab.Ptr(assigneeIDs),
-				Description: gitlab.Ptr(body),
-				ReviewerIDs: gitlab.Ptr(reviewerIDs),
-				Title:       gitlab.Ptr(data.Title),
-			},
+			opts,
 		)
 		if err != nil {
 			return fmt.Errorf("update gitlab merge request %d project %d: %w", mr.IID, g.project.ID, err)

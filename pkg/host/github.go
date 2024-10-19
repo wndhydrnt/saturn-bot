@@ -360,55 +360,59 @@ func (g *GitHubRepository) UpdatePullRequest(data PullRequestData, pr interface{
 		}
 	}
 
-	assigneesToAdd, assigneesToRemove := diffAssignees(gpr.Assignees, data.Assignees)
-	if len(assigneesToRemove) > 0 {
-		_, _, err = g.client.Issues.RemoveAssignees(ctx, g.repo.GetOwner().GetLogin(), g.repo.GetName(), gpr.GetNumber(), assigneesToRemove)
-		if err != nil {
-			return fmt.Errorf("remove assignees from updated pull request %d: %w", gpr.GetNumber(), err)
+	if len(data.Assignees) > 0 {
+		assigneesToAdd, assigneesToRemove := diffAssignees(gpr.Assignees, data.Assignees)
+		if len(assigneesToRemove) > 0 {
+			_, _, err = g.client.Issues.RemoveAssignees(ctx, g.repo.GetOwner().GetLogin(), g.repo.GetName(), gpr.GetNumber(), assigneesToRemove)
+			if err != nil {
+				return fmt.Errorf("remove assignees from updated pull request %d: %w", gpr.GetNumber(), err)
+			}
+		}
+
+		if len(assigneesToAdd) > 0 {
+			_, _, err = g.client.Issues.AddAssignees(ctx, g.repo.GetOwner().GetLogin(), g.repo.GetName(), gpr.GetNumber(), assigneesToAdd)
+			if err != nil {
+				return fmt.Errorf("add assignees to updated pull request %d: %w", gpr.GetNumber(), err)
+			}
 		}
 	}
 
-	if len(assigneesToAdd) > 0 {
-		_, _, err = g.client.Issues.AddAssignees(ctx, g.repo.GetOwner().GetLogin(), g.repo.GetName(), gpr.GetNumber(), assigneesToAdd)
+	if len(data.Reviewers) > 0 {
+		reviews, err := g.listAllReviews(gpr.GetNumber())
 		if err != nil {
-			return fmt.Errorf("add assignees to updated pull request %d: %w", gpr.GetNumber(), err)
+			return err
 		}
-	}
 
-	reviews, err := g.listAllReviews(gpr.GetNumber())
-	if err != nil {
-		return err
-	}
-
-	var submittedReviewers []*github.User
-	for _, review := range reviews {
-		submittedReviewers = append(submittedReviewers, review.User)
-	}
-
-	reviewersToAdd, reviewersToRemove := diffReviewers(gpr.RequestedReviewers, submittedReviewers, data.Reviewers)
-	if len(reviewersToAdd) > 0 {
-		_, _, err := g.client.PullRequests.RequestReviewers(
-			ctx,
-			g.repo.GetOwner().GetLogin(),
-			g.repo.GetName(),
-			gpr.GetNumber(),
-			github.ReviewersRequest{Reviewers: reviewersToAdd},
-		)
-		if err != nil {
-			return fmt.Errorf("update to add requested reviewers on pull request %d: %w", gpr.GetNumber(), err)
+		var submittedReviewers []*github.User
+		for _, review := range reviews {
+			submittedReviewers = append(submittedReviewers, review.User)
 		}
-	}
 
-	if len(reviewersToRemove) > 0 {
-		_, err := g.client.PullRequests.RemoveReviewers(
-			ctx,
-			g.repo.GetOwner().GetLogin(),
-			g.repo.GetName(),
-			gpr.GetNumber(),
-			github.ReviewersRequest{Reviewers: reviewersToRemove},
-		)
-		if err != nil {
-			return fmt.Errorf("update to remove requested reviewers from pull request %d: %w", gpr.GetNumber(), err)
+		reviewersToAdd, reviewersToRemove := diffReviewers(gpr.RequestedReviewers, submittedReviewers, data.Reviewers)
+		if len(reviewersToAdd) > 0 {
+			_, _, err := g.client.PullRequests.RequestReviewers(
+				ctx,
+				g.repo.GetOwner().GetLogin(),
+				g.repo.GetName(),
+				gpr.GetNumber(),
+				github.ReviewersRequest{Reviewers: reviewersToAdd},
+			)
+			if err != nil {
+				return fmt.Errorf("update to add requested reviewers on pull request %d: %w", gpr.GetNumber(), err)
+			}
+		}
+
+		if len(reviewersToRemove) > 0 {
+			_, err := g.client.PullRequests.RemoveReviewers(
+				ctx,
+				g.repo.GetOwner().GetLogin(),
+				g.repo.GetName(),
+				gpr.GetNumber(),
+				github.ReviewersRequest{Reviewers: reviewersToRemove},
+			)
+			if err != nil {
+				return fmt.Errorf("update to remove requested reviewers from pull request %d: %w", gpr.GetNumber(), err)
+			}
 		}
 	}
 
