@@ -676,14 +676,6 @@ _This pull request has been created by [saturn-bot](https://github.com/wndhydrnt
 			"body":  body,
 		}).
 		Reply(200)
-	gock.New("https://api.github.com").
-		Get("/repos/unit/test/pulls/987/reviews").
-		MatchParams(map[string]string{
-			"page":     "1",
-			"per_page": "20",
-		}).
-		Reply(200).
-		JSON([]*github.PullRequestReview{})
 	pr := &github.PullRequest{
 		Body:   github.String("old body"),
 		Number: github.Int(987),
@@ -723,14 +715,6 @@ func TestGitHubRepository_UpdatePullRequest_NoUpdate(t *testing.T) {
 _This pull request has been created by [saturn-bot](https://github.com/wndhydrnt/saturn-bot)_ 🪐🤖.
 `
 	defer gock.Off()
-	gock.New("https://api.github.com").
-		Get("/repos/unit/test/pulls/987/reviews").
-		MatchParams(map[string]string{
-			"page":     "1",
-			"per_page": "20",
-		}).
-		Reply(200).
-		JSON([]*github.PullRequestReview{})
 	pr := &github.PullRequest{
 		Body:   github.String(body),
 		Number: github.Int(987),
@@ -782,14 +766,6 @@ _This pull request has been created by [saturn-bot](https://github.com/wndhydrnt
 			"assignees": []string{"y", "z"},
 		}).
 		Reply(200)
-	gock.New("https://api.github.com").
-		Get("/repos/unit/test/pulls/987/reviews").
-		MatchParams(map[string]string{
-			"page":     "1",
-			"per_page": "20",
-		}).
-		Reply(200).
-		JSON([]*github.PullRequestReview{})
 	pr := &github.PullRequest{
 		Assignees: []*github.User{
 			{Login: github.String("a")},

@@ -47,6 +47,23 @@ active: true
 active: false
 ```
 
+## assignees
+
+[json-path:../../pkg/task/schema/task.schema.json:$.properties.assignees.description]
+
+!!! note
+
+    If the task previously defined assignees and the list is set back to empty
+    then saturn-bot doesn't remove the assignees from a pull request.
+
+Examples
+
+```yaml title="Set assignees"
+assignees:
+  - ellie
+  - joel
+```
+
 ## autoCloseAfter
 
 [json-path:../../pkg/task/schema/task.schema.json:$.properties.autoCloseAfter.description]
@@ -211,6 +228,23 @@ prTitle: "feat: Custom title"
 
 ```yaml title="Use a template variable"
 prTitle: "Apply task {{.TaskName}}"
+```
+
+## reviewers
+
+[json-path:../../pkg/task/schema/task.schema.json:$.properties.reviewers.description]
+
+!!! note
+
+    If the task previously defined reviewers and the list is set back to empty
+    then saturn-bot doesn't remove the reviewers from a pull request.
+
+Examples
+
+```yaml title="Set reviewers"
+reviewers:
+  - ellie
+  - joel
 ```
 
 ## schedule

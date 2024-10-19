@@ -615,10 +615,8 @@ func TestGitLabRepository_UpdatePullRequest(t *testing.T) {
 		Put("/api/v4/projects/123/merge_requests/987").
 		MatchType("json").
 		JSON(map[string]any{
-			"title":        "New PR Title",
-			"description":  "New PR Body\n\n---\n\n**Auto-merge:** Disabled. Merge this manually.\n\n**Ignore:** This PR will be recreated if closed.\n\n---\n\n- [ ] If you want to rebase this PR, check this box\n\n---\n\n_This pull request has been created by [saturn-bot](https://github.com/wndhydrnt/saturn-bot)_ 🪐🤖.\n",
-			"assignee_ids": nil,
-			"reviewer_ids": nil,
+			"title":       "New PR Title",
+			"description": "New PR Body\n\n---\n\n**Auto-merge:** Disabled. Merge this manually.\n\n**Ignore:** This PR will be recreated if closed.\n\n---\n\n- [ ] If you want to rebase this PR, check this box\n\n---\n\n_This pull request has been created by [saturn-bot](https://github.com/wndhydrnt/saturn-bot)_ 🪐🤖.\n",
 		}).
 		Reply(200).
 		JSON(map[string]string{})
@@ -683,8 +681,6 @@ func TestGitLabRepository_UpdatePullRequest_UpdatedAssigneesReviewers(t *testing
 		Put("/api/v4/projects/123/merge_requests/987").
 		MatchType("json").
 		JSON(map[string]any{
-			"title":        "PR Title",
-			"description":  gitlabMergeRequestBody,
 			"assignee_ids": []int{25, 26, 1},
 			"reviewer_ids": []int{5, 24},
 		}).
