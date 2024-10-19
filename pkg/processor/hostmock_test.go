@@ -23,6 +23,7 @@ import (
 type MockRepository struct {
 	ctrl     *gomock.Controller
 	recorder *MockRepositoryMockRecorder
+	isgomock struct{}
 }
 
 // MockRepositoryMockRecorder is the mock recorder for MockRepository.
@@ -430,6 +431,7 @@ func (mr *MockRepositoryMockRecorder) WebUrl() *gomock.Call {
 type MockHost struct {
 	ctrl     *gomock.Controller
 	recorder *MockHostMockRecorder
+	isgomock struct{}
 }
 
 // MockHostMockRecorder is the mock recorder for MockHost.
@@ -492,6 +494,7 @@ func (mr *MockHostMockRecorder) ListRepositoriesWithOpenPullRequests(result, err
 type MockHostDetail struct {
 	ctrl     *gomock.Controller
 	recorder *MockHostDetailMockRecorder
+	isgomock struct{}
 }
 
 // MockHostDetailMockRecorder is the mock recorder for MockHostDetail.
