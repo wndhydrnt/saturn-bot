@@ -22,6 +22,7 @@ import (
 type MockGitClient struct {
 	ctrl     *gomock.Controller
 	recorder *MockGitClientMockRecorder
+	isgomock struct{}
 }
 
 // MockGitClientMockRecorder is the mock recorder for MockGitClient.
