@@ -135,8 +135,8 @@ func Initialize(opts *Opts) error {
 	info, err := os.Stat(dataDir)
 	if err != nil {
 		if errors.Is(err, os.ErrNotExist) {
-			log.Log().Infof("Creating data directory %s", *opts.Config.DataDir)
-			mkdirErr := os.MkdirAll(*opts.Config.DataDir, 0700)
+			log.Log().Infof("Creating data directory %s", dataDir)
+			mkdirErr := os.MkdirAll(dataDir, 0700)
 			if mkdirErr != nil {
 				return fmt.Errorf("create data directory: %w", err)
 			}
@@ -146,7 +146,7 @@ func Initialize(opts *Opts) error {
 	}
 
 	if info != nil && !info.IsDir() {
-		return fmt.Errorf("data directory %s is not a directory", *opts.Config.DataDir)
+		return fmt.Errorf("data directory %s is not a directory", dataDir)
 	}
 
 	opts.dataDir = dataDir
