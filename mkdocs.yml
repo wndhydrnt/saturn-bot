@@ -1,4 +1,7 @@
 site_name: saturn-bot
+repo_name: wndhydrnt/saturn-bot # https://squidfunk.github.io/mkdocs-material/setup/adding-a-git-repository/
+repo_url: https://github.com/wndhydrnt/saturn-bot # https://squidfunk.github.io/mkdocs-material/setup/adding-a-git-repository/
+edit_uri: tree/main/docs # https://squidfunk.github.io/mkdocs-material/setup/adding-a-git-repository/
 nav:
   - index.md
   - installation.md
@@ -6,11 +9,30 @@ nav:
   - ...
 theme:
   features:
+    - content.action.view # https://squidfunk.github.io/mkdocs-material/setup/adding-a-git-repository/#code-actions
     - content.code.copy
     - content.tabs.link
     - navigation.indexes
     - navigation.sections
   name: material
+  palette:
+    # Palette toggle for automatic mode
+    - media: "(prefers-color-scheme)"
+      toggle:
+        icon: material/brightness-auto
+        name: Switch to light mode
+    # Palette toggle for light mode
+    - media: "(prefers-color-scheme: light)"
+      scheme: default
+      toggle:
+        icon: material/brightness-7
+        name: Switch to dark mode
+    # Palette toggle for dark mode
+    - media: "(prefers-color-scheme: dark)"
+      scheme: slate
+      toggle:
+        icon: material/brightness-4
+        name: Switch to light mode
 markdown_extensions:
   - pymdownx.highlight:
       anchor_linenums: true
@@ -27,6 +49,8 @@ markdown_extensions:
   - pymdownx.details
   - pymdownx.tabbed:
       alternate_style: true
+  - toc:
+      permalink: true
 hooks:
   - mkdocs-hooks/json_path.py
 plugins:
