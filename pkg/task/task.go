@@ -341,7 +341,7 @@ func (tr *Registry) ReadTasks(taskFile string) error {
 		}
 
 		for idx, taskPlugin := range entry.Task.Plugins {
-			if tr.isCi && tr.skipPlugins {
+			if tr.skipPlugins {
 				continue
 			}
 
@@ -370,6 +370,7 @@ func (tr *Registry) ReadTasks(taskFile string) error {
 
 func (tr *Registry) startPlugin(taskPath string, taskPlugin schema.Plugin) (*plugin.Plugin, error) {
 	pluginConfiguration := make(schema.PluginConfiguration, len(taskPlugin.Configuration))
+	// Copy to not modify the original
 	for k, v := range taskPlugin.Configuration {
 		pluginConfiguration[k] = v
 	}
