@@ -43,6 +43,7 @@ func NewCiRunnerFromConfig(configFile string, skipPlugins bool) (*CiRunner, erro
 
 // Run reads and validates taskFiles and writes a message to out for each file.
 func (ci *CiRunner) Run(out io.Writer, taskFiles ...string) error {
+	failed := false
 	for _, taskFile := range taskFiles {
 		// Create a new registry for each file.
 		// Makes it easier to connect an error to a task file.
@@ -50,6 +51,7 @@ func (ci *CiRunner) Run(out io.Writer, taskFiles ...string) error {
 		err := reg.ReadTasks(taskFile)
 		if err != nil {
 			fmt.Fprintf(out, "❌ Validation failed: %s\n", err)
+			failed = true
 			continue
 		}
 
@@ -57,6 +59,10 @@ func (ci *CiRunner) Run(out io.Writer, taskFiles ...string) error {
 			fmt.Fprintf(out, "✅ Valid task %s found\n", task.Name)
 			task.Stop()
 		}
+	}
+
+	if failed {
+		return fmt.Errorf("validation failed")
 	}
 
 	return nil

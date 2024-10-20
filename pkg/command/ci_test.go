@@ -67,7 +67,7 @@ func TestCiRunner_Run_Invalid(t *testing.T) {
 	out := &bytes.Buffer{}
 	err = runner.Run(out, filepath.Join(tmpDir, "*.yaml"))
 
-	require.NoError(t, err)
+	require.Error(t, err, "validation failed")
 	require.Contains(t, out.String(), "Validation failed: decode task from YAML file")
 }
 

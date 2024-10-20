@@ -16,6 +16,8 @@ It also starts any plugins defined in a task file
 and calls their initialize function.
 Pass --start-plugins=false to prevent this.
 
+The command exits with exit code "1" if validation fails.
+
 Examples:
 
 # Validate one task file
