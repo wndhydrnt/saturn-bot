@@ -3,6 +3,7 @@ package config
 import (
 	_ "embed"
 	"encoding/json"
+	"errors"
 	"fmt"
 	"net/mail"
 	"strings"
@@ -24,6 +25,8 @@ const (
 var (
 	//go:embed config.schema.json
 	schemaRaw string
+	// ErrNoToken informs the user that at least one token is required.
+	ErrNoToken = errors.New("no GitHub token or GitLab token configured")
 )
 
 func (c Configuration) GitUserEmail() string {
@@ -93,15 +96,15 @@ func Read(cfgFile string) (cfg Configuration, err error) {
 		return cfg, fmt.Errorf("schema validation failed: %w", err)
 	}
 
-	if cfg.GithubToken == nil && cfg.GitlabToken == nil {
-		return cfg, fmt.Errorf("no GitHub token or GitLab token configured")
-	}
-
 	if cfg.GitAuthor != "" {
 		_, err = mail.ParseAddress(cfg.GitAuthor)
 		if err != nil {
 			return cfg, fmt.Errorf("failed to parse field `gitAuthor`: %w", err)
 		}
+	}
+
+	if cfg.GithubToken == nil && cfg.GitlabToken == nil {
+		return cfg, ErrNoToken
 	}
 
 	return cfg, nil

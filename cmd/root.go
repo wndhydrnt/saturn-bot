@@ -22,6 +22,7 @@ var rootCmd = &cobra.Command{
 }
 
 func Execute() int {
+	rootCmd.AddCommand(createCiCommand())
 	rootCmd.AddCommand(createExperimentalCommand())
 	rootCmd.AddCommand(createPluginCommand())
 	rootCmd.AddCommand(createRunCommand())

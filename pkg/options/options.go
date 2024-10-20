@@ -15,6 +15,11 @@ import (
 	sLog "github.com/wndhydrnt/saturn-bot/pkg/log"
 )
 
+var (
+	// ErrNoHosts indicates that no hosts have been set up.
+	ErrNoHosts = errors.New("no hosts configured")
+)
+
 type ActionFactories []action.Factory
 
 func (af ActionFactories) Find(name string) action.Factory {
@@ -44,6 +49,8 @@ type Opts struct {
 	Config          config.Configuration
 	FilterFactories FilterFactories
 	Hosts           []host.Host
+	IsCi            bool
+	SkipPlugins     bool
 
 	dataDir            string
 	workerLoopInterval time.Duration
@@ -101,7 +108,7 @@ func createHostsFromConfig(cfg config.Configuration) ([]host.Host, error) {
 	}
 
 	if len(hosts) == 0 {
-		return nil, fmt.Errorf("no hosts configured")
+		return nil, ErrNoHosts
 	}
 
 	return hosts, nil
@@ -128,8 +135,8 @@ func Initialize(opts *Opts) error {
 	info, err := os.Stat(dataDir)
 	if err != nil {
 		if errors.Is(err, os.ErrNotExist) {
-			log.Log().Infof("Creating data directory %s", *opts.Config.DataDir)
-			mkdirErr := os.MkdirAll(*opts.Config.DataDir, 0700)
+			log.Log().Infof("Creating data directory %s", dataDir)
+			mkdirErr := os.MkdirAll(dataDir, 0700)
 			if mkdirErr != nil {
 				return fmt.Errorf("create data directory: %w", err)
 			}
@@ -139,7 +146,7 @@ func Initialize(opts *Opts) error {
 	}
 
 	if info != nil && !info.IsDir() {
-		return fmt.Errorf("data directory %s is not a directory", *opts.Config.DataDir)
+		return fmt.Errorf("data directory %s is not a directory", dataDir)
 	}
 
 	opts.dataDir = dataDir
