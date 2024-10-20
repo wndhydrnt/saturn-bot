@@ -272,9 +272,11 @@ func (tw *Task) Stop() {
 type Registry struct {
 	actionFactories options.ActionFactories
 	filterFactories options.FilterFactories
+	isCi            bool
 	pathJava        string
 	pathPython      string
 	pluginLogLevel  zapcore.Level
+	skipPlugins     bool
 	tasks           []*Task
 }
 
@@ -287,9 +289,11 @@ func NewRegistry(opts options.Opts) *Registry {
 	return &Registry{
 		actionFactories: opts.ActionFactories,
 		filterFactories: opts.FilterFactories,
+		isCi:            opts.IsCi,
 		pathJava:        opts.Config.JavaPath,
 		pathPython:      opts.Config.PythonPath,
 		pluginLogLevel:  lvl,
+		skipPlugins:     opts.SkipPlugins,
 	}
 }
 
@@ -302,7 +306,7 @@ func (tr *Registry) GetTasks() []*Task {
 // ReadAll takes a list of paths to task files and reads all tasks from the files.
 func (tr *Registry) ReadAll(taskFiles []string) error {
 	for _, path := range taskFiles {
-		err := tr.readTasks(path)
+		err := tr.ReadTasks(path)
 		if err != nil {
 			return fmt.Errorf("failed to read tasks from file %s: %w", path, err)
 		}
@@ -311,7 +315,8 @@ func (tr *Registry) ReadAll(taskFiles []string) error {
 	return nil
 }
 
-func (tr *Registry) readTasks(taskFile string) error {
+// ReadTasks reads all tasks defined in taskFile and adds them to the registry.
+func (tr *Registry) ReadTasks(taskFile string) error {
 	results, err := schema.Read(taskFile)
 	if err != nil {
 		return err
@@ -336,15 +341,11 @@ func (tr *Registry) readTasks(taskFile string) error {
 		}
 
 		for idx, taskPlugin := range entry.Task.Plugins {
-			opts := plugin.StartOptions{
-				Config:       taskPlugin.Configuration,
-				Exec:         plugin.GetPluginExec(taskPlugin.PathAbs(entry.Path), tr.pathJava, tr.pathPython),
-				OnDataStderr: plugin.NewStderrHandler(tr.pluginLogLevel),
-				OnDataStdout: plugin.NewStdoutHandler(tr.pluginLogLevel),
+			if tr.isCi && tr.skipPlugins {
+				continue
 			}
 
-			p := &plugin.Plugin{}
-			err := p.Start(opts)
+			p, err := tr.startPlugin(entry.Path, taskPlugin)
 			if err != nil {
 				return fmt.Errorf("initialize plugin #%d: %w", idx, err)
 			}
@@ -365,6 +366,32 @@ func (tr *Registry) readTasks(taskFile string) error {
 	}
 
 	return nil
+}
+
+func (tr *Registry) startPlugin(taskPath string, taskPlugin schema.Plugin) (*plugin.Plugin, error) {
+	pluginConfiguration := make(schema.PluginConfiguration, len(taskPlugin.Configuration))
+	for k, v := range taskPlugin.Configuration {
+		pluginConfiguration[k] = v
+	}
+
+	if tr.isCi {
+		pluginConfiguration["saturn-bot.ci"] = "true"
+	}
+
+	opts := plugin.StartOptions{
+		Config:       pluginConfiguration,
+		Exec:         plugin.GetPluginExec(taskPlugin.PathAbs(taskPath), tr.pathJava, tr.pathPython),
+		OnDataStderr: plugin.NewStderrHandler(tr.pluginLogLevel),
+		OnDataStdout: plugin.NewStdoutHandler(tr.pluginLogLevel),
+	}
+
+	p := &plugin.Plugin{}
+	err := p.Start(opts)
+	if err != nil {
+		return nil, err
+	}
+
+	return p, nil
 }
 
 // Stop notifies every task that this Registry is being stopped.

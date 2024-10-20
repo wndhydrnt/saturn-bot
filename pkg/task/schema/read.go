@@ -58,7 +58,7 @@ func readFile(path string) ([]ReadResult, error) {
 		}
 
 		if err != nil {
-			return nil, fmt.Errorf("decode task file from YAML: %w", err)
+			return nil, fmt.Errorf("decode task from YAML file %s: %w", path, err)
 		}
 
 		// Encode to YAML again. Calculates the hash of the task,

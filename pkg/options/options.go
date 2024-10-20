@@ -15,6 +15,11 @@ import (
 	sLog "github.com/wndhydrnt/saturn-bot/pkg/log"
 )
 
+var (
+	// ErrNoHosts indicates that no hosts have been set up.
+	ErrNoHosts = errors.New("no hosts configured")
+)
+
 type ActionFactories []action.Factory
 
 func (af ActionFactories) Find(name string) action.Factory {
@@ -44,6 +49,8 @@ type Opts struct {
 	Config          config.Configuration
 	FilterFactories FilterFactories
 	Hosts           []host.Host
+	IsCi            bool
+	SkipPlugins     bool
 
 	dataDir            string
 	workerLoopInterval time.Duration
@@ -101,7 +108,7 @@ func createHostsFromConfig(cfg config.Configuration) ([]host.Host, error) {
 	}
 
 	if len(hosts) == 0 {
-		return nil, fmt.Errorf("no hosts configured")
+		return nil, ErrNoHosts
 	}
 
 	return hosts, nil
