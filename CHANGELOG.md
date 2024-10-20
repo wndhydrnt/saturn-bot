@@ -1,5 +1,12 @@
 # Changelog
 
+## [0.15.0](https://github.com/wndhydrnt/saturn-bot/compare/v0.14.0...v0.15.0) (2024-10-20)
+
+
+### Features
+
+* Set up shell completion ([4634532](https://github.com/wndhydrnt/saturn-bot/commit/46345322d8dc9387b572bd395333e077e040fa53))
+
 ## [0.14.0](https://github.com/wndhydrnt/saturn-bot/compare/v0.13.0...v0.14.0) (2024-10-20)
 
 
