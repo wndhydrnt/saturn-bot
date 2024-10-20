@@ -64,6 +64,9 @@ type Configuration struct {
 	// order to display the logs of a plugin.
 	PluginLogLevel ConfigurationPluginLogLevel `json:"pluginLogLevel,omitempty" yaml:"pluginLogLevel,omitempty" mapstructure:"pluginLogLevel,omitempty"`
 
+	// Address of a Prometheus Pushgateway to send metrics to.
+	PushgatewayUrl *string `json:"pushgatewayUrl,omitempty" yaml:"pushgatewayUrl,omitempty" mapstructure:"pushgatewayUrl,omitempty"`
+
 	// Path to the Python binary to execute plugins. If not set explicitly, then
 	// saturn-bot searches for the binary in $PATH.
 	PythonPath string `json:"pythonPath,omitempty" yaml:"pythonPath,omitempty" mapstructure:"pythonPath,omitempty"`

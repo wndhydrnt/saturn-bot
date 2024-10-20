@@ -23,7 +23,7 @@ require (
 	github.com/ncruces/go-sqlite3/gormlite v0.16.3
 	github.com/ohler55/ojg v1.24.1
 	github.com/patrickmn/go-cache v2.1.0+incompatible
-	github.com/prometheus/client_golang v1.20.2
+	github.com/prometheus/client_golang v1.20.5
 	github.com/prometheus/common v0.55.0
 	github.com/robfig/cron v1.2.0
 	github.com/santhosh-tekuri/jsonschema/v5 v5.3.1

@@ -94,6 +94,10 @@
       "enum": ["debug", "error", "info", "warn"],
       "type": "string"
     },
+    "pushgatewayUrl": {
+      "description": "Address of a Prometheus Pushgateway to send metrics to.",
+      "type": "string"
+    },
     "pythonPath": {
       "default": "python",
       "description": "Path to the Python binary to execute plugins. If not set explicitly, then saturn-bot searches for the binary in $PATH.",

@@ -13,6 +13,7 @@ import (
 	"github.com/google/go-github/v59/github"
 	"github.com/gregjones/httpcache"
 	"github.com/wndhydrnt/saturn-bot/pkg/log"
+	"github.com/wndhydrnt/saturn-bot/pkg/metrics"
 )
 
 var (
@@ -495,14 +496,17 @@ type GitHubHost struct {
 }
 
 func NewGitHubHost(address, token string, cacheDisabled bool) (*GitHubHost, error) {
-	var httpClient *http.Client
-	if cacheDisabled {
-		httpClient = &http.Client{}
-	} else {
-		httpClient = httpcache.NewMemoryCacheTransport().Client()
+	httpClient := &http.Client{
+		Timeout:   2 * time.Second,
+		Transport: http.DefaultTransport,
+	}
+	metrics.InstrumentHttpClient(httpClient)
+	if !cacheDisabled {
+		transport := httpcache.NewMemoryCacheTransport()
+		transport.Transport = httpClient.Transport
+		httpClient.Transport = transport
 	}
 
-	httpClient.Timeout = 2 * time.Second
 	client := github.NewClient(httpClient)
 	client = client.WithAuthToken(token)
 	if address != "" {

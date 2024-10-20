@@ -200,6 +200,16 @@ Set to `ssh` to clone repositories via SSH.
 | Type    | `string`                         |
 | Values  | `debug`, `error`, `info`, `warn` |
 
+## pushgatewayUrl
+
+[json-path:../pkg/config/config.schema.json:$.properties.pushgatewayUrl.description]
+
+| Name    | Value                       |
+| ------- | --------------------------- |
+| Default | -                           |
+| Env Var | `SATURN_BOT_PUSHGATEWAYURL` |
+| Type    | `string`                    |
+
 ## pythonPath
 
 [json-path:../pkg/config/config.schema.json:$.properties.pythonPath.description]

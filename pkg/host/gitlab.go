@@ -12,6 +12,7 @@ import (
 	"time"
 
 	"github.com/wndhydrnt/saturn-bot/pkg/log"
+	"github.com/wndhydrnt/saturn-bot/pkg/metrics"
 	"github.com/xanzy/go-gitlab"
 	"go.uber.org/zap"
 )
@@ -527,7 +528,17 @@ type GitLabHost struct {
 }
 
 func NewGitLabHost(addr, token string) (*GitLabHost, error) {
-	client, err := gitlab.NewClient(token, gitlab.WithBaseURL(addr))
+	httpClient := &http.Client{
+		Timeout:   2 * time.Second,
+		Transport: http.DefaultTransport,
+	}
+	metrics.InstrumentHttpClient(httpClient)
+
+	client, err := gitlab.NewClient(
+		token,
+		gitlab.WithBaseURL(addr),
+		gitlab.WithHTTPClient(httpClient),
+	)
 	if err != nil {
 		return nil, fmt.Errorf("initialize gitlab client: %w", err)
 	}

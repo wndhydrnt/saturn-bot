@@ -8,12 +8,14 @@ import (
 	"path"
 	"time"
 
+	"github.com/prometheus/client_golang/prometheus/push"
 	"github.com/wndhydrnt/saturn-bot/pkg/action"
 	"github.com/wndhydrnt/saturn-bot/pkg/cache"
 	sContext "github.com/wndhydrnt/saturn-bot/pkg/context"
 	"github.com/wndhydrnt/saturn-bot/pkg/git"
 	"github.com/wndhydrnt/saturn-bot/pkg/host"
 	"github.com/wndhydrnt/saturn-bot/pkg/log"
+	"github.com/wndhydrnt/saturn-bot/pkg/metrics"
 	"github.com/wndhydrnt/saturn-bot/pkg/options"
 	"github.com/wndhydrnt/saturn-bot/pkg/processor"
 	"github.com/wndhydrnt/saturn-bot/pkg/task"
@@ -36,10 +38,17 @@ type Run struct {
 	DryRun       bool
 	Hosts        []host.Host
 	Processor    processor.RepositoryTaskProcessor
+	Pushgateway  *push.Pusher
 	TaskRegistry *task.Registry
 }
 
 func (r *Run) Run(repositoryNames, taskFiles []string) ([]RunResult, error) {
+	metrics.RunStart.SetToCurrentTime()
+	defer func() {
+		metrics.RunFinish.SetToCurrentTime()
+		r.pushMetrics()
+	}()
+
 	if len(r.Hosts) == 0 {
 		return nil, ErrNoHostsConfigured
 	}
@@ -110,7 +119,10 @@ func (r *Run) Run(repositoryNames, taskFiles []string) ([]RunResult, error) {
 							log.FieldTask(t.Name),
 						))
 					result.Result, result.Error = r.Processor.Process(ctx, r.DryRun, repo, t, doFilter, logger)
-					if result.Error != nil {
+					if result.Error == nil {
+						metrics.RunTaskSuccess.WithLabelValues(t.Name).Set(1)
+					} else {
+						metrics.RunTaskSuccess.WithLabelValues(t.Name).Set(0)
 						success = false
 						logger.Errorw("Task failed", "error", result.Error)
 					}
@@ -150,6 +162,15 @@ func (r *Run) Run(repositoryNames, taskFiles []string) ([]RunResult, error) {
 	return results, nil
 }
 
+func (r *Run) pushMetrics() {
+	if r.Pushgateway != nil {
+		err := r.Pushgateway.Push()
+		if err != nil {
+			log.Log().Warnw("Push to Prometheus Pushgateway failed", zap.Error(err))
+		}
+	}
+}
+
 func ExecuteRun(opts options.Opts, repositoryNames, taskFiles []string) ([]RunResult, error) {
 	err := options.Initialize(&opts)
 	if err != nil {
@@ -172,6 +193,7 @@ func ExecuteRun(opts options.Opts, repositoryNames, taskFiles []string) ([]RunRe
 			DataDir: opts.DataDir(),
 			Git:     gitClient,
 		},
+		Pushgateway:  opts.Pushgateway,
 		TaskRegistry: taskRegistry,
 	}
 	return e.Run(repositoryNames, taskFiles)
