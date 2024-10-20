@@ -1,4 +1,7 @@
 site_name: saturn-bot
+repo_name: wndhydrnt/saturn-bot # https://squidfunk.github.io/mkdocs-material/setup/adding-a-git-repository/
+repo_url: https://github.com/wndhydrnt/saturn-bot # https://squidfunk.github.io/mkdocs-material/setup/adding-a-git-repository/
+edit_uri: tree/main/docs # https://squidfunk.github.io/mkdocs-material/setup/adding-a-git-repository/
 nav:
   - index.md
   - installation.md
@@ -6,6 +9,7 @@ nav:
   - ...
 theme:
   features:
+    - content.action.view # https://squidfunk.github.io/mkdocs-material/setup/adding-a-git-repository/#code-actions
     - content.code.copy
     - content.tabs.link
     - navigation.indexes
