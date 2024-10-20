@@ -23,3 +23,9 @@ repos:
       language: system
       always_run: false
       pass_filenames: false
+    - id: completion
+      name: Generate completion scripts
+      entry: make generate_completion
+      language: system
+      files: ^cmd/.*\.go$
+      pass_filenames: false

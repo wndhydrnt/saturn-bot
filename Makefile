@@ -52,6 +52,10 @@ ifeq (, $(shell which go-jsonschema))
 endif
 	go generate ./...
 
+generate_completion: build
+	./saturn-bot completion bash > ./completion/saturn-bot.bash
+	./saturn-bot completion zsh > ./completion/saturn-bot.zsh
+
 mdox: build
 ifeq (, $(shell which mdox))
 	go install github.com/bwplotka/mdox@latest
