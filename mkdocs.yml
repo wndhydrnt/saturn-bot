@@ -45,6 +45,8 @@ markdown_extensions:
   - pymdownx.details
   - pymdownx.tabbed:
       alternate_style: true
+  - toc:
+      permalink: true
 hooks:
   - mkdocs-hooks/json_path.py
 plugins:
