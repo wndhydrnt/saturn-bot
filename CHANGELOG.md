@@ -1,5 +1,22 @@
 # Changelog
 
+## [0.14.0](https://github.com/wndhydrnt/saturn-bot/compare/v0.13.0...v0.14.0) (2024-10-20)
+
+
+### Features
+
+* **action:** Pass env var TASK_DIR to script action ([#91](https://github.com/wndhydrnt/saturn-bot/issues/91)) ([955cf5a](https://github.com/wndhydrnt/saturn-bot/commit/955cf5a5c71fe318a6b51708a0bcf8ad0bf1467c))
+* **command:** New command "ci" ([#94](https://github.com/wndhydrnt/saturn-bot/issues/94)) ([de968b7](https://github.com/wndhydrnt/saturn-bot/commit/de968b70fee9176757ee911f47e703a435a8eac5))
+* **filter:** Specify multiple expressions in filter jsonpath ([#90](https://github.com/wndhydrnt/saturn-bot/issues/90)) ([31d8ebf](https://github.com/wndhydrnt/saturn-bot/commit/31d8ebf018ced15fd947e1ac8b74aa82fdec0969))
+* **filter:** Specify multiple expressions in filter xpath ([#89](https://github.com/wndhydrnt/saturn-bot/issues/89)) ([4a96272](https://github.com/wndhydrnt/saturn-bot/commit/4a96272caa57a9e4ca0bf9f95ecacf3ba9cdac5f))
+* **host:** Cache files downloaded from a host ([#87](https://github.com/wndhydrnt/saturn-bot/issues/87)) ([263c13b](https://github.com/wndhydrnt/saturn-bot/commit/263c13b6db515ff491211a9f087acff5abc3f3ec))
+* **task:** Execute repository filter first ([#92](https://github.com/wndhydrnt/saturn-bot/issues/92)) ([b38c1e9](https://github.com/wndhydrnt/saturn-bot/commit/b38c1e927d5c2cd7794261a256fc1f9e34be20ce))
+
+
+### Bug Fixes
+
+* **host:** Do not update assignees or reviewers when task does not define them ([#93](https://github.com/wndhydrnt/saturn-bot/issues/93)) ([33a514a](https://github.com/wndhydrnt/saturn-bot/commit/33a514a12cb0afcf9b7e1c189cc4a1f0f23e5c2b))
+
 ## [0.13.0](https://github.com/wndhydrnt/saturn-bot/compare/v0.12.0...v0.13.0) (2024-10-13)
 
 
