@@ -28,19 +28,7 @@ Flags:
       --skip-plugins    Skip starting plugins as part of the CI run.
 ```
 
-## Prevent in plugins
-
-`ci` initializes every plugin defined in a task file.
-It might not be desirable that a plugin executes code that,
-for example calls external APIs.
-Plugin code can check if it runs as part of a CI run via the configuration:
-
-```go
-func (p Plugin) Init(config map[string]string) error {
-	if config["saturn-bot.ci"] == "true" {
-		return nil
-	}
-
-	// init code
-}
-```
+`ci` starts and initializes plugins as part of its execution.
+If this behavior isn't desired, the flag `--skip-plugins=true` can be passed to the command.
+It is also possible to make each plugin
+[skip initialization during CI runs](../task/plugins/index.md#skip-initialization-during-ci-runs).
