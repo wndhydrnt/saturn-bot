@@ -137,8 +137,9 @@ func (g *GitLabRepository) CreatePullRequestComment(body string, pr interface{})
 
 func (g *GitLabRepository) CreatePullRequest(branch string, data PullRequestData) error {
 	opts := &gitlab.CreateMergeRequestOptions{
-		SourceBranch: gitlab.Ptr(branch),
-		TargetBranch: gitlab.Ptr(g.project.DefaultBranch),
+		SourceBranch:       gitlab.Ptr(branch),
+		TargetBranch:       gitlab.Ptr(g.project.DefaultBranch),
+		RemoveSourceBranch: gitlab.Ptr(g.project.RemoveSourceBranchAfterMerge),
 	}
 
 	description, err := data.GetBody()
@@ -182,6 +183,10 @@ func (g *GitLabRepository) CreatePullRequest(branch string, data PullRequestData
 
 	if len(data.Labels) > 0 {
 		opts.Labels = gitlab.Ptr(gitlab.LabelOptions(data.Labels))
+	}
+
+	if g.project.SquashOption == gitlab.SquashOptionDefaultOn || g.project.SquashOption == gitlab.SquashOptionAlways {
+		opts.Squash = gitlab.Ptr(true)
 	}
 
 	_, _, err = g.client.MergeRequests.CreateMergeRequest(g.project.ID, opts)
@@ -413,7 +418,10 @@ func (g *GitLabRepository) MergePullRequest(deleteBranch bool, pr interface{}) e
 	_, _, err := g.client.MergeRequests.AcceptMergeRequest(
 		g.project.ID,
 		mr.IID,
-		&gitlab.AcceptMergeRequestOptions{ShouldRemoveSourceBranch: gitlab.Ptr(deleteBranch), Squash: &mr.Squash},
+		&gitlab.AcceptMergeRequestOptions{
+			ShouldRemoveSourceBranch: gitlab.Ptr(deleteBranch),
+			Squash:                   gitlab.Ptr(mr.Squash),
+		},
 	)
 	if err != nil {
 		return fmt.Errorf("merge merge request %d: %w", mr.IID, err)
