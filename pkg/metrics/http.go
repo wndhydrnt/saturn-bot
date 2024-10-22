@@ -24,6 +24,9 @@ var (
 
 type hostLabelCtxKey struct{}
 
+// newRoundTripper adds the host of the request to the context of the request.
+// Prometheus instrumentation reads from the context to populate the label "host".
+// See promhttp.WithLabelFromCtx() and InstrumentHttpClient().
 func newRoundTripper(next http.RoundTripper) promhttp.RoundTripperFunc {
 	return func(req *http.Request) (*http.Response, error) {
 		ctx := context.WithValue(req.Context(), hostLabelCtxKey{}, req.Host)
@@ -32,6 +35,7 @@ func newRoundTripper(next http.RoundTripper) promhttp.RoundTripperFunc {
 }
 
 func InstrumentHttpClient(c *http.Client) {
+	// Read label "host" from context.
 	opts := promhttp.WithLabelFromCtx(hostLabel,
 		func(ctx context.Context) string {
 			return ctx.Value(hostLabelCtxKey{}).(string)

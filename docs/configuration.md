@@ -200,15 +200,15 @@ Set to `ssh` to clone repositories via SSH.
 | Type    | `string`                         |
 | Values  | `debug`, `error`, `info`, `warn` |
 
-## pushgatewayUrl
+## prometheusPushgatewayUrl
 
-[json-path:../pkg/config/config.schema.json:$.properties.pushgatewayUrl.description]
+[json-path:../pkg/config/config.schema.json:$.properties.prometheusPushgatewayUrl.description]
 
-| Name    | Value                       |
-| ------- | --------------------------- |
-| Default | -                           |
-| Env Var | `SATURN_BOT_PUSHGATEWAYURL` |
-| Type    | `string`                    |
+| Name    | Value                                 |
+| ------- | ------------------------------------- |
+| Default | -                                     |
+| Env Var | `SATURN_BOT_PROMETHEUSPUSHGATEWAYURL` |
+| Type    | `string`                              |
 
 ## pythonPath
 

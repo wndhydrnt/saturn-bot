@@ -500,6 +500,10 @@ func NewGitHubHost(address, token string, cacheDisabled bool) (*GitHubHost, erro
 		Timeout:   2 * time.Second,
 		Transport: http.DefaultTransport,
 	}
+	// Set up metrics first, then add the caching layer.
+	// Makes the caching layer execute before the metrics.
+	// If it reads from cache then those calls aren't counted
+	// as requests.
 	metrics.InstrumentHttpClient(httpClient)
 	if !cacheDisabled {
 		transport := httpcache.NewMemoryCacheTransport()
