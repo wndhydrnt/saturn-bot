@@ -94,7 +94,7 @@
       "enum": ["debug", "error", "info", "warn"],
       "type": "string"
     },
-    "pushgatewayUrl": {
+    "prometheusPushgatewayUrl": {
       "description": "Address of a Prometheus Pushgateway to send metrics to.",
       "type": "string"
     },

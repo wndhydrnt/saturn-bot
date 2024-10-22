@@ -161,10 +161,10 @@ func Initialize(opts *Opts) error {
 	}
 	opts.workerLoopInterval = loop
 
-	if opts.Config.PushgatewayUrl != nil {
+	if opts.Config.PrometheusPushgatewayUrl != nil {
 		reg := prometheus.NewRegistry()
 		metrics.Register(reg)
-		opts.Pushgateway = push.New(*opts.Config.PushgatewayUrl, "saturn_bot").
+		opts.Pushgateway = push.New(*opts.Config.PrometheusPushgatewayUrl, "saturn_bot").
 			Collector(reg)
 	}
 
