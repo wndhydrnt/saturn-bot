@@ -116,11 +116,12 @@ func TestGitLabRepository_CreatePullRequest(t *testing.T) {
 	gock.New("http://gitlab.local").
 		Post("/api/v4/projects/123/merge_requests").
 		MatchType("json").
-		JSON(map[string]any{
-			"title":         "Unit Test Title",
-			"description":   "Unit Test Body\n\n---\n\n**Auto-merge:** Disabled. Merge this manually.\n\n**Ignore:** This PR will be recreated if closed.\n\n---\n\n- [ ] If you want to rebase this PR, check this box\n\n---\n\n_This pull request has been created by [saturn-bot](https://github.com/wndhydrnt/saturn-bot)_ 🪐🤖.\n",
-			"source_branch": "saturn-bot--unit-test",
-			"target_branch": "main",
+		JSON(gitlab.CreateMergeRequestOptions{
+			Title:              gitlab.Ptr("Unit Test Title"),
+			Description:        gitlab.Ptr("Unit Test Body\n\n---\n\n**Auto-merge:** Disabled. Merge this manually.\n\n**Ignore:** This PR will be recreated if closed.\n\n---\n\n- [ ] If you want to rebase this PR, check this box\n\n---\n\n_This pull request has been created by [saturn-bot](https://github.com/wndhydrnt/saturn-bot)_ 🪐🤖.\n"),
+			SourceBranch:       gitlab.Ptr("saturn-bot--unit-test"),
+			TargetBranch:       gitlab.Ptr("main"),
+			RemoveSourceBranch: gitlab.Ptr(false),
 		}).
 		Reply(200).
 		JSON(map[string]string{})
@@ -160,13 +161,14 @@ func TestGitLabRepository_CreatePullRequest_WithAssigneesReviewers(t *testing.T)
 	gock.New("http://gitlab.local").
 		Post("/api/v4/projects/123/merge_requests").
 		MatchType("json").
-		JSON(map[string]any{
-			"title":         "Unit Test Title",
-			"description":   "Unit Test Body\n\n---\n\n**Auto-merge:** Disabled. Merge this manually.\n\n**Ignore:** This PR will be recreated if closed.\n\n---\n\n- [ ] If you want to rebase this PR, check this box\n\n---\n\n_This pull request has been created by [saturn-bot](https://github.com/wndhydrnt/saturn-bot)_ 🪐🤖.\n",
-			"source_branch": "saturn-bot--unit-test",
-			"target_branch": "main",
-			"assignee_ids":  []int{975},
-			"reviewer_ids":  []int{357, 642},
+		JSON(gitlab.CreateMergeRequestOptions{
+			Title:              gitlab.Ptr("Unit Test Title"),
+			Description:        gitlab.Ptr("Unit Test Body\n\n---\n\n**Auto-merge:** Disabled. Merge this manually.\n\n**Ignore:** This PR will be recreated if closed.\n\n---\n\n- [ ] If you want to rebase this PR, check this box\n\n---\n\n_This pull request has been created by [saturn-bot](https://github.com/wndhydrnt/saturn-bot)_ 🪐🤖.\n"),
+			SourceBranch:       gitlab.Ptr("saturn-bot--unit-test"),
+			TargetBranch:       gitlab.Ptr("main"),
+			RemoveSourceBranch: gitlab.Ptr(false),
+			AssigneeIDs:        gitlab.Ptr([]int{975}),
+			ReviewerIDs:        gitlab.Ptr([]int{357, 642}),
 		}).
 		Reply(200).
 		JSON(map[string]string{})
@@ -195,17 +197,82 @@ func TestGitLabRepository_CreatePullRequest_WithLabels(t *testing.T) {
 	gock.New("http://gitlab.local").
 		Post("/api/v4/projects/123/merge_requests").
 		MatchType("json").
-		JSON(map[string]any{
-			"title":         "Unit Test Title",
-			"description":   "Unit Test Body\n\n---\n\n**Auto-merge:** Disabled. Merge this manually.\n\n**Ignore:** This PR will be recreated if closed.\n\n---\n\n- [ ] If you want to rebase this PR, check this box\n\n---\n\n_This pull request has been created by [saturn-bot](https://github.com/wndhydrnt/saturn-bot)_ 🪐🤖.\n",
-			"labels":        "unit,test",
-			"source_branch": "saturn-bot--unit-test",
-			"target_branch": "main",
+		JSON(gitlab.CreateMergeRequestOptions{
+			Title:              gitlab.Ptr("Unit Test Title"),
+			Description:        gitlab.Ptr("Unit Test Body\n\n---\n\n**Auto-merge:** Disabled. Merge this manually.\n\n**Ignore:** This PR will be recreated if closed.\n\n---\n\n- [ ] If you want to rebase this PR, check this box\n\n---\n\n_This pull request has been created by [saturn-bot](https://github.com/wndhydrnt/saturn-bot)_ 🪐🤖.\n"),
+			SourceBranch:       gitlab.Ptr("saturn-bot--unit-test"),
+			TargetBranch:       gitlab.Ptr("main"),
+			RemoveSourceBranch: gitlab.Ptr(false),
+			Labels:             &gitlab.LabelOptions{"unit", "test"},
 		}).
 		Reply(200).
 		JSON(map[string]string{})
 	project := &gitlab.Project{DefaultBranch: "main", ID: 123}
 	prData := PullRequestData{Body: "Unit Test Body", Labels: []string{"unit", "test"}, Title: "Unit Test Title"}
+
+	underTest := &GitLabRepository{client: setupClient(), project: project}
+	err := underTest.CreatePullRequest("saturn-bot--unit-test", prData)
+
+	require.NoError(t, err)
+	require.True(t, gock.IsDone())
+}
+
+func TestGitLabRepository_CreatePullRequest_SquashOptionDefaultOn(t *testing.T) {
+	defer gock.Off()
+	gock.New("http://gitlab.local").
+		Post("/api/v4/projects/123/merge_requests").
+		MatchType("json").
+		JSON(gitlab.CreateMergeRequestOptions{
+			Title:              gitlab.Ptr("Unit Test Title"),
+			Description:        gitlab.Ptr("Unit Test Body\n\n---\n\n**Auto-merge:** Disabled. Merge this manually.\n\n**Ignore:** This PR will be recreated if closed.\n\n---\n\n- [ ] If you want to rebase this PR, check this box\n\n---\n\n_This pull request has been created by [saturn-bot](https://github.com/wndhydrnt/saturn-bot)_ 🪐🤖.\n"),
+			SourceBranch:       gitlab.Ptr("saturn-bot--unit-test"),
+			TargetBranch:       gitlab.Ptr("main"),
+			RemoveSourceBranch: gitlab.Ptr(false),
+			Squash:             gitlab.Ptr(true),
+		}).
+		Reply(200).
+		JSON(map[string]string{})
+	project := &gitlab.Project{
+		DefaultBranch: "main",
+		ID:            123,
+		SquashOption:  gitlab.SquashOptionDefaultOn,
+	}
+	prData := PullRequestData{
+		Body:  "Unit Test Body",
+		Title: "Unit Test Title",
+	}
+
+	underTest := &GitLabRepository{client: setupClient(), project: project}
+	err := underTest.CreatePullRequest("saturn-bot--unit-test", prData)
+
+	require.NoError(t, err)
+	require.True(t, gock.IsDone())
+}
+
+func TestGitLabRepository_CreatePullRequest_SquashOptionAlways(t *testing.T) {
+	defer gock.Off()
+	gock.New("http://gitlab.local").
+		Post("/api/v4/projects/123/merge_requests").
+		MatchType("json").
+		JSON(gitlab.CreateMergeRequestOptions{
+			Title:              gitlab.Ptr("Unit Test Title"),
+			Description:        gitlab.Ptr("Unit Test Body\n\n---\n\n**Auto-merge:** Disabled. Merge this manually.\n\n**Ignore:** This PR will be recreated if closed.\n\n---\n\n- [ ] If you want to rebase this PR, check this box\n\n---\n\n_This pull request has been created by [saturn-bot](https://github.com/wndhydrnt/saturn-bot)_ 🪐🤖.\n"),
+			SourceBranch:       gitlab.Ptr("saturn-bot--unit-test"),
+			TargetBranch:       gitlab.Ptr("main"),
+			RemoveSourceBranch: gitlab.Ptr(false),
+			Squash:             gitlab.Ptr(true),
+		}).
+		Reply(200).
+		JSON(map[string]string{})
+	project := &gitlab.Project{
+		DefaultBranch: "main",
+		ID:            123,
+		SquashOption:  gitlab.SquashOptionAlways,
+	}
+	prData := PullRequestData{
+		Body:  "Unit Test Body",
+		Title: "Unit Test Title",
+	}
 
 	underTest := &GitLabRepository{client: setupClient(), project: project}
 	err := underTest.CreatePullRequest("saturn-bot--unit-test", prData)
