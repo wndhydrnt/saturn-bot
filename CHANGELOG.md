@@ -1,5 +1,14 @@
 # Changelog
 
+## [0.15.0](https://github.com/wndhydrnt/saturn-bot/compare/v0.14.0...v0.15.0) (2024-10-23)
+
+
+### Features
+
+* **command:** Run command sends metrics to Prometheus Pushgateway ([#98](https://github.com/wndhydrnt/saturn-bot/issues/98)) ([da7df05](https://github.com/wndhydrnt/saturn-bot/commit/da7df05abd831e0219b428dc0c67ca94858ff81d))
+* **host:** Support "Squash commits" and "Delete source branch" settings of GitLab project ([#97](https://github.com/wndhydrnt/saturn-bot/issues/97)) ([5ce431a](https://github.com/wndhydrnt/saturn-bot/commit/5ce431a67b1a04f06b7ccc94001fe9a14a8652cf))
+* Set up shell completion ([4634532](https://github.com/wndhydrnt/saturn-bot/commit/46345322d8dc9387b572bd395333e077e040fa53))
+
 ## [0.14.0](https://github.com/wndhydrnt/saturn-bot/compare/v0.13.0...v0.14.0) (2024-10-20)
 
 
