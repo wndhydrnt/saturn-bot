@@ -11,6 +11,8 @@ import (
 	"testing"
 	"time"
 
+	"github.com/h2non/gock"
+	"github.com/prometheus/client_golang/prometheus/push"
 	"github.com/stretchr/testify/assert"
 	"github.com/stretchr/testify/require"
 	"github.com/wndhydrnt/saturn-bot/pkg/action"
@@ -176,17 +178,25 @@ func TestExecuteRunner_Run(t *testing.T) {
 		Process(gomock.AssignableToTypeOf(ctx), false, repoWithPr, gomock.AssignableToTypeOf(anyTask), true, gomock.Any()).
 		Return(processor.ResultNoChanges, nil)
 
+	defer gock.Off()
+	gock.New("http://pgw.local").
+		Put("/metrics/job/saturn-bot").
+		Reply(200)
+	pushGateway := push.New("http://pgw.local", "saturn-bot")
+
 	runner := &command.Run{
 		Cache:        cache,
 		DryRun:       false,
 		Hosts:        []host.Host{hostm},
 		Processor:    procMock,
+		PushGateway:  pushGateway,
 		TaskRegistry: task.NewRegistry(runTestOpts),
 	}
 	_, err := runner.Run([]string{}, []string{taskFile})
 
 	require.NoError(t, err)
 	assert.NotEqual(t, cacheLastExecutionBefore, cache.GetLastExecutionAt(), "Updates the lat execution time in the cache")
+	require.True(t, gock.IsDone(), "All HTTP requests sent")
 }
 
 func TestExecuteRunner_Run_DryRun(t *testing.T) {

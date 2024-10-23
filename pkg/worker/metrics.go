@@ -4,6 +4,7 @@ import (
 	"github.com/prometheus/client_golang/prometheus"
 	promversioncollector "github.com/prometheus/client_golang/prometheus/collectors/version"
 	promversion "github.com/prometheus/common/version"
+	"github.com/wndhydrnt/saturn-bot/pkg/metrics"
 	"github.com/wndhydrnt/saturn-bot/pkg/version"
 )
 
@@ -52,6 +53,7 @@ func initMetrics() {
 		metricRunsMax,
 		metricServerRequestsFailed,
 	)
+	metrics.Register(prometheus.DefaultRegisterer)
 	metricRunsFailed.Add(0)
 	metricRuns.Set(0)
 	metricRunsMax.Set(0)

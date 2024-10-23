@@ -7,12 +7,15 @@ import (
 	"path/filepath"
 	"time"
 
+	"github.com/prometheus/client_golang/prometheus"
+	"github.com/prometheus/client_golang/prometheus/push"
 	"github.com/wndhydrnt/saturn-bot/pkg/action"
 	"github.com/wndhydrnt/saturn-bot/pkg/config"
 	"github.com/wndhydrnt/saturn-bot/pkg/filter"
 	"github.com/wndhydrnt/saturn-bot/pkg/host"
 	"github.com/wndhydrnt/saturn-bot/pkg/log"
 	sLog "github.com/wndhydrnt/saturn-bot/pkg/log"
+	"github.com/wndhydrnt/saturn-bot/pkg/metrics"
 )
 
 var (
@@ -51,6 +54,7 @@ type Opts struct {
 	Hosts           []host.Host
 	IsCi            bool
 	SkipPlugins     bool
+	PushGateway     *push.Pusher
 
 	dataDir            string
 	workerLoopInterval time.Duration
@@ -155,7 +159,14 @@ func Initialize(opts *Opts) error {
 	if err != nil {
 		return fmt.Errorf("setting workerLoopInterval '%s' is not a Go duration: %w", opts.Config.WorkerLoopInterval, err)
 	}
-
 	opts.workerLoopInterval = loop
+
+	if opts.Config.PrometheusPushgatewayUrl != nil {
+		reg := prometheus.NewRegistry()
+		metrics.Register(reg)
+		opts.PushGateway = push.New(*opts.Config.PrometheusPushgatewayUrl, "saturn-bot").
+			Collector(reg)
+	}
+
 	return nil
 }
