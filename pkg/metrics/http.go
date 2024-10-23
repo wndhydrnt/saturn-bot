@@ -16,7 +16,7 @@ var (
 	httpClientRequestsTotal = prometheus.NewCounterVec(
 		prometheus.CounterOpts{
 			Help: "Total number of requests sent via HTTP clients.",
-			Name: "saturn_bot_http_client_requests_total",
+			Name: "http_client_requests_total",
 		},
 		[]string{"code", "method", hostLabel},
 	)

@@ -38,7 +38,7 @@ type Run struct {
 	DryRun       bool
 	Hosts        []host.Host
 	Processor    processor.RepositoryTaskProcessor
-	Pushgateway  *push.Pusher
+	PushGateway  *push.Pusher
 	TaskRegistry *task.Registry
 }
 
@@ -163,10 +163,10 @@ func (r *Run) Run(repositoryNames, taskFiles []string) ([]RunResult, error) {
 }
 
 func (r *Run) pushMetrics() {
-	if r.Pushgateway != nil {
-		err := r.Pushgateway.Push()
+	if r.PushGateway != nil {
+		err := r.PushGateway.Push()
 		if err != nil {
-			log.Log().Warnw("Push to Prometheus Pushgateway failed", zap.Error(err))
+			log.Log().Warnw("Push to Prometheus PushGateway failed", zap.Error(err))
 		}
 	}
 }
@@ -193,7 +193,7 @@ func ExecuteRun(opts options.Opts, repositoryNames, taskFiles []string) ([]RunRe
 			DataDir: opts.DataDir(),
 			Git:     gitClient,
 		},
-		Pushgateway:  opts.Pushgateway,
+		PushGateway:  opts.PushGateway,
 		TaskRegistry: taskRegistry,
 	}
 	return e.Run(repositoryNames, taskFiles)

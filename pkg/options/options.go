@@ -54,7 +54,7 @@ type Opts struct {
 	Hosts           []host.Host
 	IsCi            bool
 	SkipPlugins     bool
-	Pushgateway     *push.Pusher
+	PushGateway     *push.Pusher
 
 	dataDir            string
 	workerLoopInterval time.Duration
@@ -164,7 +164,7 @@ func Initialize(opts *Opts) error {
 	if opts.Config.PrometheusPushgatewayUrl != nil {
 		reg := prometheus.NewRegistry()
 		metrics.Register(reg)
-		opts.Pushgateway = push.New(*opts.Config.PrometheusPushgatewayUrl, "saturn_bot").
+		opts.PushGateway = push.New(*opts.Config.PrometheusPushgatewayUrl, "saturn-bot").
 			Collector(reg)
 	}
 
