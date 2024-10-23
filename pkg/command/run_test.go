@@ -196,7 +196,7 @@ func TestExecuteRunner_Run(t *testing.T) {
 
 	require.NoError(t, err)
 	assert.NotEqual(t, cacheLastExecutionBefore, cache.GetLastExecutionAt(), "Updates the lat execution time in the cache")
-	require.True(t, gock.IsDone(), "All expected HTTP have occurred")
+	require.True(t, gock.IsDone(), "All HTTP requests sent")
 }
 
 func TestExecuteRunner_Run_DryRun(t *testing.T) {
