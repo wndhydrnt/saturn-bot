@@ -10,6 +10,20 @@ The `job` label added to all metrics is `saturn-bot`.
 
 The following metrics exist:
 
+## `git_commands_duration_seconds_count`
+
+Total number of commands executed by git.
+
+Use this metric to understand how much load saturn-bot puts
+on a repository host by, for example, cloning repositories or pushing commits.
+
+## `git_commands_duration_seconds_sum`
+
+Total duration it took for git to execute commands.
+
+Use together with `git_commands_duration_seconds_count` to calculate the average duration
+and understand the repository host is slow.
+
 ## `http_client_requests_total`
 
 Total number of requests sent via HTTP clients.
