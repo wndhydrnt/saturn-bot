@@ -9,10 +9,13 @@ import (
 	"os/exec"
 	"path"
 	"strings"
+	"time"
 
+	"github.com/prometheus/client_golang/prometheus"
 	"github.com/wndhydrnt/saturn-bot/pkg/config"
 	"github.com/wndhydrnt/saturn-bot/pkg/host"
 	"github.com/wndhydrnt/saturn-bot/pkg/log"
+	"github.com/wndhydrnt/saturn-bot/pkg/metrics"
 	"github.com/wndhydrnt/saturn-bot/pkg/options"
 	"go.uber.org/zap"
 )
@@ -57,8 +60,10 @@ type GitClient interface {
 }
 
 type Git struct {
-	CmdExec func(*exec.Cmd) error // exists to mock calls in unit tests
-	EnvVars []string
+	CmdExec             func(*exec.Cmd) error // exists to mock calls in unit tests
+	EnvVars             []string
+	MetricCommandsCount *prometheus.CounterVec
+	MetricCommandsSum   *prometheus.CounterVec
 
 	cloneOpts        []string
 	checkoutDir      string
@@ -77,6 +82,9 @@ func New(opts options.Opts) (*Git, error) {
 	}
 
 	return &Git{
+		MetricCommandsCount: metrics.GitCommandsDurationSecondsCount,
+		MetricCommandsSum:   metrics.GitCommandsDurationSecondsSum,
+
 		cloneOpts:        opts.Config.GitCloneOptions,
 		dataDir:          opts.DataDir(),
 		defaultCommitMsg: opts.Config.GitCommitMessage,
@@ -179,6 +187,22 @@ func (g *Git) Prepare(repo host.Repository, retry bool) (string, error) {
 
 func (g *Git) Execute(arg ...string) (string, string, error) {
 	cmd := exec.Command(g.gitPath, arg...) // #nosec G204 -- git executable is checked and arguments are controlled by saturn-bot
+	if len(arg) > 0 {
+		if g.MetricCommandsCount != nil {
+			g.MetricCommandsCount.WithLabelValues(arg[0]).Inc()
+		}
+
+		if g.MetricCommandsSum != nil {
+			start := time.Now()
+			// Wrap in func to defer the call to time.Since()
+			defer func() {
+				metrics.GitCommandsDurationSecondsSum.
+					WithLabelValues(arg[0]).
+					Add(time.Since(start).Seconds())
+			}()
+		}
+	}
+
 	cmd.Dir = g.checkoutDir
 	cmd.Env = g.EnvVars
 	stderr := &bytes.Buffer{}
