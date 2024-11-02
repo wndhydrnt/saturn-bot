@@ -185,7 +185,7 @@ type Task struct {
 	// Go duration, like 5m or 1h.
 	AutoMergeAfter string `json:"autoMergeAfter,omitempty" yaml:"autoMergeAfter,omitempty" mapstructure:"autoMergeAfter,omitempty"`
 
-	// If set, used as th name of the branch to commit changes to. Defaults to an
+	// If set, used as the name of the branch to commit changes to. Defaults to an
 	// auto-generated name if not set.
 	BranchName string `json:"branchName,omitempty" yaml:"branchName,omitempty" mapstructure:"branchName,omitempty"`
 

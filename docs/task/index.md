@@ -116,6 +116,9 @@ autoMerge: false
 
 Supports [templating](../features/templating.md).
 
+Some git hosts restrict the maximum length of branch names.
+The branch name is automatically cut to 230 characters.
+
 Examples
 
 ```yaml title="Set a custom branch"

@@ -40,7 +40,7 @@
     },
     "branchName": {
       "default": "",
-      "description": "If set, used as th name of the branch to commit changes to. Defaults to an auto-generated name if not set.",
+      "description": "If set, used as the name of the branch to commit changes to. Defaults to an auto-generated name if not set.",
       "type": "string"
     },
     "changeLimit": {

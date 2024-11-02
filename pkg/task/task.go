@@ -123,25 +123,33 @@ func (tw *Task) Filters() []filter.Filter {
 }
 
 func (tw *Task) RenderBranchName(data template.Data) (string, error) {
+	var name string
 	if tw.BranchName == "" {
-		return "saturn-bot--" + slug.Make(tw.Name), nil
-	}
-
-	if tw.templateBranchName == nil {
-		var parseErr error
-		tw.templateBranchName, parseErr = htmlTemplate.New("").Parse(tw.BranchName)
-		if parseErr != nil {
-			return "", fmt.Errorf("parse branch name template: %w", parseErr)
+		name = "saturn-bot--" + slug.Make(tw.Name)
+	} else {
+		if tw.templateBranchName == nil {
+			var parseErr error
+			tw.templateBranchName, parseErr = htmlTemplate.New("").Parse(tw.BranchName)
+			if parseErr != nil {
+				return "", fmt.Errorf("parse branch name template: %w", parseErr)
+			}
 		}
+
+		buf := &bytes.Buffer{}
+		err := tw.templateBranchName.Execute(buf, data)
+		if err != nil {
+			return "", fmt.Errorf("render branch name template: %w", err)
+		}
+
+		name = buf.String()
 	}
 
-	buf := &bytes.Buffer{}
-	err := tw.templateBranchName.Execute(buf, data)
-	if err != nil {
-		return "", fmt.Errorf("render branch name template: %w", err)
+	// Some git hosts place a limit on character length of branch names.
+	if len(name) > 230 {
+		return name[:230], nil
 	}
 
-	return buf.String(), nil
+	return name, nil
 }
 
 func (tw *Task) Checksum() string {
