@@ -48,7 +48,7 @@ ifeq (, $(shell which stringer))
 	go install golang.org/x/tools/cmd/stringer@latest
 endif
 ifeq (, $(shell which go-jsonschema))
-	go install github.com/atombender/go-jsonschema@latest
+	go install github.com/atombender/go-jsonschema@v0.17.0
 endif
 	go generate ./...
 
