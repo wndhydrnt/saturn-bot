@@ -1,5 +1,22 @@
 # Changelog
 
+## [0.15.0](https://github.com/wndhydrnt/saturn-bot/compare/v0.14.0...v0.15.0) (2024-11-03)
+
+
+### ⚠ BREAKING CHANGES
+
+* **filter:** Remove filter jsonpath ([#102](https://github.com/wndhydrnt/saturn-bot/issues/102))
+
+### Features
+
+* **command:** Run command sends metrics to Prometheus Pushgateway ([#98](https://github.com/wndhydrnt/saturn-bot/issues/98)) ([da7df05](https://github.com/wndhydrnt/saturn-bot/commit/da7df05abd831e0219b428dc0c67ca94858ff81d))
+* **filter:** Add jq filter ([#101](https://github.com/wndhydrnt/saturn-bot/issues/101)) ([7f6848c](https://github.com/wndhydrnt/saturn-bot/commit/7f6848ce99a1e8b5e8cc7081962dee3c6403a190))
+* **filter:** Remove filter jsonpath ([#102](https://github.com/wndhydrnt/saturn-bot/issues/102)) ([6bc7089](https://github.com/wndhydrnt/saturn-bot/commit/6bc7089fa5d59b088a155f1eeb29381c23b4a618))
+* **git:** Add metrics to track number and duration of git commands ([#99](https://github.com/wndhydrnt/saturn-bot/issues/99)) ([7e7c7c0](https://github.com/wndhydrnt/saturn-bot/commit/7e7c7c022b8c7e5be7e6a2aeb466c0b83f2104c9))
+* **host:** Support "Squash commits" and "Delete source branch" settings of GitLab project ([#97](https://github.com/wndhydrnt/saturn-bot/issues/97)) ([5ce431a](https://github.com/wndhydrnt/saturn-bot/commit/5ce431a67b1a04f06b7ccc94001fe9a14a8652cf))
+* Set up shell completion ([4634532](https://github.com/wndhydrnt/saturn-bot/commit/46345322d8dc9387b572bd395333e077e040fa53))
+* **task:** Ensure that branch name does not exceed length ([#100](https://github.com/wndhydrnt/saturn-bot/issues/100)) ([bac731d](https://github.com/wndhydrnt/saturn-bot/commit/bac731df77d65bb4485b57d4620b9f98cac56114))
+
 ## [0.14.0](https://github.com/wndhydrnt/saturn-bot/compare/v0.13.0...v0.14.0) (2024-10-20)
 
 
