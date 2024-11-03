@@ -17,7 +17,6 @@ var (
 		FileContentFactory{},
 		FileFactory{},
 		JqFactory{},
-		JsonPathFactory{},
 		RepositoryFactory{},
 		XpathFactory{},
 	}
