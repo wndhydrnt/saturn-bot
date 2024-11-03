@@ -31,7 +31,7 @@ func (wh *WorkHandler) GetWorkV1(_ context.Context) (openapi.ImplResponse, error
 	body := openapi.GetWorkV1Response{
 		RunID: int32(run.ID), // #nosec G115 -- no info by gosec on how to fix this
 		Tasks: []openapi.GetWorkV1Task{
-			{Hash: task.Hash, Name: task.TaskName},
+			{Hash: task.Sha256, Name: task.Task.Name},
 		},
 	}
 	if run.RepositoryName != nil {

@@ -20,8 +20,8 @@ func (ts *TaskHandler) GetTaskV1(_ context.Context, taskName string) (openapi.Im
 	}
 
 	body := openapi.GetTaskV1Response{
-		Name:    t.TaskName,
-		Hash:    t.Hash,
+		Name:    t.Task.Name,
+		Hash:    t.Sha256,
 		Content: content,
 	}
 	return openapi.Response(http.StatusOK, body), nil
@@ -33,7 +33,7 @@ func (th *TaskHandler) ListTasksV1(_ context.Context) (openapi.ImplResponse, err
 		Tasks: []string{},
 	}
 	for _, entry := range th.TaskService.ListTasks() {
-		body.Tasks = append(body.Tasks, entry.TaskName)
+		body.Tasks = append(body.Tasks, entry.Task.Name)
 	}
 
 	return openapi.Response(http.StatusOK, body), nil

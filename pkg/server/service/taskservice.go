@@ -9,44 +9,44 @@ import (
 
 	"github.com/wndhydrnt/saturn-bot/pkg/log"
 	"github.com/wndhydrnt/saturn-bot/pkg/server/db"
-	"github.com/wndhydrnt/saturn-bot/pkg/server/task"
+	"github.com/wndhydrnt/saturn-bot/pkg/task/schema"
 	"gorm.io/gorm"
 )
 
 type TaskService struct {
 	db    *gorm.DB
-	tasks []task.Task
+	tasks []schema.ReadResult
 }
 
-func NewTaskService(db *gorm.DB, tasks []task.Task) *TaskService {
+func NewTaskService(db *gorm.DB, tasks []schema.ReadResult) *TaskService {
 	return &TaskService{db: db, tasks: tasks}
 }
 
 func (ts *TaskService) SyncDbTasks() error {
 	for _, t := range ts.tasks {
 		var taskDB db.Task
-		tx := ts.db.Where("name = ?", t.TaskName).First(&taskDB)
+		tx := ts.db.Where("name = ?", t.Task.Name).First(&taskDB)
 		if tx.Error != nil {
 			if !errors.Is(tx.Error, gorm.ErrRecordNotFound) {
 				return tx.Error
 			}
 
-			log.Log().Debugf("Creating task %s in DB", t.TaskName)
-			taskDB.Hash = t.Hash
-			taskDB.Name = t.TaskName
+			log.Log().Debugf("Creating task %s in DB", t.Task.Name)
+			taskDB.Hash = t.Sha256
+			taskDB.Name = t.Task.Name
 			err := ts.db.Transaction(func(tx *gorm.DB) error {
 				if err := ts.db.Save(&taskDB).Error; err != nil {
-					return fmt.Errorf("create task '%s' in db: %w", t.TaskName, err)
+					return fmt.Errorf("create task '%s' in db: %w", t.Task.Name, err)
 				}
 
 				run := db.Run{
 					Reason:        0,
 					ScheduleAfter: time.Now(),
 					Status:        db.RunStatusPending,
-					TaskName:      t.TaskName,
+					TaskName:      t.Task.Name,
 				}
 				if err := ts.db.Save(&run).Error; err != nil {
-					return fmt.Errorf("schedule run for new task '%s' in db: %w", t.TaskName, err)
+					return fmt.Errorf("schedule run for new task '%s' in db: %w", t.Task.Name, err)
 				}
 
 				return nil
@@ -55,21 +55,21 @@ func (ts *TaskService) SyncDbTasks() error {
 				return err
 			}
 		} else {
-			if taskDB.Hash != t.Hash {
-				taskDB.Hash = t.Hash
+			if taskDB.Hash != t.Sha256 {
+				taskDB.Hash = t.Sha256
 				log.Log().Debugf("Updating task %s in DB", taskDB.Name)
 				run := db.Run{
 					Reason:        0,
 					ScheduleAfter: time.Now(),
 					Status:        db.RunStatusPending,
-					TaskName:      t.TaskName,
+					TaskName:      t.Task.Name,
 				}
 				if err := ts.db.Save(&run).Error; err != nil {
-					return fmt.Errorf("schedule run for updated task '%s' in db: %w", t.TaskName, err)
+					return fmt.Errorf("schedule run for updated task '%s' in db: %w", t.Task.Name, err)
 				}
 
 				if err := ts.db.Save(&taskDB).Error; err != nil {
-					return fmt.Errorf("update task '%s' in db: %w", t.TaskName, err)
+					return fmt.Errorf("update task '%s' in db: %w", t.Task.Name, err)
 				}
 			}
 		}
@@ -78,10 +78,10 @@ func (ts *TaskService) SyncDbTasks() error {
 	return nil
 }
 
-func (ts *TaskService) GetTask(taskName string) (*task.Task, string) {
+func (ts *TaskService) GetTask(taskName string) (*schema.ReadResult, string) {
 	for _, entry := range ts.tasks {
-		if entry.TaskName == taskName {
-			content, err := encodeBase64(entry.TaskPath)
+		if entry.Task.Name == taskName {
+			content, err := encodeBase64(entry.Path)
 			if err != nil {
 				return nil, ""
 			}
@@ -93,7 +93,7 @@ func (ts *TaskService) GetTask(taskName string) (*task.Task, string) {
 	return nil, ""
 }
 
-func (ts *TaskService) ListTasks() []task.Task {
+func (ts *TaskService) ListTasks() []schema.ReadResult {
 	return ts.tasks
 }
 

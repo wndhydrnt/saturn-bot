@@ -7,9 +7,10 @@ import (
 
 	"github.com/wndhydrnt/saturn-bot/pkg/log"
 	"github.com/wndhydrnt/saturn-bot/pkg/processor"
+	"github.com/wndhydrnt/saturn-bot/pkg/ptr"
 	"github.com/wndhydrnt/saturn-bot/pkg/server/api/openapi"
 	"github.com/wndhydrnt/saturn-bot/pkg/server/db"
-	"github.com/wndhydrnt/saturn-bot/pkg/server/task"
+	"github.com/wndhydrnt/saturn-bot/pkg/task/schema"
 	"go.uber.org/zap"
 	"gorm.io/gorm"
 )
@@ -18,10 +19,10 @@ var ErrNoRun = errors.New("no next run")
 
 type WorkerService struct {
 	db    *gorm.DB
-	tasks []task.Task
+	tasks []schema.ReadResult
 }
 
-func NewWorkerService(db *gorm.DB, tasks []task.Task) *WorkerService {
+func NewWorkerService(db *gorm.DB, tasks []schema.ReadResult) *WorkerService {
 	return &WorkerService{db: db, tasks: tasks}
 }
 
@@ -45,7 +46,7 @@ func (ws *WorkerService) ScheduleRun(
 		log.Log().Debugf("Scheduling new run of task %s for repository %s", taskName, repositoryName)
 		run := db.Run{
 			Reason:         reason,
-			RepositoryName: ptr(repositoryName),
+			RepositoryName: ptr.To(repositoryName),
 			ScheduleAfter:  scheduleAfter,
 			Status:         db.RunStatusPending,
 			TaskName:       taskName,
@@ -72,9 +73,9 @@ func (ws *WorkerService) ScheduleRun(
 	return runDB.ID, nil
 }
 
-func (ws *WorkerService) findTask(name string) *task.Task {
+func (ws *WorkerService) findTask(name string) *schema.ReadResult {
 	for _, t := range ws.tasks {
-		if t.TaskName == name {
+		if t.Task.Name == name {
 			return &t
 		}
 	}
@@ -82,9 +83,9 @@ func (ws *WorkerService) findTask(name string) *task.Task {
 	return nil
 }
 
-func (ws *WorkerService) NextRun() (db.Run, task.Task, error) {
+func (ws *WorkerService) NextRun() (db.Run, schema.ReadResult, error) {
 	var run db.Run
-	var runTask task.Task
+	var runTask schema.ReadResult
 	tx := ws.db.
 		Where("status = ?", db.RunStatusPending).
 		Order("schedule_after desc").
@@ -130,11 +131,11 @@ func (ws *WorkerService) ReportRun(req openapi.ReportWorkV1Request) error {
 	}
 
 	err := ws.db.Transaction(func(tx *gorm.DB) error {
-		runCurrent.FinishedAt = ptr(time.Now())
+		runCurrent.FinishedAt = ptr.To(time.Now())
 		if req.Error == "" {
 			runCurrent.Status = db.RunStatusFinished
 		} else {
-			runCurrent.Error = ptr(req.Error)
+			runCurrent.Error = ptr.To(req.Error)
 			runCurrent.Status = db.RunStatusFailed
 		}
 
@@ -176,20 +177,16 @@ func (ws *WorkerService) ReportRun(req openapi.ReportWorkV1Request) error {
 func nextSchedule(r processor.Result) *time.Time {
 	switch r {
 	case processor.ResultUnknown:
-		return ptr(time.Now().Add(15 * time.Minute))
+		return ptr.To(time.Now().Add(15 * time.Minute))
 	case processor.ResultAutoMergeTooEarly:
-		return ptr(time.Now().Add(60 * time.Minute))
+		return ptr.To(time.Now().Add(60 * time.Minute))
 	case processor.ResultPrCreated:
-		return ptr(time.Now().Add(15 * time.Minute))
+		return ptr.To(time.Now().Add(15 * time.Minute))
 	case processor.ResultPrOpen:
-		return ptr(time.Now().Add(15 * time.Minute))
+		return ptr.To(time.Now().Add(15 * time.Minute))
 	case processor.ResultNoChanges:
-		return ptr(time.Now().Add(60 * time.Minute))
+		return ptr.To(time.Now().Add(60 * time.Minute))
 	default:
 		return nil
 	}
-}
-
-func ptr[T any](in T) *T {
-	return &in
 }

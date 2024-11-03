@@ -20,6 +20,7 @@ const (
 	RunReasonChanged
 	RunReasonNew
 	RunReasonNext
+	RunReasonWebhook
 )
 
 type Run struct {
