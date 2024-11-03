@@ -61,7 +61,7 @@ func (f JqFactory) Name() string {
 	return "jq"
 }
 
-// Jq is a filter that applies a JSONPath expression to a file in the repository.
+// Jq is a filter that applies a jq expression to a file in the repository.
 type Jq struct {
 	Exprs       []*gojq.Code
 	ExprsString string
