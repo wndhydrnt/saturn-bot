@@ -118,7 +118,8 @@ func (r *Run) Run(repositoryNames, taskFiles []string) ([]RunResult, error) {
 							log.FieldRepo(repo.FullName()),
 							log.FieldTask(t.Name),
 						))
-					result.Result, result.Error = r.Processor.Process(ctx, r.DryRun, repo, t, doFilter, logger)
+					ctx = sContext.WithLog(ctx, logger)
+					result.Result, result.Error = r.Processor.Process(ctx, r.DryRun, repo, t, doFilter)
 					if result.Error == nil {
 						metrics.RunTaskSuccess.WithLabelValues(t.Name).Set(1)
 					} else {

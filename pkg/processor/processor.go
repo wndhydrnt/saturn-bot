@@ -44,7 +44,7 @@ type Processor struct {
 }
 
 type RepositoryTaskProcessor interface {
-	Process(ctx context.Context, dryRun bool, repo host.Repository, task *task.Task, doFilter bool, logger *zap.SugaredLogger) (Result, error)
+	Process(ctx context.Context, dryRun bool, repo host.Repository, task *task.Task, doFilter bool) (Result, error)
 }
 
 func (p *Processor) Process(
@@ -53,8 +53,8 @@ func (p *Processor) Process(
 	repo host.Repository,
 	task *task.Task,
 	doFilter bool,
-	logger *zap.SugaredLogger,
 ) (Result, error) {
+	logger := sContext.Log(ctx)
 	logger.Debug("Processing repository")
 	if !task.IsWithinSchedule() {
 		logger.Debug("Skipping task because it is outside of schedule")
