@@ -110,6 +110,54 @@ func (j *Filter) UnmarshalYAML(value *yaml.Node) error {
 	return nil
 }
 
+// A input allows customizing a task at runtime.
+type Input struct {
+	// Default value to use if no input has been set via the command-line.
+	Default *string `json:"default,omitempty" yaml:"default,omitempty" mapstructure:"default,omitempty"`
+
+	// Text that describes the input value.
+	Description *string `json:"description,omitempty" yaml:"description,omitempty" mapstructure:"description,omitempty"`
+
+	// Key that identifies the input. Set via the command-line to set the input value.
+	Name string `json:"name" yaml:"name" mapstructure:"name"`
+}
+
+// UnmarshalJSON implements json.Unmarshaler.
+func (j *Input) UnmarshalJSON(b []byte) error {
+	var raw map[string]interface{}
+	if err := json.Unmarshal(b, &raw); err != nil {
+		return err
+	}
+	if _, ok := raw["name"]; raw != nil && !ok {
+		return fmt.Errorf("field name in Input: required")
+	}
+	type Plain Input
+	var plain Plain
+	if err := json.Unmarshal(b, &plain); err != nil {
+		return err
+	}
+	*j = Input(plain)
+	return nil
+}
+
+// UnmarshalYAML implements yaml.Unmarshaler.
+func (j *Input) UnmarshalYAML(value *yaml.Node) error {
+	var raw map[string]interface{}
+	if err := value.Decode(&raw); err != nil {
+		return err
+	}
+	if _, ok := raw["name"]; raw != nil && !ok {
+		return fmt.Errorf("field name in Input: required")
+	}
+	type Plain Input
+	var plain Plain
+	if err := value.Decode(&plain); err != nil {
+		return err
+	}
+	*j = Input(plain)
+	return nil
+}
+
 // A plugin extends saturn-bot and allows custom filtering or modification of
 // repositories.
 type Plugin struct {
@@ -204,6 +252,9 @@ type Task struct {
 
 	// Filters make saturn-bot pick the repositories to which it applies the task.
 	Filters []Filter `json:"filters,omitempty" yaml:"filters,omitempty" mapstructure:"filters,omitempty"`
+
+	// Inputs allows customizing a task at runtime.
+	Inputs []Input `json:"inputs,omitempty" yaml:"inputs,omitempty" mapstructure:"inputs,omitempty"`
 
 	// If `true`, keep the branch after a pull request has been merged.
 	KeepBranchAfterMerge bool `json:"keepBranchAfterMerge,omitempty" yaml:"keepBranchAfterMerge,omitempty" mapstructure:"keepBranchAfterMerge,omitempty"`
