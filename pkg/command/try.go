@@ -96,6 +96,12 @@ func (r *TryRunner) Run() error {
 			continue
 		}
 
+		err := task.UpdateInputs(inputs)
+		if err != nil {
+			fmt.Fprintf(r.Out, "⚠️  Missing input: %s\n", err)
+			continue
+		}
+
 		processed = true
 		ctx := context.WithValue(context.Background(), saturnContext.RepositoryKey{}, repository)
 		matched := true
