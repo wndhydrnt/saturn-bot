@@ -17,6 +17,7 @@ import (
 	"github.com/wndhydrnt/saturn-bot/pkg/options"
 	"github.com/wndhydrnt/saturn-bot/pkg/params"
 	"github.com/wndhydrnt/saturn-bot/pkg/plugin"
+	"github.com/wndhydrnt/saturn-bot/pkg/ptr"
 	"github.com/wndhydrnt/saturn-bot/pkg/task/schema"
 	"github.com/wndhydrnt/saturn-bot/pkg/template"
 	"go.uber.org/zap"
@@ -108,6 +109,7 @@ type Task struct {
 	schedule               cron.Schedule
 	templateBranchName     *htmlTemplate.Template
 	templatePrTitle        *htmlTemplate.Template
+	inputData              map[string]string
 }
 
 func (tw *Task) Actions() []action.Action {
@@ -181,6 +183,29 @@ func (tw *Task) HasReachedChangeLimit() bool {
 	return tw.changeLimitCount >= tw.ChangeLimit
 }
 
+// UpdateInputs takes inputs supplied via the command-line and stores them for later processing.
+// It returns an error if an expected input isn't supplied and no default value for the input has been set.
+func (tw *Task) UpdateInputs(cliInputs map[string]string) error {
+	if tw.inputData == nil {
+		tw.inputData = map[string]string{}
+	}
+
+	for _, input := range tw.Inputs {
+		value := cliInputs[input.Name]
+		if value == "" {
+			if input.Default == nil {
+				return fmt.Errorf("input %s not set and has no default value", input.Name)
+			} else {
+				tw.inputData[input.Name] = ptr.From(input.Default)
+			}
+		} else {
+			tw.inputData[input.Name] = value
+		}
+	}
+
+	return nil
+}
+
 func (tw *Task) HasReachMaxOpenPRs() bool {
 	if tw.MaxOpenPRs == 0 {
 		return false
@@ -199,6 +224,16 @@ func (tw *Task) IncOpenPRsCount() {
 	if tw.MaxOpenPRs > 0 {
 		tw.openPRs++
 	}
+}
+
+// InputData a map where every key is an input defined by the task
+// and every value is what has been set via the command-line for that key.
+func (tw *Task) InputData() map[string]string {
+	if tw.inputData == nil {
+		tw.inputData = map[string]string{}
+	}
+
+	return tw.inputData
 }
 
 func (tw *Task) IsWithinSchedule() bool {
