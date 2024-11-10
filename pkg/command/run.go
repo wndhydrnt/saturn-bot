@@ -42,7 +42,7 @@ type Run struct {
 	TaskRegistry *task.Registry
 }
 
-func (r *Run) Run(repositoryNames, taskFiles []string) ([]RunResult, error) {
+func (r *Run) Run(repositoryNames, taskFiles []string, inputs map[string]string) ([]RunResult, error) {
 	metrics.RunStart.SetToCurrentTime()
 	defer func() {
 		metrics.RunFinish.SetToCurrentTime()
@@ -75,6 +75,7 @@ func (r *Run) Run(repositoryNames, taskFiles []string) ([]RunResult, error) {
 		return nil, nil
 	}
 
+	tasks = setInputs(tasks, inputs)
 	needsAllRepositories := hasUpdatedTasks(r.Cache.GetCachedTasks(), tasks)
 	if needsAllRepositories {
 		since = nil
@@ -172,7 +173,7 @@ func (r *Run) pushMetrics() {
 	}
 }
 
-func ExecuteRun(opts options.Opts, repositoryNames, taskFiles []string) ([]RunResult, error) {
+func ExecuteRun(opts options.Opts, repositoryNames, taskFiles []string, inputs map[string]string) ([]RunResult, error) {
 	err := options.Initialize(&opts)
 	if err != nil {
 		return nil, fmt.Errorf("initialize options: %w", err)
@@ -197,7 +198,7 @@ func ExecuteRun(opts options.Opts, repositoryNames, taskFiles []string) ([]RunRe
 		PushGateway:  opts.PushGateway,
 		TaskRegistry: taskRegistry,
 	}
-	return e.Run(repositoryNames, taskFiles)
+	return e.Run(repositoryNames, taskFiles, inputs)
 }
 
 func hasUpdatedTasks(cachedTasks []cache.CachedTask, tasks []*task.Task) bool {
@@ -312,4 +313,20 @@ func findRepositoryInHosts(hosts []host.Host, repositoryName string) (host.Repos
 	}
 
 	return nil, fmt.Errorf("no host found for repository '%s'", repositoryName)
+}
+
+// setInputs sets inputs passed to Run().
+// It filters out tasks when an expected input is missing.
+func setInputs(tasks []*task.Task, inputs map[string]string) []*task.Task {
+	var tasksWithInputs []*task.Task
+	for _, t := range tasks {
+		err := t.UpdateInputs(inputs)
+		if err == nil {
+			tasksWithInputs = append(tasksWithInputs, t)
+		} else {
+			log.Log().Warnf("Deactivating Task due to missing inputs: %s", err)
+		}
+	}
+
+	return tasksWithInputs
 }

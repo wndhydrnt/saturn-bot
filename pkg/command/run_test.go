@@ -192,7 +192,7 @@ func TestExecuteRunner_Run(t *testing.T) {
 		PushGateway:  pushGateway,
 		TaskRegistry: task.NewRegistry(runTestOpts),
 	}
-	_, err := runner.Run([]string{}, []string{taskFile})
+	_, err := runner.Run([]string{}, []string{taskFile}, map[string]string{})
 
 	require.NoError(t, err)
 	assert.NotEqual(t, cacheLastExecutionBefore, cache.GetLastExecutionAt(), "Updates the lat execution time in the cache")
@@ -234,7 +234,7 @@ func TestExecuteRunner_Run_DryRun(t *testing.T) {
 		Processor:    procMock,
 		TaskRegistry: task.NewRegistry(runTestOpts),
 	}
-	_, err := runner.Run([]string{}, []string{taskFile})
+	_, err := runner.Run([]string{}, []string{taskFile}, map[string]string{})
 
 	require.NoError(t, err)
 	assert.Equal(t, cacheLastExecutionBefore, cache.GetLastExecutionAt(), "Does not update the last execution time because dryRun is true")
@@ -275,8 +275,66 @@ func TestExecuteRunner_Run_RepositoriesCLI(t *testing.T) {
 		Processor:    procMock,
 		TaskRegistry: task.NewRegistry(runTestOpts),
 	}
-	_, err := runner.Run([]string{"git.local/unittest/repo"}, []string{taskFile})
+	_, err := runner.Run([]string{"git.local/unittest/repo"}, []string{taskFile}, map[string]string{})
 
 	require.NoError(t, err)
-	assert.NotEqual(t, cacheLastExecutionBefore, cache.GetLastExecutionAt(), "Updates the lat execution time in the cache")
+	assert.NotEqual(t, cacheLastExecutionBefore, cache.GetLastExecutionAt(), "Updates the last execution time in the cache")
+}
+
+func TestExecuteRunner_Run_Inputs(t *testing.T) {
+	ctrl := gomock.NewController(t)
+	repo := setupRunRepoMock(ctrl, "repo")
+	hostm := &mockHost{
+		repositories: []host.Repository{repo},
+	}
+
+	taskOk := createTestTask("git.local/unittest/repo.*")
+	taskOk.Inputs = []schema.Input{
+		{Name: "test"},
+	}
+	taskOk.Name = "TaskOk"
+	taskOkFile := createTestTaskFile(taskOk)
+
+	taskMissingInput := createTestTask("git.local/unittest/repo.*")
+	taskMissingInput.Inputs = []schema.Input{
+		{Name: "other"},
+	}
+	taskOk.Name = "TaskMissingInput"
+	taskMissingInputFile := createTestTaskFile(taskMissingInput)
+
+	cacheFile := createTestCache(taskOkFile)
+	cache := cache.NewJsonFile(cacheFile)
+	_ = cache.Read()
+	defer func() {
+		if err := os.Remove(cacheFile); err != nil {
+			panic(err)
+		}
+
+		if err := os.Remove(taskOkFile); err != nil {
+			panic(err)
+		}
+	}()
+	procMock := NewMockRepositoryTaskProcessor(ctrl)
+	var ctx = reflect.TypeOf((*context.Context)(nil)).Elem()
+
+	// Verifies that procMock.Process() gets called with the expected value.
+	isTask := func(x any) bool {
+		t := x.(*task.Task)
+		return t.Name == "TaskOk"
+	}
+
+	procMock.EXPECT().
+		Process(gomock.AssignableToTypeOf(ctx), false, repo, gomock.Cond(isTask), false).
+		Return(processor.ResultNoChanges, nil)
+
+	runner := &command.Run{
+		Cache:        cache,
+		DryRun:       false,
+		Hosts:        []host.Host{hostm},
+		Processor:    procMock,
+		TaskRegistry: task.NewRegistry(runTestOpts),
+	}
+	_, err := runner.Run([]string{"git.local/unittest/repo"}, []string{taskOkFile, taskMissingInputFile}, map[string]string{"test": "unit"})
+
+	require.NoError(t, err)
 }

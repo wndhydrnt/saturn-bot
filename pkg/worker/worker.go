@@ -233,7 +233,7 @@ func (w *Worker) executeRun(exec Execution, result chan Result) {
 		}
 		taskPaths = append(taskPaths, t.TaskPath)
 	}
-	results, err := command.ExecuteRun(w.opts, repositoryNames, taskPaths)
+	results, err := command.ExecuteRun(w.opts, repositoryNames, taskPaths, map[string]string{})
 	result <- Result{
 		RunError:    err,
 		Execution:   exec,
