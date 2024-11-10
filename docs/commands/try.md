@@ -16,31 +16,37 @@ actions and provides feedback on whether files have changed or not.
 
 Examples:
 
-Try all tasks in file "task.yaml" against
-repository "github.com/wndhydrnt/saturn-bot-example".
-
+# Try all tasks in file "task.yaml" against
+# repository "github.com/wndhydrnt/saturn-bot-example".
 saturn-bot try \
-  --config config.yaml \
   --repository github.com/wndhydrnt/saturn-bot-example \
   task.yaml
 
-Try task with name "example" in "task.yaml" against
-repository "github.com/wndhydrnt/saturn-bot-example".
-
+# Try task with name "example" in "task.yaml" against
+# repository "github.com/wndhydrnt/saturn-bot-example".
 saturn-bot try \
-  --config config.yaml \
   --repository github.com/wndhydrnt/saturn-bot-example \
   --task-name example \
+  task.yaml
+
+# Set inputs "version" and "date".
+# The task in file "task.yaml" defines the expected inputs.
+saturn-bot try \
+  --repository github.com/wndhydrnt/saturn-bot-example \
+	--input version=1.2.3 \
+	--input date=2024-11-10 \
   task.yaml
 
 Usage:
   saturn-bot try FILE [flags]
 
 Flags:
-      --config string       Path to config file.
-      --data-dir string     Path to directory to clone the repository.
-  -h, --help                help for try
-      --repository string   Name of the repository to test against.
-      --task-name string    If set, try only the task that matches the name.
-                            Useful if a task file contains multiple tasks.
+      --config string          Path to config file.
+      --data-dir string        Path to directory to clone the repository.
+  -h, --help                   help for try
+      --input stringToString   Key/value pairs to use as input parameters of the task.
+                               Can be supplied multiple times. (default [])
+      --repository string      Name of the repository to test against.
+      --task-name string       If set, try only the task that matches the name.
+                               Useful if a task file contains multiple tasks.
 ```
