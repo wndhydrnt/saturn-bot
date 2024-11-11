@@ -1,5 +1,12 @@
 # Changelog
 
+## [0.15.1](https://github.com/wndhydrnt/saturn-bot/compare/v0.15.0...v0.15.1) (2024-11-11)
+
+
+### Bug Fixes
+
+* **host:** Do not time out if rate-limiting of GitLab API is active ([#103](https://github.com/wndhydrnt/saturn-bot/issues/103)) ([d475e03](https://github.com/wndhydrnt/saturn-bot/commit/d475e031b9b82d5d91ffda1a0e19794c5ebe782a))
+
 ## [0.15.0](https://github.com/wndhydrnt/saturn-bot/compare/v0.14.0...v0.15.0) (2024-11-03)
 
 
