@@ -11,6 +11,7 @@ import (
 	"sync"
 	"time"
 
+	"github.com/hashicorp/go-cleanhttp"
 	"github.com/wndhydrnt/saturn-bot/pkg/log"
 	"github.com/wndhydrnt/saturn-bot/pkg/metrics"
 	"github.com/xanzy/go-gitlab"
@@ -536,10 +537,7 @@ type GitLabHost struct {
 }
 
 func NewGitLabHost(addr, token string) (*GitLabHost, error) {
-	httpClient := &http.Client{
-		Timeout:   2 * time.Second,
-		Transport: http.DefaultTransport,
-	}
+	httpClient := cleanhttp.DefaultPooledClient()
 	metrics.InstrumentHttpClient(httpClient)
 
 	client, err := gitlab.NewClient(
