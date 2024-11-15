@@ -62,7 +62,7 @@ func (s *Server) Start(opts options.Opts, taskPaths []string) error {
 	if err != nil {
 		return fmt.Errorf("create webhook service: %w", err)
 	}
-	api.RegisterGithubWebhookHandler(router, []byte("foobar"), webhookService)
+	api.RegisterGithubWebhookHandler(router, []byte(opts.Config.ServerGithubWebhookSecret), webhookService)
 	err = api.RegisterOpenAPIDefinitionRoute(opts.Config.ServerBaseUrl, router)
 	if err != nil {
 		return fmt.Errorf("failed to register OpenAPI definition route: %w", err)

@@ -92,6 +92,9 @@ type Configuration struct {
 	// `{{dataDir}}/db/saturn-bot.db`.
 	ServerDatabasePath string `json:"serverDatabasePath,omitempty" yaml:"serverDatabasePath,omitempty" mapstructure:"serverDatabasePath,omitempty"`
 
+	// Secret to authenticate webhook requests sent by GitHub.
+	ServerGithubWebhookSecret string `json:"serverGithubWebhookSecret,omitempty" yaml:"serverGithubWebhookSecret,omitempty" mapstructure:"serverGithubWebhookSecret,omitempty"`
+
 	// Interval at which a worker queries the server for new tasks to run.
 	WorkerLoopInterval string `json:"workerLoopInterval,omitempty" yaml:"workerLoopInterval,omitempty" mapstructure:"workerLoopInterval,omitempty"`
 
@@ -440,6 +443,9 @@ func (j *Configuration) UnmarshalJSON(b []byte) error {
 	if v, ok := raw["serverDatabasePath"]; !ok || v == nil {
 		plain.ServerDatabasePath = ""
 	}
+	if v, ok := raw["serverGithubWebhookSecret"]; !ok || v == nil {
+		plain.ServerGithubWebhookSecret = ""
+	}
 	if v, ok := raw["workerLoopInterval"]; !ok || v == nil {
 		plain.WorkerLoopInterval = "10s"
 	}
@@ -526,6 +532,9 @@ func (j *Configuration) UnmarshalYAML(value *yaml.Node) error {
 	}
 	if v, ok := raw["serverDatabasePath"]; !ok || v == nil {
 		plain.ServerDatabasePath = ""
+	}
+	if v, ok := raw["serverGithubWebhookSecret"]; !ok || v == nil {
+		plain.ServerGithubWebhookSecret = ""
 	}
 	if v, ok := raw["workerLoopInterval"]; !ok || v == nil {
 		plain.WorkerLoopInterval = "10s"
