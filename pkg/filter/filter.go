@@ -16,7 +16,7 @@ var (
 	BuiltInFactories = []Factory{
 		FileContentFactory{},
 		FileFactory{},
-		JsonPathFactory{},
+		JqFactory{},
 		RepositoryFactory{},
 		XpathFactory{},
 	}

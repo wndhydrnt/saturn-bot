@@ -1,18 +1,17 @@
-# jsonpath
+# jq
 
-Downloads a JSON or YAML file from a repository and queries it via one or more JSONPath expressions.
+Downloads a JSON or YAML file from a repository and queries it via one or more [jq](https://jqlang.github.io/jq/) expressions.
 Matches if every query returns at least one result.
 
 ## Parameters
 
 ### `expressions`
 
-List of JSONPath expressions to query the file.
+List of jq expressions to query the file.
 
-The implementation is based on [ojg](https://github.com/ohler55/ojg).
+The implementation is based on [gojq](https://github.com/itchyny/gojq).
 
-Refer to [goessner.net](https://goessner.net/articles/JsonPath/index.html) for an introduction
-to JSONPath.
+Use the [jq playground](https://jqplay.org/) to test expressions.
 
 | Name     | Value      |
 | -------- | ---------- |
@@ -43,29 +42,38 @@ Supports JSON and YAML formats.
 ```yaml
 # Match if the file package.json defines a dependency on the library react.
 filters:
-  - filter: jsonpath
+  - filter: jq
     params:
-      expressions: ["$.dependencies.react"]
+      expressions: [".dependencies.react"]
       path: package.json
 ```
 
 ```yaml
 # Match if the file package.json defines a dependency on the library react and react-dom.
 filters:
-  - filter: jsonpath
+  - filter: jq
     params:
       expressions:
-        - "$.dependencies.react"
-        - "$.dependencies.react-dom"
+        - ".dependencies.react"
+        - ".dependencies.react-dom"
       path: package.json
 ```
 
 ```yaml
 # Match if the file package.json doesn't define a dependency on the library react.
 filters:
-  - filter: jsonpath
+  - filter: jq
     params:
-      expressions: ["$.dependencies.react"]
+      expressions: [".dependencies.react"]
       path: package.json
     reverse: true
+```
+
+```yaml
+# Same as previous example, but not using `reverse`.
+filters:
+  - filter: jq
+    params:
+      expressions: [".dependencies.react == null"]
+      path: package.json
 ```
