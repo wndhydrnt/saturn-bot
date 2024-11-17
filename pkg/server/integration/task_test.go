@@ -11,7 +11,7 @@ import (
 func TestServer_TaskAPI(t *testing.T) {
 	testCases := []testCase{
 		{
-			name:  `When it receives a request to list tasks then it returns a list of tasks`,
+			name:  `When it receives a request to list tasks then it returns the list of known tasks`,
 			tasks: []schema.Task{defaultTask},
 			apiCalls: []apiCall{
 				{
@@ -38,6 +38,19 @@ func TestServer_TaskAPI(t *testing.T) {
 						Hash:    defaultTaskHash,
 						Content: defaultTaskContentBase64,
 					},
+				},
+			},
+		},
+
+		{
+			name:  `When it receives a request to get one task and the task doesn't exist then it indicates that to the client`,
+			tasks: []schema.Task{defaultTask},
+			apiCalls: []apiCall{
+				{
+					method:       "GET",
+					path:         "/api/v1/tasks/unknown",
+					statusCode:   http.StatusNotFound,
+					responseBody: openapi.Error{Error: "Not Found", Message: "Task unknown"},
 				},
 			},
 		},
