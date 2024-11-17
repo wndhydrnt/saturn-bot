@@ -33,7 +33,7 @@ checksums:
 generate_openapi: generate_openapi_server generate_openapi_worker
 
 generate_openapi_server:
-	rm -f ./pkg/server/handler/api/openapi/*.go
+	rm -f ./pkg/server/api/openapi/*.go
 	docker run --rm -v "$(PWD):/work" --workdir "/work/pkg/server/api/openapi" openapitools/openapi-generator-cli:v7.6.0 generate -i openapi.yaml -g go-server --additional-properties=router=chi,outputAsLibrary=true,sourceFolder=.,packageName=openapi,onlyInterfaces=true
 
 generate_openapi_worker:
