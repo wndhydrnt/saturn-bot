@@ -22,9 +22,9 @@ var _ MappedNullable = &ScheduleRunV1Request{}
 
 // ScheduleRunV1Request struct for ScheduleRunV1Request
 type ScheduleRunV1Request struct {
-	// Name of the repository for which to add a run. If empty, the run uses the filters of the task.
-	RepositoryName *string `json:"repositoryName,omitempty"`
-	// Schedule the run after the given time. If empty, then the current time is used.
+	// Names of the repositories for which to add a run. Leave empty to schedule a run for all repositories the task matches.
+	RepositoryNames []string `json:"repositoryNames,omitempty"`
+	// Schedule the run after the given time. Uses the current time if empty.
 	ScheduleAfter *time.Time `json:"scheduleAfter,omitempty"`
 	// Name of the task for which to add a run.
 	TaskName string `json:"taskName"`
@@ -51,36 +51,36 @@ func NewScheduleRunV1RequestWithDefaults() *ScheduleRunV1Request {
 	return &this
 }
 
-// GetRepositoryName returns the RepositoryName field value if set, zero value otherwise.
-func (o *ScheduleRunV1Request) GetRepositoryName() string {
-	if o == nil || IsNil(o.RepositoryName) {
-		var ret string
+// GetRepositoryNames returns the RepositoryNames field value if set, zero value otherwise.
+func (o *ScheduleRunV1Request) GetRepositoryNames() []string {
+	if o == nil || IsNil(o.RepositoryNames) {
+		var ret []string
 		return ret
 	}
-	return *o.RepositoryName
+	return o.RepositoryNames
 }
 
-// GetRepositoryNameOk returns a tuple with the RepositoryName field value if set, nil otherwise
+// GetRepositoryNamesOk returns a tuple with the RepositoryNames field value if set, nil otherwise
 // and a boolean to check if the value has been set.
-func (o *ScheduleRunV1Request) GetRepositoryNameOk() (*string, bool) {
-	if o == nil || IsNil(o.RepositoryName) {
+func (o *ScheduleRunV1Request) GetRepositoryNamesOk() ([]string, bool) {
+	if o == nil || IsNil(o.RepositoryNames) {
 		return nil, false
 	}
-	return o.RepositoryName, true
+	return o.RepositoryNames, true
 }
 
-// HasRepositoryName returns a boolean if a field has been set.
-func (o *ScheduleRunV1Request) HasRepositoryName() bool {
-	if o != nil && !IsNil(o.RepositoryName) {
+// HasRepositoryNames returns a boolean if a field has been set.
+func (o *ScheduleRunV1Request) HasRepositoryNames() bool {
+	if o != nil && !IsNil(o.RepositoryNames) {
 		return true
 	}
 
 	return false
 }
 
-// SetRepositoryName gets a reference to the given string and assigns it to the RepositoryName field.
-func (o *ScheduleRunV1Request) SetRepositoryName(v string) {
-	o.RepositoryName = &v
+// SetRepositoryNames gets a reference to the given []string and assigns it to the RepositoryNames field.
+func (o *ScheduleRunV1Request) SetRepositoryNames(v []string) {
+	o.RepositoryNames = v
 }
 
 // GetScheduleAfter returns the ScheduleAfter field value if set, zero value otherwise.
@@ -181,8 +181,8 @@ func (o ScheduleRunV1Request) MarshalJSON() ([]byte, error) {
 
 func (o ScheduleRunV1Request) ToMap() (map[string]interface{}, error) {
 	toSerialize := map[string]interface{}{}
-	if !IsNil(o.RepositoryName) {
-		toSerialize["repositoryName"] = o.RepositoryName
+	if !IsNil(o.RepositoryNames) {
+		toSerialize["repositoryNames"] = o.RepositoryNames
 	}
 	if !IsNil(o.ScheduleAfter) {
 		toSerialize["scheduleAfter"] = o.ScheduleAfter

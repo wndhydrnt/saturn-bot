@@ -18,6 +18,7 @@ import (
 	"github.com/wndhydrnt/saturn-bot/pkg/options"
 	"github.com/wndhydrnt/saturn-bot/pkg/processor"
 	"github.com/wndhydrnt/saturn-bot/pkg/server/task"
+	"github.com/wndhydrnt/saturn-bot/pkg/task/schema"
 	"github.com/wndhydrnt/saturn-bot/pkg/version"
 	"github.com/wndhydrnt/saturn-bot/pkg/worker/client"
 	"go.uber.org/zap"
@@ -101,7 +102,7 @@ type Worker struct {
 
 	opts       options.Opts
 	resultChan chan Result
-	tasks      []task.Task
+	tasks      []schema.ReadResult
 	stopped    bool
 	stopChan   chan chan struct{}
 }
@@ -216,11 +217,6 @@ func (w *Worker) Stop() chan struct{} {
 }
 
 func (w *Worker) executeRun(exec Execution, result chan Result) {
-	var repositoryNames []string
-	if exec.Repository != nil {
-		repositoryNames = append(repositoryNames, *exec.Repository)
-	}
-
 	var taskPaths []string
 	for _, taskReq := range exec.Tasks {
 		t, err := w.findTaskByName(taskReq.Name, taskReq.Hash)
@@ -231,9 +227,9 @@ func (w *Worker) executeRun(exec Execution, result chan Result) {
 			}
 			return
 		}
-		taskPaths = append(taskPaths, t.TaskPath)
+		taskPaths = append(taskPaths, t.Path)
 	}
-	results, err := command.ExecuteRun(w.opts, repositoryNames, taskPaths)
+	results, err := command.ExecuteRun(w.opts, exec.Repositories, taskPaths)
 	result <- Result{
 		RunError:    err,
 		Execution:   exec,
@@ -241,18 +237,18 @@ func (w *Worker) executeRun(exec Execution, result chan Result) {
 	}
 }
 
-func (w *Worker) findTaskByName(name string, hash string) (task.Task, error) {
+func (w *Worker) findTaskByName(name string, hash string) (schema.ReadResult, error) {
 	for _, t := range w.tasks {
-		if t.TaskName == name {
-			if t.Hash == hash {
+		if t.Task.Name == name {
+			if t.Sha256 == hash {
 				return t, nil
 			} else {
-				return task.Task{}, fmt.Errorf("hash of task '%s' does not match - got '%s' want '%s'", name, hash, t.Hash)
+				return schema.ReadResult{}, fmt.Errorf("hash of task '%s' does not match - got '%s' want '%s'", name, hash, t.Hash)
 			}
 		}
 	}
 
-	return task.Task{}, fmt.Errorf("task '%s' not found", name)
+	return schema.ReadResult{}, fmt.Errorf("task '%s' not found", name)
 }
 
 func mapRunResultsToTaskResults(runResults []command.RunResult) []client.ReportWorkV1TaskResult {

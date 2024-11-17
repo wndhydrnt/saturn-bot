@@ -108,11 +108,17 @@ components:
     ScheduleRunV1Request:
       type: object
       properties:
-        repositoryName:
-          description: Name of the repository for which to add a run. If empty, the run uses the filters of the task.
-          type: string
+        repositoryNames:
+          description: |-
+            Names of the repositories for which to add a run.
+            Leave empty to schedule a run for all repositories the task matches.
+          type: array
+          items:
+            type: string
         scheduleAfter:
-          description: Schedule the run after the given time. If empty, then the current time is used.
+          description: |-
+            Schedule the run after the given time.
+            Uses the current time if empty.
           type: string
           format: date-time
         taskName:
@@ -136,9 +142,11 @@ components:
         runID:
           description: Internal identifier of the unit of work.
           type: integer
-        repository:
-          description: Repository for which to apply the tasks.
-          type: string
+        repositories:
+          description: Names of repositories for which to apply the tasks.
+          type: array
+          items:
+            type: string
         tasks:
           description: Names of the tasks to execute.
           type: array

@@ -3,6 +3,7 @@ package schema
 import (
 	"bytes"
 	"crypto/sha256"
+	"encoding/hex"
 	"errors"
 	"fmt"
 	"hash"
@@ -15,9 +16,10 @@ import (
 )
 
 type ReadResult struct {
-	Hash hash.Hash
-	Path string
-	Task Task
+	Hash   hash.Hash
+	Path   string
+	Sha256 string
+	Task   Task
 }
 
 // Read return all Tasks from the file at `path`.
@@ -92,9 +94,10 @@ func readFile(path string) ([]ReadResult, error) {
 
 		log.Log().Debugf("Found task %s", task.Name)
 		result = append(result, ReadResult{
-			Hash: checksum,
-			Path: path,
-			Task: task,
+			Hash:   checksum,
+			Path:   path,
+			Sha256: hex.EncodeToString(checksum.Sum(nil)),
+			Task:   task,
 		})
 	}
 

@@ -32,6 +32,7 @@ type Server struct {
 }
 
 func (s *Server) Start(opts options.Opts, taskPaths []string) error {
+	metrics.Init(opts.PrometheusRegisterer)
 	tasks, err := task.Load(taskPaths)
 	if err != nil {
 		return fmt.Errorf("load tasks on server start: %w", err)
@@ -58,12 +59,21 @@ func (s *Server) Start(opts options.Opts, taskPaths []string) error {
 	workerHandler := &api.WorkHandler{WorkerService: workerService}
 	workerCtrl := openapi.NewWorkerAPIController(workerHandler)
 	router := newRouter(opts, taskCtrl, workerCtrl)
+	webhookService, err := service.NewWebhookService(tasks, workerService)
+	if err != nil {
+		return fmt.Errorf("create webhook service: %w", err)
+	}
+	api.RegisterGithubWebhookHandler(router, []byte(opts.Config.ServerGithubWebhookSecret), webhookService)
 	err = api.RegisterOpenAPIDefinitionRoute(opts.Config.ServerBaseUrl, router)
 	if err != nil {
 		return fmt.Errorf("failed to register OpenAPI definition route: %w", err)
 	}
 	api.RegisterHealthRoute(router)
-	metrics.RegisterPrometheusRoute(router)
+	metrics.RegisterPrometheusRoute(metrics.RegisterPrometheusRouteOpts{
+		PrometheusGatherer:   opts.PrometheusGatherer,
+		PrometheusRegisterer: opts.PrometheusRegisterer,
+		Router:               router,
+	})
 
 	s.httpServer = &http.Server{
 		ReadHeaderTimeout: 10 * time.Millisecond,
@@ -114,8 +124,6 @@ func Run(configPath string, taskPaths []string) error {
 		return err
 	}
 
-	metrics.Init()
-
 	sigs := make(chan os.Signal, 1)
 	signal.Notify(sigs, syscall.SIGINT, syscall.SIGTERM)
 	s := &Server{}
@@ -149,7 +157,7 @@ func newRouter(opts options.Opts, routers ...openapi.Router) chi.Router {
 	}
 
 	pm := chiprometheus.New("saturn-bot")
-	pm.MustRegisterDefault()
+	opts.PrometheusRegisterer.MustRegister(pm.Collectors()...)
 	router.Use(pm.Handler)
 
 	for _, api := range routers {

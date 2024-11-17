@@ -18,8 +18,8 @@ type GetWorkV1Response struct {
 	// Internal identifier of the unit of work.
 	RunID int32 `json:"runID"`
 
-	// Repository for which to apply the tasks.
-	Repository string `json:"repository,omitempty"`
+	// Names of repositories for which to apply the tasks.
+	Repositories []string `json:"repositories,omitempty"`
 
 	// Names of the tasks to execute.
 	Tasks []GetWorkV1Task `json:"tasks"`
