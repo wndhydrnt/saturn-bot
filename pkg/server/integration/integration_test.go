@@ -80,7 +80,10 @@ func executeTestCase(t *testing.T, tc testCase) {
 	server := &server.Server{}
 	err = server.Start(opts, taskFiles)
 	require.NoError(t, err, "Server starts up")
-	defer server.Stop()
+	defer func() {
+		err := server.Stop()
+		require.NoError(t, err, "Server shuts down")
+	}()
 
 	e := httpexpect.Default(t, cfg.ServerBaseUrl)
 	for _, call := range tc.apiCalls {
