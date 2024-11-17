@@ -87,6 +87,8 @@ func executeTestCase(t *testing.T, tc testCase) {
 		require.NoError(t, err, "Server shuts down")
 	}()
 
+	// Give the HTTP server time to start up - works around flaky tests
+	time.Sleep(1 * time.Millisecond)
 	e := httpexpect.Default(t, cfg.ServerBaseUrl)
 	for _, call := range tc.apiCalls {
 		time.Sleep(call.sleep)
@@ -107,7 +109,7 @@ func executeTestCase(t *testing.T, tc testCase) {
 
 func randomPort() int {
 	for {
-		r := rand.New(rand.NewSource(time.Now().UnixMicro()))
+		r := rand.New(rand.NewSource(time.Now().UnixMicro())) //nolint:all // It's okay to use weak randomization in unit tests
 		port := r.Intn(25000)
 		if port > 1024 {
 			return port
