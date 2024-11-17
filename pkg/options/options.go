@@ -48,13 +48,14 @@ func (ff FilterFactories) Find(name string) filter.Factory {
 }
 
 type Opts struct {
-	ActionFactories ActionFactories
-	Config          config.Configuration
-	FilterFactories FilterFactories
-	Hosts           []host.Host
-	IsCi            bool
-	SkipPlugins     bool
-	PushGateway     *push.Pusher
+	ActionFactories    ActionFactories
+	Config             config.Configuration
+	FilterFactories    FilterFactories
+	Hosts              []host.Host
+	IsCi               bool
+	SkipPlugins        bool
+	PushGateway        *push.Pusher
+	PrometheusRegistry prometheus.Registerer
 
 	dataDir            string
 	workerLoopInterval time.Duration
@@ -72,9 +73,10 @@ func (o Opts) WorkerLoopInterval() time.Duration {
 // and returns an Options struct that can be modified further, if needed.
 func ToOptions(c config.Configuration) (Opts, error) {
 	opts := Opts{
-		ActionFactories: action.BuiltInFactories,
-		Config:          c,
-		FilterFactories: filter.BuiltInFactories,
+		ActionFactories:    action.BuiltInFactories,
+		Config:             c,
+		FilterFactories:    filter.BuiltInFactories,
+		PrometheusRegistry: prometheus.DefaultRegisterer,
 	}
 
 	hosts, err := createHostsFromConfig(c)

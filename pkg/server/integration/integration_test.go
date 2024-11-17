@@ -10,6 +10,7 @@ import (
 
 	"github.com/gavv/httpexpect/v2"
 	_ "github.com/ncruces/go-sqlite3/vfs/memdb"
+	"github.com/prometheus/client_golang/prometheus"
 	"github.com/stretchr/testify/require"
 	"github.com/wndhydrnt/saturn-bot/pkg/config"
 	"github.com/wndhydrnt/saturn-bot/pkg/options"
@@ -71,6 +72,8 @@ func executeTestCase(t *testing.T, tc testCase) {
 
 	opts, err := options.ToOptions(cfg)
 	require.NoError(t, err, "Parses options")
+	// Always use a new registry to avoid a panic caused by attempts to register the same metrics twice.
+	opts.PrometheusRegistry = prometheus.NewRegistry()
 
 	taskFiles := bootstrapTaskFiles(t, tc.tasks)
 
