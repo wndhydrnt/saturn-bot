@@ -74,8 +74,7 @@ func executeTestCase(t *testing.T, tc testCase) {
 	require.NoError(t, err, "Parses options")
 	// Always use a new registry to avoid a panic caused by attempts to register the same metrics twice.
 	promReg := prometheus.NewRegistry()
-	opts.PrometheusGatherer = promReg
-	opts.PrometheusRegisterer = promReg
+	opts.SetPrometheusRegistry(promReg)
 
 	taskFiles := bootstrapTaskFiles(t, tc.tasks)
 
