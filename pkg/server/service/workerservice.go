@@ -28,7 +28,7 @@ func NewWorkerService(db *gorm.DB, tasks []schema.ReadResult) *WorkerService {
 
 func (ws *WorkerService) ScheduleRun(
 	reason db.RunReason,
-	repositoryName string,
+	repositoryNames []string,
 	scheduleAfter time.Time,
 	taskName string,
 	tx *gorm.DB,
@@ -37,19 +37,31 @@ func (ws *WorkerService) ScheduleRun(
 	if tx == nil {
 		tx = ws.db
 	}
-	result := tx.
-		Where("repository_name = ?", repositoryName).
+	query := tx.
 		Where("task_name = ?", taskName).
-		Where("status = ?", db.RunStatusPending).
-		First(&runDB)
+		Where("status = ?", db.RunStatusPending)
+
+	repositoryNameList := db.StringList(repositoryNames)
+	if len(repositoryNameList) == 0 {
+		query = query.Where("repository_names is null")
+	} else {
+		query = query.Where("repository_names = ?", repositoryNameList)
+	}
+
+	result := query.First(&runDB)
 	if errors.Is(result.Error, gorm.ErrRecordNotFound) {
-		log.Log().Debugf("Scheduling new run of task %s for repository %s", taskName, repositoryName)
+		if len(repositoryNames) > 0 {
+			log.Log().Debugf("Scheduling new run of task %s for repositories %v", taskName, repositoryNames)
+		} else {
+			log.Log().Debugf("Scheduling new run of task %s for all repositories", taskName)
+		}
+
 		run := db.Run{
-			Reason:         reason,
-			RepositoryName: ptr.To(repositoryName),
-			ScheduleAfter:  scheduleAfter,
-			Status:         db.RunStatusPending,
-			TaskName:       taskName,
+			Reason:          reason,
+			RepositoryNames: repositoryNameList,
+			ScheduleAfter:   scheduleAfter,
+			Status:          db.RunStatusPending,
+			TaskName:        taskName,
 		}
 
 		if err := tx.Save(&run).Error; err != nil {
@@ -63,7 +75,7 @@ func (ws *WorkerService) ScheduleRun(
 		return 0, fmt.Errorf("read next scheduled run: %w", tx.Error)
 	}
 
-	if runDB.ScheduleAfter.Before(scheduleAfter) {
+	if runDB.ScheduleAfter.After(scheduleAfter) {
 		runDB.ScheduleAfter = scheduleAfter
 		if err := tx.Save(&runDB).Error; err != nil {
 			return 0, fmt.Errorf("update scheduleAfter of run: %w", err)
@@ -143,6 +155,7 @@ func (ws *WorkerService) ReportRun(req openapi.ReportWorkV1Request) error {
 			return err
 		}
 
+		next := 1 * time.Hour
 		for _, taskResult := range req.TaskResults {
 			result := db.TaskResult{
 				RepositoryName: taskResult.RepositoryName,
@@ -159,13 +172,15 @@ func (ws *WorkerService) ReportRun(req openapi.ReportWorkV1Request) error {
 			}
 
 			procResult := processor.Result(taskResult.Result)
-			next := nextSchedule(procResult)
-			if next != nil {
-				_, err := ws.ScheduleRun(db.RunReasonNext, taskResult.RepositoryName, *next, taskResult.TaskName, tx)
-				if err != nil {
-					return err
-				}
+			nextNew := nextSchedule(procResult)
+			if nextNew < next {
+				next = nextNew
 			}
+		}
+
+		_, err := ws.ScheduleRun(db.RunReasonNext, runCurrent.RepositoryNames, time.Now().Add(next), runCurrent.TaskName, tx)
+		if err != nil {
+			return err
 		}
 
 		return nil
@@ -174,19 +189,19 @@ func (ws *WorkerService) ReportRun(req openapi.ReportWorkV1Request) error {
 	return err
 }
 
-func nextSchedule(r processor.Result) *time.Time {
+func nextSchedule(r processor.Result) time.Duration {
 	switch r {
 	case processor.ResultUnknown:
-		return ptr.To(time.Now().Add(15 * time.Minute))
+		return 15 * time.Minute
 	case processor.ResultAutoMergeTooEarly:
-		return ptr.To(time.Now().Add(60 * time.Minute))
+		return 60 * time.Minute
 	case processor.ResultPrCreated:
-		return ptr.To(time.Now().Add(15 * time.Minute))
+		return 15 * time.Minute
 	case processor.ResultPrOpen:
-		return ptr.To(time.Now().Add(15 * time.Minute))
+		return 15 * time.Minute
 	case processor.ResultNoChanges:
-		return ptr.To(time.Now().Add(60 * time.Minute))
+		return 60 * time.Minute
 	default:
-		return nil
+		return 60 * time.Minute
 	}
 }

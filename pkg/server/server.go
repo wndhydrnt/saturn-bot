@@ -13,7 +13,6 @@ import (
 
 	"github.com/go-chi/chi/v5"
 	"github.com/go-chi/chi/v5/middleware"
-	chiprometheus "github.com/toshi0607/chi-prometheus"
 	"github.com/wndhydrnt/saturn-bot/pkg/config"
 	"github.com/wndhydrnt/saturn-bot/pkg/log"
 	"github.com/wndhydrnt/saturn-bot/pkg/options"
@@ -153,9 +152,9 @@ func newRouter(opts options.Opts, routers ...openapi.Router) chi.Router {
 		router.Use(middleware.Logger)
 	}
 
-	pm := chiprometheus.New("saturn-bot")
-	pm.MustRegisterDefault()
-	router.Use(pm.Handler)
+	// pm := chiprometheus.New("saturn-bot")
+	// pm.MustRegisterDefault()
+	// router.Use(pm.Handler)
 
 	for _, api := range routers {
 		for _, route := range api.Routes() {

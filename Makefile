@@ -64,7 +64,8 @@ endif
 
 test_cover:
 	go test -coverpkg=./... -coverprofile cover.out.tmp ./...
-	grep -v -E ".*/pkg\/server\/.*|.*\/pkg\/worker\/.*" cover.out.tmp > cover.out
+	# grep -v -E ".*/pkg\/server\/.*|.*\/pkg\/worker\/.*" cover.out.tmp > cover.out
+	grep -v -E ".*\/pkg\/worker\/.*" cover.out.tmp > cover.out
 	go tool cover -html cover.out -o cover.html
 	rm cover.out.tmp cover.out
 

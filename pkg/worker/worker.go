@@ -217,11 +217,6 @@ func (w *Worker) Stop() chan struct{} {
 }
 
 func (w *Worker) executeRun(exec Execution, result chan Result) {
-	var repositoryNames []string
-	if exec.Repository != nil {
-		repositoryNames = append(repositoryNames, *exec.Repository)
-	}
-
 	var taskPaths []string
 	for _, taskReq := range exec.Tasks {
 		t, err := w.findTaskByName(taskReq.Name, taskReq.Hash)
@@ -234,7 +229,7 @@ func (w *Worker) executeRun(exec Execution, result chan Result) {
 		}
 		taskPaths = append(taskPaths, t.Path)
 	}
-	results, err := command.ExecuteRun(w.opts, repositoryNames, taskPaths)
+	results, err := command.ExecuteRun(w.opts, exec.Repositories, taskPaths)
 	result <- Result{
 		RunError:    err,
 		Execution:   exec,

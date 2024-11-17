@@ -33,7 +33,7 @@ func (h *GithubWebhookHandler) HandleWebhook(w http.ResponseWriter, r *http.Requ
 		return
 	}
 
-	// Run in goroutine to no block the handler.
+	// Run in goroutine to not block the handler.
 	go func() {
 		log.Log().Debugf("Enqueuing GitHub webhook %s", whID)
 		h.WebhookService.Enqueue(&service.EnqueueInput{
@@ -47,5 +47,5 @@ func (h *GithubWebhookHandler) HandleWebhook(w http.ResponseWriter, r *http.Requ
 
 func RegisterGithubWebhookHandler(router chi.Router, secretKey []byte, ws *service.WebhookService) {
 	h := &GithubWebhookHandler{SecretKey: secretKey, WebhookService: ws}
-	router.Post("/webhook/github", h.HandleWebhook)
+	router.Post("/webhooks/github", h.HandleWebhook)
 }

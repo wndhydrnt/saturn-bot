@@ -12,18 +12,6 @@ import (
 	"github.com/wndhydrnt/saturn-bot/pkg/task/schema"
 )
 
-func mustParseJqQuery(q *gojq.Query, err error) *gojq.Query {
-	if err != nil {
-		panic(err)
-	}
-
-	return q
-}
-
-var (
-	githubRepositoryNameExpr = mustParseJqQuery(gojq.Parse(".repository.full_name"))
-)
-
 type WebhookType uint
 
 const (
@@ -61,18 +49,6 @@ func (s *WebhookService) Enqueue(in *EnqueueInput) error {
 		}
 	}
 
-	repositoryNameRaw, hasNext := githubRepositoryNameExpr.Run(in.Payload).Next()
-	if !hasNext {
-		return nil
-	}
-
-	repositoryName, ok := repositoryNameRaw.(string)
-	if !ok {
-		return nil
-	}
-
-	repositoryName = "github.com/" + repositoryName
-
 	var errs []error
 	for _, task := range s.tasks {
 		if !hasGithubWebhookTrigger(task.Task.Trigger) {
@@ -83,7 +59,7 @@ func (s *WebhookService) Enqueue(in *EnqueueInput) error {
 		for idx, trigger := range task.Task.Trigger.Webhook.Github {
 			if s.match(in.Event, idx, task.Task.Name, trigger, in.Payload) {
 				log.Log().Debugf("Task %s matches GitHub webhook %s", task.Task.Name, in.ID)
-				_, err := s.workerService.ScheduleRun(db.RunReasonWebhook, repositoryName, time.Now(), task.Task.Name, nil)
+				_, err := s.workerService.ScheduleRun(db.RunReasonWebhook, nil, time.Now(), task.Task.Name, nil)
 				errs = append(errs, err)
 			} else {
 				log.Log().Debugf("Task %s does not match GitHub webhook %s", task.Task.Name, in.ID)

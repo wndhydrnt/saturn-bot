@@ -19,10 +19,10 @@ import (
 
 type ScheduleRunV1Request struct {
 
-	// Name of the repository for which to add a run. If empty, the run uses the filters of the task.
-	RepositoryName string `json:"repositoryName,omitempty"`
+	// Names of the repositories for which to add a run. Leave empty to schedule a run for all repositories the task matches.
+	RepositoryNames []string `json:"repositoryNames,omitempty"`
 
-	// Schedule the run after the given time. If empty, then the current time is used.
+	// Schedule the run after the given time. Uses the current time if empty.
 	ScheduleAfter time.Time `json:"scheduleAfter,omitempty"`
 
 	// Name of the task for which to add a run.

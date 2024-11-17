@@ -23,8 +23,8 @@ var _ MappedNullable = &GetWorkV1Response{}
 type GetWorkV1Response struct {
 	// Internal identifier of the unit of work.
 	RunID int32 `json:"runID"`
-	// Repository for which to apply the tasks.
-	Repository *string `json:"repository,omitempty"`
+	// Names of repositories for which to apply the tasks.
+	Repositories []string `json:"repositories,omitempty"`
 	// Names of the tasks to execute.
 	Tasks []GetWorkV1Task `json:"tasks"`
 }
@@ -74,36 +74,36 @@ func (o *GetWorkV1Response) SetRunID(v int32) {
 	o.RunID = v
 }
 
-// GetRepository returns the Repository field value if set, zero value otherwise.
-func (o *GetWorkV1Response) GetRepository() string {
-	if o == nil || IsNil(o.Repository) {
-		var ret string
+// GetRepositories returns the Repositories field value if set, zero value otherwise.
+func (o *GetWorkV1Response) GetRepositories() []string {
+	if o == nil || IsNil(o.Repositories) {
+		var ret []string
 		return ret
 	}
-	return *o.Repository
+	return o.Repositories
 }
 
-// GetRepositoryOk returns a tuple with the Repository field value if set, nil otherwise
+// GetRepositoriesOk returns a tuple with the Repositories field value if set, nil otherwise
 // and a boolean to check if the value has been set.
-func (o *GetWorkV1Response) GetRepositoryOk() (*string, bool) {
-	if o == nil || IsNil(o.Repository) {
+func (o *GetWorkV1Response) GetRepositoriesOk() ([]string, bool) {
+	if o == nil || IsNil(o.Repositories) {
 		return nil, false
 	}
-	return o.Repository, true
+	return o.Repositories, true
 }
 
-// HasRepository returns a boolean if a field has been set.
-func (o *GetWorkV1Response) HasRepository() bool {
-	if o != nil && !IsNil(o.Repository) {
+// HasRepositories returns a boolean if a field has been set.
+func (o *GetWorkV1Response) HasRepositories() bool {
+	if o != nil && !IsNil(o.Repositories) {
 		return true
 	}
 
 	return false
 }
 
-// SetRepository gets a reference to the given string and assigns it to the Repository field.
-func (o *GetWorkV1Response) SetRepository(v string) {
-	o.Repository = &v
+// SetRepositories gets a reference to the given []string and assigns it to the Repositories field.
+func (o *GetWorkV1Response) SetRepositories(v []string) {
+	o.Repositories = v
 }
 
 // GetTasks returns the Tasks field value
@@ -141,8 +141,8 @@ func (o GetWorkV1Response) MarshalJSON() ([]byte, error) {
 func (o GetWorkV1Response) ToMap() (map[string]interface{}, error) {
 	toSerialize := map[string]interface{}{}
 	toSerialize["runID"] = o.RunID
-	if !IsNil(o.Repository) {
-		toSerialize["repository"] = o.Repository
+	if !IsNil(o.Repositories) {
+		toSerialize["repositories"] = o.Repositories
 	}
 	toSerialize["tasks"] = o.Tasks
 	return toSerialize, nil

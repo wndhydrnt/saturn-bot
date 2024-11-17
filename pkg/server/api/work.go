@@ -29,13 +29,11 @@ func (wh *WorkHandler) GetWorkV1(_ context.Context) (openapi.ImplResponse, error
 	}
 
 	body := openapi.GetWorkV1Response{
-		RunID: int32(run.ID), // #nosec G115 -- no info by gosec on how to fix this
+		Repositories: run.RepositoryNames,
+		RunID:        int32(run.ID), // #nosec G115 -- no info by gosec on how to fix this
 		Tasks: []openapi.GetWorkV1Task{
 			{Hash: task.Sha256, Name: task.Task.Name},
 		},
-	}
-	if run.RepositoryName != nil {
-		body.Repository = *run.RepositoryName
 	}
 
 	return openapi.Response(http.StatusOK, body), nil
@@ -54,7 +52,7 @@ func (wh *WorkHandler) ReportWorkV1(_ context.Context, req openapi.ReportWorkV1R
 }
 
 func (wh *WorkHandler) ScheduleRunV1(_ context.Context, req openapi.ScheduleRunV1Request) (openapi.ImplResponse, error) {
-	runID, err := wh.WorkerService.ScheduleRun(db.RunReasonManual, req.RepositoryName, req.ScheduleAfter, req.TaskName, nil)
+	runID, err := wh.WorkerService.ScheduleRun(db.RunReasonManual, req.RepositoryNames, req.ScheduleAfter, req.TaskName, nil)
 	if err != nil {
 		return openapi.Response(http.StatusInternalServerError, serverError), nil
 	}
