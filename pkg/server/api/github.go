@@ -51,6 +51,8 @@ func (h *GithubWebhookHandler) HandleWebhook(w http.ResponseWriter, r *http.Requ
 		w.WriteHeader(http.StatusInternalServerError)
 		return
 	}
+
+	w.WriteHeader(http.StatusOK)
 }
 
 // RegisterGithubWebhookHandler registers the handler with a [github.com/go-chi/chi/v5.Router].
