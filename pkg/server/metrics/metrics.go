@@ -9,11 +9,11 @@ import (
 	"github.com/wndhydrnt/saturn-bot/pkg/version"
 )
 
-func Init() {
+func Init(registry prometheus.Registerer) {
 	promversion.Version = version.Version
 	promversion.Revision = version.Hash
 	promversion.BuildDate = version.DateTime
-	prometheus.DefaultRegisterer.MustRegister(promversioncollector.NewCollector("saturn_bot_server"))
+	registry.MustRegister(promversioncollector.NewCollector("saturn_bot_server"))
 }
 
 func RegisterPrometheusRoute(router chi.Router) {

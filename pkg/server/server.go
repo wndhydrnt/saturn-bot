@@ -32,6 +32,7 @@ type Server struct {
 }
 
 func (s *Server) Start(opts options.Opts, taskPaths []string) error {
+	metrics.Init(opts.PrometheusRegistry)
 	tasks, err := task.Load(taskPaths)
 	if err != nil {
 		return fmt.Errorf("load tasks on server start: %w", err)
@@ -87,7 +88,7 @@ func (s *Server) Start(opts options.Opts, taskPaths []string) error {
 
 func (s *Server) Stop() error {
 	if s.httpServer != nil {
-		log.Log().Debug("Shutting down HTTP server")
+		log.Log().Info("Shutting down HTTP server")
 		ctx := context.Background()
 		ctx, cancel := context.WithDeadline(ctx, time.Now().Add(1*time.Minute))
 		err := s.httpServer.Shutdown(ctx)
@@ -96,7 +97,7 @@ func (s *Server) Stop() error {
 			return fmt.Errorf("shutdown of http server failed: %w", err)
 		}
 
-		log.Log().Debug("Shutdown of HTTP server finished")
+		log.Log().Info("Shutdown of HTTP server finished")
 		return nil
 	}
 
@@ -118,8 +119,6 @@ func Run(configPath string, taskPaths []string) error {
 	if err != nil {
 		return err
 	}
-
-	metrics.Init()
 
 	sigs := make(chan os.Signal, 1)
 	signal.Notify(sigs, syscall.SIGINT, syscall.SIGTERM)
