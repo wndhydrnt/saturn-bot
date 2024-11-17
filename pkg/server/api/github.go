@@ -20,6 +20,7 @@ func (h *GithubWebhookHandler) HandleWebhook(w http.ResponseWriter, r *http.Requ
 	payload, err := github.ValidatePayload(r, h.SecretKey)
 	if err != nil {
 		log.Log().Errorw("Failed to validate GitHub webhook", zap.Error(err))
+		w.WriteHeader(http.StatusBadRequest)
 		return
 	}
 
@@ -30,19 +31,23 @@ func (h *GithubWebhookHandler) HandleWebhook(w http.ResponseWriter, r *http.Requ
 	err = json.Unmarshal(payload, &content)
 	if err != nil {
 		log.Log().Errorw("Failed to unmarshal GitHub webhook", zap.Error(err))
+		w.WriteHeader(http.StatusBadRequest)
 		return
 	}
 
-	// Run in goroutine to not block the handler.
-	go func() {
-		log.Log().Debugf("Enqueuing GitHub webhook %s", whID)
-		h.WebhookService.Enqueue(&service.EnqueueInput{
-			Event:   whType,
-			ID:      whID,
-			Payload: content,
-			Type:    service.GithubWebhookType,
-		})
-	}()
+	// Note: GitHub expects a response within 10 seconds.
+	log.Log().Debugf("Enqueuing GitHub webhook %s", whID)
+	err = h.WebhookService.Enqueue(&service.EnqueueInput{
+		Event:   whType,
+		ID:      whID,
+		Payload: content,
+		Type:    service.GithubWebhookType,
+	})
+	if err != nil {
+		log.Log().Errorw("Failed to enqueue GitHub webhook", zap.Error(err))
+		w.WriteHeader(http.StatusInternalServerError)
+		return
+	}
 }
 
 func RegisterGithubWebhookHandler(router chi.Router, secretKey []byte, ws *service.WebhookService) {
