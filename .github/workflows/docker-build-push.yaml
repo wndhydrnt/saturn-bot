@@ -2,12 +2,10 @@ name: Docker Build Push
 
 on:
   push:
+    branches:
+      - "main"
     tags:
       - "*"
-  workflow_run:
-    workflows: ["Hadolint"]
-    types:
-      - completed
 
 env:
   REGISTRY: ghcr.io
