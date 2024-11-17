@@ -11,11 +11,14 @@ import (
 	"go.uber.org/zap"
 )
 
+// GithubWebhookHandler handles webhooks received by GitLab.
 type GithubWebhookHandler struct {
 	SecretKey      []byte
 	WebhookService *service.WebhookService
 }
 
+// HandleWebhook parses and validates a webhook sent by GitHub.
+// If the webhook is valid, it sends the webhook on for processing.
 func (h *GithubWebhookHandler) HandleWebhook(w http.ResponseWriter, r *http.Request) {
 	payload, err := github.ValidatePayload(r, h.SecretKey)
 	if err != nil {
@@ -50,6 +53,7 @@ func (h *GithubWebhookHandler) HandleWebhook(w http.ResponseWriter, r *http.Requ
 	}
 }
 
+// RegisterGithubWebhookHandler registers the handler with a [github.com/go-chi/chi/v5.Router].
 func RegisterGithubWebhookHandler(router chi.Router, secretKey []byte, ws *service.WebhookService) {
 	h := &GithubWebhookHandler{SecretKey: secretKey, WebhookService: ws}
 	router.Post("/webhooks/github", h.HandleWebhook)

@@ -26,8 +26,10 @@ const (
 	RunReasonWebhook
 )
 
+// StringList represents a database type that stores a list of strings.
 type StringList []string
 
+// Scan implements [sql.Scanner].
 func (sl *StringList) Scan(value any) error {
 	if value == nil {
 		return nil
@@ -43,6 +45,7 @@ func (sl *StringList) Scan(value any) error {
 	return nil
 }
 
+// Scan implements [sql.Valuer].
 func (sl StringList) Value() (driver.Value, error) {
 	if len(sl) == 0 {
 		return nil, nil
