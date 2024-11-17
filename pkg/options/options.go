@@ -48,14 +48,15 @@ func (ff FilterFactories) Find(name string) filter.Factory {
 }
 
 type Opts struct {
-	ActionFactories    ActionFactories
-	Config             config.Configuration
-	FilterFactories    FilterFactories
-	Hosts              []host.Host
-	IsCi               bool
-	SkipPlugins        bool
-	PushGateway        *push.Pusher
-	PrometheusRegistry prometheus.Registerer
+	ActionFactories      ActionFactories
+	Config               config.Configuration
+	FilterFactories      FilterFactories
+	Hosts                []host.Host
+	IsCi                 bool
+	SkipPlugins          bool
+	PushGateway          *push.Pusher
+	PrometheusGatherer   prometheus.Gatherer
+	PrometheusRegisterer prometheus.Registerer
 
 	dataDir            string
 	workerLoopInterval time.Duration
@@ -63,6 +64,11 @@ type Opts struct {
 
 func (o Opts) DataDir() string {
 	return o.dataDir
+}
+
+func (o *Opts) SetPrometheusRegistry(reg *prometheus.Registry) {
+	o.PrometheusGatherer = reg
+	o.PrometheusRegisterer = reg
 }
 
 func (o Opts) WorkerLoopInterval() time.Duration {
@@ -73,10 +79,11 @@ func (o Opts) WorkerLoopInterval() time.Duration {
 // and returns an Options struct that can be modified further, if needed.
 func ToOptions(c config.Configuration) (Opts, error) {
 	opts := Opts{
-		ActionFactories:    action.BuiltInFactories,
-		Config:             c,
-		FilterFactories:    filter.BuiltInFactories,
-		PrometheusRegistry: prometheus.DefaultRegisterer,
+		ActionFactories:      action.BuiltInFactories,
+		Config:               c,
+		FilterFactories:      filter.BuiltInFactories,
+		PrometheusGatherer:   prometheus.DefaultGatherer,
+		PrometheusRegisterer: prometheus.DefaultRegisterer,
 	}
 
 	hosts, err := createHostsFromConfig(c)
@@ -163,11 +170,10 @@ func Initialize(opts *Opts) error {
 	}
 	opts.workerLoopInterval = loop
 
-	if opts.Config.PrometheusPushgatewayUrl != nil {
-		reg := prometheus.NewRegistry()
-		metrics.Register(reg)
+	if opts.Config.PrometheusPushgatewayUrl != nil && opts.PrometheusRegisterer != nil && opts.PrometheusGatherer != nil {
+		metrics.Register(opts.PrometheusRegisterer)
 		opts.PushGateway = push.New(*opts.Config.PrometheusPushgatewayUrl, "saturn-bot").
-			Collector(reg)
+			Gatherer(opts.PrometheusGatherer)
 	}
 
 	return nil

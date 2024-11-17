@@ -32,7 +32,7 @@ type Server struct {
 }
 
 func (s *Server) Start(opts options.Opts, taskPaths []string) error {
-	metrics.Init(opts.PrometheusRegistry)
+	metrics.Init(opts.PrometheusRegisterer)
 	tasks, err := task.Load(taskPaths)
 	if err != nil {
 		return fmt.Errorf("load tasks on server start: %w", err)
@@ -153,7 +153,7 @@ func newRouter(opts options.Opts, routers ...openapi.Router) chi.Router {
 	}
 
 	pm := chiprometheus.New("saturn-bot")
-	opts.PrometheusRegistry.MustRegister(pm.Collectors()...)
+	opts.PrometheusRegisterer.MustRegister(pm.Collectors()...)
 	router.Use(pm.Handler)
 
 	for _, api := range routers {
