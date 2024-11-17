@@ -16,6 +16,20 @@ func Init(registry prometheus.Registerer) {
 	registry.MustRegister(promversioncollector.NewCollector("saturn_bot_server"))
 }
 
-func RegisterPrometheusRoute(router chi.Router) {
-	router.Handle("/metrics", promhttp.Handler())
+// RegisterPrometheusRouteOpts defines all options accepted by [RegisterPrometheusRoute].
+type RegisterPrometheusRouteOpts struct {
+	PrometheusGatherer   prometheus.Gatherer
+	PrometheusRegisterer prometheus.Registerer
+	Router               chi.Router
+}
+
+// RegisterPrometheusRoute registers the handler that exposes Prometheus metrics.
+func RegisterPrometheusRoute(opts RegisterPrometheusRouteOpts) {
+	opts.Router.Handle(
+		"/metrics",
+		promhttp.InstrumentMetricHandler(
+			opts.PrometheusRegisterer,
+			promhttp.HandlerFor(opts.PrometheusGatherer, promhttp.HandlerOpts{}),
+		),
+	)
 }

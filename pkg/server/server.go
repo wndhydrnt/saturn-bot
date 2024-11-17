@@ -69,7 +69,11 @@ func (s *Server) Start(opts options.Opts, taskPaths []string) error {
 		return fmt.Errorf("failed to register OpenAPI definition route: %w", err)
 	}
 	api.RegisterHealthRoute(router)
-	metrics.RegisterPrometheusRoute(router)
+	metrics.RegisterPrometheusRoute(metrics.RegisterPrometheusRouteOpts{
+		PrometheusGatherer:   opts.PrometheusGatherer,
+		PrometheusRegisterer: opts.PrometheusRegisterer,
+		Router:               router,
+	})
 
 	s.httpServer = &http.Server{
 		ReadHeaderTimeout: 10 * time.Millisecond,
