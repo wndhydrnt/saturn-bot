@@ -99,7 +99,7 @@ func (r *TryRunner) Run() error {
 		}
 
 		processed = true
-		err := task.UpdateInputs(r.Inputs)
+		err := task.SetInputs(r.Inputs)
 		if err != nil {
 			fmt.Fprintf(r.Out, "⚠️  Missing input: %s\n", err)
 			continue

@@ -183,9 +183,9 @@ func (tw *Task) HasReachedChangeLimit() bool {
 	return tw.changeLimitCount >= tw.ChangeLimit
 }
 
-// UpdateInputs takes inputs supplied via the command-line and stores them for later processing.
+// SetInputs takes inputs supplied via the command-line and stores them for later processing.
 // It returns an error if an expected input isn't supplied and no default value for the input has been set.
-func (tw *Task) UpdateInputs(cliInputs map[string]string) error {
+func (tw *Task) SetInputs(cliInputs map[string]string) error {
 	if tw.inputData == nil {
 		tw.inputData = map[string]string{}
 	}

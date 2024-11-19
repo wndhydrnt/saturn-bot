@@ -6,6 +6,7 @@ import (
 	"fmt"
 	"os"
 	"path"
+	"slices"
 	"time"
 
 	"github.com/prometheus/client_golang/prometheus/push"
@@ -318,15 +319,12 @@ func findRepositoryInHosts(hosts []host.Host, repositoryName string) (host.Repos
 // setInputs sets inputs passed to Run().
 // It filters out tasks when an expected input is missing.
 func setInputs(tasks []*task.Task, inputs map[string]string) []*task.Task {
-	var tasksWithInputs []*task.Task
-	for _, t := range tasks {
-		err := t.UpdateInputs(inputs)
-		if err == nil {
-			tasksWithInputs = append(tasksWithInputs, t)
-		} else {
-			log.Log().Warnf("Deactivating Task due to missing inputs: %s", err)
+	return slices.DeleteFunc(tasks, func(t *task.Task) bool {
+		if err := t.SetInputs(inputs); err != nil {
+			log.Log().Infof("Deactivating Task %s - missing inputs: %s", t.Name, err)
+			return false
 		}
-	}
 
-	return tasksWithInputs
+		return true
+	})
 }
