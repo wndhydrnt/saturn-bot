@@ -404,7 +404,7 @@ func (tr *Registry) ReadTasks(taskFile string) error {
 		}
 		wrapper.schedule = schedule
 
-		wrapper.checksum = fmt.Sprintf("%x", entry.Hash.Sum(nil))
+		wrapper.checksum = entry.Sha256
 		tr.tasks = append(tr.tasks, wrapper)
 	}
 

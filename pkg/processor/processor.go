@@ -12,7 +12,6 @@ import (
 	sContext "github.com/wndhydrnt/saturn-bot/pkg/context"
 	"github.com/wndhydrnt/saturn-bot/pkg/git"
 	"github.com/wndhydrnt/saturn-bot/pkg/host"
-	"github.com/wndhydrnt/saturn-bot/pkg/log"
 	"github.com/wndhydrnt/saturn-bot/pkg/task"
 	"github.com/wndhydrnt/saturn-bot/pkg/template"
 	"go.uber.org/zap"
@@ -74,7 +73,7 @@ func (p *Processor) Process(
 	ctx = context.WithValue(ctx, sContext.RepositoryKey{}, repo)
 
 	if doFilter {
-		match, err := matchTaskToRepository(ctx, task)
+		match, err := matchTaskToRepository(ctx, task, logger)
 		if err != nil {
 			return ResultUnknown, err
 		}
@@ -120,7 +119,7 @@ func (p *Processor) Process(
 	return result, nil
 }
 
-func matchTaskToRepository(ctx context.Context, task *task.Task) (bool, error) {
+func matchTaskToRepository(ctx context.Context, task *task.Task, logger *zap.SugaredLogger) (bool, error) {
 	if len(task.Filters()) == 0 {
 		// A task without filters is considered not matching.
 		// Avoids accidentally applying a task to all repositories
@@ -135,7 +134,7 @@ func matchTaskToRepository(ctx context.Context, task *task.Task) (bool, error) {
 		}
 
 		if !match {
-			log.Log().Debugf("Filter %s does not match task %s", filter.String(), task.Name)
+			logger.Debugf("Filter %s does not match", filter.String())
 			return false, nil
 		}
 	}

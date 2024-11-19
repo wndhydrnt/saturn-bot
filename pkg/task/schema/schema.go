@@ -110,6 +110,18 @@ func (j *Filter) UnmarshalYAML(value *yaml.Node) error {
 	return nil
 }
 
+type GithubTrigger struct {
+	// Experimental: GitHub webhook event, like push. See
+	// https://docs.github.com/en/webhooks/webhook-events-and-payloads for a list of
+	// all available events.
+	Event *string `json:"event,omitempty" yaml:"event,omitempty" mapstructure:"event,omitempty"`
+
+	// Experimental: jq expressions to apply to the body of the webhook. If all
+	// expressions match the content of the webhook then a new run of the task is
+	// scheduled.
+	Filters []string `json:"filters,omitempty" yaml:"filters,omitempty" mapstructure:"filters,omitempty"`
+}
+
 // A input allows customizing a task at runtime.
 type Input struct {
 	// Default value to use if no input has been set via the command-line.
@@ -287,6 +299,21 @@ type Task struct {
 
 	// Define times of week or month for when saturn-bot executes the task.
 	Schedule string `json:"schedule,omitempty" yaml:"schedule,omitempty" mapstructure:"schedule,omitempty"`
+
+	// Experimental: Define when the task gets executed. Only relevant in server mode.
+	Trigger *TaskTrigger `json:"trigger,omitempty" yaml:"trigger,omitempty" mapstructure:"trigger,omitempty"`
+}
+
+// Experimental: Define when the task gets executed. Only relevant in server mode.
+type TaskTrigger struct {
+	// Experimental: Execute the task when the server receives a webhook.
+	Webhook *TaskTriggerWebhook `json:"webhook,omitempty" yaml:"webhook,omitempty" mapstructure:"webhook,omitempty"`
+}
+
+// Experimental: Execute the task when the server receives a webhook.
+type TaskTriggerWebhook struct {
+	// Experimental: Execute the task when the server receives a webhook from GitHub.
+	Github []GithubTrigger `json:"github,omitempty" yaml:"github,omitempty" mapstructure:"github,omitempty"`
 }
 
 // UnmarshalJSON implements json.Unmarshaler.

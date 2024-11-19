@@ -55,7 +55,7 @@ func NewOpenApiDefinitionHandler(baseURL string) (http.HandlerFunc, error) {
 
 	content := buf.Bytes()
 	return func(w http.ResponseWriter, r *http.Request) {
-		w.Header().Set("Content-Type", "application/yaml")
+		w.Header().Set("Content-Type", "text/yaml")
 		_, _ = w.Write(content)
 	}, nil
 }

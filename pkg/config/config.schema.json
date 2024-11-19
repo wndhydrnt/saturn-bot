@@ -133,6 +133,11 @@
       "description": "If `true`, display executed SQL queries and errors of the database. Useful for debugging.",
       "type": "boolean"
     },
+    "serverGithubWebhookSecret": {
+      "default": "",
+      "description": "Secret to authenticate webhook requests sent by GitHub.",
+      "type": "string"
+    },
     "workerLoopInterval": {
       "default": "10s",
       "description": "Interval at which a worker queries the server for new tasks to run.",

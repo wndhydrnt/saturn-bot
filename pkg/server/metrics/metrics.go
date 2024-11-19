@@ -9,13 +9,27 @@ import (
 	"github.com/wndhydrnt/saturn-bot/pkg/version"
 )
 
-func Init() {
+func Init(registry prometheus.Registerer) {
 	promversion.Version = version.Version
 	promversion.Revision = version.Hash
 	promversion.BuildDate = version.DateTime
-	prometheus.DefaultRegisterer.MustRegister(promversioncollector.NewCollector("saturn_bot_server"))
+	registry.MustRegister(promversioncollector.NewCollector("saturn_bot_server"))
 }
 
-func RegisterPrometheusRoute(router chi.Router) {
-	router.Handle("/metrics", promhttp.Handler())
+// RegisterPrometheusRouteOpts defines all options accepted by [RegisterPrometheusRoute].
+type RegisterPrometheusRouteOpts struct {
+	PrometheusGatherer   prometheus.Gatherer
+	PrometheusRegisterer prometheus.Registerer
+	Router               chi.Router
+}
+
+// RegisterPrometheusRoute registers the handler that exposes Prometheus metrics.
+func RegisterPrometheusRoute(opts RegisterPrometheusRouteOpts) {
+	opts.Router.Handle(
+		"/metrics",
+		promhttp.InstrumentMetricHandler(
+			opts.PrometheusRegisterer,
+			promhttp.HandlerFor(opts.PrometheusGatherer, promhttp.HandlerOpts{}),
+		),
+	)
 }
