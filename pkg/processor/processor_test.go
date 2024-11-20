@@ -9,7 +9,7 @@ import (
 
 	"github.com/stretchr/testify/assert"
 	"github.com/stretchr/testify/require"
-	sContext "github.com/wndhydrnt/saturn-bot/pkg/context"
+	sbcontext "github.com/wndhydrnt/saturn-bot/pkg/context"
 	"github.com/wndhydrnt/saturn-bot/pkg/git"
 	"github.com/wndhydrnt/saturn-bot/pkg/host"
 	"github.com/wndhydrnt/saturn-bot/pkg/options"
@@ -406,7 +406,7 @@ func TestProcessor_Process_UpdatePullRequest(t *testing.T) {
 	tw := &task.Task{Task: schema.Task{Name: "unittest"}}
 	tw.AddFilters(&trueFilter{})
 	ctx := context.Background()
-	ctx = context.WithValue(ctx, sContext.RunDataKey{}, map[string]string{"Greeting": "Hello"})
+	ctx = sbcontext.WithRunData(ctx, map[string]string{"Greeting": "Hello"})
 
 	p := &processor.Processor{Git: gitc}
 	result, err := p.Process(ctx, false, repo, tw, true)

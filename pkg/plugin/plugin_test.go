@@ -48,14 +48,14 @@ func TestPlugin_Apply(t *testing.T) {
 	}, nil)
 	ctx := context.Background()
 	ctx = context.WithValue(ctx, sbcontext.CheckoutPath{}, "/tmp")
-	ctx = context.WithValue(ctx, sbcontext.RunDataKey{}, runData)
+	ctx = sbcontext.WithRunData(ctx, runData)
 	ctx = context.WithValue(ctx, sbcontext.RepositoryKey{}, repo)
 
 	pa := &plugin.Plugin{Provider: provider}
 	err := pa.Apply(ctx)
 
 	require.NoError(t, err)
-	require.Equal(t, map[string]string{"a": "2", "b": "2"}, runData)
+	require.Equal(t, map[string]string{"a": "2", "b": "2"}, sbcontext.RunData(ctx))
 }
 
 func TestPlugin_Apply_WithPullRequest(t *testing.T) {
@@ -128,14 +128,14 @@ func TestPlugin_Do(t *testing.T) {
 	ctx := context.Background()
 	ctx = context.WithValue(ctx, sbcontext.CheckoutPath{}, "/tmp")
 	ctx = context.WithValue(ctx, sbcontext.RepositoryKey{}, repo)
-	ctx = context.WithValue(ctx, sbcontext.RunDataKey{}, runData)
+	ctx = sbcontext.WithRunData(ctx, runData)
 
 	pf := &plugin.Plugin{Provider: provider}
 	match, err := pf.Do(ctx)
 
 	require.NoError(t, err)
 	require.True(t, match)
-	require.Equal(t, map[string]string{"a": "2", "b": "2"}, runData)
+	require.Equal(t, map[string]string{"a": "2", "b": "2"}, sbcontext.RunData(ctx))
 }
 
 func TestPlugin_Do_WithPullRequest(t *testing.T) {

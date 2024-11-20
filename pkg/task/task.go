@@ -226,7 +226,7 @@ func (tw *Task) IncOpenPRsCount() {
 	}
 }
 
-// InputData a map where every key is an input defined by the task
+// InputData returns a map where every key is an input defined by the task
 // and every value is what has been set via the command-line for that key.
 func (tw *Task) InputData() map[string]string {
 	if tw.inputData == nil {
