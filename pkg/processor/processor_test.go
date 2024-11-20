@@ -381,7 +381,11 @@ func TestProcessor_Process_UpdatePullRequest(t *testing.T) {
 		AutoMergeAfter: &autoMergeAfter,
 		TaskName:       "unittest",
 		TemplateData: template.Data{
-			Run: map[string]string{"Greeting": "Hello"},
+			Run: map[string]string{
+				"Greeting": "Hello",
+				"inputOne": "iValueOne",
+				"inputTwo": "iValueTwo",
+			},
 			Repository: template.DataRepository{
 				FullName: "git.local/unit/test",
 				Host:     "git.local",
@@ -403,8 +407,15 @@ func TestProcessor_Process_UpdatePullRequest(t *testing.T) {
 	gitc.EXPECT().Push("saturn-bot--unittest").Return(nil)
 	gitc.EXPECT().HasRemoteChanges("main").Return(true, nil)
 	gitc.EXPECT().HasRemoteChanges("saturn-bot--unittest").Return(true, nil)
-	tw := &task.Task{Task: schema.Task{Name: "unittest"}}
+	tw := &task.Task{Task: schema.Task{
+		Name: "unittest",
+		Inputs: []schema.Input{
+			{Name: "inputOne"},
+			{Name: "inputTwo"},
+		},
+	}}
 	tw.AddFilters(&trueFilter{})
+	tw.SetInputs(map[string]string{"inputOne": "iValueOne", "inputTwo": "iValueTwo"})
 	ctx := context.Background()
 	ctx = sbcontext.WithRunData(ctx, map[string]string{"Greeting": "Hello"})
 

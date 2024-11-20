@@ -1,6 +1,7 @@
 package task_test
 
 import (
+	"errors"
 	"fmt"
 	"os"
 	"path/filepath"
@@ -11,7 +12,9 @@ import (
 	"github.com/wndhydrnt/saturn-bot/pkg/action"
 	"github.com/wndhydrnt/saturn-bot/pkg/filter"
 	"github.com/wndhydrnt/saturn-bot/pkg/options"
+	"github.com/wndhydrnt/saturn-bot/pkg/ptr"
 	"github.com/wndhydrnt/saturn-bot/pkg/task"
+	"github.com/wndhydrnt/saturn-bot/pkg/task/schema"
 )
 
 func TestRegistry_ReadAll(t *testing.T) {
@@ -268,4 +271,56 @@ func TestRegistry_ReadAll_SortRepositoryFilterFirst(t *testing.T) {
 	assert.Equal(t, task.Filters()[0].String(), "repository(host=^git.localhost$,owner=^unit$,name=^test$)")
 	assert.Equal(t, task.Filters()[1].String(), "repository(host=^git.localhost$,owner=^unit$,name=^test2$)")
 	assert.Equal(t, task.Filters()[2].String(), "file(op=and,paths=[unit-test.txt])")
+}
+
+func TestTask_Inputs(t *testing.T) {
+	testCases := []struct {
+		name   string
+		task   schema.Task
+		inputs map[string]string
+		result map[string]string
+		err    error
+	}{
+		{
+			name: "valid input values",
+			task: schema.Task{Inputs: []schema.Input{
+				{Name: "category"},
+				{Name: "type"},
+			}},
+			inputs: map[string]string{"category": "unittest", "type": "table"},
+			result: map[string]string{"category": "unittest", "type": "table"},
+		},
+
+		{
+			name: "default input value",
+			task: schema.Task{Inputs: []schema.Input{
+				{Name: "category"},
+				{Name: "type", Default: ptr.To("single-test")},
+			}},
+			inputs: map[string]string{"category": "unittest"},
+			result: map[string]string{"category": "unittest", "type": "single-test"},
+		},
+
+		{
+			name: "missing input values",
+			task: schema.Task{Inputs: []schema.Input{
+				{Name: "unittest"},
+			}},
+			inputs: map[string]string{},
+			err:    errors.New("input unittest not set and has no default value"),
+		},
+	}
+
+	for _, tc := range testCases {
+		t.Run(tc.name, func(t *testing.T) {
+			tw := &task.Task{Task: tc.task}
+			err := tw.SetInputs(tc.inputs)
+			if tc.err == nil {
+				require.NoError(t, err)
+				require.Equal(t, tc.result, tw.InputData())
+			} else {
+				require.EqualError(t, err, tc.err.Error())
+			}
+		})
+	}
 }
