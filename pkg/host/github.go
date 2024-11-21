@@ -303,7 +303,10 @@ func (g *GitHubRepository) ListPullRequestComments(pr interface{}) ([]PullReques
 
 func (g *GitHubRepository) MergePullRequest(deleteBranch bool, pr interface{}) error {
 	gpr := pr.(*github.PullRequest)
-	_, _, err := g.client.PullRequests.Merge(ctx, g.repo.GetOwner().GetLogin(), g.repo.GetName(), gpr.GetNumber(), "Auto-merge by saturn-bot", &github.PullRequestOptions{})
+	opts := &github.PullRequestOptions{
+		MergeMethod: g.determineMergeMethod(),
+	}
+	_, _, err := g.client.PullRequests.Merge(ctx, g.repo.GetOwner().GetLogin(), g.repo.GetName(), gpr.GetNumber(), "Auto-merge by saturn-bot", opts)
 	if err != nil {
 		return fmt.Errorf("merge github pull request %d: %w", gpr.GetNumber(), err)
 	}
@@ -313,6 +316,22 @@ func (g *GitHubRepository) MergePullRequest(deleteBranch bool, pr interface{}) e
 	}
 
 	return nil
+}
+
+func (g *GitHubRepository) determineMergeMethod() string {
+	if g.repo.GetAllowSquashMerge() {
+		return "squash"
+	}
+
+	if g.repo.GetAllowRebaseMerge() {
+		return "rebase"
+	}
+
+	if g.repo.GetAllowMergeCommit() {
+		return "merge"
+	}
+
+	return ""
 }
 
 func (g *GitHubRepository) Name() string {
