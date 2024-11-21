@@ -304,7 +304,6 @@ func applyTaskToRepository(ctx context.Context, dryRun bool, gitc git.GitClient,
 		logger.Info("No changes after applying actions")
 	}
 
-	autoMergeAfter := task.CalcAutoMergeAfter()
 	ctx = updateTemplateVars(ctx, repo, task)
 	prTitle, err := task.RenderPrTitle(template.FromContext(ctx))
 	if err != nil {
@@ -314,7 +313,7 @@ func applyTaskToRepository(ctx context.Context, dryRun bool, gitc git.GitClient,
 	prData := host.PullRequestData{
 		Assignees:      task.Assignees,
 		AutoMerge:      task.AutoMerge,
-		AutoMergeAfter: &autoMergeAfter,
+		AutoMergeAfter: task.CalcAutoMergeAfter(),
 		Body:           task.PrBody,
 		Labels:         task.Labels,
 		MergeOnce:      task.MergeOnce,
