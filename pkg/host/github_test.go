@@ -623,6 +623,61 @@ func TestGitHubRepository_MergePullRequest_NoDeleteBranch(t *testing.T) {
 	assert.True(t, gock.IsDone())
 }
 
+func TestGitHubRepository_MergePullRequest_DeleteBranch(t *testing.T) {
+	defer gock.Off()
+	gock.New("https://api.github.com").
+		Put("/repos/unit/test/pulls/987/merge").
+		JSON(map[string]string{
+			"commit_message": "Auto-merge by saturn-bot",
+		}).
+		Reply(200)
+	gock.New("https://api.github.com").
+		Delete("/repos/unit/test/git/refs/heads/unittest").
+		Reply(200)
+	pr := &github.PullRequest{
+		Number: github.Int(987),
+		Head: &github.PullRequestBranch{
+			Ref: github.String("unittest"),
+		},
+	}
+
+	repo := &GitHubRepository{
+		client: setupGitHubTestClient(),
+		repo:   setupGitHubRepository(),
+	}
+	err := repo.MergePullRequest(true, pr)
+
+	require.NoError(t, err)
+	assert.True(t, gock.IsDone())
+}
+
+func TestGitHubRepository_MergePullRequest_DeleteBranchByGitHub(t *testing.T) {
+	defer gock.Off()
+	gock.New("https://api.github.com").
+		Put("/repos/unit/test/pulls/987/merge").
+		JSON(map[string]string{
+			"commit_message": "Auto-merge by saturn-bot",
+		}).
+		Reply(200)
+	pr := &github.PullRequest{
+		Number: github.Int(987),
+		Head: &github.PullRequestBranch{
+			Ref: github.String("unittest"),
+		},
+	}
+
+	ghRepo := setupGitHubRepository()
+	ghRepo.DeleteBranchOnMerge = github.Bool(true)
+	repo := &GitHubRepository{
+		client: setupGitHubTestClient(),
+		repo:   ghRepo,
+	}
+	err := repo.MergePullRequest(true, pr)
+
+	require.NoError(t, err)
+	assert.True(t, gock.IsDone())
+}
+
 func TestGitHubRepository_MergePullRequest_MergeMethods(t *testing.T) {
 	testCases := []struct {
 		method string
@@ -680,34 +735,6 @@ func TestGitHubRepository_MergePullRequest_MergeMethods(t *testing.T) {
 			assert.True(t, gock.IsDone())
 		})
 	}
-}
-
-func TestGitHubRepository_MergePullRequest_DeleteBranch(t *testing.T) {
-	defer gock.Off()
-	gock.New("https://api.github.com").
-		Put("/repos/unit/test/pulls/987/merge").
-		JSON(map[string]string{
-			"commit_message": "Auto-merge by saturn-bot",
-		}).
-		Reply(200)
-	gock.New("https://api.github.com").
-		Delete("/repos/unit/test/git/refs/heads/unittest").
-		Reply(200)
-	pr := &github.PullRequest{
-		Number: github.Int(987),
-		Head: &github.PullRequestBranch{
-			Ref: github.String("unittest"),
-		},
-	}
-
-	repo := &GitHubRepository{
-		client: setupGitHubTestClient(),
-		repo:   setupGitHubRepository(),
-	}
-	err := repo.MergePullRequest(true, pr)
-
-	require.NoError(t, err)
-	assert.True(t, gock.IsDone())
 }
 
 func TestGitHubRepository_UpdatePullRequest_Update(t *testing.T) {

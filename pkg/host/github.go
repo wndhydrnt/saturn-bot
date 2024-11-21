@@ -311,7 +311,9 @@ func (g *GitHubRepository) MergePullRequest(deleteBranch bool, pr interface{}) e
 		return fmt.Errorf("merge github pull request %d: %w", gpr.GetNumber(), err)
 	}
 
-	if deleteBranch {
+	// Don't delete if DeleteBranchOnMerge == true.
+	// GitHub deletes the branch on its own.
+	if deleteBranch && !g.repo.GetDeleteBranchOnMerge() {
 		return g.DeleteBranch(pr)
 	}
 
