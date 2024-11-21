@@ -415,7 +415,8 @@ func TestProcessor_Process_UpdatePullRequest(t *testing.T) {
 		},
 	}}
 	tw.AddFilters(&trueFilter{})
-	tw.SetInputs(map[string]string{"inputOne": "iValueOne", "inputTwo": "iValueTwo"})
+	err = tw.SetInputs(map[string]string{"inputOne": "iValueOne", "inputTwo": "iValueTwo"})
+	require.NoError(t, err)
 	ctx := context.Background()
 	ctx = sbcontext.WithRunData(ctx, map[string]string{"Greeting": "Hello"})
 
