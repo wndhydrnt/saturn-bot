@@ -381,10 +381,8 @@ func TestProcessor_Process_UpdatePullRequest(t *testing.T) {
 	repo.EXPECT().GetPullRequestBody(prID).Return("")
 	repo.EXPECT().BaseBranch().Return("main")
 	repo.EXPECT().IsPullRequestOpen(prID).Return(true).AnyTimes()
-	autoMergeAfter := time.Duration(0)
 	prData := host.PullRequestData{
-		AutoMergeAfter: &autoMergeAfter,
-		TaskName:       "unittest",
+		TaskName: "unittest",
 		TemplateData: template.Data{
 			Run: map[string]string{"Greeting": "Hello"},
 			Repository: template.DataRepository{

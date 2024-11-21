@@ -37,7 +37,7 @@ type PullRequestComment struct {
 type PullRequestData struct {
 	Assignees      []string
 	AutoMerge      bool
-	AutoMergeAfter *time.Duration
+	AutoMergeAfter time.Duration
 	Body           string
 	Labels         []string
 	MergeOnce      bool
@@ -67,7 +67,7 @@ func (prd PullRequestData) GetBody() (string, error) {
 
 	var autoMergeText string
 	if prd.AutoMerge {
-		if prd.AutoMergeAfter == nil {
+		if prd.AutoMergeAfter == 0 {
 			autoMergeText = "Enabled. Saturn merges this automatically on its next run and if all checks have passed."
 		} else {
 			autoMergeText = fmt.Sprintf("Enabled. Saturn automatically merges this in %s and if all checks have passed.", prd.AutoMergeAfter.String())
