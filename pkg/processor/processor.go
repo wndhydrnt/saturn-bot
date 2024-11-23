@@ -18,7 +18,7 @@ import (
 )
 
 //go:generate stringer -type=Result
-type Result int32
+type Result int
 
 const (
 	ResultUnknown Result = iota
