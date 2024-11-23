@@ -135,6 +135,13 @@
               "items": {
                 "$ref": "#/$defs/githubTrigger"
               }
+            },
+            "gitlab": {
+              "description": "Experimental: Execute the task when the server receives a webhook from GitLab.",
+              "type": "array",
+              "items": {
+                "$ref": "#/$defs/gitlabTrigger"
+              }
             }
           }
         }
@@ -199,6 +206,22 @@
       "properties": {
         "event": {
           "description": "Experimental: GitHub webhook event, like push. See https://docs.github.com/en/webhooks/webhook-events-and-payloads for a list of all available events.",
+          "type": "string"
+        },
+        "filters": {
+          "description": "Experimental: jq expressions to apply to the body of the webhook. If all expressions match the content of the webhook then a new run of the task is scheduled.",
+          "type": "array",
+          "items": {
+            "type": "string"
+          }
+        }
+      }
+    },
+    "gitlabTrigger": {
+      "type": "object",
+      "properties": {
+        "event": {
+          "description": "Experimental: GitLab webhook event, like push. See https://docs.gitlab.com/ee/user/project/integrations/webhook_events.html for a list of all available events.",
           "type": "string"
         },
         "filters": {

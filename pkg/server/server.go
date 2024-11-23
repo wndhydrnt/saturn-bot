@@ -22,7 +22,9 @@ import (
 	"github.com/wndhydrnt/saturn-bot/pkg/server/db"
 	"github.com/wndhydrnt/saturn-bot/pkg/server/metrics"
 	"github.com/wndhydrnt/saturn-bot/pkg/server/service"
-	"github.com/wndhydrnt/saturn-bot/pkg/server/task"
+	"github.com/wndhydrnt/saturn-bot/pkg/task"
+
+	// "github.com/wndhydrnt/saturn-bot/pkg/server/task"
 	"github.com/wndhydrnt/saturn-bot/pkg/version"
 	"go.uber.org/zap"
 )
@@ -33,7 +35,12 @@ type Server struct {
 
 func (s *Server) Start(opts options.Opts, taskPaths []string) error {
 	metrics.Init(opts.PrometheusRegisterer)
-	tasks, err := task.Load(taskPaths)
+	taskRegistry := task.NewRegistry(options.Opts{
+		ActionFactories: opts.ActionFactories,
+		FilterFactories: opts.FilterFactories,
+		SkipPlugins:     true,
+	})
+	err := taskRegistry.ReadAll(taskPaths)
 	if err != nil {
 		return fmt.Errorf("load tasks on server start: %w", err)
 	}
@@ -48,18 +55,18 @@ func (s *Server) Start(opts options.Opts, taskPaths []string) error {
 		return fmt.Errorf("initialize database: %w", err)
 	}
 
-	taskService := service.NewTaskService(database, tasks)
+	taskService := service.NewTaskService(database, taskRegistry)
 	err = taskService.SyncDbTasks()
 	if err != nil {
 		return err
 	}
 
 	taskCtrl := openapi.NewTaskAPIController(&api.TaskHandler{TaskService: taskService})
-	workerService := service.NewWorkerService(database, tasks)
+	workerService := service.NewWorkerService(database, taskRegistry)
 	workerHandler := &api.WorkHandler{WorkerService: workerService}
 	workerCtrl := openapi.NewWorkerAPIController(workerHandler)
 	router := newRouter(opts, taskCtrl, workerCtrl)
-	webhookService, err := service.NewWebhookService(tasks, workerService)
+	webhookService, err := service.NewWebhookService(taskRegistry, workerService)
 	if err != nil {
 		return fmt.Errorf("create webhook service: %w", err)
 	}

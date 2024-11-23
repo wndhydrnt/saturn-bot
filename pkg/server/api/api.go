@@ -4,10 +4,12 @@ import (
 	"bytes"
 	_ "embed"
 	"fmt"
+	"io"
 	"net/http"
 	"strings"
 
 	"github.com/go-chi/chi/v5"
+	"github.com/wndhydrnt/saturn-bot/pkg/log"
 	"github.com/wndhydrnt/saturn-bot/pkg/server/api/openapi"
 	"gopkg.in/yaml.v3"
 )
@@ -67,4 +69,13 @@ func RegisterHealthRoute(router chi.Router) {
 		const up = "UP"
 		_, _ = fmt.Fprint(w, up)
 	})
+}
+
+func DiscardRequest(r *http.Request) {
+	if _, err := io.Copy(io.Discard, r.Body); err != nil {
+		log.Log().Debug("Failed to discard request body")
+	}
+	if err := r.Body.Close(); err != nil {
+		log.Log().Debug("Failed to close request body")
+	}
 }

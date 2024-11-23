@@ -40,11 +40,10 @@ func (h *GithubWebhookHandler) HandleWebhook(w http.ResponseWriter, r *http.Requ
 
 	// Note: GitHub expects a response within 10 seconds.
 	log.Log().Debugf("Enqueuing GitHub webhook %s", whID)
-	err = h.WebhookService.Enqueue(&service.EnqueueInput{
+	err = h.WebhookService.EnqueueGithub(&service.WebhookEnqueueInput{
 		Event:   whType,
 		ID:      whID,
 		Payload: content,
-		Type:    service.GithubWebhookType,
 	})
 	if err != nil {
 		log.Log().Errorw("Failed to enqueue GitHub webhook", zap.Error(err))

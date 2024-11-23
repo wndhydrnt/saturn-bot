@@ -20,8 +20,8 @@ func (ts *TaskHandler) GetTaskV1(_ context.Context, taskName string) (openapi.Im
 	}
 
 	body := openapi.GetTaskV1Response{
-		Name:    t.Task.Name,
-		Hash:    t.Sha256,
+		Name:    t.Name,
+		Hash:    t.Checksum(),
 		Content: content,
 	}
 	return openapi.Response(http.StatusOK, body), nil
