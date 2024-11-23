@@ -1,6 +1,7 @@
 package api
 
 import (
+	"encoding/json"
 	"io"
 	"net/http"
 
@@ -44,14 +45,15 @@ func (gh *GitlabWebhookHandler) HandleWebhook(w http.ResponseWriter, r *http.Req
 		return
 	}
 
-	event, err := gitlab.ParseWebhook(eventType, payload)
+	var event map[string]any
+	err = json.Unmarshal(payload, &event)
 	if err != nil {
 		log.Log().Warn("Failed to parse GitLab webhook")
 		w.WriteHeader(http.StatusBadRequest)
 		return
 	}
 
-	err = gh.WebhookService.EnqueueGithub(&service.WebhookEnqueueInput{
+	err = gh.WebhookService.EnqueueGitlab(&service.WebhookEnqueueInput{
 		Event:   string(eventType),
 		ID:      r.Header.Get(gitlabWebhookEventIDHeader),
 		Payload: event,

@@ -60,8 +60,6 @@ func (s *WebhookService) enqueue(in *WebhookEnqueueInput, triggerCache map[strin
 				break
 			}
 		}
-
-		log.Log().Debugf("Task %s does not match webhook %s", taskName, in.ID)
 	}
 
 	return errors.Join(errs...)
@@ -69,6 +67,7 @@ func (s *WebhookService) enqueue(in *WebhookEnqueueInput, triggerCache map[strin
 
 func (s *WebhookService) populateCaches() error {
 	s.githubTriggerCache = map[string][]cacheEntry{}
+	s.gitlabTriggerCache = map[string][]cacheEntry{}
 	for _, t := range s.taskRegistry.GetTasks() {
 		if hasGithubWebhookTrigger(t.Trigger) {
 			err := s.populateGithubCache(t)
@@ -114,7 +113,7 @@ func (s *WebhookService) populateGitlabCache(t *task.Task) error {
 		cacheEntries[idxHook] = cacheEntry{event: ptr.From(hook.Event), filters: filters}
 	}
 
-	s.githubTriggerCache[t.Name] = cacheEntries
+	s.gitlabTriggerCache[t.Name] = cacheEntries
 	return nil
 }
 
@@ -162,7 +161,7 @@ func match(event string, trigger cacheEntry, payload any) bool {
 		}
 
 		if valueRaw == nil {
-			// Query matched nothing.
+			// Query matches nothing.
 			return false
 		}
 
@@ -173,7 +172,7 @@ func match(event string, trigger cacheEntry, payload any) bool {
 		}
 
 		if !value {
-			// Query evaluated to false.
+			// Query evaluates to false.
 			return false
 		}
 	}
