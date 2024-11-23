@@ -23,8 +23,6 @@ import (
 	"github.com/wndhydrnt/saturn-bot/pkg/server/metrics"
 	"github.com/wndhydrnt/saturn-bot/pkg/server/service"
 	"github.com/wndhydrnt/saturn-bot/pkg/task"
-
-	// "github.com/wndhydrnt/saturn-bot/pkg/server/task"
 	"github.com/wndhydrnt/saturn-bot/pkg/version"
 	"go.uber.org/zap"
 )

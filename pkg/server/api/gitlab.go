@@ -17,11 +17,17 @@ const (
 	gitlabWebhookTokenHeader   = "X-Gitlab-Token"
 )
 
+// GitlabWebhookHandler handles webhooks sent by GitLab.
 type GitlabWebhookHandler struct {
 	SecretToken    string
 	WebhookService *service.WebhookService
 }
 
+// HandleWebhook parses and validates a webhook sent by GitLab.
+// If the webhook is valid, it sends the webhook on for processing.
+// A webhook is considered valid if:
+// * The secret token from the request matches the configured secret token.
+// * The HTTP method is POST.
 func (gh *GitlabWebhookHandler) HandleWebhook(w http.ResponseWriter, r *http.Request) {
 	defer DiscardRequest(r)
 	eventToken := r.Header.Get(gitlabWebhookTokenHeader)

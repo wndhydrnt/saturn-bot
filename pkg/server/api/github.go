@@ -11,7 +11,7 @@ import (
 	"go.uber.org/zap"
 )
 
-// GithubWebhookHandler handles webhooks received by GitLab.
+// GithubWebhookHandler handles webhooks sent by GitHub.
 type GithubWebhookHandler struct {
 	SecretKey      []byte
 	WebhookService *service.WebhookService

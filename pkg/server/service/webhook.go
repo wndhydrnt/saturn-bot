@@ -13,11 +13,19 @@ import (
 	"github.com/wndhydrnt/saturn-bot/pkg/task/schema"
 )
 
+type webhookType string
+
+const (
+	webhookTypeGithub webhookType = "GitHub"
+	webhookTypeGitlab webhookType = "GitLab"
+)
+
 type cacheEntry struct {
 	event   string
 	filters []*gojq.Code
 }
 
+// WebhookService handles scheduling new runs when a webhook is received.
 type WebhookService struct {
 	githubTriggerCache map[string][]cacheEntry
 	gitlabTriggerCache map[string][]cacheEntry
@@ -25,6 +33,8 @@ type WebhookService struct {
 	workerService      *WorkerService
 }
 
+// NewWebhookService returns a new instance of [WebhookService].
+// It parses the triggers defined by tasks and caches them.
 func NewWebhookService(taskRegistry *task.Registry, workerService *WorkerService) (*WebhookService, error) {
 	s := &WebhookService{taskRegistry: taskRegistry, workerService: workerService}
 	err := s.populateCaches()
@@ -41,20 +51,24 @@ type WebhookEnqueueInput struct {
 	Payload any
 }
 
+// EnqueueGithub enqueues new runs when a webhook by GitHub is received by the server.
+// It visits every task that configures triggers for GitHub webhooks.
 func (s *WebhookService) EnqueueGithub(in *WebhookEnqueueInput) error {
-	return s.enqueue(in, s.githubTriggerCache)
+	return s.enqueue(in, s.githubTriggerCache, webhookTypeGithub)
 }
 
+// EnqueueGitlab enqueues new runs when a webhook by GitLab is received by the server.
+// It visits every task that configures triggers for GitLab webhooks.
 func (s *WebhookService) EnqueueGitlab(in *WebhookEnqueueInput) error {
-	return s.enqueue(in, s.gitlabTriggerCache)
+	return s.enqueue(in, s.gitlabTriggerCache, webhookTypeGitlab)
 }
 
-func (s *WebhookService) enqueue(in *WebhookEnqueueInput, triggerCache map[string][]cacheEntry) error {
+func (s *WebhookService) enqueue(in *WebhookEnqueueInput, triggerCache map[string][]cacheEntry, wtype webhookType) error {
 	var errs []error
 	for taskName, triggers := range triggerCache {
 		for _, trigger := range triggers {
 			if match(in.Event, trigger, in.Payload) {
-				log.Log().Debugf("Task %s matches webhook %s", taskName, in.ID)
+				log.Log().Debugf("Task %s matches %s webhook %s", taskName, wtype, in.ID)
 				_, err := s.workerService.ScheduleRun(db.RunReasonWebhook, nil, time.Now(), taskName, nil)
 				errs = append(errs, err)
 				break
