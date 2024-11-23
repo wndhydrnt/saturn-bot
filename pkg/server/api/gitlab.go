@@ -4,6 +4,7 @@ import (
 	"io"
 	"net/http"
 
+	"github.com/go-chi/chi/v5"
 	"github.com/wndhydrnt/saturn-bot/pkg/log"
 	"github.com/wndhydrnt/saturn-bot/pkg/server/service"
 	"github.com/xanzy/go-gitlab"
@@ -62,4 +63,10 @@ func (gh *GitlabWebhookHandler) HandleWebhook(w http.ResponseWriter, r *http.Req
 	}
 
 	w.WriteHeader(http.StatusOK)
+}
+
+// RegisterGitlabWebhookHandler registers the handler with a [github.com/go-chi/chi/v5.Router].
+func RegisterGitlabWebhookHandler(router chi.Router, token string, ws *service.WebhookService) {
+	h := &GitlabWebhookHandler{SecretToken: token, WebhookService: ws}
+	router.Post("/webhooks/gitlab", h.HandleWebhook)
 }
