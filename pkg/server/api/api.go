@@ -9,14 +9,14 @@ import (
 
 	"github.com/go-chi/chi/v5"
 	"github.com/wndhydrnt/saturn-bot/pkg/log"
-	"github.com/wndhydrnt/saturn-bot/pkg/server/api/openapi"
 	"gopkg.in/yaml.v3"
 )
 
+//go:generate go run github.com/oapi-codegen/oapi-codegen/v2/cmd/oapi-codegen -o ./openapi/openapi.go -package openapi -generate types,chi-server,strict-server ./openapi/openapi.yaml
+
 var (
 	//go:embed openapi/openapi.yaml
-	openApiDef  string
-	serverError = openapi.Error{Error: "Internal Server Error", Message: ""}
+	openApiDef string
 )
 
 func RegisterOpenAPIDefinitionRoute(baseURL string, router chi.Router) error {

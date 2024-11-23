@@ -143,10 +143,10 @@ func (ws *WorkerService) ReportRun(req openapi.ReportWorkV1Request) error {
 
 	err := ws.db.Transaction(func(tx *gorm.DB) error {
 		runCurrent.FinishedAt = ptr.To(time.Now())
-		if req.Error == "" {
+		if req.Error == nil {
 			runCurrent.Status = db.RunStatusFinished
 		} else {
-			runCurrent.Error = ptr.To(req.Error)
+			runCurrent.Error = req.Error
 			runCurrent.Status = db.RunStatusFailed
 		}
 
@@ -162,8 +162,8 @@ func (ws *WorkerService) ReportRun(req openapi.ReportWorkV1Request) error {
 				RunID:          runCurrent.ID,
 				TaskName:       taskResult.TaskName,
 			}
-			if taskResult.Error != "" {
-				result.Error = &taskResult.Error
+			if taskResult.Error != nil {
+				result.Error = taskResult.Error
 			}
 
 			if err := tx.Save(&result).Error; err != nil {
