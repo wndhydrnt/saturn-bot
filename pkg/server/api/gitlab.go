@@ -14,7 +14,7 @@ import (
 
 const (
 	gitlabWebhookEventIDHeader = "X-Gitlab-Event-UUID"
-	gitlabWebhookTokenHeader   = "X-Gitlab-Token"
+	gitlabWebhookTokenHeader   = "X-Gitlab-Token" // #nosec G101 -- This is not a secret
 )
 
 // GitlabWebhookHandler handles webhooks sent by GitLab.
