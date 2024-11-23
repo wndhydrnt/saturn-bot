@@ -12,8 +12,6 @@ import (
 	"gopkg.in/yaml.v3"
 )
 
-//go:generate go run github.com/oapi-codegen/oapi-codegen/v2/cmd/oapi-codegen -o ./openapi/openapi.go -package openapi -generate types,chi-server,strict-server ./openapi/openapi.yaml
-
 var (
 	//go:embed openapi/openapi.yaml
 	openApiDef string

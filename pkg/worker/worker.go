@@ -1,7 +1,6 @@
 package worker
 
 import (
-	"bytes"
 	"context"
 	"errors"
 	"fmt"
@@ -17,6 +16,7 @@ import (
 	"github.com/wndhydrnt/saturn-bot/pkg/log"
 	"github.com/wndhydrnt/saturn-bot/pkg/options"
 	"github.com/wndhydrnt/saturn-bot/pkg/processor"
+	"github.com/wndhydrnt/saturn-bot/pkg/ptr"
 	"github.com/wndhydrnt/saturn-bot/pkg/server/task"
 	"github.com/wndhydrnt/saturn-bot/pkg/task/schema"
 	"github.com/wndhydrnt/saturn-bot/pkg/version"
@@ -28,19 +28,6 @@ var (
 	ctx       = context.Background()
 	ErrNoExec = errors.New("no execution")
 )
-
-func handleApiError(err error) error {
-	var apiError *client.GenericOpenAPIError
-	if errors.As(err, &apiError) {
-		return fmt.Errorf(
-			"%s - %s",
-			apiError.Error(),
-			string(bytes.TrimSpace(apiError.Body())),
-		)
-	}
-
-	return err
-}
 
 type Execution client.GetWorkV1Response
 
@@ -56,22 +43,21 @@ type ExecutionSource interface {
 }
 
 type APIExecutionSource struct {
-	client client.WorkerAPI
+	client client.ClientWithResponsesInterface
 }
 
 func (a *APIExecutionSource) Next() (Execution, error) {
-	req := a.client.GetWorkV1(ctx)
-	resp, _, err := a.client.GetWorkV1Execute(req)
+	resp, err := a.client.GetWorkV1WithResponse(ctx)
 	if err != nil {
 		metricServerRequestsFailed.WithLabelValues(metricLabelOpGetWorkV1).Inc()
-		return Execution{}, fmt.Errorf("api request to get work: %w", handleApiError(err))
+		return Execution{}, fmt.Errorf("api request to get work: %w", err)
 	}
 
-	if len(resp.Tasks) == 0 {
+	if len(resp.JSON200.Tasks) == 0 {
 		return Execution{}, ErrNoExec
 	}
 
-	return Execution(*resp), nil
+	return Execution(*resp.JSON200), nil
 }
 
 func (a *APIExecutionSource) Report(result Result) error {
@@ -80,17 +66,14 @@ func (a *APIExecutionSource) Report(result Result) error {
 		TaskResults: mapRunResultsToTaskResults(result.TaskResults),
 	}
 	if result.RunError != nil {
-		payload.Error = client.PtrString(result.RunError.Error())
+		payload.Error = ptr.To(result.RunError.Error())
 	}
 
 	log.Log().Debugf("Reporting run %d", result.Execution.RunID)
-	req := a.client.
-		ReportWorkV1(ctx).
-		ReportWorkV1Request(payload)
-	_, _, err := a.client.ReportWorkV1Execute(req)
+	_, err := a.client.ReportWorkV1WithResponse(ctx, payload)
 	if err != nil {
 		metricServerRequestsFailed.WithLabelValues(metricLabelOpReportWorkV1).Inc()
-		return fmt.Errorf("send execution result to API: %w", handleApiError(err))
+		return fmt.Errorf("send execution result to API: %w", err)
 	}
 
 	return nil
@@ -128,13 +111,13 @@ func NewWorker(configPath string, taskPaths []string) (*Worker, error) {
 		return nil, err
 	}
 
-	apiClient := client.NewAPIClient(&client.Configuration{
-		Servers: []client.ServerConfiguration{
-			{URL: opts.Config.WorkerServerAPIBaseURL},
-		},
-	})
+	apiClient, err := client.NewClientWithResponses(opts.Config.WorkerServerAPIBaseURL)
+	if err != nil {
+		return nil, fmt.Errorf("create openapi client: %w", err)
+	}
+
 	return &Worker{
-		Exec:  &APIExecutionSource{client: apiClient.WorkerAPI},
+		Exec:  &APIExecutionSource{client: apiClient},
 		opts:  opts,
 		tasks: tasks,
 	}, nil
@@ -229,7 +212,12 @@ func (w *Worker) executeRun(exec Execution, result chan Result) {
 		}
 		taskPaths = append(taskPaths, t.Path)
 	}
-	results, err := command.ExecuteRun(w.opts, exec.Repositories, taskPaths)
+	var repositories []string
+	if exec.Repositories != nil {
+		repositories = ptr.From(exec.Repositories)
+	}
+
+	results, err := command.ExecuteRun(w.opts, repositories, taskPaths)
 	result <- Result{
 		RunError:    err,
 		Execution:   exec,
@@ -260,11 +248,11 @@ func mapRunResultsToTaskResults(runResults []command.RunResult) []client.ReportW
 
 		result := client.ReportWorkV1TaskResult{
 			RepositoryName: rr.RepositoryName,
-			Result:         client.PtrInt32(int32(rr.Result)), // #nosec G115 -- no info by gosec on how to fix this
+			Result:         int(rr.Result),
 			TaskName:       rr.TaskName,
 		}
 		if rr.Error != nil {
-			result.Error = client.PtrString(rr.Error.Error())
+			result.Error = ptr.To(rr.Error.Error())
 		}
 
 		results = append(results, result)
