@@ -27,7 +27,7 @@ func (a *APIServer) GetWorkV1(ctx context.Context, _ openapi.GetWorkV1RequestObj
 	}
 
 	if len(run.RepositoryNames) > 0 {
-		resp.Repositories = ptr.To(run.RepositoryNames.ToNativeType())
+		resp.Repositories = ptr.To([]string(run.RepositoryNames))
 	}
 
 	resp.RunID = int(run.ID) // #nosec G115 -- no info by gosec on how to fix this

@@ -54,10 +54,6 @@ func (sl StringList) Value() (driver.Value, error) {
 	return strings.Join(sl, ";"), nil
 }
 
-func (sl StringList) ToNativeType() []string {
-	return sl
-}
-
 type Run struct {
 	Error           *string
 	ID              uint `gorm:"primarykey"`
