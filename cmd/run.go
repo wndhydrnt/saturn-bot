@@ -64,8 +64,9 @@ func createRunCommand() *cobra.Command {
 		},
 	}
 	cmd.Flags().StringVar(&cfgFile, "config", "", "Path to config file")
-	cmd.Flags().StringToStringVar(&inputs, "input", map[string]string{}, `Key/value pairs to use as input parameters of tasks.
-Can be supplied multiple times.`)
+	cmd.Flags().StringToStringVar(&inputs, "input", map[string]string{}, `Key/value pair in the format <key>=<value>
+to use as an input parameter of a task.
+Can be supplied multiple times to set multiple inputs.`)
 	cmd.Flags().StringArrayVar(&repositories, "repository", []string{}, `Name of a repository to apply the tasks to.
 Filters of a task aren't executed if this flag
 is set.

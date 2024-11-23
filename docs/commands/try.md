@@ -44,8 +44,9 @@ Flags:
       --config string          Path to config file.
       --data-dir string        Path to directory to clone the repository.
   -h, --help                   help for try
-      --input stringToString   Key/value pairs to use as input parameters of the task.
-                               Can be supplied multiple times. (default [])
+      --input stringToString   Key/value pair in the format <key>=<value>
+                               to use as an input parameter of a task.
+                               Can be supplied multiple times to set multiple inputs. (default [])
       --repository string      Name of the repository to test against.
       --task-name string       If set, try only the task that matches the name.
                                Useful if a task file contains multiple tasks.

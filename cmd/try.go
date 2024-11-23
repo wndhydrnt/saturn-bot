@@ -76,7 +76,8 @@ func createTryCommand() *cobra.Command {
 	cmd.Flags().StringVar(&repository, "repository", "", "Name of the repository to test against.")
 	cmd.Flags().StringVar(&taskName, "task-name", "", `If set, try only the task that matches the name.
 Useful if a task file contains multiple tasks.`)
-	cmd.Flags().StringToStringVar(&inputs, "input", map[string]string{}, `Key/value pairs to use as input parameters of the task.
-Can be supplied multiple times.`)
+	cmd.Flags().StringToStringVar(&inputs, "input", map[string]string{}, `Key/value pair in the format <key>=<value>
+to use as an input parameter of a task.
+Can be supplied multiple times to set multiple inputs.`)
 	return cmd
 }

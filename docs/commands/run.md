@@ -42,8 +42,9 @@ Usage:
 Flags:
       --config string            Path to config file
   -h, --help                     help for run
-      --input stringToString     Key/value pairs to use as input parameters of tasks.
-                                 Can be supplied multiple times. (default [])
+      --input stringToString     Key/value pair in the format <key>=<value>
+                                 to use as an input parameter of a task.
+                                 Can be supplied multiple times to set multiple inputs. (default [])
       --repository stringArray   Name of a repository to apply the tasks to.
                                  Filters of a task aren't executed if this flag
                                  is set.
