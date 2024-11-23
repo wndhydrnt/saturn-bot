@@ -51,13 +51,13 @@ type WebhookEnqueueInput struct {
 	Payload any
 }
 
-// EnqueueGithub enqueues new runs when a webhook by GitHub is received by the server.
+// EnqueueGithub enqueues new runs when a webhook from GitHub is received by the server.
 // It visits every task that configures triggers for GitHub webhooks.
 func (s *WebhookService) EnqueueGithub(in *WebhookEnqueueInput) error {
 	return s.enqueue(in, s.githubTriggerCache, webhookTypeGithub)
 }
 
-// EnqueueGitlab enqueues new runs when a webhook by GitLab is received by the server.
+// EnqueueGitlab enqueues new runs when a webhook from GitLab is received by the server.
 // It visits every task that configures triggers for GitLab webhooks.
 func (s *WebhookService) EnqueueGitlab(in *WebhookEnqueueInput) error {
 	return s.enqueue(in, s.gitlabTriggerCache, webhookTypeGitlab)
@@ -197,7 +197,7 @@ func match(event string, trigger cacheEntry, payload any) bool {
 }
 
 func parseHookFilters(filters []string) ([]*gojq.Code, error) {
-	var codes []*gojq.Code
+	codes := make([]*gojq.Code, len(filters))
 	for idxFilter, filter := range filters {
 		query, err := gojq.Parse(filter)
 		if err != nil {
@@ -208,7 +208,8 @@ func parseHookFilters(filters []string) ([]*gojq.Code, error) {
 		if err != nil {
 			return nil, fmt.Errorf("compile jq expression of item %d: %w", idxFilter, err)
 		}
-		codes = append(codes, compiledQuery)
+
+		codes[idxFilter] = compiledQuery
 	}
 
 	return codes, nil

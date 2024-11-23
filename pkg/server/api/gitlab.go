@@ -51,6 +51,7 @@ func (gh *GitlabWebhookHandler) HandleWebhook(w http.ResponseWriter, r *http.Req
 		return
 	}
 
+	// Use map[string]any because gojq expects it.
 	var event map[string]any
 	err = json.Unmarshal(payload, &event)
 	if err != nil {
