@@ -32,7 +32,7 @@ func (wh *WorkHandler) GetWorkV1(_ context.Context) (openapi.ImplResponse, error
 		Repositories: run.RepositoryNames,
 		RunID:        int32(run.ID), // #nosec G115 -- no info by gosec on how to fix this
 		Tasks: []openapi.GetWorkV1Task{
-			{Hash: task.Sha256, Name: task.Task.Name},
+			{Hash: task.Checksum(), Name: task.Task.Name},
 		},
 	}
 

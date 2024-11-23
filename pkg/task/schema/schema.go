@@ -122,6 +122,18 @@ type GithubTrigger struct {
 	Filters []string `json:"filters,omitempty" yaml:"filters,omitempty" mapstructure:"filters,omitempty"`
 }
 
+type GitlabTrigger struct {
+	// Experimental: GitLab webhook event, like push. See
+	// https://docs.gitlab.com/ee/user/project/integrations/webhook_events.html for a
+	// list of all available events.
+	Event *string `json:"event,omitempty" yaml:"event,omitempty" mapstructure:"event,omitempty"`
+
+	// Experimental: jq expressions to apply to the body of the webhook. If all
+	// expressions match the content of the webhook then a new run of the task is
+	// scheduled.
+	Filters []string `json:"filters,omitempty" yaml:"filters,omitempty" mapstructure:"filters,omitempty"`
+}
+
 // A plugin extends saturn-bot and allows custom filtering or modification of
 // repositories.
 type Plugin struct {
@@ -263,6 +275,9 @@ type TaskTrigger struct {
 type TaskTriggerWebhook struct {
 	// Experimental: Execute the task when the server receives a webhook from GitHub.
 	Github []GithubTrigger `json:"github,omitempty" yaml:"github,omitempty" mapstructure:"github,omitempty"`
+
+	// Experimental: Execute the task when the server receives a webhook from GitLab.
+	Gitlab []GitlabTrigger `json:"gitlab,omitempty" yaml:"gitlab,omitempty" mapstructure:"gitlab,omitempty"`
 }
 
 // UnmarshalJSON implements json.Unmarshaler.

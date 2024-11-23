@@ -10,7 +10,7 @@ import (
 	"github.com/wndhydrnt/saturn-bot/pkg/ptr"
 	"github.com/wndhydrnt/saturn-bot/pkg/server/api/openapi"
 	"github.com/wndhydrnt/saturn-bot/pkg/server/db"
-	"github.com/wndhydrnt/saturn-bot/pkg/task/schema"
+	"github.com/wndhydrnt/saturn-bot/pkg/task"
 	"go.uber.org/zap"
 	"gorm.io/gorm"
 )
@@ -18,12 +18,12 @@ import (
 var ErrNoRun = errors.New("no next run")
 
 type WorkerService struct {
-	db    *gorm.DB
-	tasks []schema.ReadResult
+	db           *gorm.DB
+	taskRegistry *task.Registry
 }
 
-func NewWorkerService(db *gorm.DB, tasks []schema.ReadResult) *WorkerService {
-	return &WorkerService{db: db, tasks: tasks}
+func NewWorkerService(db *gorm.DB, taskRegistry *task.Registry) *WorkerService {
+	return &WorkerService{db: db, taskRegistry: taskRegistry}
 }
 
 func (ws *WorkerService) ScheduleRun(
@@ -85,40 +85,39 @@ func (ws *WorkerService) ScheduleRun(
 	return runDB.ID, nil
 }
 
-func (ws *WorkerService) findTask(name string) *schema.ReadResult {
-	for _, t := range ws.tasks {
+func (ws *WorkerService) findTask(name string) *task.Task {
+	for _, t := range ws.taskRegistry.GetTasks() {
 		if t.Task.Name == name {
-			return &t
+			return t
 		}
 	}
 
 	return nil
 }
 
-func (ws *WorkerService) NextRun() (db.Run, schema.ReadResult, error) {
+func (ws *WorkerService) NextRun() (db.Run, *task.Task, error) {
 	var run db.Run
-	var runTask schema.ReadResult
 	tx := ws.db.
 		Where("status = ?", db.RunStatusPending).
 		Order("schedule_after desc").
 		First(&run)
 	if tx.Error != nil {
 		if errors.Is(tx.Error, gorm.ErrRecordNotFound) {
-			return run, runTask, ErrNoRun
+			return run, nil, ErrNoRun
 		}
 
 		log.Log().Errorw("Failed to get next run", zap.Error(tx.Error))
-		return run, runTask, tx.Error
+		return run, nil, tx.Error
 	}
 
 	if run.ScheduleAfter.After(time.Now()) {
-		return run, runTask, ErrNoRun
+		return run, nil, ErrNoRun
 	}
 
 	run.Status = db.RunStatusRunning
 	if err := ws.db.Save(&run).Error; err != nil {
 		log.Log().Errorw("Update next run", zap.Error(err))
-		return run, runTask, err
+		return run, nil, err
 	}
 
 	task := ws.findTask(run.TaskName)
@@ -127,10 +126,10 @@ func (ws *WorkerService) NextRun() (db.Run, schema.ReadResult, error) {
 			log.Log().Error("Delete run of unknown task", zap.Error(tx.Error))
 		}
 
-		return run, runTask, ErrNoRun
+		return run, nil, ErrNoRun
 	}
 
-	return run, *task, nil
+	return run, task, nil
 }
 
 func (ws *WorkerService) ReportRun(req openapi.ReportWorkV1Request) error {

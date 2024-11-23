@@ -104,6 +104,7 @@ type Task struct {
 	checksum               string
 	filters                []filter.Filter
 	openPRs                int
+	path                   string // Path to the file that contains the task.
 	plugins                []*plugin.Plugin
 	schedule               cron.Schedule
 	templateBranchName     *htmlTemplate.Template
@@ -270,6 +271,10 @@ func (tw *Task) OnPrMerged(ctx context.Context) error {
 	return nil
 }
 
+func (tw *Task) Path() string {
+	return tw.path
+}
+
 func (tw *Task) Stop() {
 	for _, p := range tw.plugins {
 		p.Stop()
@@ -336,7 +341,10 @@ func (tr *Registry) ReadTasks(taskFile string) error {
 			continue
 		}
 
-		wrapper := &Task{}
+		wrapper := &Task{
+			checksum: entry.Sha256,
+			path:     entry.Path,
+		}
 		wrapper.Task = entry.Task
 		wrapper.actions, err = createActionsForTask(wrapper.Task.Actions, tr.actionFactories, entry.Path)
 		if err != nil {
@@ -369,7 +377,6 @@ func (tr *Registry) ReadTasks(taskFile string) error {
 		}
 		wrapper.schedule = schedule
 
-		wrapper.checksum = entry.Sha256
 		tr.tasks = append(tr.tasks, wrapper)
 	}
 
