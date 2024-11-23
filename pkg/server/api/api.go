@@ -4,7 +4,6 @@ import (
 	"bytes"
 	_ "embed"
 	"fmt"
-	"io"
 	"net/http"
 	"strings"
 
@@ -72,9 +71,6 @@ func RegisterHealthRoute(router chi.Router) {
 }
 
 func DiscardRequest(r *http.Request) {
-	if _, err := io.Copy(io.Discard, r.Body); err != nil {
-		log.Log().Debug("Failed to discard request body")
-	}
 	if err := r.Body.Close(); err != nil {
 		log.Log().Debug("Failed to close request body")
 	}

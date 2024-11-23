@@ -20,6 +20,7 @@ type GithubWebhookHandler struct {
 // HandleWebhook parses and validates a webhook sent by GitHub.
 // If the webhook is valid, it sends the webhook on for processing.
 func (h *GithubWebhookHandler) HandleWebhook(w http.ResponseWriter, r *http.Request) {
+	defer DiscardRequest(r)
 	payload, err := github.ValidatePayload(r, h.SecretKey)
 	if err != nil {
 		log.Log().Errorw("Failed to validate GitHub webhook", zap.Error(err))
