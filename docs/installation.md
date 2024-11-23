@@ -19,3 +19,9 @@ docker run --rm -it ghcr.io/wndhydrnt/saturn-bot:v0.15.1 version
 ```
 
 <!-- x-release-please-end -->
+
+## Go
+
+```shell
+go install github.com/wndhydrnt/saturn-bot@latest
+```

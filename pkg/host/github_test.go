@@ -651,6 +651,92 @@ func TestGitHubRepository_MergePullRequest_DeleteBranch(t *testing.T) {
 	assert.True(t, gock.IsDone())
 }
 
+func TestGitHubRepository_MergePullRequest_DeleteBranchByGitHub(t *testing.T) {
+	defer gock.Off()
+	gock.New("https://api.github.com").
+		Put("/repos/unit/test/pulls/987/merge").
+		JSON(map[string]string{
+			"commit_message": "Auto-merge by saturn-bot",
+		}).
+		Reply(200)
+	pr := &github.PullRequest{
+		Number: github.Int(987),
+		Head: &github.PullRequestBranch{
+			Ref: github.String("unittest"),
+		},
+	}
+
+	ghRepo := setupGitHubRepository()
+	ghRepo.DeleteBranchOnMerge = github.Bool(true)
+	repo := &GitHubRepository{
+		client: setupGitHubTestClient(),
+		repo:   ghRepo,
+	}
+	err := repo.MergePullRequest(true, pr)
+
+	require.NoError(t, err)
+	assert.True(t, gock.IsDone())
+}
+
+func TestGitHubRepository_MergePullRequest_MergeMethods(t *testing.T) {
+	testCases := []struct {
+		method string
+		repo   *github.Repository
+	}{
+		{
+			method: "merge",
+			repo: func() *github.Repository {
+				ghRepo := setupGitHubRepository()
+				ghRepo.AllowMergeCommit = github.Bool(true)
+				return ghRepo
+			}(),
+		},
+
+		{
+			method: "rebase",
+			repo: func() *github.Repository {
+				ghRepo := setupGitHubRepository()
+				ghRepo.AllowRebaseMerge = github.Bool(true)
+				return ghRepo
+			}(),
+		},
+
+		{
+			method: "squash",
+			repo: func() *github.Repository {
+				ghRepo := setupGitHubRepository()
+				ghRepo.AllowSquashMerge = github.Bool(true)
+				return ghRepo
+			}(),
+		},
+	}
+
+	for _, tc := range testCases {
+		t.Run(tc.method, func(t *testing.T) {
+			defer gock.Off()
+			gock.New("https://api.github.com").
+				Put("/repos/unit/test/pulls/987/merge").
+				JSON(map[string]string{
+					"commit_message": "Auto-merge by saturn-bot",
+					"merge_method":   tc.method,
+				}).
+				Reply(200)
+			pr := &github.PullRequest{
+				Number: github.Int(987),
+			}
+
+			repo := &GitHubRepository{
+				client: setupGitHubTestClient(),
+				repo:   tc.repo,
+			}
+			err := repo.MergePullRequest(false, pr)
+
+			require.NoError(t, err)
+			assert.True(t, gock.IsDone())
+		})
+	}
+}
+
 func TestGitHubRepository_UpdatePullRequest_Update(t *testing.T) {
 	body := `new body
 
