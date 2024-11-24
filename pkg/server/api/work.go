@@ -3,7 +3,6 @@ package api
 import (
 	"context"
 	"errors"
-	"fmt"
 	"time"
 
 	"github.com/wndhydrnt/saturn-bot/pkg/log"
@@ -23,7 +22,7 @@ func (a *APIServer) GetWorkV1(ctx context.Context, _ openapi.GetWorkV1RequestObj
 		}
 
 		log.Log().Errorw("Failed to get next run", zap.Error(err))
-		return resp, fmt.Errorf("internal server error")
+		return resp, ErrInternal
 	}
 
 	if len(run.RepositoryNames) > 0 {
@@ -42,7 +41,7 @@ func (a *APIServer) ReportWorkV1(_ context.Context, request openapi.ReportWorkV1
 	resp := openapi.ReportWorkV1201JSONResponse{}
 	err := a.WorkerService.ReportRun(*request.Body)
 	if err != nil {
-		return resp, fmt.Errorf("internal server error")
+		return resp, ErrInternal
 	}
 
 	resp.Result = "ok"
@@ -52,7 +51,7 @@ func (a *APIServer) ReportWorkV1(_ context.Context, request openapi.ReportWorkV1
 func (a *APIServer) ScheduleRunV1(_ context.Context, req openapi.ScheduleRunV1RequestObject) (openapi.ScheduleRunV1ResponseObject, error) {
 	var schedulerAfter time.Time
 	if req.Body.ScheduleAfter == nil {
-		schedulerAfter = time.Now()
+		schedulerAfter = a.Clock.Now()
 	} else {
 		schedulerAfter = *req.Body.ScheduleAfter
 	}
@@ -64,7 +63,7 @@ func (a *APIServer) ScheduleRunV1(_ context.Context, req openapi.ScheduleRunV1Re
 
 	runID, err := a.WorkerService.ScheduleRun(db.RunReasonManual, repositoryNames, schedulerAfter, req.Body.TaskName, nil)
 	if err != nil {
-		return nil, fmt.Errorf("internal server error")
+		return nil, ErrInternal
 	}
 
 	return openapi.ScheduleRunV1200JSONResponse{

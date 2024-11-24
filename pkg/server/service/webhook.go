@@ -3,9 +3,9 @@ package service
 import (
 	"errors"
 	"fmt"
-	"time"
 
 	"github.com/itchyny/gojq"
+	"github.com/wndhydrnt/saturn-bot/pkg/clock"
 	"github.com/wndhydrnt/saturn-bot/pkg/log"
 	"github.com/wndhydrnt/saturn-bot/pkg/ptr"
 	"github.com/wndhydrnt/saturn-bot/pkg/server/db"
@@ -27,6 +27,7 @@ type cacheEntry struct {
 
 // WebhookService handles scheduling new runs when a webhook is received.
 type WebhookService struct {
+	clock              clock.Clock
 	githubTriggerCache map[string][]cacheEntry
 	gitlabTriggerCache map[string][]cacheEntry
 	taskRegistry       *task.Registry
@@ -35,8 +36,12 @@ type WebhookService struct {
 
 // NewWebhookService returns a new instance of [WebhookService].
 // It parses the triggers defined by tasks and caches them.
-func NewWebhookService(taskRegistry *task.Registry, workerService *WorkerService) (*WebhookService, error) {
-	s := &WebhookService{taskRegistry: taskRegistry, workerService: workerService}
+func NewWebhookService(clock clock.Clock, taskRegistry *task.Registry, workerService *WorkerService) (*WebhookService, error) {
+	s := &WebhookService{
+		clock:         clock,
+		taskRegistry:  taskRegistry,
+		workerService: workerService,
+	}
 	err := s.populateCaches()
 	if err != nil {
 		return nil, fmt.Errorf("populate filter caches: %w", err)
@@ -69,7 +74,7 @@ func (s *WebhookService) enqueue(in *WebhookEnqueueInput, triggerCache map[strin
 		for _, trigger := range triggers {
 			if match(in.Event, trigger, in.Payload) {
 				log.Log().Debugf("Task %s matches %s webhook %s", taskName, wtype, in.ID)
-				_, err := s.workerService.ScheduleRun(db.RunReasonWebhook, nil, time.Now(), taskName, nil)
+				_, err := s.workerService.ScheduleRun(db.RunReasonWebhook, nil, s.clock.Now(), taskName, nil)
 				errs = append(errs, err)
 				break
 			}

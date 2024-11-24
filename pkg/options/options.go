@@ -10,6 +10,7 @@ import (
 	"github.com/prometheus/client_golang/prometheus"
 	"github.com/prometheus/client_golang/prometheus/push"
 	"github.com/wndhydrnt/saturn-bot/pkg/action"
+	"github.com/wndhydrnt/saturn-bot/pkg/clock"
 	"github.com/wndhydrnt/saturn-bot/pkg/config"
 	"github.com/wndhydrnt/saturn-bot/pkg/filter"
 	"github.com/wndhydrnt/saturn-bot/pkg/host"
@@ -49,6 +50,7 @@ func (ff FilterFactories) Find(name string) filter.Factory {
 
 type Opts struct {
 	ActionFactories      ActionFactories
+	Clock                clock.Clock
 	Config               config.Configuration
 	FilterFactories      FilterFactories
 	Hosts                []host.Host
@@ -174,6 +176,10 @@ func Initialize(opts *Opts) error {
 		metrics.Register(opts.PrometheusRegisterer)
 		opts.PushGateway = push.New(*opts.Config.PrometheusPushgatewayUrl, "saturn-bot").
 			Gatherer(opts.PrometheusGatherer)
+	}
+
+	if opts.Clock == nil {
+		opts.Clock = clock.Default
 	}
 
 	return nil

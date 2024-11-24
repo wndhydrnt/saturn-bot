@@ -70,6 +70,32 @@ paths:
             application/json:
               schema:
                 $ref: "#/components/schemas/Error"
+  /api/v1/tasks/{task}/runs:
+    get:
+      operationId: listTaskRunsV1
+      summary: List of scheduled runs of a task.
+      description: |
+        Returns a list of past and future runs of a task.
+      tags:
+        - task
+      parameters:
+        - in: path
+          name: task
+          schema:
+            type: string
+          required: true
+          description: Name of the task for which to return the runs.
+        - in: query
+          name: listOptions
+          schema:
+            $ref: "#/components/schemas/ListOptions"
+      responses:
+        "200":
+          description: OK
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/ListTaskRunsV1Response"
   /api/v1/worker/work:
     get:
       operationId: getWorkV1
@@ -230,3 +256,54 @@ components:
         content:
           type: string
       required: ["name", "hash", "content"]
+    ListOptions:
+      type: object
+      properties:
+        page:
+          default: 1
+          type: integer
+        limit:
+          default: 20
+          type: integer
+      required: ["page", "limit"]
+    Page:
+      type: object
+      properties:
+        next:
+          type: integer
+      required: ["next"]
+    ListTaskRunsV1Response:
+      type: object
+      properties:
+        result:
+          type: array
+          description: List of runs.
+          items:
+            $ref: "#/components/schemas/TaskRunV1"
+        page:
+          $ref: "#/components/schemas/Page"
+      required: ["result", "page"]
+    TaskRunV1:
+      type: object
+      properties:
+        id:
+          type: integer
+        reason:
+          type: string
+          enum:
+            - changed
+            - manual
+            - new
+            - next
+            - webhook
+        scheduleAfter:
+          type: string
+          format: date-time
+        status:
+          type: string
+          enum:
+            - pending
+            - running
+            - finished
+            - failed
+      required: ["id", "reason", "scheduleAfter", "status"]

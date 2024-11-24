@@ -5,8 +5,8 @@ import (
 	"errors"
 	"fmt"
 	"os"
-	"time"
 
+	"github.com/wndhydrnt/saturn-bot/pkg/clock"
 	"github.com/wndhydrnt/saturn-bot/pkg/log"
 	"github.com/wndhydrnt/saturn-bot/pkg/server/db"
 	"github.com/wndhydrnt/saturn-bot/pkg/task"
@@ -14,12 +14,17 @@ import (
 )
 
 type TaskService struct {
+	clock        clock.Clock
 	db           *gorm.DB
 	taskRegistry *task.Registry
 }
 
-func NewTaskService(db *gorm.DB, taskRegistry *task.Registry) *TaskService {
-	return &TaskService{db: db, taskRegistry: taskRegistry}
+func NewTaskService(clock clock.Clock, db *gorm.DB, taskRegistry *task.Registry) *TaskService {
+	return &TaskService{
+		clock:        clock,
+		db:           db,
+		taskRegistry: taskRegistry,
+	}
 }
 
 func (ts *TaskService) SyncDbTasks() error {
@@ -40,8 +45,8 @@ func (ts *TaskService) SyncDbTasks() error {
 				}
 
 				run := db.Run{
-					Reason:        0,
-					ScheduleAfter: time.Now(),
+					Reason:        db.RunReasonNew,
+					ScheduleAfter: ts.clock.Now(),
 					Status:        db.RunStatusPending,
 					TaskName:      t.Name,
 				}
@@ -60,7 +65,7 @@ func (ts *TaskService) SyncDbTasks() error {
 				log.Log().Debugf("Updating task %s in DB", taskDB.Name)
 				run := db.Run{
 					Reason:        0,
-					ScheduleAfter: time.Now(),
+					ScheduleAfter: ts.clock.Now(),
 					Status:        db.RunStatusPending,
 					TaskName:      t.Name,
 				}
