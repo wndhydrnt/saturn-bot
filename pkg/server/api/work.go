@@ -101,7 +101,7 @@ func (a *APIServer) ScheduleRunV1(_ context.Context, req openapi.ScheduleRunV1Re
 func mapRun(r db.Run) openapi.RunV1 {
 	run := openapi.RunV1{
 		FinishedAt:    r.FinishedAt,
-		Id:            int(r.ID),
+		Id:            r.ID,
 		Reason:        mapRunReason(r.Reason),
 		ScheduleAfter: r.ScheduleAfter,
 		StartedAt:     r.StartedAt,

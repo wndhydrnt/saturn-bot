@@ -137,7 +137,7 @@ type ReportWorkV1TaskResult struct {
 // RunV1 defines model for RunV1.
 type RunV1 struct {
 	FinishedAt    *time.Time  `json:"finishedAt,omitempty"`
-	Id            int         `json:"id"`
+	Id            uint        `json:"id"`
 	Reason        RunV1Reason `json:"reason"`
 	Repositories  *[]string   `json:"repositories,omitempty"`
 	ScheduleAfter time.Time   `json:"scheduleAfter"`

@@ -292,6 +292,7 @@ components:
           type: string
           format: date-time
         id:
+          x-go-type: uint
           type: integer
         reason:
           type: string
