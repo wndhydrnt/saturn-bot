@@ -3,6 +3,7 @@ package service
 import (
 	"errors"
 	"fmt"
+	"time"
 
 	"github.com/itchyny/gojq"
 	"github.com/wndhydrnt/saturn-bot/pkg/clock"
@@ -21,6 +22,7 @@ const (
 )
 
 type cacheEntry struct {
+	delay   time.Duration
 	event   string
 	filters []*gojq.Code
 }
@@ -74,7 +76,8 @@ func (s *WebhookService) enqueue(in *WebhookEnqueueInput, triggerCache map[strin
 		for _, trigger := range triggers {
 			if match(in.Event, trigger, in.Payload) {
 				log.Log().Debugf("Task %s matches %s webhook %s", taskName, wtype, in.ID)
-				_, err := s.workerService.ScheduleRun(db.RunReasonWebhook, nil, s.clock.Now(), taskName, nil)
+				scheduleAfter := s.clock.Now().Add(trigger.delay)
+				_, err := s.workerService.ScheduleRun(db.RunReasonWebhook, nil, scheduleAfter, taskName, nil)
 				errs = append(errs, err)
 				break
 			}
@@ -114,7 +117,11 @@ func (s *WebhookService) populateGithubCache(t *task.Task) error {
 			return fmt.Errorf("parse GitHub webhook %d: %w", idxHook, err)
 		}
 
-		cacheEntries[idxHook] = cacheEntry{event: ptr.From(hook.Event), filters: filters}
+		cacheEntries[idxHook] = cacheEntry{
+			delay:   time.Duration(t.Trigger.Webhook.Delay) * time.Second,
+			event:   ptr.From(hook.Event),
+			filters: filters,
+		}
 	}
 
 	s.githubTriggerCache[t.Name] = cacheEntries
@@ -129,7 +136,11 @@ func (s *WebhookService) populateGitlabCache(t *task.Task) error {
 			return fmt.Errorf("parse GitLab webhook %d: %w", idxHook, err)
 		}
 
-		cacheEntries[idxHook] = cacheEntry{event: ptr.From(hook.Event), filters: filters}
+		cacheEntries[idxHook] = cacheEntry{
+			delay:   time.Duration(t.Trigger.Webhook.Delay) * time.Second,
+			event:   ptr.From(hook.Event),
+			filters: filters,
+		}
 	}
 
 	s.gitlabTriggerCache[t.Name] = cacheEntries

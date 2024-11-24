@@ -82,6 +82,7 @@ func (ws *WorkerService) ScheduleRun(
 	}
 
 	if runDB.ScheduleAfter.After(scheduleAfter) {
+		runDB.Reason = reason
 		runDB.ScheduleAfter = scheduleAfter
 		if err := tx.Save(&runDB).Error; err != nil {
 			return 0, fmt.Errorf("update scheduleAfter of run: %w", err)

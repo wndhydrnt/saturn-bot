@@ -4,7 +4,6 @@ import (
 	"fmt"
 	"net/http"
 	"testing"
-	"time"
 
 	"github.com/wndhydrnt/saturn-bot/pkg/ptr"
 	"github.com/wndhydrnt/saturn-bot/pkg/server/api/openapi"
@@ -58,7 +57,7 @@ func TestServer_API_ListRunsV1(t *testing.T) {
 							{
 								Id:            2,
 								Reason:        openapi.Next,
-								ScheduleAfter: time.Date(2000, 1, 1, 1, 0, 41, 0, time.UTC),
+								ScheduleAfter: testDate(1, 0, 4),
 								Status:        openapi.Pending,
 								Task:          defaultTask.Name,
 							},
@@ -75,11 +74,11 @@ func TestServer_API_ListRunsV1(t *testing.T) {
 						Page: openapi.Page{Next: 0},
 						Result: []openapi.RunV1{
 							{
-								FinishedAt:    ptr.To(time.Date(2000, 1, 1, 0, 0, 40, 0, time.UTC)),
+								FinishedAt:    ptr.To(testDate(0, 0, 3)),
 								Id:            1,
 								Reason:        openapi.New,
-								ScheduleAfter: time.Date(2000, 1, 1, 0, 0, 37, 0, time.UTC),
-								StartedAt:     ptr.To(time.Date(2000, 1, 1, 0, 0, 39, 0, time.UTC)),
+								ScheduleAfter: testDate(0, 0, 0),
+								StartedAt:     ptr.To(testDate(0, 0, 2)),
 								Status:        openapi.Finished,
 								Task:          defaultTask.Name,
 							},
