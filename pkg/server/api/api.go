@@ -85,8 +85,12 @@ func toListOptions(apiListOpts *openapi.ListOptions) service.ListOptions {
 		Limit: apiListOpts.Limit,
 		Page:  apiListOpts.Page,
 	}
-	if apiListOpts.Limit == 0 {
+	if apiListOpts.Limit <= 0 {
 		listOpts.Limit = 20
+	}
+
+	if apiListOpts.Limit > 50 {
+		listOpts.Limit = 50
 	}
 
 	if apiListOpts.Page == 0 {

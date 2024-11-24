@@ -22,21 +22,21 @@ const (
 	Ok ReportWorkV1ResponseResult = "ok"
 )
 
-// Defines values for TaskRunV1Reason.
+// Defines values for RunV1Reason.
 const (
-	Changed TaskRunV1Reason = "changed"
-	Manual  TaskRunV1Reason = "manual"
-	New     TaskRunV1Reason = "new"
-	Next    TaskRunV1Reason = "next"
-	Webhook TaskRunV1Reason = "webhook"
+	Changed RunV1Reason = "changed"
+	Manual  RunV1Reason = "manual"
+	New     RunV1Reason = "new"
+	Next    RunV1Reason = "next"
+	Webhook RunV1Reason = "webhook"
 )
 
-// Defines values for TaskRunV1Status.
+// Defines values for RunV1Status.
 const (
-	Failed   TaskRunV1Status = "failed"
-	Finished TaskRunV1Status = "finished"
-	Pending  TaskRunV1Status = "pending"
-	Running  TaskRunV1Status = "running"
+	Failed   RunV1Status = "failed"
+	Finished RunV1Status = "finished"
+	Pending  RunV1Status = "pending"
+	Running  RunV1Status = "running"
 )
 
 // Error defines model for Error.
@@ -79,12 +79,12 @@ type ListOptions struct {
 	Page  int `json:"page"`
 }
 
-// ListTaskRunsV1Response defines model for ListTaskRunsV1Response.
-type ListTaskRunsV1Response struct {
+// ListRunsV1Response defines model for ListRunsV1Response.
+type ListRunsV1Response struct {
 	Page Page `json:"page"`
 
 	// Result List of runs.
-	Result []TaskRunV1 `json:"result"`
+	Result []RunV1 `json:"result"`
 }
 
 // ListTasksV1Response defines model for ListTasksV1Response.
@@ -134,6 +134,24 @@ type ReportWorkV1TaskResult struct {
 	TaskName string `json:"taskName"`
 }
 
+// RunV1 defines model for RunV1.
+type RunV1 struct {
+	FinishedAt    *time.Time  `json:"finishedAt,omitempty"`
+	Id            int         `json:"id"`
+	Reason        RunV1Reason `json:"reason"`
+	Repositories  *[]string   `json:"repositories,omitempty"`
+	ScheduleAfter time.Time   `json:"scheduleAfter"`
+	StartedAt     *time.Time  `json:"startedAt,omitempty"`
+	Status        RunV1Status `json:"status"`
+	Task          string      `json:"task"`
+}
+
+// RunV1Reason defines model for RunV1.Reason.
+type RunV1Reason string
+
+// RunV1Status defines model for RunV1.Status.
+type RunV1Status string
+
 // ScheduleRunV1Request defines model for ScheduleRunV1Request.
 type ScheduleRunV1Request struct {
 	// RepositoryNames Names of the repositories for which to add a run.
@@ -155,22 +173,10 @@ type ScheduleRunV1Response struct {
 	RunID int `json:"runID"`
 }
 
-// TaskRunV1 defines model for TaskRunV1.
-type TaskRunV1 struct {
-	Id            int             `json:"id"`
-	Reason        TaskRunV1Reason `json:"reason"`
-	ScheduleAfter time.Time       `json:"scheduleAfter"`
-	Status        TaskRunV1Status `json:"status"`
-}
-
-// TaskRunV1Reason defines model for TaskRunV1.Reason.
-type TaskRunV1Reason string
-
-// TaskRunV1Status defines model for TaskRunV1.Status.
-type TaskRunV1Status string
-
-// ListTaskRunsV1Params defines parameters for ListTaskRunsV1.
-type ListTaskRunsV1Params struct {
+// ListRunsV1Params defines parameters for ListRunsV1.
+type ListRunsV1Params struct {
+	// Task Name of the task to filter by.
+	Task        *string      `form:"task,omitempty" json:"task,omitempty"`
 	ListOptions *ListOptions `form:"listOptions,omitempty" json:"listOptions,omitempty"`
 }
 
@@ -264,8 +270,8 @@ type ClientInterface interface {
 	// GetTaskV1 request
 	GetTaskV1(ctx context.Context, task string, reqEditors ...RequestEditorFn) (*http.Response, error)
 
-	// ListTaskRunsV1 request
-	ListTaskRunsV1(ctx context.Context, task string, params *ListTaskRunsV1Params, reqEditors ...RequestEditorFn) (*http.Response, error)
+	// ListRunsV1 request
+	ListRunsV1(ctx context.Context, params *ListRunsV1Params, reqEditors ...RequestEditorFn) (*http.Response, error)
 
 	// GetWorkV1 request
 	GetWorkV1(ctx context.Context, reqEditors ...RequestEditorFn) (*http.Response, error)
@@ -324,8 +330,8 @@ func (c *Client) GetTaskV1(ctx context.Context, task string, reqEditors ...Reque
 	return c.Client.Do(req)
 }
 
-func (c *Client) ListTaskRunsV1(ctx context.Context, task string, params *ListTaskRunsV1Params, reqEditors ...RequestEditorFn) (*http.Response, error) {
-	req, err := NewListTaskRunsV1Request(c.Server, task, params)
+func (c *Client) ListRunsV1(ctx context.Context, params *ListRunsV1Params, reqEditors ...RequestEditorFn) (*http.Response, error) {
+	req, err := NewListRunsV1Request(c.Server, params)
 	if err != nil {
 		return nil, err
 	}
@@ -473,23 +479,16 @@ func NewGetTaskV1Request(server string, task string) (*http.Request, error) {
 	return req, nil
 }
 
-// NewListTaskRunsV1Request generates requests for ListTaskRunsV1
-func NewListTaskRunsV1Request(server string, task string, params *ListTaskRunsV1Params) (*http.Request, error) {
+// NewListRunsV1Request generates requests for ListRunsV1
+func NewListRunsV1Request(server string, params *ListRunsV1Params) (*http.Request, error) {
 	var err error
-
-	var pathParam0 string
-
-	pathParam0, err = runtime.StyleParamWithLocation("simple", false, "task", runtime.ParamLocationPath, task)
-	if err != nil {
-		return nil, err
-	}
 
 	serverURL, err := url.Parse(server)
 	if err != nil {
 		return nil, err
 	}
 
-	operationPath := fmt.Sprintf("/api/v1/tasks/%s/runs", pathParam0)
+	operationPath := fmt.Sprintf("/api/v1/worker/runs")
 	if operationPath[0] == '/' {
 		operationPath = "." + operationPath
 	}
@@ -501,6 +500,22 @@ func NewListTaskRunsV1Request(server string, task string, params *ListTaskRunsV1
 
 	if params != nil {
 		queryValues := queryURL.Query()
+
+		if params.Task != nil {
+
+			if queryFrag, err := runtime.StyleParamWithLocation("form", true, "task", runtime.ParamLocationQuery, *params.Task); err != nil {
+				return nil, err
+			} else if parsed, err := url.ParseQuery(queryFrag); err != nil {
+				return nil, err
+			} else {
+				for k, v := range parsed {
+					for _, v2 := range v {
+						queryValues.Add(k, v2)
+					}
+				}
+			}
+
+		}
 
 		if params.ListOptions != nil {
 
@@ -650,8 +665,8 @@ type ClientWithResponsesInterface interface {
 	// GetTaskV1WithResponse request
 	GetTaskV1WithResponse(ctx context.Context, task string, reqEditors ...RequestEditorFn) (*GetTaskV1ResponseBody, error)
 
-	// ListTaskRunsV1WithResponse request
-	ListTaskRunsV1WithResponse(ctx context.Context, task string, params *ListTaskRunsV1Params, reqEditors ...RequestEditorFn) (*ListTaskRunsV1ResponseBody, error)
+	// ListRunsV1WithResponse request
+	ListRunsV1WithResponse(ctx context.Context, params *ListRunsV1Params, reqEditors ...RequestEditorFn) (*ListRunsV1ResponseBody, error)
 
 	// GetWorkV1WithResponse request
 	GetWorkV1WithResponse(ctx context.Context, reqEditors ...RequestEditorFn) (*GetWorkV1ResponseBody, error)
@@ -730,14 +745,14 @@ func (r GetTaskV1ResponseBody) StatusCode() int {
 	return 0
 }
 
-type ListTaskRunsV1ResponseBody struct {
+type ListRunsV1ResponseBody struct {
 	Body         []byte
 	HTTPResponse *http.Response
-	JSON200      *ListTaskRunsV1Response
+	JSON200      *ListRunsV1Response
 }
 
 // Status returns HTTPResponse.Status
-func (r ListTaskRunsV1ResponseBody) Status() string {
+func (r ListRunsV1ResponseBody) Status() string {
 	if r.HTTPResponse != nil {
 		return r.HTTPResponse.Status
 	}
@@ -745,7 +760,7 @@ func (r ListTaskRunsV1ResponseBody) Status() string {
 }
 
 // StatusCode returns HTTPResponse.StatusCode
-func (r ListTaskRunsV1ResponseBody) StatusCode() int {
+func (r ListRunsV1ResponseBody) StatusCode() int {
 	if r.HTTPResponse != nil {
 		return r.HTTPResponse.StatusCode
 	}
@@ -831,13 +846,13 @@ func (c *ClientWithResponses) GetTaskV1WithResponse(ctx context.Context, task st
 	return ParseGetTaskV1ResponseBody(rsp)
 }
 
-// ListTaskRunsV1WithResponse request returning *ListTaskRunsV1ResponseBody
-func (c *ClientWithResponses) ListTaskRunsV1WithResponse(ctx context.Context, task string, params *ListTaskRunsV1Params, reqEditors ...RequestEditorFn) (*ListTaskRunsV1ResponseBody, error) {
-	rsp, err := c.ListTaskRunsV1(ctx, task, params, reqEditors...)
+// ListRunsV1WithResponse request returning *ListRunsV1ResponseBody
+func (c *ClientWithResponses) ListRunsV1WithResponse(ctx context.Context, params *ListRunsV1Params, reqEditors ...RequestEditorFn) (*ListRunsV1ResponseBody, error) {
+	rsp, err := c.ListRunsV1(ctx, params, reqEditors...)
 	if err != nil {
 		return nil, err
 	}
-	return ParseListTaskRunsV1ResponseBody(rsp)
+	return ParseListRunsV1ResponseBody(rsp)
 }
 
 // GetWorkV1WithResponse request returning *GetWorkV1ResponseBody
@@ -958,22 +973,22 @@ func ParseGetTaskV1ResponseBody(rsp *http.Response) (*GetTaskV1ResponseBody, err
 	return response, nil
 }
 
-// ParseListTaskRunsV1ResponseBody parses an HTTP response from a ListTaskRunsV1WithResponse call
-func ParseListTaskRunsV1ResponseBody(rsp *http.Response) (*ListTaskRunsV1ResponseBody, error) {
+// ParseListRunsV1ResponseBody parses an HTTP response from a ListRunsV1WithResponse call
+func ParseListRunsV1ResponseBody(rsp *http.Response) (*ListRunsV1ResponseBody, error) {
 	bodyBytes, err := io.ReadAll(rsp.Body)
 	defer func() { _ = rsp.Body.Close() }()
 	if err != nil {
 		return nil, err
 	}
 
-	response := &ListTaskRunsV1ResponseBody{
+	response := &ListRunsV1ResponseBody{
 		Body:         bodyBytes,
 		HTTPResponse: rsp,
 	}
 
 	switch {
 	case strings.Contains(rsp.Header.Get("Content-Type"), "json") && rsp.StatusCode == 200:
-		var dest ListTaskRunsV1Response
+		var dest ListRunsV1Response
 		if err := json.Unmarshal(bodyBytes, &dest); err != nil {
 			return nil, err
 		}

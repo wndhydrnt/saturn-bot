@@ -70,32 +70,6 @@ paths:
             application/json:
               schema:
                 $ref: "#/components/schemas/Error"
-  /api/v1/tasks/{task}/runs:
-    get:
-      operationId: listTaskRunsV1
-      summary: List of scheduled runs of a task.
-      description: |
-        Returns a list of past and future runs of a task.
-      tags:
-        - task
-      parameters:
-        - in: path
-          name: task
-          schema:
-            type: string
-          required: true
-          description: Name of the task for which to return the runs.
-        - in: query
-          name: listOptions
-          schema:
-            $ref: "#/components/schemas/ListOptions"
-      responses:
-        "200":
-          description: OK
-          content:
-            application/json:
-              schema:
-                $ref: "#/components/schemas/ListTaskRunsV1Response"
   /api/v1/worker/work:
     get:
       operationId: getWorkV1
@@ -129,6 +103,32 @@ paths:
             application/json:
               schema:
                 $ref: "#/components/schemas/ReportWorkV1Response"
+  /api/v1/worker/runs:
+    get:
+      operationId: listRunsV1
+      summary: List of runs.
+      description: |
+        Returns a list of past and future runs.
+        Optional filters can be applied.
+      tags:
+        - worker
+      parameters:
+        - in: query
+          name: task
+          schema:
+            type: string
+          description: Name of the task to filter by.
+        - in: query
+          name: listOptions
+          schema:
+            $ref: "#/components/schemas/ListOptions"
+      responses:
+        "200":
+          description: OK
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/ListRunsV1Response"
 components:
   schemas:
     ScheduleRunV1Request:
@@ -265,6 +265,8 @@ components:
         limit:
           default: 20
           type: integer
+          minimum: 1
+          maximum: 50
       required: ["page", "limit"]
     Page:
       type: object
@@ -272,20 +274,23 @@ components:
         next:
           type: integer
       required: ["next"]
-    ListTaskRunsV1Response:
+    ListRunsV1Response:
       type: object
       properties:
         result:
           type: array
           description: List of runs.
           items:
-            $ref: "#/components/schemas/TaskRunV1"
+            $ref: "#/components/schemas/RunV1"
         page:
           $ref: "#/components/schemas/Page"
       required: ["result", "page"]
-    TaskRunV1:
+    RunV1:
       type: object
       properties:
+        finishedAt:
+          type: string
+          format: date-time
         id:
           type: integer
         reason:
@@ -296,7 +301,14 @@ components:
             - new
             - next
             - webhook
+        repositories:
+          type: array
+          items:
+            type: string
         scheduleAfter:
+          type: string
+          format: date-time
+        startedAt:
           type: string
           format: date-time
         status:
@@ -306,4 +318,6 @@ components:
             - running
             - finished
             - failed
-      required: ["id", "reason", "scheduleAfter", "status"]
+        task:
+          type: string
+      required: ["id", "reason", "scheduleAfter", "status", "task"]

@@ -120,6 +120,7 @@ func (ws *WorkerService) NextRun() (db.Run, *task.Task, error) {
 		return run, nil, ErrNoRun
 	}
 
+	run.StartedAt = ptr.To(ws.clock.Now())
 	run.Status = db.RunStatusRunning
 	if err := ws.db.Save(&run).Error; err != nil {
 		log.Log().Errorw("Update next run", zap.Error(err))
@@ -194,9 +195,18 @@ func (ws *WorkerService) ReportRun(req openapi.ReportWorkV1Request) error {
 	return err
 }
 
-func (ws *WorkerService) ListRunsOfTask(taskName string, listOpts ListOptions) ([]db.Run, int64, error) {
+type ListRunsOptions struct {
+	TaskName string
+}
+
+func (ws *WorkerService) ListRuns(opts ListRunsOptions, listOpts ListOptions) ([]db.Run, int64, error) {
 	var runs []db.Run
-	result := ws.db.Where("task_name = ?", taskName).
+	query := ws.db
+	if opts.TaskName != "" {
+		query = query.Where("task_name = ?", opts.TaskName)
+	}
+
+	result := query.
 		Offset(listOpts.Offset()).
 		Limit(listOpts.Limit).
 		Order("schedule_after DESC").
@@ -207,9 +217,12 @@ func (ws *WorkerService) ListRunsOfTask(taskName string, listOpts ListOptions) (
 	}
 
 	var count int64
-	countResult := ws.db.Model(&db.Run{}).
-		Where("task_name = ?", taskName).
-		Count(&count)
+	queryCount := ws.db.Model(&db.Run{})
+	if opts.TaskName != "" {
+		queryCount = queryCount.Where("task_name = ?", opts.TaskName)
+	}
+
+	countResult := queryCount.Count(&count)
 	if countResult.Error != nil {
 		return nil, 0, countResult.Error
 	}
