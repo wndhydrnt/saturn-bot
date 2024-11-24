@@ -1,4 +1,4 @@
-openapi: 3.1.0
+openapi: 3.0.3
 info:
   title: saturn-bot server API
   version: 1.0.0
@@ -193,7 +193,7 @@ components:
           type: array
           items:
             $ref: "#/components/schemas/ReportWorkV1TaskResult"
-      required: ["runID"]
+      required: ["runID", "taskResults"]
     ReportWorkV1TaskResult:
       description: Result of the run of a task.
       type: object
@@ -210,7 +210,7 @@ components:
         taskName:
           description: Name of the task.
           type: string
-      required: ["repositoryName", "taskName"]
+      required: ["repositoryName", "result", "taskName"]
     ListTasksV1Response:
       type: object
       properties:
@@ -229,5 +229,4 @@ components:
           type: string
         content:
           type: string
-          format: byte
       required: ["name", "hash", "content"]

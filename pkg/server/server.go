@@ -18,7 +18,6 @@ import (
 	"github.com/wndhydrnt/saturn-bot/pkg/log"
 	"github.com/wndhydrnt/saturn-bot/pkg/options"
 	"github.com/wndhydrnt/saturn-bot/pkg/server/api"
-	"github.com/wndhydrnt/saturn-bot/pkg/server/api/openapi"
 	"github.com/wndhydrnt/saturn-bot/pkg/server/db"
 	"github.com/wndhydrnt/saturn-bot/pkg/server/metrics"
 	"github.com/wndhydrnt/saturn-bot/pkg/server/service"
@@ -59,11 +58,8 @@ func (s *Server) Start(opts options.Opts, taskPaths []string) error {
 		return err
 	}
 
-	taskCtrl := openapi.NewTaskAPIController(&api.TaskHandler{TaskService: taskService})
 	workerService := service.NewWorkerService(database, taskRegistry)
-	workerHandler := &api.WorkHandler{WorkerService: workerService}
-	workerCtrl := openapi.NewWorkerAPIController(workerHandler)
-	router := newRouter(opts, taskCtrl, workerCtrl)
+	router := newRouter(opts)
 	webhookService, err := service.NewWebhookService(taskRegistry, workerService)
 	if err != nil {
 		return fmt.Errorf("create webhook service: %w", err)
@@ -81,11 +77,16 @@ func (s *Server) Start(opts options.Opts, taskPaths []string) error {
 		Router:               router,
 	})
 
+	handler := api.RegisterAPIServer(&api.NewAPIServerOptions{
+		Router:        router,
+		TaskService:   taskService,
+		WorkerService: workerService,
+	})
 	s.httpServer = &http.Server{
 		ReadHeaderTimeout: 10 * time.Millisecond,
 		Addr:              opts.Config.ServerAddr,
 	}
-	s.httpServer.Handler = router
+	s.httpServer.Handler = handler
 	go func(server *http.Server) {
 		err := server.ListenAndServe()
 		if err != nil && !errors.Is(err, http.ErrServerClosed) {
@@ -152,7 +153,7 @@ func Run(configPath string, taskPaths []string) error {
 
 // newRouter copies openapi.newRouter.
 // This is done to configure middlewares of chi.Router.
-func newRouter(opts options.Opts, routers ...openapi.Router) chi.Router {
+func newRouter(opts options.Opts) chi.Router {
 	router := chi.NewRouter()
 	if opts.Config.ServerCompress {
 		router.Use(middleware.Compress(5))
@@ -165,13 +166,5 @@ func newRouter(opts options.Opts, routers ...openapi.Router) chi.Router {
 	pm := chiprometheus.New("saturn-bot")
 	opts.PrometheusRegisterer.MustRegister(pm.Collectors()...)
 	router.Use(pm.Handler)
-
-	for _, api := range routers {
-		for _, route := range api.Routes() {
-			var handler http.Handler = route.HandlerFunc
-			router.Method(route.Method, route.Pattern, handler)
-		}
-	}
-
 	return router
 }

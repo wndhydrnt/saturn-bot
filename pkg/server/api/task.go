@@ -2,39 +2,35 @@ package api
 
 import (
 	"context"
-	"net/http"
 
 	"github.com/wndhydrnt/saturn-bot/pkg/server/api/openapi"
-	"github.com/wndhydrnt/saturn-bot/pkg/server/service"
 )
 
-type TaskHandler struct {
-	TaskService *service.TaskService
-}
-
-// GetTaskV1 implements openapi.TaskAPIServicer
-func (ts *TaskHandler) GetTaskV1(_ context.Context, taskName string) (openapi.ImplResponse, error) {
-	t, content := ts.TaskService.GetTask(taskName)
+// GetTaskV1 implements [openapi.ServerInterface].
+func (a *APIServer) GetTaskV1(_ context.Context, request openapi.GetTaskV1RequestObject) (openapi.GetTaskV1ResponseObject, error) {
+	t, content := a.TaskService.GetTask(request.Task)
 	if t == nil {
-		return openapi.Response(http.StatusNotFound, openapi.Error{Error: "Not Found", Message: "Task unknown"}), nil
+		return openapi.GetTaskV1404JSONResponse{
+			Error:   "Not Found",
+			Message: "Task unknown",
+		}, nil
 	}
 
-	body := openapi.GetTaskV1Response{
+	return openapi.GetTaskV1200JSONResponse{
 		Name:    t.Name,
 		Hash:    t.Checksum(),
 		Content: content,
-	}
-	return openapi.Response(http.StatusOK, body), nil
+	}, nil
 }
 
-// ListTasksV1 implements openapi.TaskAPIServicer
-func (th *TaskHandler) ListTasksV1(_ context.Context) (openapi.ImplResponse, error) {
-	body := openapi.ListTasksV1Response{
+// ListTasksV1 implements [openapi.ServerInterface].
+func (th *APIServer) ListTasksV1(_ context.Context, request openapi.ListTasksV1RequestObject) (openapi.ListTasksV1ResponseObject, error) {
+	resp := openapi.ListTasksV1200JSONResponse{
 		Tasks: []string{},
 	}
 	for _, entry := range th.TaskService.ListTasks() {
-		body.Tasks = append(body.Tasks, entry.Task.Name)
+		resp.Tasks = append(resp.Tasks, entry.Task.Name)
 	}
 
-	return openapi.Response(http.StatusOK, body), nil
+	return resp, nil
 }

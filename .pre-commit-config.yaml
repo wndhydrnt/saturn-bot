@@ -9,17 +9,10 @@ repos:
       language: system
       files: ^cmd/.*\.go$
       pass_filenames: false
-    - id: json-schema
-      name: Generate JSON schemas
-      files: ^.*\.schema\.json$
-      entry: make generate_go
-      language: system
-      always_run: false
-      pass_filenames: false
-    - id: openapi-generate
-      name: OpenAPI
-      files: ^pkg/server/api/openapi/openapi\.yaml$
-      entry: make generate_openapi
+    - id: go-generate
+      name: go generate
+      files: ^.*\.schema\.json|pkg/server/api/openapi/openapi\.yaml$
+      entry: go generate ./...
       language: system
       always_run: false
       pass_filenames: false
