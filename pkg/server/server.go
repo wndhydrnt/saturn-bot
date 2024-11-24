@@ -52,15 +52,15 @@ func (s *Server) Start(opts options.Opts, taskPaths []string) error {
 		return fmt.Errorf("initialize database: %w", err)
 	}
 
-	taskService := service.NewTaskService(database, taskRegistry)
+	taskService := service.NewTaskService(opts.Clock, database, taskRegistry)
 	err = taskService.SyncDbTasks()
 	if err != nil {
 		return err
 	}
 
-	workerService := service.NewWorkerService(database, taskRegistry)
+	workerService := service.NewWorkerService(opts.Clock, database, taskRegistry)
 	router := newRouter(opts)
-	webhookService, err := service.NewWebhookService(taskRegistry, workerService)
+	webhookService, err := service.NewWebhookService(opts.Clock, taskRegistry, workerService)
 	if err != nil {
 		return fmt.Errorf("create webhook service: %w", err)
 	}
@@ -88,6 +88,7 @@ func (s *Server) Start(opts options.Opts, taskPaths []string) error {
 	}
 	s.httpServer.Handler = handler
 	go func(server *http.Server) {
+		log.Log().Infof("HTTP server listening on %s", opts.Config.ServerAddr)
 		err := server.ListenAndServe()
 		if err != nil && !errors.Is(err, http.ErrServerClosed) {
 			log.Log().Errorw("HTTP server failed - exiting", zap.Error(err))
