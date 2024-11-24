@@ -88,6 +88,7 @@ func (s *Server) Start(opts options.Opts, taskPaths []string) error {
 	}
 	s.httpServer.Handler = handler
 	go func(server *http.Server) {
+		log.Log().Infof("HTTP server listening on %s", opts.Config.ServerAddr)
 		err := server.ListenAndServe()
 		if err != nil && !errors.Is(err, http.ErrServerClosed) {
 			log.Log().Errorw("HTTP server failed - exiting", zap.Error(err))
