@@ -49,7 +49,10 @@ func (ff FilterFactories) Find(name string) filter.Factory {
 }
 
 type Opts struct {
-	ActionFactories      ActionFactories
+	ActionFactories ActionFactories
+	// Clock interfaces to a clock.
+	// Its purpose is to fake time in unit tests.
+	// Defaults to an object that proxies to the [time] package.
 	Clock                clock.Clock
 	Config               config.Configuration
 	FilterFactories      FilterFactories
