@@ -93,7 +93,12 @@ type ListTasksV1Response struct {
 
 // Page defines model for Page.
 type Page struct {
+	// Next Number of the page with the next results.
+	// 0 if there is no next page.
 	Next int `json:"next"`
+
+	// Total Total number of items.
+	Total int `json:"total"`
 }
 
 // ReportWorkV1Request defines model for ReportWorkV1Request.

@@ -272,6 +272,7 @@ func TestServer_WebhookGitlab(t *testing.T) {
 					path:       "/api/v1/worker/runs",
 					statusCode: http.StatusOK,
 					responseBody: openapi.ListRunsV1Response{
+						Page: openapi.Page{Total: 2},
 						Result: []openapi.RunV1{
 							{
 								Id:            2,

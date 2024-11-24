@@ -52,7 +52,7 @@ func TestServer_API_ListRunsV1(t *testing.T) {
 					query:      fmt.Sprintf("limit=1&page=1&task=%s", defaultTask.Name),
 					statusCode: http.StatusOK,
 					responseBody: openapi.ListRunsV1Response{
-						Page: openapi.Page{Next: 2},
+						Page: openapi.Page{Next: 2, Total: 2},
 						Result: []openapi.RunV1{
 							{
 								Id:            2,
@@ -71,7 +71,7 @@ func TestServer_API_ListRunsV1(t *testing.T) {
 					query:      fmt.Sprintf("limit=1&page=2&task=%s", defaultTask.Name),
 					statusCode: http.StatusOK,
 					responseBody: openapi.ListRunsV1Response{
-						Page: openapi.Page{Next: 0},
+						Page: openapi.Page{Next: 0, Total: 2},
 						Result: []openapi.RunV1{
 							{
 								FinishedAt:    ptr.To(testDate(0, 0, 3)),

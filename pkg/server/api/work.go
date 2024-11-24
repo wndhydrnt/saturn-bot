@@ -57,7 +57,8 @@ func (a *APIServer) ListRunsV1(ctx context.Context, request openapi.ListRunsV1Re
 
 	resp := openapi.ListRunsV1200JSONResponse{
 		Page: openapi.Page{
-			Next: listOpts.Next(int(totalCount)),
+			Next:  listOpts.Next(int(totalCount)),
+			Total: int(totalCount),
 		},
 		Result: result,
 	}

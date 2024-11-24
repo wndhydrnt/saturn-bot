@@ -272,8 +272,14 @@ components:
       type: object
       properties:
         next:
+          description: |
+            Number of the page with the next results.
+            0 if there is no next page.
           type: integer
-      required: ["next"]
+        total:
+          description: Total number of items.
+          type: integer
+      required: ["next", "total"]
     ListRunsV1Response:
       type: object
       properties:
