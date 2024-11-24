@@ -64,7 +64,7 @@ func (ts *TaskService) SyncDbTasks() error {
 				taskDB.Hash = t.Checksum()
 				log.Log().Debugf("Updating task %s in DB", taskDB.Name)
 				run := db.Run{
-					Reason:        0,
+					Reason:        db.RunReasonChanged,
 					ScheduleAfter: ts.clock.Now(),
 					Status:        db.RunStatusPending,
 					TaskName:      t.Name,
