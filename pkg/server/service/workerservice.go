@@ -106,7 +106,7 @@ func (ws *WorkerService) NextRun() (db.Run, *task.Task, error) {
 	var run db.Run
 	tx := ws.db.
 		Where("status = ?", db.RunStatusPending).
-		Order("schedule_after desc").
+		Order("schedule_after asc").
 		First(&run)
 	if tx.Error != nil {
 		if errors.Is(tx.Error, gorm.ErrRecordNotFound) {
