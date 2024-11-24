@@ -138,6 +138,91 @@ func TestServer_WebhookGithub(t *testing.T) {
 				},
 			},
 		},
+
+		{
+			name: `Given a task that triggers on a GitHub webhook event
+							And that defines a delay for the trigger
+							When it receives a GitHub webhook
+							Then schedules the run with a delay`,
+			tasks: []schema.Task{
+				{
+					Name: "unittest",
+					Trigger: &schema.TaskTrigger{
+						Webhook: &schema.TaskTriggerWebhook{
+							Delay: 300,
+							Github: []schema.GithubTrigger{
+								{Event: ptr.To("push")},
+							},
+						},
+					},
+				},
+			},
+			apiCalls: []apiCall{
+				// Drain the run queue.
+				{
+					method:     "GET",
+					path:       "/api/v1/worker/work",
+					statusCode: http.StatusOK,
+					responseBody: openapi.GetWorkV1Response{
+						RunID: 1,
+						Tasks: []openapi.GetWorkV1Task{
+							{Hash: "e422f6dda5759ae9c366c901d9db999dc37deee9c9664d9d2421ca8e239807c2", Name: "unittest"},
+						},
+					},
+				},
+				// And report the result of the run.
+				{
+					method: "POST",
+					path:   "/api/v1/worker/work",
+					requestBody: openapi.ReportWorkV1Request{
+						RunID:       1,
+						TaskResults: []openapi.ReportWorkV1TaskResult{},
+					},
+					statusCode: http.StatusCreated,
+					responseBody: openapi.ReportWorkV1Response{
+						Result: "ok",
+					},
+				},
+				// Send the webhook request
+				{
+					method: "POST",
+					path:   "/webhooks/github",
+					requestHeaders: map[string]string{
+						github.EventTypeHeader:       "push",
+						github.SHA256SignatureHeader: genGithubWebhookSignature([]byte("secret"), []byte("{}")),
+					},
+					requestBody: github.PushEvent{},
+					statusCode:  http.StatusOK,
+				},
+				// Check that the new run is delayed by ~5 minutes.
+				{
+					sleep:      5 * time.Millisecond, // Need to sleep because write of webhook happens in goroutine
+					method:     "GET",
+					path:       "/api/v1/worker/runs",
+					statusCode: http.StatusOK,
+					responseBody: openapi.ListRunsV1Response{
+						Result: []openapi.RunV1{
+							{
+								Id:            2,
+								Reason:        openapi.Webhook,
+								ScheduleAfter: testDate(0, 5, 5),
+								Status:        openapi.Pending,
+								Task:          "unittest",
+							},
+							{
+								FinishedAt:    ptr.To(testDate(0, 0, 3)),
+								Id:            1,
+								Reason:        openapi.New,
+								ScheduleAfter: testDate(0, 0, 0),
+								StartedAt:     ptr.To(testDate(0, 0, 2)),
+								Status:        openapi.Finished,
+								Task:          "unittest",
+							},
+						},
+					},
+				},
+			},
+		},
 	}
 
 	for _, tc := range testCases {

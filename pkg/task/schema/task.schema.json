@@ -129,6 +129,11 @@
           "description": "Experimental: Execute the task when the server receives a webhook.",
           "type": "object",
           "properties": {
+            "delay": {
+              "description": "Experimental: Delay the execution of the task by this many seconds.",
+              "default": 0,
+              "type": "integer"
+            },
             "github": {
               "description": "Experimental: Execute the task when the server receives a webhook from GitHub.",
               "type": "array",

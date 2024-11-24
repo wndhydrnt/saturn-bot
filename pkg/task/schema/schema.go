@@ -273,11 +273,50 @@ type TaskTrigger struct {
 
 // Experimental: Execute the task when the server receives a webhook.
 type TaskTriggerWebhook struct {
+	// Experimental: Delay the execution of the task by this many seconds.
+	Delay int `json:"delay,omitempty" yaml:"delay,omitempty" mapstructure:"delay,omitempty"`
+
 	// Experimental: Execute the task when the server receives a webhook from GitHub.
 	Github []GithubTrigger `json:"github,omitempty" yaml:"github,omitempty" mapstructure:"github,omitempty"`
 
 	// Experimental: Execute the task when the server receives a webhook from GitLab.
 	Gitlab []GitlabTrigger `json:"gitlab,omitempty" yaml:"gitlab,omitempty" mapstructure:"gitlab,omitempty"`
+}
+
+// UnmarshalJSON implements json.Unmarshaler.
+func (j *TaskTriggerWebhook) UnmarshalJSON(b []byte) error {
+	var raw map[string]interface{}
+	if err := json.Unmarshal(b, &raw); err != nil {
+		return err
+	}
+	type Plain TaskTriggerWebhook
+	var plain Plain
+	if err := json.Unmarshal(b, &plain); err != nil {
+		return err
+	}
+	if v, ok := raw["delay"]; !ok || v == nil {
+		plain.Delay = 0.0
+	}
+	*j = TaskTriggerWebhook(plain)
+	return nil
+}
+
+// UnmarshalYAML implements yaml.Unmarshaler.
+func (j *TaskTriggerWebhook) UnmarshalYAML(value *yaml.Node) error {
+	var raw map[string]interface{}
+	if err := value.Decode(&raw); err != nil {
+		return err
+	}
+	type Plain TaskTriggerWebhook
+	var plain Plain
+	if err := value.Decode(&plain); err != nil {
+		return err
+	}
+	if v, ok := raw["delay"]; !ok || v == nil {
+		plain.Delay = 0.0
+	}
+	*j = TaskTriggerWebhook(plain)
+	return nil
 }
 
 // UnmarshalJSON implements json.Unmarshaler.

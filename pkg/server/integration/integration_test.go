@@ -83,6 +83,10 @@ func executeTestCase(t *testing.T, tc testCase) {
 
 	// Always add a fake clock make calls to Now() predictable.
 	opts.Clock = fakeClock
+	defer func(f *clock.Fake) {
+		// Reset the clock before the next test.
+		f.Base = time.Date(2000, 1, 1, 0, 0, 0, 0, time.UTC)
+	}(fakeClock)
 
 	taskFiles := bootstrapTaskFiles(t, tc.tasks)
 
@@ -141,4 +145,8 @@ func bootstrapTaskFiles(t *testing.T, tasks []schema.Task) []string {
 	}
 
 	return filePaths
+}
+
+func testDate(hour int, min int, sec int) time.Time {
+	return time.Date(2000, 1, 1, hour, min, sec, 0, time.UTC)
 }
