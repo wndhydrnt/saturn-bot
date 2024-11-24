@@ -95,3 +95,36 @@ func TestServer_API_ListRunsV1(t *testing.T) {
 		})
 	}
 }
+
+func TestServer_API_GetWorkV1(t *testing.T) {
+	testCases := []testCase{
+		{
+			name: `Given two tasks
+							When a worker requests work
+							Then it returns the task with the oldest schedule timestamp`,
+			tasks: []schema.Task{
+				{Name: "unittest 1"},
+				{Name: "unittest 2"},
+			},
+			apiCalls: []apiCall{
+				{
+					method:     "GET",
+					path:       "/api/v1/worker/work",
+					statusCode: http.StatusOK,
+					responseBody: openapi.GetWorkV1Response{
+						RunID: 1,
+						Tasks: []openapi.GetWorkV1Task{
+							{Hash: "ab5a03b44faf542081c9b54eab3ce7c10731b917ebca511b28b7723258ad49b2", Name: "unittest 1"},
+						},
+					},
+				},
+			},
+		},
+	}
+
+	for _, tc := range testCases {
+		t.Run(tc.name, func(t *testing.T) {
+			executeTestCase(t, tc)
+		})
+	}
+}
