@@ -40,10 +40,10 @@ For example, the task above can be extended to customize title, description and 
 
 ```yaml title="Task with input template"
 name: Inputs Example
-branchName: '{{ .Run["greeting"] }}-{{ .Run["to"] }}'
-prTitle: '{{ .Run["greeting"] }} {{ .Run["to"] }}'
+branchName: '{{ .Run.greeting }}-{{ .Run.to }}'
+prTitle: '{{ .Run.greeting }} {{ .Run.to }}'
 prBody: |
-    {{ .Run["greeting"] }}, {{ .Run["to"] }}!
+    {{ .Run.greeting }}, {{ .Run.to }}!
 
 # ... other settings
 

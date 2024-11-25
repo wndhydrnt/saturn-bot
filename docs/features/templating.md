@@ -26,7 +26,7 @@ as well as data set by [plugins](../task/plugins/index.md).
 Run data can be accessed in a template in two ways.
 
 ```text
-{{ .Run["key"] }}
+{{ .Run.key }}
 ```
 
 or, if the key contains a `-`, via the built-in index function:
