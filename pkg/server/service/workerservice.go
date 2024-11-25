@@ -5,12 +5,13 @@ import (
 	"fmt"
 	"time"
 
+	"github.com/wndhydrnt/saturn-bot/pkg/clock"
 	"github.com/wndhydrnt/saturn-bot/pkg/log"
 	"github.com/wndhydrnt/saturn-bot/pkg/processor"
 	"github.com/wndhydrnt/saturn-bot/pkg/ptr"
 	"github.com/wndhydrnt/saturn-bot/pkg/server/api/openapi"
 	"github.com/wndhydrnt/saturn-bot/pkg/server/db"
-	"github.com/wndhydrnt/saturn-bot/pkg/task/schema"
+	"github.com/wndhydrnt/saturn-bot/pkg/task"
 	"go.uber.org/zap"
 	"gorm.io/gorm"
 )
@@ -18,12 +19,17 @@ import (
 var ErrNoRun = errors.New("no next run")
 
 type WorkerService struct {
-	db    *gorm.DB
-	tasks []schema.ReadResult
+	clock        clock.Clock
+	db           *gorm.DB
+	taskRegistry *task.Registry
 }
 
-func NewWorkerService(db *gorm.DB, tasks []schema.ReadResult) *WorkerService {
-	return &WorkerService{db: db, tasks: tasks}
+func NewWorkerService(clock clock.Clock, db *gorm.DB, taskRegistry *task.Registry) *WorkerService {
+	return &WorkerService{
+		clock:        clock,
+		db:           db,
+		taskRegistry: taskRegistry,
+	}
 }
 
 func (ws *WorkerService) ScheduleRun(
@@ -76,6 +82,7 @@ func (ws *WorkerService) ScheduleRun(
 	}
 
 	if runDB.ScheduleAfter.After(scheduleAfter) {
+		runDB.Reason = reason
 		runDB.ScheduleAfter = scheduleAfter
 		if err := tx.Save(&runDB).Error; err != nil {
 			return 0, fmt.Errorf("update scheduleAfter of run: %w", err)
@@ -85,40 +92,40 @@ func (ws *WorkerService) ScheduleRun(
 	return runDB.ID, nil
 }
 
-func (ws *WorkerService) findTask(name string) *schema.ReadResult {
-	for _, t := range ws.tasks {
+func (ws *WorkerService) findTask(name string) *task.Task {
+	for _, t := range ws.taskRegistry.GetTasks() {
 		if t.Task.Name == name {
-			return &t
+			return t
 		}
 	}
 
 	return nil
 }
 
-func (ws *WorkerService) NextRun() (db.Run, schema.ReadResult, error) {
+func (ws *WorkerService) NextRun() (db.Run, *task.Task, error) {
 	var run db.Run
-	var runTask schema.ReadResult
 	tx := ws.db.
 		Where("status = ?", db.RunStatusPending).
-		Order("schedule_after desc").
+		Order("schedule_after asc").
 		First(&run)
 	if tx.Error != nil {
 		if errors.Is(tx.Error, gorm.ErrRecordNotFound) {
-			return run, runTask, ErrNoRun
+			return run, nil, ErrNoRun
 		}
 
 		log.Log().Errorw("Failed to get next run", zap.Error(tx.Error))
-		return run, runTask, tx.Error
+		return run, nil, tx.Error
 	}
 
-	if run.ScheduleAfter.After(time.Now()) {
-		return run, runTask, ErrNoRun
+	if run.ScheduleAfter.After(ws.clock.Now()) {
+		return run, nil, ErrNoRun
 	}
 
+	run.StartedAt = ptr.To(ws.clock.Now())
 	run.Status = db.RunStatusRunning
 	if err := ws.db.Save(&run).Error; err != nil {
 		log.Log().Errorw("Update next run", zap.Error(err))
-		return run, runTask, err
+		return run, nil, err
 	}
 
 	task := ws.findTask(run.TaskName)
@@ -127,10 +134,10 @@ func (ws *WorkerService) NextRun() (db.Run, schema.ReadResult, error) {
 			log.Log().Error("Delete run of unknown task", zap.Error(tx.Error))
 		}
 
-		return run, runTask, ErrNoRun
+		return run, nil, ErrNoRun
 	}
 
-	return run, *task, nil
+	return run, task, nil
 }
 
 func (ws *WorkerService) ReportRun(req openapi.ReportWorkV1Request) error {
@@ -143,11 +150,11 @@ func (ws *WorkerService) ReportRun(req openapi.ReportWorkV1Request) error {
 	}
 
 	err := ws.db.Transaction(func(tx *gorm.DB) error {
-		runCurrent.FinishedAt = ptr.To(time.Now())
-		if req.Error == "" {
+		runCurrent.FinishedAt = ptr.To(ws.clock.Now())
+		if req.Error == nil {
 			runCurrent.Status = db.RunStatusFinished
 		} else {
-			runCurrent.Error = ptr.To(req.Error)
+			runCurrent.Error = req.Error
 			runCurrent.Status = db.RunStatusFailed
 		}
 
@@ -163,8 +170,8 @@ func (ws *WorkerService) ReportRun(req openapi.ReportWorkV1Request) error {
 				RunID:          runCurrent.ID,
 				TaskName:       taskResult.TaskName,
 			}
-			if taskResult.Error != "" {
-				result.Error = &taskResult.Error
+			if taskResult.Error != nil {
+				result.Error = taskResult.Error
 			}
 
 			if err := tx.Save(&result).Error; err != nil {
@@ -178,7 +185,7 @@ func (ws *WorkerService) ReportRun(req openapi.ReportWorkV1Request) error {
 			}
 		}
 
-		_, err := ws.ScheduleRun(db.RunReasonNext, runCurrent.RepositoryNames, time.Now().Add(next), runCurrent.TaskName, tx)
+		_, err := ws.ScheduleRun(db.RunReasonNext, runCurrent.RepositoryNames, ws.clock.Now().Add(next), runCurrent.TaskName, tx)
 		if err != nil {
 			return err
 		}
@@ -187,6 +194,41 @@ func (ws *WorkerService) ReportRun(req openapi.ReportWorkV1Request) error {
 	})
 
 	return err
+}
+
+type ListRunsOptions struct {
+	TaskName string
+}
+
+func (ws *WorkerService) ListRuns(opts ListRunsOptions, listOpts ListOptions) ([]db.Run, int64, error) {
+	var runs []db.Run
+	query := ws.db
+	if opts.TaskName != "" {
+		query = query.Where("task_name = ?", opts.TaskName)
+	}
+
+	result := query.
+		Offset(listOpts.Offset()).
+		Limit(listOpts.Limit).
+		Order("schedule_after DESC").
+		Find(&runs)
+
+	if result.Error != nil {
+		return nil, 0, result.Error
+	}
+
+	var count int64
+	queryCount := ws.db.Model(&db.Run{})
+	if opts.TaskName != "" {
+		queryCount = queryCount.Where("task_name = ?", opts.TaskName)
+	}
+
+	countResult := queryCount.Count(&count)
+	if countResult.Error != nil {
+		return nil, 0, countResult.Error
+	}
+
+	return runs, count, result.Error
 }
 
 func nextSchedule(r processor.Result) time.Duration {

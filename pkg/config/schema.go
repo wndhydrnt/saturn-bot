@@ -95,6 +95,11 @@ type Configuration struct {
 	// Secret to authenticate webhook requests sent by GitHub.
 	ServerGithubWebhookSecret string `json:"serverGithubWebhookSecret,omitempty" yaml:"serverGithubWebhookSecret,omitempty" mapstructure:"serverGithubWebhookSecret,omitempty"`
 
+	// Secret to authenticate webhook requests sent by GitLab. See
+	// https://docs.gitlab.com/ee/user/project/integrations/webhooks.html#create-a-webhook
+	// for how to set up the token.
+	ServerGitlabWebhookSecret string `json:"serverGitlabWebhookSecret,omitempty" yaml:"serverGitlabWebhookSecret,omitempty" mapstructure:"serverGitlabWebhookSecret,omitempty"`
+
 	// Interval at which a worker queries the server for new tasks to run.
 	WorkerLoopInterval string `json:"workerLoopInterval,omitempty" yaml:"workerLoopInterval,omitempty" mapstructure:"workerLoopInterval,omitempty"`
 
@@ -446,6 +451,9 @@ func (j *Configuration) UnmarshalJSON(b []byte) error {
 	if v, ok := raw["serverGithubWebhookSecret"]; !ok || v == nil {
 		plain.ServerGithubWebhookSecret = ""
 	}
+	if v, ok := raw["serverGitlabWebhookSecret"]; !ok || v == nil {
+		plain.ServerGitlabWebhookSecret = ""
+	}
 	if v, ok := raw["workerLoopInterval"]; !ok || v == nil {
 		plain.WorkerLoopInterval = "10s"
 	}
@@ -535,6 +543,9 @@ func (j *Configuration) UnmarshalYAML(value *yaml.Node) error {
 	}
 	if v, ok := raw["serverGithubWebhookSecret"]; !ok || v == nil {
 		plain.ServerGithubWebhookSecret = ""
+	}
+	if v, ok := raw["serverGitlabWebhookSecret"]; !ok || v == nil {
+		plain.ServerGitlabWebhookSecret = ""
 	}
 	if v, ok := raw["workerLoopInterval"]; !ok || v == nil {
 		plain.WorkerLoopInterval = "10s"

@@ -8,14 +8,15 @@ import (
 	"strings"
 
 	"github.com/go-chi/chi/v5"
+	"github.com/wndhydrnt/saturn-bot/pkg/log"
 	"github.com/wndhydrnt/saturn-bot/pkg/server/api/openapi"
+	"github.com/wndhydrnt/saturn-bot/pkg/server/service"
 	"gopkg.in/yaml.v3"
 )
 
 var (
 	//go:embed openapi/openapi.yaml
-	openApiDef  string
-	serverError = openapi.Error{Error: "Internal Server Error", Message: ""}
+	openApiDef string
 )
 
 func RegisterOpenAPIDefinitionRoute(baseURL string, router chi.Router) error {
@@ -67,4 +68,34 @@ func RegisterHealthRoute(router chi.Router) {
 		const up = "UP"
 		_, _ = fmt.Fprint(w, up)
 	})
+}
+
+func DiscardRequest(r *http.Request) {
+	if err := r.Body.Close(); err != nil {
+		log.Log().Debug("Failed to close request body")
+	}
+}
+
+func toListOptions(apiListOpts *openapi.ListOptions) service.ListOptions {
+	if apiListOpts == nil {
+		return service.ListOptions{Limit: 20, Page: 1}
+	}
+
+	listOpts := service.ListOptions{
+		Limit: apiListOpts.Limit,
+		Page:  apiListOpts.Page,
+	}
+	if apiListOpts.Limit <= 0 {
+		listOpts.Limit = 20
+	}
+
+	if apiListOpts.Limit > 50 {
+		listOpts.Limit = 50
+	}
+
+	if apiListOpts.Page == 0 {
+		listOpts.Page = 1
+	}
+
+	return listOpts
 }

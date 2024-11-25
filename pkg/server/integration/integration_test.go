@@ -12,6 +12,7 @@ import (
 	_ "github.com/ncruces/go-sqlite3/vfs/memdb"
 	"github.com/prometheus/client_golang/prometheus"
 	"github.com/stretchr/testify/require"
+	"github.com/wndhydrnt/saturn-bot/pkg/clock"
 	"github.com/wndhydrnt/saturn-bot/pkg/config"
 	"github.com/wndhydrnt/saturn-bot/pkg/options"
 	"github.com/wndhydrnt/saturn-bot/pkg/ptr"
@@ -24,10 +25,12 @@ var (
 	defaultServerConfig = config.Configuration{
 		GithubToken:               ptr.To("unittest"),
 		ServerGithubWebhookSecret: "secret",
+		ServerGitlabWebhookSecret: "secret",
 	}
 	defaultTask              = schema.Task{Name: "unittest"}
 	defaultTaskContentBase64 = "bmFtZTogdW5pdHRlc3QK"
 	defaultTaskHash          = "e42a6e186f31b860f22f07ed468b99c6dc75318542fc9ac8383358fae1b5ab8b"
+	fakeClock                = &clock.Fake{Base: time.Date(2000, 1, 1, 0, 0, 0, 0, time.UTC)}
 )
 
 type apiCall struct {
@@ -35,6 +38,8 @@ type apiCall struct {
 	method string
 	// Path of the request.
 	path string
+	// Query parameters of the request.
+	query string
 	// Request headers, if any.
 	requestHeaders map[string]string
 	// Request body, if any.
@@ -76,6 +81,13 @@ func executeTestCase(t *testing.T, tc testCase) {
 	promReg := prometheus.NewRegistry()
 	opts.SetPrometheusRegistry(promReg)
 
+	// Always add a fake clock make calls to Now() predictable.
+	opts.Clock = fakeClock
+	defer func(f *clock.Fake) {
+		// Reset the clock before the next test.
+		f.Base = time.Date(2000, 1, 1, 0, 0, 0, 0, time.UTC)
+	}(fakeClock)
+
 	taskFiles := bootstrapTaskFiles(t, tc.tasks)
 
 	server := &server.Server{}
@@ -93,6 +105,9 @@ func executeTestCase(t *testing.T, tc testCase) {
 		time.Sleep(call.sleep)
 		req := e.Request(call.method, call.path).
 			WithHeaders(call.requestHeaders)
+		if call.query != "" {
+			req = req.WithQueryString(call.query)
+		}
 		if call.requestBody != nil {
 			req = req.WithJSON(call.requestBody)
 		}
@@ -130,4 +145,8 @@ func bootstrapTaskFiles(t *testing.T, tasks []schema.Task) []string {
 	}
 
 	return filePaths
+}
+
+func testDate(hour int, min int, sec int) time.Time {
+	return time.Date(2000, 1, 1, hour, min, sec, 0, time.UTC)
 }

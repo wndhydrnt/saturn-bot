@@ -18,11 +18,10 @@ import (
 	"github.com/wndhydrnt/saturn-bot/pkg/log"
 	"github.com/wndhydrnt/saturn-bot/pkg/options"
 	"github.com/wndhydrnt/saturn-bot/pkg/server/api"
-	"github.com/wndhydrnt/saturn-bot/pkg/server/api/openapi"
 	"github.com/wndhydrnt/saturn-bot/pkg/server/db"
 	"github.com/wndhydrnt/saturn-bot/pkg/server/metrics"
 	"github.com/wndhydrnt/saturn-bot/pkg/server/service"
-	"github.com/wndhydrnt/saturn-bot/pkg/server/task"
+	"github.com/wndhydrnt/saturn-bot/pkg/task"
 	"github.com/wndhydrnt/saturn-bot/pkg/version"
 	"go.uber.org/zap"
 )
@@ -33,7 +32,12 @@ type Server struct {
 
 func (s *Server) Start(opts options.Opts, taskPaths []string) error {
 	metrics.Init(opts.PrometheusRegisterer)
-	tasks, err := task.Load(taskPaths)
+	taskRegistry := task.NewRegistry(options.Opts{
+		ActionFactories: opts.ActionFactories,
+		FilterFactories: opts.FilterFactories,
+		SkipPlugins:     true,
+	})
+	err := taskRegistry.ReadAll(taskPaths)
 	if err != nil {
 		return fmt.Errorf("load tasks on server start: %w", err)
 	}
@@ -48,22 +52,20 @@ func (s *Server) Start(opts options.Opts, taskPaths []string) error {
 		return fmt.Errorf("initialize database: %w", err)
 	}
 
-	taskService := service.NewTaskService(database, tasks)
+	workerService := service.NewWorkerService(opts.Clock, database, taskRegistry)
+	taskService := service.NewTaskService(opts.Clock, database, taskRegistry, workerService)
 	err = taskService.SyncDbTasks()
 	if err != nil {
 		return err
 	}
 
-	taskCtrl := openapi.NewTaskAPIController(&api.TaskHandler{TaskService: taskService})
-	workerService := service.NewWorkerService(database, tasks)
-	workerHandler := &api.WorkHandler{WorkerService: workerService}
-	workerCtrl := openapi.NewWorkerAPIController(workerHandler)
-	router := newRouter(opts, taskCtrl, workerCtrl)
-	webhookService, err := service.NewWebhookService(tasks, workerService)
+	router := newRouter(opts)
+	webhookService, err := service.NewWebhookService(opts.Clock, taskRegistry, workerService)
 	if err != nil {
 		return fmt.Errorf("create webhook service: %w", err)
 	}
 	api.RegisterGithubWebhookHandler(router, []byte(opts.Config.ServerGithubWebhookSecret), webhookService)
+	api.RegisterGitlabWebhookHandler(router, opts.Config.ServerGitlabWebhookSecret, webhookService)
 	err = api.RegisterOpenAPIDefinitionRoute(opts.Config.ServerBaseUrl, router)
 	if err != nil {
 		return fmt.Errorf("failed to register OpenAPI definition route: %w", err)
@@ -75,12 +77,18 @@ func (s *Server) Start(opts options.Opts, taskPaths []string) error {
 		Router:               router,
 	})
 
+	handler := api.RegisterAPIServer(&api.NewAPIServerOptions{
+		Router:        router,
+		TaskService:   taskService,
+		WorkerService: workerService,
+	})
 	s.httpServer = &http.Server{
 		ReadHeaderTimeout: 10 * time.Millisecond,
 		Addr:              opts.Config.ServerAddr,
 	}
-	s.httpServer.Handler = router
+	s.httpServer.Handler = handler
 	go func(server *http.Server) {
+		log.Log().Infof("HTTP server listening on %s", opts.Config.ServerAddr)
 		err := server.ListenAndServe()
 		if err != nil && !errors.Is(err, http.ErrServerClosed) {
 			log.Log().Errorw("HTTP server failed - exiting", zap.Error(err))
@@ -146,7 +154,7 @@ func Run(configPath string, taskPaths []string) error {
 
 // newRouter copies openapi.newRouter.
 // This is done to configure middlewares of chi.Router.
-func newRouter(opts options.Opts, routers ...openapi.Router) chi.Router {
+func newRouter(opts options.Opts) chi.Router {
 	router := chi.NewRouter()
 	if opts.Config.ServerCompress {
 		router.Use(middleware.Compress(5))
@@ -159,13 +167,5 @@ func newRouter(opts options.Opts, routers ...openapi.Router) chi.Router {
 	pm := chiprometheus.New("saturn-bot")
 	opts.PrometheusRegisterer.MustRegister(pm.Collectors()...)
 	router.Use(pm.Handler)
-
-	for _, api := range routers {
-		for _, route := range api.Routes() {
-			var handler http.Handler = route.HandlerFunc
-			router.Method(route.Method, route.Pattern, handler)
-		}
-	}
-
 	return router
 }
