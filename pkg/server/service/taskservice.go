@@ -14,16 +14,18 @@ import (
 )
 
 type TaskService struct {
-	clock        clock.Clock
-	db           *gorm.DB
-	taskRegistry *task.Registry
+	clock         clock.Clock
+	db            *gorm.DB
+	taskRegistry  *task.Registry
+	workerService *WorkerService
 }
 
-func NewTaskService(clock clock.Clock, db *gorm.DB, taskRegistry *task.Registry) *TaskService {
+func NewTaskService(clock clock.Clock, db *gorm.DB, taskRegistry *task.Registry, workerService *WorkerService) *TaskService {
 	return &TaskService{
-		clock:        clock,
-		db:           db,
-		taskRegistry: taskRegistry,
+		clock:         clock,
+		db:            db,
+		taskRegistry:  taskRegistry,
+		workerService: workerService,
 	}
 }
 
@@ -44,13 +46,8 @@ func (ts *TaskService) SyncDbTasks() error {
 					return fmt.Errorf("create task '%s' in db: %w", t.Name, err)
 				}
 
-				run := db.Run{
-					Reason:        db.RunReasonNew,
-					ScheduleAfter: ts.clock.Now(),
-					Status:        db.RunStatusPending,
-					TaskName:      t.Name,
-				}
-				if err := ts.db.Save(&run).Error; err != nil {
+				_, err := ts.workerService.ScheduleRun(db.RunReasonNew, nil, ts.clock.Now(), t.Name, nil)
+				if err != nil {
 					return fmt.Errorf("schedule run for new task '%s' in db: %w", t.Name, err)
 				}
 
@@ -63,13 +60,8 @@ func (ts *TaskService) SyncDbTasks() error {
 			if taskDB.Hash != t.Checksum() {
 				taskDB.Hash = t.Checksum()
 				log.Log().Debugf("Updating task %s in DB", taskDB.Name)
-				run := db.Run{
-					Reason:        db.RunReasonChanged,
-					ScheduleAfter: ts.clock.Now(),
-					Status:        db.RunStatusPending,
-					TaskName:      t.Name,
-				}
-				if err := ts.db.Save(&run).Error; err != nil {
+				_, err := ts.workerService.ScheduleRun(db.RunReasonChanged, nil, ts.clock.Now(), t.Name, nil)
+				if err != nil {
 					return fmt.Errorf("schedule run for updated task '%s' in db: %w", t.Name, err)
 				}
 

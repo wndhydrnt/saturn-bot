@@ -52,13 +52,13 @@ func (s *Server) Start(opts options.Opts, taskPaths []string) error {
 		return fmt.Errorf("initialize database: %w", err)
 	}
 
-	taskService := service.NewTaskService(opts.Clock, database, taskRegistry)
+	workerService := service.NewWorkerService(opts.Clock, database, taskRegistry)
+	taskService := service.NewTaskService(opts.Clock, database, taskRegistry, workerService)
 	err = taskService.SyncDbTasks()
 	if err != nil {
 		return err
 	}
 
-	workerService := service.NewWorkerService(opts.Clock, database, taskRegistry)
 	router := newRouter(opts)
 	webhookService, err := service.NewWebhookService(opts.Clock, taskRegistry, workerService)
 	if err != nil {
