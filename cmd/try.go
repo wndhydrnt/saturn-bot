@@ -23,26 +23,32 @@ actions and provides feedback on whether files have changed or not.
 
 Examples:
 
-Try all tasks in file "task.yaml" against
-repository "github.com/wndhydrnt/saturn-bot-example".
-
+# Try all tasks in file "task.yaml" against
+# repository "github.com/wndhydrnt/saturn-bot-example".
 saturn-bot try \
-  --config config.yaml \
   --repository github.com/wndhydrnt/saturn-bot-example \
   task.yaml
 
-Try task with name "example" in "task.yaml" against
-repository "github.com/wndhydrnt/saturn-bot-example".
-
+# Try task with name "example" in "task.yaml" against
+# repository "github.com/wndhydrnt/saturn-bot-example".
 saturn-bot try \
-  --config config.yaml \
   --repository github.com/wndhydrnt/saturn-bot-example \
   --task-name example \
-  task.yaml`
+  task.yaml
+
+# Set inputs "version" and "date".
+# The task in file "task.yaml" defines the expected inputs.
+saturn-bot try \
+  --repository github.com/wndhydrnt/saturn-bot-example \
+	--input version=1.2.3 \
+	--input date=2024-11-10 \
+  task.yaml
+`
 )
 
 func createTryCommand() *cobra.Command {
 	var dataDir string
+	var inputs map[string]string
 	var repository string
 	var taskName string
 
@@ -56,7 +62,7 @@ func createTryCommand() *cobra.Command {
 			handleError(err, cmd.ErrOrStderr())
 			opts, err := options.ToOptions(cfg)
 			handleError(err, cmd.ErrOrStderr())
-			runner, err := command.NewTryRunner(opts, dataDir, repository, args[0], taskName)
+			runner, err := command.NewTryRunner(opts, dataDir, repository, args[0], taskName, inputs)
 			if err != nil {
 				handleError(err, cmd.ErrOrStderr())
 			}
@@ -70,5 +76,8 @@ func createTryCommand() *cobra.Command {
 	cmd.Flags().StringVar(&repository, "repository", "", "Name of the repository to test against.")
 	cmd.Flags().StringVar(&taskName, "task-name", "", `If set, try only the task that matches the name.
 Useful if a task file contains multiple tasks.`)
+	cmd.Flags().StringToStringVar(&inputs, "input", map[string]string{}, `Key/value pair in the format <key>=<value>
+to use as an input parameter of a task.
+Can be supplied multiple times to set multiple inputs.`)
 	return cmd
 }

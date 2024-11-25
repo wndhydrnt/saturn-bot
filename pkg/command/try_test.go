@@ -17,6 +17,7 @@ import (
 	"github.com/wndhydrnt/saturn-bot/pkg/host"
 	"github.com/wndhydrnt/saturn-bot/pkg/options"
 	"github.com/wndhydrnt/saturn-bot/pkg/task"
+	"github.com/wndhydrnt/saturn-bot/pkg/task/schema"
 	"go.uber.org/mock/gomock"
 )
 
@@ -230,6 +231,35 @@ func TestTryRunner_Run_UnsetTaskFile(t *testing.T) {
 	assert.EqualError(t, err, "required flag `--task-file` is not set")
 }
 
+func TestTryRunner_Run_InputsMissing(t *testing.T) {
+	ctrl := gomock.NewController(t)
+	repoMock := NewMockRepository(ctrl)
+	hostMock := NewMockHost(ctrl)
+	hostMock.EXPECT().CreateFromName("git.local/unit/test").Return(repoMock, nil)
+	registry := task.NewRegistry(tryTestOpts)
+	gitcMock := NewMockGitClient(ctrl)
+	task := createTestTask("git.local/unit/test")
+	task.Inputs = append(task.Inputs, schema.Input{
+		Name: "test-input",
+	})
+	taskFile := createTestTaskFile(task)
+	out := &bytes.Buffer{}
+
+	underTest := &command.TryRunner{
+		ApplyActionsFunc: func(actions []action.Action, ctx context.Context, dir string) error { return nil },
+		GitClient:        gitcMock,
+		Hosts:            []host.Host{hostMock},
+		Out:              out,
+		Registry:         registry,
+		RepositoryName:   "git.local/unit/test",
+		TaskFile:         taskFile,
+	}
+	err := underTest.Run()
+
+	require.NoError(t, err, "should not return an error")
+	assert.Contains(t, out.String(), "Missing input: input test-input not set and has no default value", "should inform the user that the input isn't set")
+}
+
 func TestNewTryRunner(t *testing.T) {
 	configRaw := `gitlabToken: "abc"
 gitUserEmail: "test@unittest.local"
@@ -241,7 +271,7 @@ gitUserName: "unittest"`
 	require.NoError(t, err, "should convert configuration to options successfully")
 	dataDir := filepath.Join(os.TempDir(), "saturn-bot")
 
-	runner, err := command.NewTryRunner(opts, dataDir, "git.local/unit/test", "task.yaml", "Unit Test")
+	runner, err := command.NewTryRunner(opts, dataDir, "git.local/unit/test", "task.yaml", "Unit Test", map[string]string{})
 
 	require.NoError(t, err)
 	assert.NotNil(t, runner.ApplyActionsFunc)

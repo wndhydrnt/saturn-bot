@@ -19,6 +19,7 @@ type TryRunner struct {
 	ApplyActionsFunc func(actions []action.Action, ctx context.Context, dir string) error
 	GitClient        git.GitClient
 	Hosts            []host.Host
+	Inputs           map[string]string
 	Out              io.Writer
 	Registry         *task.Registry
 	RepositoryName   string
@@ -26,7 +27,7 @@ type TryRunner struct {
 	TaskName         string
 }
 
-func NewTryRunner(opts options.Opts, dataDir string, repositoryName string, taskFile string, taskName string) (*TryRunner, error) {
+func NewTryRunner(opts options.Opts, dataDir string, repositoryName string, taskFile string, taskName string, inputs map[string]string) (*TryRunner, error) {
 	if dataDir != "" {
 		// This code can set its own data dir.
 		opts.Config.DataDir = &dataDir
@@ -45,6 +46,7 @@ func NewTryRunner(opts options.Opts, dataDir string, repositoryName string, task
 		ApplyActionsFunc: applyActionsInDirectory,
 		GitClient:        gitClient,
 		Hosts:            opts.Hosts,
+		Inputs:           inputs,
 		Out:              os.Stdout,
 		Registry:         task.NewRegistry(opts),
 		RepositoryName:   repositoryName,
@@ -97,6 +99,12 @@ func (r *TryRunner) Run() error {
 		}
 
 		processed = true
+		err := task.SetInputs(r.Inputs)
+		if err != nil {
+			fmt.Fprintf(r.Out, "⚠️  Missing input: %s\n", err)
+			continue
+		}
+
 		ctx := context.WithValue(context.Background(), saturnContext.RepositoryKey{}, repository)
 		matched := true
 		for _, filter := range task.Filters() {

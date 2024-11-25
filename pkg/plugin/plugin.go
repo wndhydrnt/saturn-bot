@@ -52,7 +52,6 @@ type Plugin struct {
 // Apply implements action.Action
 func (p *Plugin) Apply(ctx context.Context) error {
 	path := ctx.Value(sbcontext.CheckoutPath{}).(string)
-	runData := sbcontext.RunData(ctx)
 	reply, err := p.ExecuteActions(&protoV1.ExecuteActionsRequest{
 		Path:    path,
 		Context: NewContext(ctx),
@@ -61,13 +60,12 @@ func (p *Plugin) Apply(ctx context.Context) error {
 		return fmt.Errorf("execute action: %w", err)
 	}
 
-	updateRunData(runData, reply.RunData)
+	sbcontext.WithRunData(ctx, reply.RunData)
 	return nil
 }
 
 // Do implements filter.Filter.
 func (p *Plugin) Do(ctx context.Context) (bool, error) {
-	runData := sbcontext.RunData(ctx)
 	reply, err := p.ExecuteFilters(&protoV1.ExecuteFiltersRequest{
 		Context: NewContext(ctx),
 	})
@@ -75,7 +73,7 @@ func (p *Plugin) Do(ctx context.Context) (bool, error) {
 		return false, fmt.Errorf("execute filter: %w", err)
 	}
 
-	updateRunData(runData, reply.RunData)
+	sbcontext.WithRunData(ctx, reply.RunData)
 	return reply.GetMatch(), nil
 }
 
@@ -296,12 +294,6 @@ func NewStderrHandler(level zapcore.Level) StdioHandler {
 // NewStdoutHandler returns an StdioHandler for the stream "stdout".
 func NewStdoutHandler(level zapcore.Level) StdioHandler {
 	return NewStdioHandler(level, "stdout")
-}
-
-func updateRunData(current, received map[string]string) {
-	for k, v := range received {
-		current[k] = v
-	}
 }
 
 // parseAddr parses a go-plugin connection string.

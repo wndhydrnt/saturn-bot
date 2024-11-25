@@ -155,6 +155,12 @@ changeLimit: 0
 
 All available filters can be found [here](./filters/index.md).
 
+## inputs
+
+[json-path:../../pkg/task/schema/task.schema.json:$.properties.inputs.description]
+
+[Inputs](./inputs.md) provides more details on how to use them.
+
 ## keepBranchAfterMerge
 
 [json-path:../../pkg/task/schema/task.schema.json:$.properties.keepBranchAfterMerge.description]

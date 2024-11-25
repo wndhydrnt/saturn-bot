@@ -18,36 +18,35 @@ If files have been modified, it creates a pull request for the repository.
 
 Examples:
 
-Execute task in file "task.yaml" against all repositories:
+# Execute task in file "task.yaml" against all repositories.
+saturn-bot run task.yaml
 
+# Execute tasks in files "task1.yaml" and "task2.yaml"
+# against all repositories.
 saturn-bot run \
-  --config config.yaml \
-  task.yaml
-
-Execute tasks in files "task1.yaml" and "task2.yaml"
-against all repositories:
-
-saturn-bot run \
-  --config config.yaml \
   task1.yaml \
   task2.yaml
 
-Globbing support:
+# Globbing support.
+saturn-bot run *.yaml
 
+# Execute task in file "task.yaml" against
+# repository "github.com/wndhydrnt/saturn-bot-example".
 saturn-bot run \
-  --config config.yaml \
-  *.yaml
-
-Execute task in file "task.yaml" against
-repository "github.com/wndhydrnt/saturn-bot-example":
-
-saturn-bot run \
-  --config config.yaml \
   --repository github.com/wndhydrnt/saturn-bot-example \
-  task.yaml`
+  task.yaml
+
+# Set inputs "version" and "date".
+# The task in file "task.yaml" defines the expected inputs.
+saturn-bot run \
+  --input version=1.2.3 \
+  --input date=2024-11-10 \
+  task.yaml
+`
 )
 
 func createRunCommand() *cobra.Command {
+	var inputs map[string]string
 	var repositories []string
 
 	var cmd = &cobra.Command{
@@ -60,11 +59,14 @@ func createRunCommand() *cobra.Command {
 			handleError(err, cmd.ErrOrStderr())
 			opts, err := options.ToOptions(cfg)
 			handleError(err, cmd.ErrOrStderr())
-			_, err = command.ExecuteRun(opts, repositories, args)
+			_, err = command.ExecuteRun(opts, repositories, args, inputs)
 			handleError(err, cmd.ErrOrStderr())
 		},
 	}
 	cmd.Flags().StringVar(&cfgFile, "config", "", "Path to config file")
+	cmd.Flags().StringToStringVar(&inputs, "input", map[string]string{}, `Key/value pair in the format <key>=<value>
+to use as an input parameter of a task.
+Can be supplied multiple times to set multiple inputs.`)
 	cmd.Flags().StringArrayVar(&repositories, "repository", []string{}, `Name of a repository to apply the tasks to.
 Filters of a task aren't executed if this flag
 is set.

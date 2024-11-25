@@ -65,6 +65,13 @@
         "$ref": "#/$defs/filter"
       }
     },
+    "inputs": {
+      "type": "array",
+      "description": "Inputs allows customizing a task at runtime.",
+      "items": {
+        "$ref": "#/$defs/input"
+      }
+    },
     "keepBranchAfterMerge": {
       "default": false,
       "description": "If `true`, keep the branch after a pull request has been merged.",
@@ -188,6 +195,25 @@
         }
       },
       "required": ["filter"]
+    },
+    "input": {
+      "description": "A input allows customizing a task at runtime.",
+      "type": "object",
+      "properties": {
+        "default": {
+          "description": "Default value to use if no input has been set via the command-line.",
+          "type": "string"
+        },
+        "description": {
+          "description": "Text that describes the input value.",
+          "type": "string"
+        },
+        "name": {
+          "description": "Key that identifies the input. Set via the command-line to set the input value.",
+          "type": "string"
+        }
+      },
+      "required": ["name"]
     },
     "plugin": {
       "description": "A plugin extends saturn-bot and allows custom filtering or modification of repositories.",

@@ -212,12 +212,13 @@ func (w *Worker) executeRun(exec Execution, result chan Result) {
 		}
 		taskPaths = append(taskPaths, t.Path)
 	}
+
 	var repositories []string
 	if exec.Repositories != nil {
 		repositories = ptr.From(exec.Repositories)
 	}
 
-	results, err := command.ExecuteRun(w.opts, repositories, taskPaths)
+	results, err := command.ExecuteRun(w.opts, repositories, taskPaths, map[string]string{})
 	result <- Result{
 		RunError:    err,
 		Execution:   exec,

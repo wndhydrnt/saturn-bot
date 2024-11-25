@@ -9,7 +9,7 @@ import (
 	"time"
 
 	"github.com/wndhydrnt/saturn-bot/pkg/action"
-	sContext "github.com/wndhydrnt/saturn-bot/pkg/context"
+	sbcontext "github.com/wndhydrnt/saturn-bot/pkg/context"
 	"github.com/wndhydrnt/saturn-bot/pkg/git"
 	"github.com/wndhydrnt/saturn-bot/pkg/host"
 	"github.com/wndhydrnt/saturn-bot/pkg/task"
@@ -43,7 +43,7 @@ type Processor struct {
 }
 
 type RepositoryTaskProcessor interface {
-	Process(ctx context.Context, dryRun bool, repo host.Repository, task *task.Task, doFilter bool, logger *zap.SugaredLogger) (Result, error)
+	Process(ctx context.Context, dryRun bool, repo host.Repository, task *task.Task, doFilter bool) (Result, error)
 }
 
 func (p *Processor) Process(
@@ -52,8 +52,9 @@ func (p *Processor) Process(
 	repo host.Repository,
 	task *task.Task,
 	doFilter bool,
-	logger *zap.SugaredLogger,
 ) (Result, error) {
+	ctx = sbcontext.WithRunData(ctx, task.InputData())
+	logger := sbcontext.Log(ctx)
 	logger.Debug("Processing repository")
 	if !task.IsWithinSchedule() {
 		logger.Debug("Skipping task because it is outside of schedule")
@@ -70,7 +71,7 @@ func (p *Processor) Process(
 		return ResultSkip, nil
 	}
 
-	ctx = context.WithValue(ctx, sContext.RepositoryKey{}, repo)
+	ctx = context.WithValue(ctx, sbcontext.RepositoryKey{}, repo)
 
 	if doFilter {
 		match, err := matchTaskToRepository(ctx, task, logger)
@@ -102,7 +103,7 @@ func (p *Processor) Process(
 		return ResultUnknown, fmt.Errorf("prepare of git repository failed: %w", err)
 	}
 
-	ctx = context.WithValue(ctx, sContext.CheckoutPath{}, workDir)
+	ctx = context.WithValue(ctx, sbcontext.CheckoutPath{}, workDir)
 	result, err := applyTaskToRepository(ctx, dryRun, p.Git, logger, repo, task, workDir)
 	if err != nil {
 		return ResultUnknown, fmt.Errorf("task failed: %w", err)
@@ -173,7 +174,7 @@ func applyTaskToRepository(ctx context.Context, dryRun bool, gitc git.GitClient,
 	if prID != nil && repo.IsPullRequestOpen(prID) {
 		prInfo := repo.PullRequest(prID)
 		if prInfo != nil {
-			ctx = context.WithValue(ctx, sContext.PullRequestKey{}, *prInfo)
+			ctx = context.WithValue(ctx, sbcontext.PullRequestKey{}, *prInfo)
 		}
 
 		if task.AutoCloseAfter > 0 && prInfo.CreatedAt != nil {
@@ -445,7 +446,7 @@ func inDirectory(dir string, f func() error) error {
 
 func updateTemplateVars(ctx context.Context, repo host.Repository, tk *task.Task) context.Context {
 	data := template.FromContext(ctx)
-	runData := sContext.RunData(ctx)
+	runData := sbcontext.RunData(ctx)
 	for k, v := range runData {
 		data.Run[k] = v
 	}

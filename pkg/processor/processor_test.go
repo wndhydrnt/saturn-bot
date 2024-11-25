@@ -9,7 +9,7 @@ import (
 
 	"github.com/stretchr/testify/assert"
 	"github.com/stretchr/testify/require"
-	sContext "github.com/wndhydrnt/saturn-bot/pkg/context"
+	sbcontext "github.com/wndhydrnt/saturn-bot/pkg/context"
 	"github.com/wndhydrnt/saturn-bot/pkg/git"
 	"github.com/wndhydrnt/saturn-bot/pkg/host"
 	"github.com/wndhydrnt/saturn-bot/pkg/options"
@@ -18,11 +18,6 @@ import (
 	"github.com/wndhydrnt/saturn-bot/pkg/task/schema"
 	"github.com/wndhydrnt/saturn-bot/pkg/template"
 	"go.uber.org/mock/gomock"
-	"go.uber.org/zap"
-)
-
-var (
-	testLogger = zap.NewNop().Sugar()
 )
 
 type trueFilter struct{}
@@ -85,7 +80,7 @@ func TestProcessor_Process_CreatePullRequestLocalChanges(t *testing.T) {
 	tw.AddFilters(&trueFilter{})
 
 	p := &processor.Processor{Git: gitc}
-	result, err := p.Process(context.Background(), false, repo, tw, true, testLogger)
+	result, err := p.Process(context.Background(), false, repo, tw, true)
 
 	require.NoError(t, err)
 	assert.Equal(t, processor.ResultPrCreated, result)
@@ -118,7 +113,7 @@ func TestProcessor_Process_CreatePullRequestRemoteChanges(t *testing.T) {
 	tw.AddFilters(&trueFilter{})
 
 	p := &processor.Processor{Git: gitc}
-	result, err := p.Process(context.Background(), false, repo, tw, true, testLogger)
+	result, err := p.Process(context.Background(), false, repo, tw, true)
 
 	require.NoError(t, err)
 	assert.Equal(t, processor.ResultPrCreated, result)
@@ -136,7 +131,7 @@ func TestProcessor_Process_PullRequestClosedAndMergeOnceActive(t *testing.T) {
 	tw.AddFilters(&trueFilter{})
 
 	p := &processor.Processor{Git: gitc}
-	result, err := p.Process(context.Background(), false, repo, tw, true, testLogger)
+	result, err := p.Process(context.Background(), false, repo, tw, true)
 
 	require.NoError(t, err)
 	assert.Equal(t, processor.ResultPrClosedBefore, result)
@@ -155,7 +150,7 @@ func TestProcessor_Process_PullRequestMergedAndMergeOnceActive(t *testing.T) {
 	tw.AddFilters(&trueFilter{})
 
 	p := &processor.Processor{Git: gitc}
-	result, err := p.Process(context.Background(), false, repo, tw, true, testLogger)
+	result, err := p.Process(context.Background(), false, repo, tw, true)
 
 	require.NoError(t, err)
 	assert.Equal(t, processor.ResultPrMergedBefore, result)
@@ -174,7 +169,7 @@ func TestProcessor_Process_CreateOnly(t *testing.T) {
 	tw.AddFilters(&trueFilter{})
 
 	p := &processor.Processor{Git: gitc}
-	result, err := p.Process(context.Background(), false, repo, tw, true, testLogger)
+	result, err := p.Process(context.Background(), false, repo, tw, true)
 
 	require.NoError(t, err)
 	assert.Equal(t, processor.ResultPrOpen, result)
@@ -210,7 +205,7 @@ func TestProcessor_Process_ClosePullRequestIfChangesExistInBaseBranch(t *testing
 	tw.AddFilters(&trueFilter{})
 
 	p := &processor.Processor{Git: gitc}
-	result, err := p.Process(context.Background(), false, repo, tw, true, testLogger)
+	result, err := p.Process(context.Background(), false, repo, tw, true)
 
 	require.NoError(t, err)
 	assert.Equal(t, processor.ResultPrClosed, result)
@@ -247,7 +242,7 @@ func TestProcessor_Process_MergePullRequest(t *testing.T) {
 	tw.AddFilters(&trueFilter{})
 
 	p := &processor.Processor{Git: gitc}
-	result, err := p.Process(context.Background(), false, repo, tw, true, testLogger)
+	result, err := p.Process(context.Background(), false, repo, tw, true)
 
 	require.NoError(t, err)
 	assert.Equal(t, processor.ResultPrMerged, result)
@@ -281,7 +276,7 @@ func TestProcessor_Process_MergePullRequest_FailedMergeChecks(t *testing.T) {
 	tw.AddFilters(&trueFilter{})
 
 	p := &processor.Processor{Git: gitc}
-	result, err := p.Process(context.Background(), false, repo, tw, true, testLogger)
+	result, err := p.Process(context.Background(), false, repo, tw, true)
 
 	require.NoError(t, err)
 	assert.Equal(t, processor.ResultChecksFailed, result)
@@ -320,7 +315,7 @@ func TestProcessor_Process_MergePullRequest_AutoMergeAfter(t *testing.T) {
 	tw.AddFilters(&trueFilter{})
 
 	p := &processor.Processor{Git: gitc}
-	result, err := p.Process(context.Background(), false, repo, tw, true, testLogger)
+	result, err := p.Process(context.Background(), false, repo, tw, true)
 
 	require.NoError(t, err)
 	assert.Equal(t, processor.ResultAutoMergeTooEarly, result)
@@ -359,7 +354,7 @@ func TestProcessor_Process_MergePullRequest_MergeConflict(t *testing.T) {
 	tw.AddFilters(&trueFilter{})
 
 	p := &processor.Processor{Git: gitc}
-	result, err := p.Process(context.Background(), false, repo, tw, true, testLogger)
+	result, err := p.Process(context.Background(), false, repo, tw, true)
 
 	require.NoError(t, err)
 	assert.Equal(t, processor.ResultConflict, result)
@@ -384,7 +379,11 @@ func TestProcessor_Process_UpdatePullRequest(t *testing.T) {
 	prData := host.PullRequestData{
 		TaskName: "unittest",
 		TemplateData: template.Data{
-			Run: map[string]string{"Greeting": "Hello"},
+			Run: map[string]string{
+				"Greeting": "Hello",
+				"inputOne": "iValueOne",
+				"inputTwo": "iValueTwo",
+			},
 			Repository: template.DataRepository{
 				FullName: "git.local/unit/test",
 				Host:     "git.local",
@@ -406,13 +405,21 @@ func TestProcessor_Process_UpdatePullRequest(t *testing.T) {
 	gitc.EXPECT().Push("saturn-bot--unittest").Return(nil)
 	gitc.EXPECT().HasRemoteChanges("main").Return(true, nil)
 	gitc.EXPECT().HasRemoteChanges("saturn-bot--unittest").Return(true, nil)
-	tw := &task.Task{Task: schema.Task{Name: "unittest"}}
+	tw := &task.Task{Task: schema.Task{
+		Name: "unittest",
+		Inputs: []schema.Input{
+			{Name: "inputOne"},
+			{Name: "inputTwo"},
+		},
+	}}
 	tw.AddFilters(&trueFilter{})
+	err = tw.SetInputs(map[string]string{"inputOne": "iValueOne", "inputTwo": "iValueTwo"})
+	require.NoError(t, err)
 	ctx := context.Background()
-	ctx = context.WithValue(ctx, sContext.RunDataKey{}, map[string]string{"Greeting": "Hello"})
+	ctx = sbcontext.WithRunData(ctx, map[string]string{"Greeting": "Hello"})
 
 	p := &processor.Processor{Git: gitc}
-	result, err := p.Process(ctx, false, repo, tw, true, testLogger)
+	result, err := p.Process(ctx, false, repo, tw, true)
 
 	require.NoError(t, err)
 	assert.Equal(t, processor.ResultPrOpen, result)
@@ -444,7 +451,7 @@ func TestProcessor_Process_NoChanges(t *testing.T) {
 	tw.AddFilters(&trueFilter{})
 
 	p := &processor.Processor{Git: gitc}
-	result, err := p.Process(context.Background(), false, repo, tw, true, testLogger)
+	result, err := p.Process(context.Background(), false, repo, tw, true)
 
 	require.NoError(t, err)
 	assert.Equal(t, processor.ResultNoChanges, result)
@@ -496,7 +503,7 @@ The commit(s) that modified the pull request:
 	tw.AddFilters(&trueFilter{})
 
 	p := &processor.Processor{Git: gitc}
-	result, err := p.Process(context.Background(), false, repo, tw, true, testLogger)
+	result, err := p.Process(context.Background(), false, repo, tw, true)
 
 	require.NoError(t, err)
 	assert.Equal(t, processor.ResultBranchModified, result)
@@ -536,7 +543,7 @@ func TestProcessor_Process_ForceRebaseByUser(t *testing.T) {
 	tw.AddFilters(&trueFilter{})
 
 	p := &processor.Processor{Git: gitc}
-	result, err := p.Process(context.Background(), false, repo, tw, true, testLogger)
+	result, err := p.Process(context.Background(), false, repo, tw, true)
 
 	require.NoError(t, err)
 	assert.Equal(t, processor.ResultPrOpen, result)
@@ -550,7 +557,7 @@ func TestProcessor_Process_ChangeLimit(t *testing.T) {
 	tw.IncChangeLimitCount()
 
 	p := &processor.Processor{Git: gitc}
-	result, err := p.Process(context.Background(), false, repo, tw, true, testLogger)
+	result, err := p.Process(context.Background(), false, repo, tw, true)
 
 	require.NoError(t, err)
 	assert.Equal(t, processor.ResultSkip, result)
@@ -564,7 +571,7 @@ func TestProcessor_Process_MaxOpenPRs(t *testing.T) {
 	tw.IncOpenPRsCount()
 
 	p := &processor.Processor{Git: gitc}
-	result, err := p.Process(context.Background(), false, repo, tw, true, testLogger)
+	result, err := p.Process(context.Background(), false, repo, tw, true)
 
 	require.NoError(t, err)
 	assert.Equal(t, processor.ResultSkip, result)
@@ -578,7 +585,7 @@ func TestProcessor_Process_FilterNotMatching(t *testing.T) {
 	tw.AddFilters(&falseFilter{})
 
 	p := &processor.Processor{Git: gitc}
-	result, err := p.Process(context.Background(), false, repo, tw, true, testLogger)
+	result, err := p.Process(context.Background(), false, repo, tw, true)
 
 	require.NoError(t, err)
 	assert.Equal(t, processor.ResultNoMatch, result)
@@ -591,7 +598,7 @@ func TestProcessor_Process_NoFilters(t *testing.T) {
 	tw := &task.Task{Task: schema.Task{Name: "unittest"}}
 
 	p := &processor.Processor{Git: gitc}
-	result, err := p.Process(context.Background(), false, repo, tw, true, testLogger)
+	result, err := p.Process(context.Background(), false, repo, tw, true)
 
 	require.NoError(t, err)
 	assert.Equal(t, processor.ResultNoMatch, result)
@@ -615,7 +622,7 @@ func TestProcessor_Process_AutoCloseAfter_Close(t *testing.T) {
 	tw.AddFilters(&trueFilter{})
 
 	p := &processor.Processor{Git: gitc}
-	result, err := p.Process(context.Background(), false, repo, tw, true, testLogger)
+	result, err := p.Process(context.Background(), false, repo, tw, true)
 
 	require.NoError(t, err)
 	assert.Equal(t, processor.ResultPrClosed, result)
@@ -644,7 +651,7 @@ func TestProcessor_Process_AutoCloseAfter_NotTimeYet(t *testing.T) {
 	tw.AddFilters(&trueFilter{})
 
 	p := &processor.Processor{Git: gitc}
-	result, err := p.Process(context.Background(), false, repo, tw, true, testLogger)
+	result, err := p.Process(context.Background(), false, repo, tw, true)
 
 	require.NoError(t, err)
 	assert.Equal(t, processor.ResultPrOpen, result)
@@ -675,7 +682,7 @@ func TestProcessor_Process_EmptyRepository(t *testing.T) {
 	tw.AddFilters(&trueFilter{})
 
 	p := &processor.Processor{Git: gitc}
-	result, err := p.Process(context.Background(), false, repo, tw, true, testLogger)
+	result, err := p.Process(context.Background(), false, repo, tw, true)
 
 	require.NoError(t, err)
 	assert.Equal(t, processor.ResultNoMatch, result)
@@ -705,7 +712,7 @@ schedule: "* * %d * *"`, future.Day())
 	require.NoError(t, err)
 
 	p := &processor.Processor{Git: gitc}
-	result, err := p.Process(context.Background(), false, repo, reg.GetTasks()[0], true, testLogger)
+	result, err := p.Process(context.Background(), false, repo, reg.GetTasks()[0], true)
 
 	require.NoError(t, err)
 	assert.Equal(t, processor.ResultSkip, result)
