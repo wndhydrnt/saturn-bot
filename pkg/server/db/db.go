@@ -12,6 +12,14 @@ import (
 	"gorm.io/gorm/logger"
 )
 
+const (
+	sqlitePragmaJournalMode = "PRAGMA journal_mode = WAL;"
+	sqlitePragmaSynchronous = "PRAGMA synchronous = NORMAL;"
+	sqlitePragmaCacheSize   = "PRAGMA cache_size = 1000000000;"
+	sqlitePragmaForeignKeys = "PRAGMA foreign_keys = true;"
+	sqlitePragmaBusyTimeout = "PRAGMA busy_timeout = 5000;"
+)
+
 func New(enableLog, migrate bool, path string) (*gorm.DB, error) {
 	dir := filepath.Dir(path)
 	if dir != "" {
@@ -43,5 +51,20 @@ func New(enableLog, migrate bool, path string) (*gorm.DB, error) {
 		}
 	}
 
+	err = configureSqlite(db, sqlitePragmaJournalMode, sqlitePragmaSynchronous, sqlitePragmaCacheSize, sqlitePragmaForeignKeys, sqlitePragmaBusyTimeout)
+	if err != nil {
+		return nil, fmt.Errorf("configure sqlite: %w", err)
+	}
+
 	return db, nil
+}
+
+func configureSqlite(db *gorm.DB, stmts ...string) error {
+	for _, stmt := range stmts {
+		if tx := db.Exec(stmt); tx.Error != nil {
+			return fmt.Errorf("execute '%s': %w", stmt, tx.Error)
+		}
+	}
+
+	return nil
 }
