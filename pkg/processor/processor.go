@@ -156,9 +156,14 @@ func applyTaskToRepository(ctx context.Context, dryRun bool, gitc git.GitClient,
 		return ResultUnknown, fmt.Errorf("find pull request: %w", err)
 	}
 
-	if prID != nil && repo.IsPullRequestClosed(prID) && task.MergeOnce {
-		logger.Info("Existing PR has been closed")
-		return ResultPrClosedBefore, nil
+	if prID != nil && repo.IsPullRequestClosed(prID) {
+		if task.MergeOnce {
+			logger.Info("Existing PR has been closed")
+			return ResultPrClosedBefore, nil
+		} else {
+			logger.Debug("Previous pull request closed - resetting to create a new pull request")
+			prID = nil
+		}
 	}
 
 	if prID != nil && repo.IsPullRequestMerged(prID) && task.MergeOnce {

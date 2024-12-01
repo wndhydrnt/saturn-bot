@@ -119,6 +119,39 @@ func TestProcessor_Process_CreatePullRequestRemoteChanges(t *testing.T) {
 	assert.Equal(t, processor.ResultPrCreated, result)
 }
 
+func TestProcessor_Process_CreatePullRequestPreviouslyClosed(t *testing.T) {
+	tempDir, err := os.MkdirTemp("", "")
+	require.NoError(t, err)
+	defer func() {
+		_ = os.RemoveAll(tempDir)
+	}()
+
+	prID := "prID"
+	ctrl := gomock.NewController(t)
+	repo := setupRepoMock(ctrl)
+	repo.EXPECT().FindPullRequest("saturn-bot--unittest").Return(prID, nil)
+	repo.EXPECT().IsPullRequestClosed(prID).Return(true).AnyTimes()
+	repo.EXPECT().IsPullRequestMerged(prID).Return(false).AnyTimes()
+	repo.EXPECT().GetPullRequestBody(nil).Return("").AnyTimes()
+	repo.EXPECT().BaseBranch().Return("main")
+	repo.EXPECT().IsPullRequestOpen(nil).Return(false).AnyTimes()
+	repo.EXPECT().CreatePullRequest("saturn-bot--unittest", gomock.Any()).Return(nil)
+	gitc := NewMockGitClient(ctrl)
+	gitc.EXPECT().Prepare(repo, false).Return(tempDir, nil)
+	gitc.EXPECT().UpdateTaskBranch("saturn-bot--unittest", false, repo)
+	gitc.EXPECT().HasLocalChanges().Return(false, nil)
+	gitc.EXPECT().HasRemoteChanges("main").Return(true, nil)
+	gitc.EXPECT().HasRemoteChanges("saturn-bot--unittest").Return(false, nil)
+	tw := &task.Task{Task: schema.Task{CommitMessage: "commit test", Name: "unittest"}}
+	tw.AddFilters(&trueFilter{})
+
+	p := &processor.Processor{Git: gitc}
+	result, err := p.Process(context.Background(), false, repo, tw, true)
+
+	require.NoError(t, err)
+	assert.Equal(t, processor.ResultPrCreated, result)
+}
+
 func TestProcessor_Process_PullRequestClosedAndMergeOnceActive(t *testing.T) {
 	prID := "prID"
 	ctrl := gomock.NewController(t)
