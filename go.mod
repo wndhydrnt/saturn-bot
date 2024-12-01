@@ -1,6 +1,6 @@
 module github.com/wndhydrnt/saturn-bot
 
-go 1.22.0
+go 1.23
 
 require (
 	github.com/antchfx/xmlquery v1.4.2
