@@ -1,5 +1,27 @@
 # Changelog
 
+## [0.16.0](https://github.com/wndhydrnt/saturn-bot/compare/v0.15.1...v0.16.0) (2024-12-01)
+
+
+### Features
+
+* **server:** Add endpoint to process webhooks sent by GitHub ([#105](https://github.com/wndhydrnt/saturn-bot/issues/105)) ([fa81814](https://github.com/wndhydrnt/saturn-bot/commit/fa818145097314b382521ae4f75a2191404b4c44))
+* **server:** Add endpoint to process webhooks sent by GitLab ([#112](https://github.com/wndhydrnt/saturn-bot/issues/112)) ([2cb93b6](https://github.com/wndhydrnt/saturn-bot/commit/2cb93b64ec11af8f97cbb300bee7fb3724beb0a4))
+* **server:** Add total number of items to pagination responses ([6a4f722](https://github.com/wndhydrnt/saturn-bot/commit/6a4f722cbab56d86fb8c719216642ac81f96779f))
+* **server:** Delay execution of a task when a webhook is received ([#115](https://github.com/wndhydrnt/saturn-bot/issues/115)) ([047169b](https://github.com/wndhydrnt/saturn-bot/commit/047169b5955eca072ba060e10170027da2df7e82))
+* **server:** Inspect upcoming and past runs via an endpoint ([#114](https://github.com/wndhydrnt/saturn-bot/issues/114)) ([8ed4ded](https://github.com/wndhydrnt/saturn-bot/commit/8ed4ded3488e444544f4636fada3e6521b7958d5))
+* **task:** Inputs ([#107](https://github.com/wndhydrnt/saturn-bot/issues/107)) ([0bffdd4](https://github.com/wndhydrnt/saturn-bot/commit/0bffdd410b049cbc8a212cd7d919f6f8e2c4f140))
+
+
+### Bug Fixes
+
+* **host:** Auto-merge GitHub PR fails if repository allows only "squash" merge method ([#110](https://github.com/wndhydrnt/saturn-bot/issues/110)) ([57c3673](https://github.com/wndhydrnt/saturn-bot/commit/57c3673a0c40d377c7b1911c5ed167d5a6fa35ff))
+* **host:** Too eager to delete GitHub branch ([#111](https://github.com/wndhydrnt/saturn-bot/issues/111)) ([ccb8a6b](https://github.com/wndhydrnt/saturn-bot/commit/ccb8a6b71df7363cfe5aa3fca8e2157f0e1ec1d3))
+* **processor:** Pull request not recreated if closed ([#117](https://github.com/wndhydrnt/saturn-bot/issues/117)) ([c554240](https://github.com/wndhydrnt/saturn-bot/commit/c55424090d60ea0fa64ff51f0c6526194814742d))
+* **server:** Runs skipped when more than one Task is registered ([#116](https://github.com/wndhydrnt/saturn-bot/issues/116)) ([e3f7956](https://github.com/wndhydrnt/saturn-bot/commit/e3f79560c9fac2732d0f465322058815cddffd27))
+* **server:** Wrong run reason "manual" when task changed on disk ([c825e95](https://github.com/wndhydrnt/saturn-bot/commit/c825e95efdfab1e3a9dab45c405148cec1a45b66))
+* **template:** Description of pull request states that PR gets merged in 0s ([#108](https://github.com/wndhydrnt/saturn-bot/issues/108)) ([b463fba](https://github.com/wndhydrnt/saturn-bot/commit/b463fba8a97cb21579fd855e7305adecd6772ace))
+
 ## [0.15.1](https://github.com/wndhydrnt/saturn-bot/compare/v0.15.0...v0.15.1) (2024-11-11)
 
 
