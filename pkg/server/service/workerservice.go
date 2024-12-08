@@ -63,17 +63,22 @@ func (ws *WorkerService) ScheduleRun(
 	if tx == nil {
 		tx = ws.db
 	}
-	runDataDb := db.StringMap(runData)
 	query := tx.
 		Where("task_name = ?", taskName).
-		Where("status = ?", db.RunStatusPending).
-		Where("run_data = ?", runDataDb.String())
+		Where("status = ?", db.RunStatusPending)
 
 	repositoryNameList := db.StringList(repositoryNames)
 	if len(repositoryNameList) == 0 {
 		query = query.Where("repository_names is null")
 	} else {
 		query = query.Where("repository_names = ?", repositoryNameList)
+	}
+
+	runDataDb := db.StringMap(runData)
+	if len(runDataDb) == 0 {
+		query = query.Where("run_data is null")
+	} else {
+		query = query.Where("run_data = ?", runDataDb)
 	}
 
 	result := query.First(&runDB)
