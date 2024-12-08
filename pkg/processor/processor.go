@@ -5,6 +5,7 @@ import (
 	"errors"
 	"fmt"
 	"os"
+	"slices"
 	"strings"
 	"time"
 
@@ -317,13 +318,13 @@ func applyTaskToRepository(ctx context.Context, dryRun bool, gitc git.GitClient,
 	}
 
 	prData := host.PullRequestData{
-		Assignees:      task.Assignees,
+		Assignees:      getAssignees(ctx, task),
 		AutoMerge:      task.AutoMerge,
 		AutoMergeAfter: task.CalcAutoMergeAfter(),
 		Body:           task.PrBody,
 		Labels:         task.Labels,
 		MergeOnce:      task.MergeOnce,
-		Reviewers:      task.Reviewers,
+		Reviewers:      getReviewers(ctx, task),
 		TaskName:       task.Name,
 		TemplateData:   template.FromContext(ctx),
 		Title:          prTitle,
@@ -466,4 +467,27 @@ func updateTemplateVars(ctx context.Context, repo host.Repository, tk *task.Task
 	}
 
 	return template.UpdateContext(ctx, data)
+}
+
+// getAssignees merges static assignees from a task with dynamic assignees from run data.
+func getAssignees(ctx context.Context, t *task.Task) []string {
+	return mergeUsers(ctx, sbcontext.RunDataKeyAssignees, t.Assignees)
+}
+
+// getReviewers merges static reviewers from a task with dynamic reviewers from run data.
+func getReviewers(ctx context.Context, t *task.Task) []string {
+	return mergeUsers(ctx, sbcontext.RunDataKeyReviewers, t.Reviewers)
+}
+
+func mergeUsers(ctx context.Context, key string, static []string) []string {
+	runData := sbcontext.RunData(ctx)
+	dataRaw, ok := runData[key]
+	if !ok {
+		return static
+	}
+
+	users := strings.Split(dataRaw, ",")
+	users = append(users, static...)
+	slices.Sort(users)
+	return slices.Compact(users)
 }

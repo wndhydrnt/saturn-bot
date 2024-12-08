@@ -11,6 +11,7 @@ import (
 	"github.com/wndhydrnt/saturn-bot/pkg/ptr"
 	"github.com/wndhydrnt/saturn-bot/pkg/server/api/openapi"
 	"github.com/wndhydrnt/saturn-bot/pkg/server/db"
+	sberror "github.com/wndhydrnt/saturn-bot/pkg/server/error"
 	"github.com/wndhydrnt/saturn-bot/pkg/task"
 	"go.uber.org/zap"
 	"gorm.io/gorm"
@@ -18,17 +19,26 @@ import (
 
 var ErrNoRun = errors.New("no next run")
 
-type WorkerService struct {
-	clock        clock.Clock
-	db           *gorm.DB
-	taskRegistry *task.Registry
+type ErrorMissingInput struct {
+	InputName string
+	TaskName  string
 }
 
-func NewWorkerService(clock clock.Clock, db *gorm.DB, taskRegistry *task.Registry) *WorkerService {
+func (e ErrorMissingInput) Error() string {
+	return fmt.Sprintf("missing required input %s for task %s", e.InputName, e.TaskName)
+}
+
+type WorkerService struct {
+	clock       clock.Clock
+	db          *gorm.DB
+	taskService *TaskService
+}
+
+func NewWorkerService(clock clock.Clock, db *gorm.DB, taskService *TaskService) *WorkerService {
 	return &WorkerService{
-		clock:        clock,
-		db:           db,
-		taskRegistry: taskRegistry,
+		clock:       clock,
+		db:          db,
+		taskService: taskService,
 	}
 }
 
@@ -37,15 +47,27 @@ func (ws *WorkerService) ScheduleRun(
 	repositoryNames []string,
 	scheduleAfter time.Time,
 	taskName string,
+	runData map[string]string,
 	tx *gorm.DB,
 ) (uint, error) {
+	task, _, err := ws.taskService.GetTask(taskName)
+	if err != nil {
+		return 0, err
+	}
+
+	if err := checkRequiredInputs(task, runData); err != nil {
+		return 0, err
+	}
+
 	var runDB db.Run
 	if tx == nil {
 		tx = ws.db
 	}
+	runDataDb := db.StringMap(runData)
 	query := tx.
 		Where("task_name = ?", taskName).
-		Where("status = ?", db.RunStatusPending)
+		Where("status = ?", db.RunStatusPending).
+		Where("run_data = ?", runDataDb.String())
 
 	repositoryNameList := db.StringList(repositoryNames)
 	if len(repositoryNameList) == 0 {
@@ -68,6 +90,7 @@ func (ws *WorkerService) ScheduleRun(
 			ScheduleAfter:   scheduleAfter,
 			Status:          db.RunStatusPending,
 			TaskName:        taskName,
+			RunData:         runDataDb,
 		}
 
 		if err := tx.Save(&run).Error; err != nil {
@@ -92,14 +115,9 @@ func (ws *WorkerService) ScheduleRun(
 	return runDB.ID, nil
 }
 
-func (ws *WorkerService) findTask(name string) *task.Task {
-	for _, t := range ws.taskRegistry.GetTasks() {
-		if t.Task.Name == name {
-			return t
-		}
-	}
-
-	return nil
+func (ws *WorkerService) findTask(name string) (*task.Task, error) {
+	t, _, err := ws.taskService.GetTask(name)
+	return t, err
 }
 
 func (ws *WorkerService) NextRun() (db.Run, *task.Task, error) {
@@ -128,7 +146,7 @@ func (ws *WorkerService) NextRun() (db.Run, *task.Task, error) {
 		return run, nil, err
 	}
 
-	task := ws.findTask(run.TaskName)
+	task, _ := ws.findTask(run.TaskName)
 	if task == nil {
 		if err := ws.db.Delete(&run).Error; err != nil {
 			log.Log().Error("Delete run of unknown task", zap.Error(tx.Error))
@@ -185,7 +203,7 @@ func (ws *WorkerService) ReportRun(req openapi.ReportWorkV1Request) error {
 			}
 		}
 
-		_, err := ws.ScheduleRun(db.RunReasonNext, runCurrent.RepositoryNames, ws.clock.Now().Add(next), runCurrent.TaskName, tx)
+		_, err := ws.ScheduleRun(db.RunReasonNext, runCurrent.RepositoryNames, ws.clock.Now().Add(next), runCurrent.TaskName, runCurrent.RunData, tx)
 		if err != nil {
 			return err
 		}
@@ -246,4 +264,20 @@ func nextSchedule(r processor.Result) time.Duration {
 	default:
 		return 60 * time.Minute
 	}
+}
+
+func checkRequiredInputs(t *task.Task, runData map[string]string) error {
+	for _, input := range t.Inputs {
+		if input.Default != nil {
+			// No need to check if a default value is available.
+			continue
+		}
+
+		_, exists := runData[input.Name]
+		if !exists {
+			return sberror.NewInputMissingError(input.Name, t.Name)
+		}
+	}
+
+	return nil
 }

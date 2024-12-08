@@ -52,10 +52,10 @@ func (s *Server) Start(opts options.Opts, taskPaths []string) error {
 		return fmt.Errorf("initialize database: %w", err)
 	}
 
-	workerService := service.NewWorkerService(opts.Clock, database, taskRegistry)
-	taskService := service.NewTaskService(opts.Clock, database, taskRegistry, workerService)
-	err = taskService.SyncDbTasks()
-	if err != nil {
+	taskService := service.NewTaskService(opts.Clock, database, taskRegistry)
+	workerService := service.NewWorkerService(opts.Clock, database, taskService)
+	syncService := service.NewSync(opts.Clock, database, taskService, workerService)
+	if err := syncService.SyncTasksInDatabase(); err != nil {
 		return err
 	}
 
@@ -156,9 +156,9 @@ func Run(configPath string, taskPaths []string) error {
 // This is done to configure middlewares of chi.Router.
 func newRouter(opts options.Opts) chi.Router {
 	router := chi.NewRouter()
-	if opts.Config.ServerCompress {
-		router.Use(middleware.Compress(5))
-	}
+	// if opts.Config.ServerCompress {
+	// 	router.Use(middleware.Compress(5))
+	// }
 
 	if opts.Config.ServerAccessLog {
 		router.Use(middleware.Logger)

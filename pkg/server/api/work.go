@@ -3,12 +3,15 @@ package api
 import (
 	"context"
 	"errors"
+	"strings"
 	"time"
 
+	sbcontext "github.com/wndhydrnt/saturn-bot/pkg/context"
 	"github.com/wndhydrnt/saturn-bot/pkg/log"
 	"github.com/wndhydrnt/saturn-bot/pkg/ptr"
 	"github.com/wndhydrnt/saturn-bot/pkg/server/api/openapi"
 	"github.com/wndhydrnt/saturn-bot/pkg/server/db"
+	sberror "github.com/wndhydrnt/saturn-bot/pkg/server/error"
 	"github.com/wndhydrnt/saturn-bot/pkg/server/service"
 	"go.uber.org/zap"
 )
@@ -89,8 +92,31 @@ func (a *APIServer) ScheduleRunV1(_ context.Context, req openapi.ScheduleRunV1Re
 		repositoryNames = *req.Body.RepositoryNames
 	}
 
-	runID, err := a.WorkerService.ScheduleRun(db.RunReasonManual, repositoryNames, schedulerAfter, req.Body.TaskName, nil)
+	var runData map[string]string
+	if req.Body.RunData == nil {
+		runData = map[string]string{}
+	} else {
+		runData = *req.Body.RunData
+	}
+
+	if req.Body.Assignees != nil {
+		runData[sbcontext.RunDataKeyAssignees] = strings.Join(ptr.From(req.Body.Assignees), ",")
+	}
+
+	if req.Body.Reviewers != nil {
+		runData[sbcontext.RunDataKeyReviewers] = strings.Join(ptr.From(req.Body.Reviewers), ",")
+	}
+
+	runID, err := a.WorkerService.ScheduleRun(db.RunReasonManual, repositoryNames, schedulerAfter, req.Body.TaskName, runData, nil)
 	if err != nil {
+		var clientErr sberror.Client
+		if errors.As(err, &clientErr) {
+			return openapi.ScheduleRunV1400JSONResponse{
+				Error:   clientErr.ErrorID(),
+				Message: clientErr.Error(),
+			}, nil
+		}
+
 		return nil, ErrInternal
 	}
 
@@ -111,6 +137,10 @@ func mapRun(r db.Run) openapi.RunV1 {
 	}
 	if len(r.RepositoryNames) > 0 {
 		run.Repositories = ptr.To([]string(r.RepositoryNames))
+	}
+
+	if len(r.RunData) > 0 {
+		run.RunData = ptr.To(map[string]string(r.RunData))
 	}
 
 	return run
