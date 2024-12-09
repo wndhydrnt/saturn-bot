@@ -1,6 +1,8 @@
 package api
 
-import "errors"
+import (
+	"errors"
+)
 
 var (
 	ErrInternal = errors.New("internal server error")

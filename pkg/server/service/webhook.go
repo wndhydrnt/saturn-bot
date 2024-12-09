@@ -77,7 +77,7 @@ func (s *WebhookService) enqueue(in *WebhookEnqueueInput, triggerCache map[strin
 			if match(in.Event, trigger, in.Payload) {
 				log.Log().Debugf("Task %s matches %s webhook %s", taskName, wtype, in.ID)
 				scheduleAfter := s.clock.Now().Add(trigger.delay)
-				_, err := s.workerService.ScheduleRun(db.RunReasonWebhook, nil, scheduleAfter, taskName, nil)
+				_, err := s.workerService.ScheduleRun(db.RunReasonWebhook, nil, scheduleAfter, taskName, map[string]string{}, nil)
 				errs = append(errs, err)
 				break
 			}

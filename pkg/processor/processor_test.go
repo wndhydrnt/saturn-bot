@@ -410,12 +410,16 @@ func TestProcessor_Process_UpdatePullRequest(t *testing.T) {
 	repo.EXPECT().BaseBranch().Return("main")
 	repo.EXPECT().IsPullRequestOpen(prID).Return(true).AnyTimes()
 	prData := host.PullRequestData{
-		TaskName: "unittest",
+		Assignees: []string{"dina", "ellie"},
+		Reviewers: []string{"joel", "tommy"},
+		TaskName:  "unittest",
 		TemplateData: template.Data{
 			Run: map[string]string{
-				"Greeting": "Hello",
-				"inputOne": "iValueOne",
-				"inputTwo": "iValueTwo",
+				"Greeting":                    "Hello",
+				"inputOne":                    "iValueOne",
+				"inputTwo":                    "iValueTwo",
+				sbcontext.RunDataKeyAssignees: "ellie,dina",
+				sbcontext.RunDataKeyReviewers: "tommy,joel",
 			},
 			Repository: template.DataRepository{
 				FullName: "git.local/unit/test",
@@ -444,12 +448,18 @@ func TestProcessor_Process_UpdatePullRequest(t *testing.T) {
 			{Name: "inputOne"},
 			{Name: "inputTwo"},
 		},
+		Assignees: []string{"dina"},
+		Reviewers: []string{"joel"},
 	}}
 	tw.AddFilters(&trueFilter{})
 	err = tw.SetInputs(map[string]string{"inputOne": "iValueOne", "inputTwo": "iValueTwo"})
 	require.NoError(t, err)
 	ctx := context.Background()
-	ctx = sbcontext.WithRunData(ctx, map[string]string{"Greeting": "Hello"})
+	ctx = sbcontext.WithRunData(ctx, map[string]string{
+		"Greeting":                    "Hello",
+		sbcontext.RunDataKeyAssignees: "ellie,dina",
+		sbcontext.RunDataKeyReviewers: "tommy,joel",
+	})
 
 	p := &processor.Processor{Git: gitc}
 	result, err := p.Process(ctx, false, repo, tw, true)

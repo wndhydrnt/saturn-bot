@@ -5,6 +5,7 @@ import (
 	"testing"
 
 	"github.com/wndhydrnt/saturn-bot/pkg/server/api/openapi"
+	sberror "github.com/wndhydrnt/saturn-bot/pkg/server/error"
 	"github.com/wndhydrnt/saturn-bot/pkg/task/schema"
 )
 
@@ -60,7 +61,7 @@ func TestServer_API_GetTaskV1(t *testing.T) {
 					method:       "GET",
 					path:         "/api/v1/tasks/unknown",
 					statusCode:   http.StatusNotFound,
-					responseBody: openapi.Error{Error: "Not Found", Message: "Task unknown"},
+					responseBody: openapi.Error{Error: sberror.ClientIDTaskNotFound, Message: "unknown task: unknown"},
 				},
 			},
 		},
