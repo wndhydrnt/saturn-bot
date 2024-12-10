@@ -23,6 +23,7 @@ var (
 )
 
 type FilterRepository interface {
+	FullName() string
 	GetFile(fileName string) (string, error)
 	HasFile(path string) (bool, error)
 	Host() host.HostDetail
