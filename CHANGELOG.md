@@ -1,5 +1,12 @@
 # Changelog
 
+## [0.17.0](https://github.com/wndhydrnt/saturn-bot/compare/v0.16.0...v0.17.0) (2024-12-10)
+
+
+### Features
+
+* **action:** Add stdout/stderr to error of actions "exec" and "script" ([18e216e](https://github.com/wndhydrnt/saturn-bot/commit/18e216e4e844e55c2ac813bbe00935ca79ed84cb))
+
 ## [0.16.0](https://github.com/wndhydrnt/saturn-bot/compare/v0.15.1...v0.16.0) (2024-12-01)
 
 
