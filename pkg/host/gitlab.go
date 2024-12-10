@@ -7,6 +7,7 @@ import (
 	"net/http"
 	"net/url"
 	"path"
+	"slices"
 	"strings"
 	"sync"
 	"time"
@@ -367,6 +368,10 @@ func (g *GitLabRepository) Host() HostDetail {
 	return g.host
 }
 
+func (g *GitLabRepository) ID() int64 {
+	return int64(g.project.ID)
+}
+
 func (g *GitLabRepository) IsPullRequestClosed(pr interface{}) bool {
 	mr := pr.(*gitlab.MergeRequest)
 	return mr.State == "closed" || mr.State == "locked"
@@ -700,4 +705,43 @@ func (g *GitLabHost) ListRepositoriesWithOpenPullRequests(result chan []Reposito
 
 		opts.Page = resp.NextPage
 	}
+}
+
+func (g *GitLabHost) SearchCode(gitlabGroupID any, query string) ([]int64, error) {
+	opts := &gitlab.SearchOptions{
+		ListOptions: gitlab.ListOptions{
+			Page:    1,
+			PerPage: 100,
+		},
+	}
+
+	log.Log().Debug("GitLab code search started")
+	var result []int64
+	for {
+		var blobs []*gitlab.Blob
+		var resp *gitlab.Response
+		var searchErr error
+		if gitlabGroupID == nil {
+			blobs, resp, searchErr = g.client.Search.Blobs(query, opts)
+		} else {
+			blobs, resp, searchErr = g.client.Search.BlobsByGroup(gitlabGroupID, query, opts)
+		}
+		if searchErr != nil {
+			return nil, fmt.Errorf("execute gitlab code search query page %d: %w", opts.Page, searchErr)
+		}
+
+		for _, blob := range blobs {
+			result = append(result, int64(blob.ProjectID))
+		}
+
+		if resp.NextPage == 0 {
+			break
+		}
+
+		opts.Page = resp.NextPage
+	}
+
+	slices.Sort(result)
+	log.Log().Debug("GitLab code search finished")
+	return slices.Compact(result), nil
 }

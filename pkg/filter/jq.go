@@ -17,7 +17,7 @@ import (
 type JqFactory struct{}
 
 // Create implements Factory.
-func (f JqFactory) Create(params params.Params) (Filter, error) {
+func (f JqFactory) Create(_ CreateOptions, params params.Params) (Filter, error) {
 	expressionsRaw, err := params.StringSlice("expressions", []string{})
 	if err != nil {
 		return nil, err

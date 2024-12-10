@@ -23,10 +23,10 @@ var (
 )
 
 type FilterRepository interface {
-	FullName() string
 	GetFile(fileName string) (string, error)
 	HasFile(path string) (bool, error)
 	Host() host.HostDetail
+	ID() int64
 	Name() string
 	Owner() string
 }
@@ -36,8 +36,12 @@ type Filter interface {
 	String() string
 }
 
+type CreateOptions struct {
+	Hosts []host.Host
+}
+
 type Factory interface {
-	Create(params params.Params) (Filter, error)
+	Create(opts CreateOptions, params params.Params) (Filter, error)
 	Name() string
 }
 
@@ -47,7 +51,7 @@ func (f FileFactory) Name() string {
 	return "file"
 }
 
-func (f FileFactory) Create(params params.Params) (Filter, error) {
+func (f FileFactory) Create(_ CreateOptions, params params.Params) (Filter, error) {
 	if params["paths"] == nil {
 		return nil, fmt.Errorf("required parameter `paths` not set")
 	}
@@ -125,7 +129,7 @@ func (f FileContentFactory) Name() string {
 	return "fileContent"
 }
 
-func (f FileContentFactory) Create(params params.Params) (Filter, error) {
+func (f FileContentFactory) Create(_ CreateOptions, params params.Params) (Filter, error) {
 	if params["path"] == nil {
 		return nil, fmt.Errorf("required parameter `path` not set")
 	}
@@ -189,7 +193,7 @@ func (f RepositoryFactory) Name() string {
 	return "repository"
 }
 
-func (f RepositoryFactory) Create(params params.Params) (Filter, error) {
+func (f RepositoryFactory) Create(_ CreateOptions, params params.Params) (Filter, error) {
 	if params["host"] == nil {
 		return nil, fmt.Errorf("required parameter `host` not set")
 	}
