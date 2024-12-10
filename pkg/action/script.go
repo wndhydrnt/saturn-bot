@@ -1,6 +1,7 @@
 package action
 
 import (
+	"bytes"
 	"context"
 	"errors"
 	"fmt"
@@ -111,7 +112,11 @@ func (a *scriptAction) Apply(ctx context.Context) error {
 		return fmt.Errorf("render script: %w", err)
 	}
 
+	stdout := &bytes.Buffer{}
+	stderr := &bytes.Buffer{}
 	cmd := exec.Command(a.shell, scriptFile.Name()) // #nosec G204
+	cmd.Stderr = stderr
+	cmd.Stdout = stdout
 	env := cmd.Environ()
 	env = append(env, "TASK_DIR="+a.taskDir)
 	cmd.Env = env
@@ -125,7 +130,11 @@ func (a *scriptAction) Apply(ctx context.Context) error {
 	}()
 	select {
 	case err := <-errChan:
-		return err
+		if err != nil {
+			return fmt.Errorf("%w\nstdout: %s\nstderr:%s", err, stdout.String(), stderr.String())
+		}
+
+		return nil
 	case <-cmdCtx.Done():
 		var killErr error
 		if cmd.Process != nil {
