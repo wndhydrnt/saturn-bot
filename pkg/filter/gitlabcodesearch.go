@@ -25,13 +25,28 @@ func (f GitlabCodeSearchFactory) Create(opts CreateOptions, params params.Params
 		return nil, fmt.Errorf("required parameter `query` not set")
 	}
 
-	gcs := &GitlabCodeSearch{}
+	gcs := &GitlabCodeSearch{Query: query}
 	for _, h := range opts.Hosts {
-		gl, ok := h.(*host.GitLabHost)
+		gl, ok := h.(host.GitLabSearcher)
 		if ok {
 			gcs.Host = gl
 			break
 		}
+	}
+
+	if gcs.Host == nil {
+		return nil, fmt.Errorf("required host for GitLab not found")
+	}
+
+	groupIDInt, groupIDIntErr := params.Int("groupID", 0)
+	groupIDString, groupIDStringErr := params.String("groupID", "")
+	switch {
+	case groupIDInt > 0:
+		gcs.GroupID = groupIDInt
+	case groupIDString != "":
+		gcs.GroupID = groupIDString
+	case groupIDIntErr != nil && groupIDStringErr != nil:
+		return nil, fmt.Errorf("parameter `groupID` must be either of type int or string")
 	}
 
 	return gcs, nil
@@ -43,7 +58,7 @@ func (f GitlabCodeSearchFactory) Name() string {
 }
 
 type GitlabCodeSearch struct {
-	Host    *host.GitLabHost
+	Host    host.GitLabSearcher
 	GroupID any
 	Query   string
 
@@ -60,7 +75,7 @@ func (s *GitlabCodeSearch) Do(ctx context.Context) (bool, error) {
 }
 
 func (s *GitlabCodeSearch) String() string {
-	return fmt.Sprintf("gitlabCodeSearch(query=%s)", s.Query)
+	return fmt.Sprintf("gitlabCodeSearch(groupID=%v, query=%s)", s.GroupID, s.Query)
 }
 
 func (s *GitlabCodeSearch) matchesQuery(id int64) (bool, error) {

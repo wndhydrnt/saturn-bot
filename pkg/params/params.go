@@ -27,6 +27,20 @@ func (p Params) Duration(key string, def time.Duration) (time.Duration, error) {
 	return d, nil
 }
 
+// Int parses a parameter into a int.
+func (p Params) Int(key string, def int) (int, error) {
+	if p[key] == nil {
+		return def, nil
+	}
+
+	val, ok := p[key].(int)
+	if !ok {
+		return def, fmt.Errorf("parameter `%s` is of type %T not int", key, p[key])
+	}
+
+	return val, nil
+}
+
 // String parses a parameter into a string.
 func (p Params) String(key string, def string) (string, error) {
 	if p[key] == nil {

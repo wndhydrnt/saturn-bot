@@ -48,6 +48,14 @@ func (u *userCache) get(name string) (*gitlab.User, error) {
 	return users[0], nil
 }
 
+// GitLabSearcher defines methods to search GitLab.
+type GitLabSearcher interface {
+	// SearchCode returns a list of GitLab project IDs that match the search query.
+	// If gitlabGroupID is not nil, the search is limited to projects
+	// in the specified GitLab group and its sub-groups.
+	SearchCode(gitlabGroupID any, query string) ([]int64, error)
+}
+
 type GitLabRepository struct {
 	client    *gitlab.Client
 	fullName  string
