@@ -715,6 +715,9 @@ func (g *GitLabHost) ListRepositoriesWithOpenPullRequests(result chan []Reposito
 	}
 }
 
+// SearchCode implements [GitLabSearcher].
+// It returns a list of unique IDs of all projects returned by the search query.
+// The IDs are sorted in ascending order.
 func (g *GitLabHost) SearchCode(gitlabGroupID any, query string) ([]int64, error) {
 	opts := &gitlab.SearchOptions{
 		ListOptions: gitlab.ListOptions{

@@ -11,7 +11,7 @@ import (
 	"github.com/wndhydrnt/saturn-bot/pkg/params"
 )
 
-// GitlabCodeSearch creates jq filters.
+// GitlabCodeSearch creates gitlabCodeSearch filters.
 type GitlabCodeSearchFactory struct{}
 
 // Create implements Factory.
@@ -57,6 +57,9 @@ func (f GitlabCodeSearchFactory) Name() string {
 	return "gitlabCodeSearch"
 }
 
+// GitlabCodeSearch filters repositories.
+// It executes a code search query against GitLab and stores the IDs of the projects returned.
+// A repository matches if the list of IDs contains the ID of the repository.
 type GitlabCodeSearch struct {
 	Host    host.GitLabSearcher
 	GroupID any
@@ -65,6 +68,7 @@ type GitlabCodeSearch struct {
 	searchResults []int64
 }
 
+// Do implements [Filter].
 func (s *GitlabCodeSearch) Do(ctx context.Context) (bool, error) {
 	repo, ok := ctx.Value(sbcontext.RepositoryKey{}).(FilterRepository)
 	if !ok {
@@ -74,6 +78,7 @@ func (s *GitlabCodeSearch) Do(ctx context.Context) (bool, error) {
 	return s.matchesQuery(repo.ID())
 }
 
+// String implements [Filter].
 func (s *GitlabCodeSearch) String() string {
 	return fmt.Sprintf("gitlabCodeSearch(groupID=%v, query=%s)", s.GroupID, s.Query)
 }
