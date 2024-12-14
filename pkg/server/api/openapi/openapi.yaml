@@ -18,11 +18,17 @@ paths:
         required: true
       responses:
         "200":
-          description: OK
+          description: New run has been scheduled.
           content:
             application/json:
               schema:
                 $ref: "#/components/schemas/ScheduleRunV1Response"
+        "400":
+          description: Client sent wrong data in request body.
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/Error"
   /api/v1/tasks:
     get:
       operationId: listTasksV1
@@ -134,10 +140,20 @@ components:
     ScheduleRunV1Request:
       type: object
       properties:
+        assignees:
+          description: List of usernames to set as assignees of pull requests. Optional.
+          type: array
+          items:
+            type: string
         repositoryNames:
           description: |-
             Names of the repositories for which to add a run.
             Leave empty to schedule a run for all repositories the task matches.
+          type: array
+          items:
+            type: string
+        reviewers:
+          description: List of usernames to set as reviewers of pull requests. Optional.
           type: array
           items:
             type: string
@@ -173,6 +189,11 @@ components:
           type: array
           items:
             type: string
+        runData:
+          description: Run data.
+          type: object
+          additionalProperties:
+            type: string
         tasks:
           description: Names of the tasks to execute.
           type: array
@@ -193,7 +214,7 @@ components:
       type: object
       properties:
         error:
-          type: string
+          type: integer
         message:
           type: string
       required: ["error", "message"]
@@ -311,6 +332,10 @@ components:
         repositories:
           type: array
           items:
+            type: string
+        runData:
+          type: object
+          additionalProperties:
             type: string
         scheduleAfter:
           type: string

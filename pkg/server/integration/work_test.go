@@ -120,6 +120,162 @@ func TestServer_API_GetWorkV1(t *testing.T) {
 				},
 			},
 		},
+
+		{
+			name: `Given a task that expects an input
+							And a run of that task is scheduled manually
+							When a worker requests work
+							Then it returns the task`,
+			tasks: []schema.Task{
+				{Name: "unittest", Inputs: []schema.Input{{Name: "example"}}},
+			},
+			apiCalls: []apiCall{
+				{
+					method: "POST",
+					path:   "/api/v1/runs",
+					requestBody: openapi.ScheduleRunV1Request{
+						TaskName: "unittest",
+						RunData:  ptr.To(map[string]string{"example": "data"}),
+					},
+					statusCode: http.StatusOK,
+					responseBody: openapi.ScheduleRunV1Response{
+						RunID: 1,
+					},
+				},
+				{
+					method:     "GET",
+					path:       "/api/v1/worker/work",
+					statusCode: http.StatusOK,
+					responseBody: openapi.GetWorkV1Response{
+						RunID:   1,
+						RunData: ptr.To(map[string]string{"example": "data"}),
+						Tasks: []openapi.GetWorkV1Task{
+							{
+								Hash: "5e9905415e0e41a1a99df7f6034a174c21ad07443f70773bb8de5a0aaecd8f62",
+								Name: "unittest",
+							},
+						},
+					},
+				},
+			},
+		},
+	}
+
+	for _, tc := range testCases {
+		t.Run(tc.name, func(t *testing.T) {
+			executeTestCase(t, tc)
+		})
+	}
+}
+
+func TestServer_API_ScheduleRunV1(t *testing.T) {
+	testCases := []testCase{
+		{
+			name: `When scheduling a run for an unknown task
+							Then it returns the info that the task does not exist`,
+			tasks: []schema.Task{
+				{Name: "unittest"},
+			},
+			apiCalls: []apiCall{
+				{
+					method: "POST",
+					path:   "/api/v1/runs",
+					requestBody: openapi.ScheduleRunV1Request{
+						TaskName: "other",
+					},
+					statusCode: http.StatusBadRequest,
+					responseBody: openapi.Error{
+						Error:   1000,
+						Message: "unknown task: other",
+					},
+				},
+			},
+		},
+
+		{
+			name: `Given a task that requires an input
+							When scheduling a run for that task without providing values for those inputs
+							Then it returns the info that required inputs are missing`,
+			tasks: []schema.Task{
+				{
+					Name: "unittest",
+					Inputs: []schema.Input{
+						{Name: "greeting"},
+					},
+				},
+			},
+			apiCalls: []apiCall{
+				{
+					method: "POST",
+					path:   "/api/v1/runs",
+					requestBody: openapi.ScheduleRunV1Request{
+						TaskName: "unittest",
+					},
+					statusCode: http.StatusBadRequest,
+					responseBody: openapi.Error{
+						Error:   1001,
+						Message: "required input greeting not set for task unittest",
+					},
+				},
+			},
+		},
+
+		{
+			name: `Given a task
+							When scheduling a run that sets all fields possible
+							Then it schedules the run`,
+			tasks: []schema.Task{
+				{
+					Name: "unittest",
+					Inputs: []schema.Input{
+						{Name: "greeting"},
+					},
+				},
+			},
+			apiCalls: []apiCall{
+				// Schedule a new run
+				{
+					method: "POST",
+					path:   "/api/v1/runs",
+					requestBody: openapi.ScheduleRunV1Request{
+						Assignees:       ptr.To([]string{"ellie"}),
+						RepositoryNames: ptr.To([]string{"git.local/unit/test"}),
+						Reviewers:       ptr.To([]string{"abby"}),
+						RunData:         ptr.To(map[string]string{"greeting": "Hello"}),
+						ScheduleAfter:   ptr.To(testDate(6, 0, 0)),
+						TaskName:        "unittest",
+					},
+					statusCode: http.StatusOK,
+					responseBody: openapi.ScheduleRunV1Response{
+						RunID: 1,
+					},
+				},
+				// Check that the task got scheduled
+				{
+					method:     "GET",
+					path:       "/api/v1/worker/runs",
+					statusCode: http.StatusOK,
+					responseBody: openapi.ListRunsV1Response{
+						Page: openapi.Page{Next: 0, Total: 1},
+						Result: []openapi.RunV1{
+							{
+								Id:           1,
+								Reason:       openapi.Manual,
+								Repositories: ptr.To([]string{"git.local/unit/test"}),
+								RunData: ptr.To(map[string]string{
+									"greeting":     "Hello",
+									"sb.assignees": "ellie",
+									"sb.reviewers": "abby",
+								}),
+								ScheduleAfter: testDate(6, 0, 0),
+								Status:        openapi.Pending,
+								Task:          "unittest",
+							},
+						},
+					},
+				},
+			},
+		},
 	}
 
 	for _, tc := range testCases {

@@ -12,6 +12,11 @@ type PullRequestKey struct{}
 type RepositoryKey struct{}
 type runDataKey struct{}
 
+const (
+	RunDataKeyAssignees = "sb.assignees"
+	RunDataKeyReviewers = "sb.reviewers"
+)
+
 // RunData reads and returns plugin data from the context.
 // It initialize the map if the context does not contain plugin data.
 func RunData(ctx context.Context) map[string]string {

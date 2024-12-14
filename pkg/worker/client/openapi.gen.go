@@ -41,7 +41,7 @@ const (
 
 // Error defines model for Error.
 type Error struct {
-	Error   string `json:"error"`
+	Error   int    `json:"error"`
 	Message string `json:"message"`
 }
 
@@ -56,6 +56,9 @@ type GetTaskV1Response struct {
 type GetWorkV1Response struct {
 	// Repositories Names of repositories for which to apply the tasks.
 	Repositories *[]string `json:"repositories,omitempty"`
+
+	// RunData Run data.
+	RunData *map[string]string `json:"runData,omitempty"`
 
 	// RunID Internal identifier of the unit of work.
 	RunID int `json:"runID"`
@@ -141,14 +144,15 @@ type ReportWorkV1TaskResult struct {
 
 // RunV1 defines model for RunV1.
 type RunV1 struct {
-	FinishedAt    *time.Time  `json:"finishedAt,omitempty"`
-	Id            uint        `json:"id"`
-	Reason        RunV1Reason `json:"reason"`
-	Repositories  *[]string   `json:"repositories,omitempty"`
-	ScheduleAfter time.Time   `json:"scheduleAfter"`
-	StartedAt     *time.Time  `json:"startedAt,omitempty"`
-	Status        RunV1Status `json:"status"`
-	Task          string      `json:"task"`
+	FinishedAt    *time.Time         `json:"finishedAt,omitempty"`
+	Id            uint               `json:"id"`
+	Reason        RunV1Reason        `json:"reason"`
+	Repositories  *[]string          `json:"repositories,omitempty"`
+	RunData       *map[string]string `json:"runData,omitempty"`
+	ScheduleAfter time.Time          `json:"scheduleAfter"`
+	StartedAt     *time.Time         `json:"startedAt,omitempty"`
+	Status        RunV1Status        `json:"status"`
+	Task          string             `json:"task"`
 }
 
 // RunV1Reason defines model for RunV1.Reason.
@@ -159,10 +163,16 @@ type RunV1Status string
 
 // ScheduleRunV1Request defines model for ScheduleRunV1Request.
 type ScheduleRunV1Request struct {
+	// Assignees List of usernames to set as assignees of pull requests. Optional.
+	Assignees *[]string `json:"assignees,omitempty"`
+
 	// RepositoryNames Names of the repositories for which to add a run.
 	// Leave empty to schedule a run for all repositories the task matches.
-	RepositoryNames *[]string          `json:"repositoryNames,omitempty"`
-	RunData         *map[string]string `json:"runData,omitempty"`
+	RepositoryNames *[]string `json:"repositoryNames,omitempty"`
+
+	// Reviewers List of usernames to set as reviewers of pull requests. Optional.
+	Reviewers *[]string          `json:"reviewers,omitempty"`
+	RunData   *map[string]string `json:"runData,omitempty"`
 
 	// ScheduleAfter Schedule the run after the given time.
 	// Uses the current time if empty.
@@ -686,6 +696,7 @@ type ScheduleRunV1ResponseBody struct {
 	Body         []byte
 	HTTPResponse *http.Response
 	JSON200      *ScheduleRunV1Response
+	JSON400      *Error
 }
 
 // Status returns HTTPResponse.Status
@@ -906,6 +917,13 @@ func ParseScheduleRunV1ResponseBody(rsp *http.Response) (*ScheduleRunV1ResponseB
 			return nil, err
 		}
 		response.JSON200 = &dest
+
+	case strings.Contains(rsp.Header.Get("Content-Type"), "json") && rsp.StatusCode == 400:
+		var dest Error
+		if err := json.Unmarshal(bodyBytes, &dest); err != nil {
+			return nil, err
+		}
+		response.JSON400 = &dest
 
 	}
 

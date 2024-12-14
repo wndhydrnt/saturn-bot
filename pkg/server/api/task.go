@@ -2,17 +2,20 @@ package api
 
 import (
 	"context"
+	"errors"
 
 	"github.com/wndhydrnt/saturn-bot/pkg/server/api/openapi"
+	sberror "github.com/wndhydrnt/saturn-bot/pkg/server/error"
 )
 
 // GetTaskV1 implements [openapi.ServerInterface].
 func (a *APIServer) GetTaskV1(_ context.Context, request openapi.GetTaskV1RequestObject) (openapi.GetTaskV1ResponseObject, error) {
-	t, content := a.TaskService.GetTask(request.Task)
-	if t == nil {
+	t, content, err := a.TaskService.GetTask(request.Task)
+	var clientErr sberror.Client
+	if errors.As(err, &clientErr) {
 		return openapi.GetTaskV1404JSONResponse{
-			Error:   "Not Found",
-			Message: "Task unknown",
+			Error:   clientErr.ErrorID(),
+			Message: clientErr.Error(),
 		}, nil
 	}
 
