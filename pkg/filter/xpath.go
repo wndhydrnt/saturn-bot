@@ -18,7 +18,7 @@ import (
 type XpathFactory struct{}
 
 // Create implements Factory.
-func (f XpathFactory) Create(params params.Params) (Filter, error) {
+func (f XpathFactory) Create(_ CreateOptions, params params.Params) (Filter, error) {
 	expressionsRaw, err := params.StringSlice("expressions", []string{})
 	if err != nil {
 		return nil, err

@@ -286,6 +286,20 @@ func (mr *MockRepositoryMockRecorder) Host() *gomock.Call {
 	return mr.mock.ctrl.RecordCallWithMethodType(mr.mock, "Host", reflect.TypeOf((*MockRepository)(nil).Host))
 }
 
+// ID mocks base method.
+func (m *MockRepository) ID() int64 {
+	m.ctrl.T.Helper()
+	ret := m.ctrl.Call(m, "ID")
+	ret0, _ := ret[0].(int64)
+	return ret0
+}
+
+// ID indicates an expected call of ID.
+func (mr *MockRepositoryMockRecorder) ID() *gomock.Call {
+	mr.mock.ctrl.T.Helper()
+	return mr.mock.ctrl.RecordCallWithMethodType(mr.mock, "ID", reflect.TypeOf((*MockRepository)(nil).ID))
+}
+
 // IsPullRequestClosed mocks base method.
 func (m *MockRepository) IsPullRequestClosed(pr any) bool {
 	m.ctrl.T.Helper()

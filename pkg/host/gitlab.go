@@ -6,6 +6,7 @@ import (
 	"fmt"
 	"net/url"
 	"path"
+	"slices"
 	"strings"
 	"sync"
 	"time"
@@ -44,6 +45,14 @@ func (u *userCache) get(name string) (*gitlab.User, error) {
 	u.data[name] = users[0]
 	u.dataMu.Unlock()
 	return users[0], nil
+}
+
+// GitLabSearcher defines methods to search GitLab.
+type GitLabSearcher interface {
+	// SearchCode returns a list of GitLab project IDs that match the search query.
+	// If gitlabGroupID is not nil, the search is limited to projects
+	// in the specified GitLab group and its sub-groups.
+	SearchCode(gitlabGroupID any, query string) ([]int64, error)
 }
 
 type GitLabRepository struct {
@@ -360,6 +369,11 @@ func (g *GitLabRepository) HasSuccessfulPullRequestBuild(pr interface{}) (bool, 
 
 func (g *GitLabRepository) Host() HostDetail {
 	return g.host
+}
+
+// ID implements [Host].
+func (g *GitLabRepository) ID() int64 {
+	return int64(g.project.ID)
 }
 
 func (g *GitLabRepository) IsPullRequestClosed(pr interface{}) bool {
@@ -695,4 +709,46 @@ func (g *GitLabHost) ListRepositoriesWithOpenPullRequests(result chan []Reposito
 
 		opts.Page = resp.NextPage
 	}
+}
+
+// SearchCode implements [GitLabSearcher].
+// It returns a list of unique IDs of all projects returned by the search query.
+// The IDs are sorted in ascending order.
+func (g *GitLabHost) SearchCode(gitlabGroupID any, query string) ([]int64, error) {
+	opts := &gitlab.SearchOptions{
+		ListOptions: gitlab.ListOptions{
+			Page:    1,
+			PerPage: 100,
+		},
+	}
+
+	log.Log().Debug("GitLab code search started")
+	var result []int64
+	for {
+		var blobs []*gitlab.Blob
+		var resp *gitlab.Response
+		var searchErr error
+		if gitlabGroupID == nil {
+			blobs, resp, searchErr = g.client.Search.Blobs(query, opts)
+		} else {
+			blobs, resp, searchErr = g.client.Search.BlobsByGroup(gitlabGroupID, query, opts)
+		}
+		if searchErr != nil {
+			return nil, fmt.Errorf("execute gitlab code search query page %d: %w", opts.Page, searchErr)
+		}
+
+		for _, blob := range blobs {
+			result = append(result, int64(blob.ProjectID))
+		}
+
+		if resp.NextPage == 0 {
+			break
+		}
+
+		opts.Page = resp.NextPage
+	}
+
+	slices.Sort(result)
+	log.Log().Debug("GitLab code search finished")
+	return slices.Compact(result), nil
 }
