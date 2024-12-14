@@ -9,7 +9,7 @@ import (
 	"github.com/wndhydrnt/saturn-bot/pkg/ptr"
 	"github.com/wndhydrnt/saturn-bot/pkg/server/api/openapi"
 	"github.com/wndhydrnt/saturn-bot/pkg/task/schema"
-	"github.com/xanzy/go-gitlab"
+	gitlab "gitlab.com/gitlab-org/api/client-go"
 )
 
 func TestServer_WebhookGitlab(t *testing.T) {
