@@ -13,6 +13,7 @@ import (
 	protoV1 "github.com/wndhydrnt/saturn-bot-go/protocol/v1"
 	"github.com/wndhydrnt/saturn-bot/pkg/action"
 	"github.com/wndhydrnt/saturn-bot/pkg/filter"
+	"github.com/wndhydrnt/saturn-bot/pkg/host"
 	"github.com/wndhydrnt/saturn-bot/pkg/log"
 	"github.com/wndhydrnt/saturn-bot/pkg/options"
 	"github.com/wndhydrnt/saturn-bot/pkg/params"
@@ -49,7 +50,7 @@ func createActionsForTask(actionDefs []schema.Action, factories options.ActionFa
 	return result, nil
 }
 
-func createFiltersForTask(filterDefs []schema.Filter, factories options.FilterFactories) ([]filter.Filter, error) {
+func createFiltersForTask(filterDefs []schema.Filter, factories options.FilterFactories, hosts []host.Host) ([]filter.Filter, error) {
 	var result []filter.Filter
 	if filterDefs == nil {
 		return result, nil
@@ -61,7 +62,7 @@ func createFiltersForTask(filterDefs []schema.Filter, factories options.FilterFa
 			return nil, fmt.Errorf("no filter registered for identifier %s", def.Filter)
 		}
 
-		fl, err := factory.Create(params.Params(def.Params))
+		fl, err := factory.Create(filter.CreateOptions{Hosts: hosts}, params.Params(def.Params))
 		if err != nil {
 			return nil, fmt.Errorf("failed to initialize filter %s at %d: %w", def.Filter, idx, err)
 		}
@@ -320,6 +321,7 @@ func (tw *Task) Stop() {
 type Registry struct {
 	actionFactories options.ActionFactories
 	filterFactories options.FilterFactories
+	hosts           []host.Host
 	isCi            bool
 	pathJava        string
 	pathPython      string
@@ -337,6 +339,7 @@ func NewRegistry(opts options.Opts) *Registry {
 	return &Registry{
 		actionFactories: opts.ActionFactories,
 		filterFactories: opts.FilterFactories,
+		hosts:           opts.Hosts,
 		isCi:            opts.IsCi,
 		pathJava:        opts.Config.JavaPath,
 		pathPython:      opts.Config.PythonPath,
@@ -386,7 +389,7 @@ func (tr *Registry) ReadTasks(taskFile string) error {
 			return fmt.Errorf("parse actions of task: %w", err)
 		}
 
-		wrapper.filters, err = createFiltersForTask(wrapper.Task.Filters, tr.filterFactories)
+		wrapper.filters, err = createFiltersForTask(wrapper.Task.Filters, tr.filterFactories, tr.hosts)
 		if err != nil {
 			return fmt.Errorf("parse filters of task file '%s': %w", entry.Path, err)
 		}

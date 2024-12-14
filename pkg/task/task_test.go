@@ -11,6 +11,7 @@ import (
 	"github.com/stretchr/testify/require"
 	"github.com/wndhydrnt/saturn-bot/pkg/action"
 	"github.com/wndhydrnt/saturn-bot/pkg/filter"
+	"github.com/wndhydrnt/saturn-bot/pkg/host"
 	"github.com/wndhydrnt/saturn-bot/pkg/options"
 	"github.com/wndhydrnt/saturn-bot/pkg/ptr"
 	"github.com/wndhydrnt/saturn-bot/pkg/task"
@@ -140,6 +141,10 @@ func TestRegistry_ReadAll_AllBuiltInFilters(t *testing.T) {
       params:
         paths: [test.txt]
       reverse: true
+    - filter: gitlabCodeSearch
+      params:
+        groupID: 10
+        query: "extension:txt test"
     - filter: jq
       params:
         expressions: [".dependencies"]
@@ -163,7 +168,16 @@ func TestRegistry_ReadAll_AllBuiltInFilters(t *testing.T) {
 		require.NoError(t, err)
 	}()
 
-	tr := task.NewRegistry(options.Opts{FilterFactories: filter.BuiltInFactories})
+	// Required for filter.GitlabCodeSearch
+	type gitlabCodeSearcher struct {
+		host.Host
+		host.GitLabSearcher
+	}
+
+	tr := task.NewRegistry(options.Opts{
+		FilterFactories: filter.BuiltInFactories,
+		Hosts:           []host.Host{&gitlabCodeSearcher{}},
+	})
 	err = tr.ReadAll([]string{taskPath})
 	require.NoError(t, err)
 
@@ -175,6 +189,7 @@ func TestRegistry_ReadAll_AllBuiltInFilters(t *testing.T) {
 		"file(op=and,paths=[unit-test.txt])",
 		"fileContent(path=hello-world.txt,regexp=Hello World)",
 		"!file(op=and,paths=[test.txt])",
+		"gitlabCodeSearch(groupID=10, query=extension:txt test)",
 		"jq(expressions=[.dependencies], path=package.json)",
 		"xpath(expressions=[//project],path=pom.xml)",
 	}

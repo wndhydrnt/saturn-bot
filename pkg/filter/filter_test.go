@@ -15,6 +15,7 @@ import (
 type testCase struct {
 	name             string
 	factory          filter.Factory
+	createOpts       func(*gomock.Controller) filter.CreateOptions
 	params           params.Params
 	repoMockFunc     func(*MockRepository)
 	wantMatch        bool
@@ -29,7 +30,12 @@ func runTestCase(t *testing.T, tc testCase) {
 		tc.repoMockFunc(repoMock)
 	}
 
-	f, err := tc.factory.Create(tc.params)
+	var createOpts filter.CreateOptions
+	if tc.createOpts != nil {
+		createOpts = tc.createOpts(ctrl)
+	}
+
+	f, err := tc.factory.Create(createOpts, tc.params)
 	if tc.wantFactoryError == "" {
 		require.NoError(t, err)
 	} else {
@@ -49,15 +55,17 @@ func runTestCase(t *testing.T, tc testCase) {
 }
 
 func TestFileFactory_Create(t *testing.T) {
+	opts := filter.CreateOptions{}
 	fac := filter.FileFactory{}
-	_, err := fac.Create(map[string]any{})
+	_, err := fac.Create(opts, map[string]any{})
 	require.ErrorContains(t, err, "required parameter `paths` not set")
 
-	_, err = fac.Create(map[string]any{"op": "invalid", "paths": []string{"test.yaml"}})
+	_, err = fac.Create(opts, map[string]any{"op": "invalid", "paths": []string{"test.yaml"}})
 	require.ErrorContains(t, err, "value of parameter `op` can be and,or not 'invalid'")
 }
 
 func TestFile_Do(t *testing.T) {
+	opts := filter.CreateOptions{}
 	ctrl := gomock.NewController(t)
 	repoMock := NewMockRepository(ctrl)
 	repoMock.EXPECT().HasFile("test.yaml").Return(true, nil).AnyTimes()
@@ -70,42 +78,42 @@ func TestFile_Do(t *testing.T) {
 	fac := filter.FileFactory{}
 
 	// One file, exists
-	f, err := fac.Create(map[string]any{"paths": []any{"test.yaml"}})
+	f, err := fac.Create(opts, map[string]any{"paths": []any{"test.yaml"}})
 	require.NoError(t, err)
 	result, err := f.Do(ctx)
 	require.NoError(t, err)
 	require.True(t, result)
 
 	// One file, missing
-	f, err = fac.Create(map[string]any{"paths": []any{"test.json"}})
+	f, err = fac.Create(opts, map[string]any{"paths": []any{"test.json"}})
 	require.NoError(t, err)
 	result, err = f.Do(ctx)
 	require.NoError(t, err)
 	require.False(t, result)
 
 	// Two files, all exist, and
-	f, err = fac.Create(map[string]any{"op": "and", "paths": []any{"test.yaml", "test.toml"}})
+	f, err = fac.Create(opts, map[string]any{"op": "and", "paths": []any{"test.yaml", "test.toml"}})
 	require.NoError(t, err)
 	result, err = f.Do(ctx)
 	require.NoError(t, err)
 	require.True(t, result)
 
 	// Two files, one missing, and
-	f, err = fac.Create(map[string]any{"op": "and", "paths": []any{"test.yaml", "test.json"}})
+	f, err = fac.Create(opts, map[string]any{"op": "and", "paths": []any{"test.yaml", "test.json"}})
 	require.NoError(t, err)
 	result, err = f.Do(ctx)
 	require.NoError(t, err)
 	require.False(t, result)
 
 	// Two files, one exists, or
-	f, err = fac.Create(map[string]any{"op": "or", "paths": []any{"test.yaml", "test.json"}})
+	f, err = fac.Create(opts, map[string]any{"op": "or", "paths": []any{"test.yaml", "test.json"}})
 	require.NoError(t, err)
 	result, err = f.Do(ctx)
 	require.NoError(t, err)
 	require.True(t, result)
 
 	// Two files, both missing, or
-	f, err = fac.Create(map[string]any{"op": "or", "paths": []any{"test.json", "test.json5"}})
+	f, err = fac.Create(opts, map[string]any{"op": "or", "paths": []any{"test.json", "test.json5"}})
 	require.NoError(t, err)
 	result, err = f.Do(ctx)
 	require.NoError(t, err)
@@ -183,37 +191,38 @@ ghi
 }
 
 func TestRepositoryFactory_Create(t *testing.T) {
+	opts := filter.CreateOptions{}
 	fac := filter.RepositoryFactory{}
-	_, err := fac.Create(map[string]any{})
+	_, err := fac.Create(opts, map[string]any{})
 	require.ErrorContains(t, err, "required parameter `host` not set")
 
-	_, err = fac.Create(map[string]any{"host": "github.com"})
+	_, err = fac.Create(opts, map[string]any{"host": "github.com"})
 	require.ErrorContains(t, err, "required parameter `owner` not set")
 
-	_, err = fac.Create(map[string]any{
+	_, err = fac.Create(opts, map[string]any{
 		"host":  "github.com",
 		"owner": "wndhydrnt",
 	})
 	require.ErrorContains(t, err, "required parameter `name` not set")
 
-	_, err = fac.Create(map[string]any{
+	_, err = fac.Create(opts, map[string]any{
 		"host":  "github.com",
 		"owner": "wndhydrnt",
 	})
 	require.ErrorContains(t, err, "required parameter `name` not set")
 
-	_, err = fac.Create(map[string]any{
+	_, err = fac.Create(opts, map[string]any{
 		"host": "(github.com",
 	})
 	require.ErrorContains(t, err, "compile parameter `host` to regular expression: error parsing regexp: missing closing ): `^(github.com$`")
 
-	_, err = fac.Create(map[string]any{
+	_, err = fac.Create(opts, map[string]any{
 		"host":  "github.com",
 		"owner": "(wndhydrnt",
 	})
 	require.ErrorContains(t, err, "compile parameter `owner` to regular expression: error parsing regexp: missing closing ): `^(wndhydrnt$`")
 
-	_, err = fac.Create(map[string]any{
+	_, err = fac.Create(opts, map[string]any{
 		"host":  "github.com",
 		"owner": "wndhydrnt",
 		"name":  "(saturn-bot",
@@ -224,7 +233,7 @@ func TestRepositoryFactory_Create(t *testing.T) {
 func TestRepository_Do(t *testing.T) {
 	fac := filter.RepositoryFactory{}
 
-	f, err := fac.Create(map[string]any{"host": "github.com", "owner": "wndhydrnt", "name": "rcmt"})
+	f, err := fac.Create(filter.CreateOptions{}, map[string]any{"host": "github.com", "owner": "wndhydrnt", "name": "rcmt"})
 	require.NoError(t, err)
 
 	cases := []struct {

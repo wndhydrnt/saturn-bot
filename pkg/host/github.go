@@ -254,6 +254,11 @@ func (g *GitHubRepository) Host() HostDetail {
 	return g.host
 }
 
+// ID implements [Host].
+func (g *GitHubRepository) ID() int64 {
+	return g.repo.GetID()
+}
+
 func (g *GitHubRepository) IsPullRequestClosed(pr interface{}) bool {
 	gpr := pr.(*github.PullRequest)
 	return gpr.GetState() == "closed" && !gpr.GetMerged()

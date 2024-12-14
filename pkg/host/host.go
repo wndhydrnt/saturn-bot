@@ -113,6 +113,8 @@ type Repository interface {
 	HasFile(path string) (bool, error)
 	HasSuccessfulPullRequestBuild(pr interface{}) (bool, error)
 	Host() HostDetail
+	// ID returns the global, unique identifier of the repository in the host.
+	ID() int64
 	IsPullRequestClosed(pr interface{}) bool
 	IsPullRequestMerged(pr interface{}) bool
 	IsPullRequestOpen(pr interface{}) bool

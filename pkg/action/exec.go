@@ -1,6 +1,7 @@
 package action
 
 import (
+	"bytes"
 	"context"
 	"errors"
 	"fmt"
@@ -9,7 +10,6 @@ import (
 	"strings"
 	"time"
 
-	"github.com/wndhydrnt/saturn-bot/pkg/log"
 	"github.com/wndhydrnt/saturn-bot/pkg/params"
 )
 
@@ -87,10 +87,11 @@ type execAction struct {
 }
 
 func (a *execAction) Apply(_ context.Context) error {
-	la := &logAdapter{name: filepath.Base(a.name)}
+	stdout := &bytes.Buffer{}
+	stderr := &bytes.Buffer{}
 	cmd := exec.Command(a.name, a.args...) // #nosec G204 -- users can pass arbitrary values here
-	cmd.Stdout = la
-	cmd.Stderr = la
+	cmd.Stdout = stdout
+	cmd.Stderr = stderr
 	errChan := make(chan error)
 	go func() {
 		err := cmd.Run()
@@ -103,7 +104,11 @@ func (a *execAction) Apply(_ context.Context) error {
 			// Drain the channel
 			<-timer.C
 		}
-		return err
+		if err != nil {
+			return fmt.Errorf("%w\nstdout:\n%s\nstderr:\n%s", err, stdout.String(), stderr.String())
+		}
+
+		return nil
 	case <-timer.C:
 		err := cmd.Process.Kill()
 		return errors.Join(fmt.Errorf("command timed out"), err)
@@ -113,13 +118,4 @@ func (a *execAction) Apply(_ context.Context) error {
 func (a *execAction) String() string {
 	args := strings.Join(a.args, ",")
 	return fmt.Sprintf("exec(args=%s, command=%s, timeout=%s)", args, a.name, a.timeout)
-}
-
-type logAdapter struct {
-	name string
-}
-
-func (la *logAdapter) Write(p []byte) (n int, err error) {
-	log.Log().Debugw(strings.TrimSpace(string(p)), "command", la.name)
-	return len(p), nil
 }
