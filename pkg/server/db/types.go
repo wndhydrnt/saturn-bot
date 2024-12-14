@@ -26,7 +26,7 @@ func (sl *StringList) Scan(value any) error {
 	return nil
 }
 
-// Scan implements [sql.Valuer].
+// Value implements [sql.Valuer].
 func (sl StringList) Value() (driver.Value, error) {
 	if len(sl) == 0 {
 		return nil, nil
@@ -40,8 +40,10 @@ const (
 	stringMapPairSep = "@@@"
 )
 
+// StringMap represents a field that contains multiple key/value pairs.
 type StringMap map[string]string
 
+// Scan implements [sql.Scanner].
 func (sm *StringMap) Scan(value any) error {
 	if value == nil {
 		return nil
@@ -66,6 +68,7 @@ func (sm *StringMap) Scan(value any) error {
 	return nil
 }
 
+// String serializes the content of the map to a string.
 func (sl StringMap) String() string {
 	if len(sl) == 0 {
 		return ""
@@ -88,6 +91,7 @@ func (sl StringMap) String() string {
 	return s
 }
 
+// Value implements [sql.Valuer].
 func (sl StringMap) Value() (driver.Value, error) {
 	if len(sl) == 0 {
 		return nil, nil

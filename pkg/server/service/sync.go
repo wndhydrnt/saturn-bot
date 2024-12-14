@@ -11,6 +11,7 @@ import (
 	"gorm.io/gorm"
 )
 
+// Sync synchronizes tasks on startup.
 type Sync struct {
 	clock         clock.Clock
 	db            *gorm.DB
@@ -18,6 +19,7 @@ type Sync struct {
 	workerService *WorkerService
 }
 
+// NewSync returns a new Sync.
 func NewSync(clock clock.Clock, db *gorm.DB, taskService *TaskService, workerService *WorkerService) *Sync {
 	return &Sync{
 		clock:         clock,
@@ -27,6 +29,10 @@ func NewSync(clock clock.Clock, db *gorm.DB, taskService *TaskService, workerSer
 	}
 }
 
+// SyncTasksInDatabase checks if any tasks have changed since that last start of the server.
+//
+// It schedules a new run of a task if the task has changed on disk.
+// The new run is scheduled as soon as possible.
 func (s *Sync) SyncTasksInDatabase() error {
 	for _, t := range s.taskService.ListTasks() {
 		var taskDB db.Task
