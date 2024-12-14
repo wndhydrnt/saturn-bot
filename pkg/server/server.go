@@ -78,6 +78,7 @@ func (s *Server) Start(opts options.Opts, taskPaths []string) error {
 	})
 
 	handler := api.RegisterAPIServer(&api.NewAPIServerOptions{
+		Clock:         opts.Clock,
 		Router:        router,
 		TaskService:   taskService,
 		WorkerService: workerService,

@@ -120,6 +120,45 @@ func TestServer_API_GetWorkV1(t *testing.T) {
 				},
 			},
 		},
+
+		{
+			name: `Given a task that expects an input
+							And a run of that task is scheduled manually
+							When a worker requests work
+							Then it returns the task`,
+			tasks: []schema.Task{
+				{Name: "unittest", Inputs: []schema.Input{{Name: "example"}}},
+			},
+			apiCalls: []apiCall{
+				{
+					method: "POST",
+					path:   "/api/v1/runs",
+					requestBody: openapi.ScheduleRunV1Request{
+						TaskName: "unittest",
+						RunData:  ptr.To(map[string]string{"example": "data"}),
+					},
+					statusCode: http.StatusOK,
+					responseBody: openapi.ScheduleRunV1Response{
+						RunID: 1,
+					},
+				},
+				{
+					method:     "GET",
+					path:       "/api/v1/worker/work",
+					statusCode: http.StatusOK,
+					responseBody: openapi.GetWorkV1Response{
+						RunID:   1,
+						RunData: ptr.To(map[string]string{"example": "data"}),
+						Tasks: []openapi.GetWorkV1Task{
+							{
+								Hash: "5e9905415e0e41a1a99df7f6034a174c21ad07443f70773bb8de5a0aaecd8f62",
+								Name: "unittest",
+							},
+						},
+					},
+				},
+			},
+		},
 	}
 
 	for _, tc := range testCases {
