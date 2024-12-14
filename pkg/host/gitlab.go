@@ -4,7 +4,6 @@ import (
 	"encoding/base64"
 	"errors"
 	"fmt"
-	"net/http"
 	"net/url"
 	"path"
 	"strings"
@@ -245,8 +244,7 @@ func (g *GitLabRepository) FindPullRequest(branch string) (any, error) {
 func (g *GitLabRepository) GetFile(fileName string) (string, error) {
 	file, _, err := g.client.RepositoryFiles.GetFile(g.project.ID, fileName, &gitlab.GetFileOptions{Ref: gitlab.Ptr(g.project.DefaultBranch)})
 	if err != nil {
-		var errResp *gitlab.ErrorResponse
-		if errors.As(err, &errResp) && errResp.Response.StatusCode == http.StatusNotFound {
+		if errors.Is(err, gitlab.ErrNotFound) {
 			return "", ErrFileNotFound
 		}
 
@@ -281,12 +279,9 @@ func (g *GitLabRepository) HasFile(p string) (bool, error) {
 			opts,
 		)
 		if err != nil {
-			var errResp *gitlab.ErrorResponse
-			if errors.As(err, &errResp) {
-				if errResp.Response.StatusCode == http.StatusNotFound {
-					log.Log().Warn("Tree not found - empty repository?")
-					return false, nil
-				}
+			if errors.Is(err, gitlab.ErrNotFound) {
+				log.Log().Warn("Tree not found - empty repository?")
+				return false, nil
 			}
 			return false, fmt.Errorf("list tree of repository %d: %w", g.project.ID, err)
 		}
