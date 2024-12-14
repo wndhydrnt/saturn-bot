@@ -376,6 +376,7 @@ func (g *GitLabRepository) Host() HostDetail {
 	return g.host
 }
 
+// ID implements [Host].
 func (g *GitLabRepository) ID() int64 {
 	return int64(g.project.ID)
 }

@@ -37,6 +37,7 @@ type Filter interface {
 	String() string
 }
 
+// CreateOptions defines additional dependencies or values of [Factory].
 type CreateOptions struct {
 	Hosts []host.Host
 }

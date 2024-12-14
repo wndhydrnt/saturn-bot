@@ -254,6 +254,7 @@ func (g *GitHubRepository) Host() HostDetail {
 	return g.host
 }
 
+// ID implements [Host].
 func (g *GitHubRepository) ID() int64 {
 	return g.repo.GetID()
 }
