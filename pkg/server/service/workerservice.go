@@ -5,6 +5,7 @@ import (
 	"fmt"
 	"time"
 
+	gron "github.com/adhocore/gronx"
 	"github.com/wndhydrnt/saturn-bot/pkg/clock"
 	"github.com/wndhydrnt/saturn-bot/pkg/log"
 	"github.com/wndhydrnt/saturn-bot/pkg/processor"
@@ -50,7 +51,7 @@ func (ws *WorkerService) ScheduleRun(
 	runData map[string]string,
 	tx *gorm.DB,
 ) (uint, error) {
-	task, _, err := ws.taskService.GetTask(taskName)
+	task, err := ws.taskService.GetTask(taskName)
 	if err != nil {
 		return 0, err
 	}
@@ -121,7 +122,7 @@ func (ws *WorkerService) ScheduleRun(
 }
 
 func (ws *WorkerService) findTask(name string) (*task.Task, error) {
-	t, _, err := ws.taskService.GetTask(name)
+	t, err := ws.taskService.GetTask(name)
 	return t, err
 }
 
@@ -191,7 +192,6 @@ func (ws *WorkerService) ReportRun(req openapi.ReportWorkV1Request) error {
 				RepositoryName: taskResult.RepositoryName,
 				Result:         uint(taskResult.Result), // #nosec G115 -- no info by gosec on how to fix this
 				RunID:          runCurrent.ID,
-				TaskName:       taskResult.TaskName,
 			}
 			if taskResult.Error != nil {
 				result.Error = taskResult.Error
@@ -202,7 +202,7 @@ func (ws *WorkerService) ReportRun(req openapi.ReportWorkV1Request) error {
 			}
 
 			procResult := processor.Result(taskResult.Result)
-			nextNew := nextSchedule(procResult)
+			nextNew := ws.nextSchedule(procResult, nil)
 			if nextNew < next {
 				next = nextNew
 			}
@@ -254,7 +254,7 @@ func (ws *WorkerService) ListRuns(opts ListRunsOptions, listOpts ListOptions) ([
 	return runs, count, result.Error
 }
 
-func nextSchedule(r processor.Result) time.Duration {
+func (ws *WorkerService) nextSchedule(r processor.Result, t *task.Task) time.Duration {
 	switch r {
 	case processor.ResultUnknown:
 		return 15 * time.Minute
@@ -267,7 +267,13 @@ func nextSchedule(r processor.Result) time.Duration {
 	case processor.ResultNoChanges:
 		return 60 * time.Minute
 	default:
-		return 60 * time.Minute
+		if t.Trigger.Cron != nil {
+			now := ws.clock.Now()
+			nextTick, _ := gron.NextTickAfter(ptr.From(t.Trigger.Cron), now, true)
+			return now.Sub(nextTick)
+		}
+
+		return 24 * time.Hour
 	}
 }
 

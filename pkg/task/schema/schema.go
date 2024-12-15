@@ -318,6 +318,9 @@ type Task struct {
 
 // Experimental: Define when the task gets executed. Only relevant in server mode.
 type TaskTrigger struct {
+	// Experimental: Trigger the task based on a cron schedule.
+	Cron *string `json:"cron,omitempty" yaml:"cron,omitempty" mapstructure:"cron,omitempty"`
+
 	// Experimental: Execute the task when the server receives a webhook.
 	Webhook *TaskTriggerWebhook `json:"webhook,omitempty" yaml:"webhook,omitempty" mapstructure:"webhook,omitempty"`
 }

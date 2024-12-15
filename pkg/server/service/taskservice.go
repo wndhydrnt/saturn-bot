@@ -25,19 +25,23 @@ func NewTaskService(clock clock.Clock, db *gorm.DB, taskRegistry *task.Registry)
 	}
 }
 
-func (ts *TaskService) GetTask(taskName string) (*task.Task, string, error) {
+func (ts *TaskService) GetTask(taskName string) (*task.Task, error) {
 	for _, entry := range ts.taskRegistry.GetTasks() {
 		if entry.Name == taskName {
-			content, err := encodeBase64(entry.Path())
-			if err != nil {
-				return nil, "", err
-			}
-
-			return entry, content, nil
+			return entry, nil
 		}
 	}
 
-	return nil, "", sberror.NewTaskNotFoundError(taskName)
+	return nil, sberror.NewTaskNotFoundError(taskName)
+}
+
+func (ts *TaskService) EncodeTaskBase64(taskName string) (string, error) {
+	task, err := ts.GetTask(taskName)
+	if err != nil {
+		return "", err
+	}
+
+	return encodeBase64(task.Path())
 }
 
 func (ts *TaskService) ListTasks() []*task.Task {

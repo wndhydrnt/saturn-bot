@@ -38,8 +38,9 @@ func TestServer_WebhookGitlab(t *testing.T) {
 					statusCode: http.StatusOK,
 					responseBody: openapi.GetWorkV1Response{
 						RunID: 1,
-						Tasks: []openapi.GetWorkV1Task{
-							{Hash: "35e6e13d4ec91723e96cf0e93998043d042d98a637fe56f09bee1cd8558ea950", Name: "unittest"},
+						Task: openapi.WorkTaskV1{
+							Hash: "35e6e13d4ec91723e96cf0e93998043d042d98a637fe56f09bee1cd8558ea950",
+							Name: "unittest",
 						},
 					},
 				},
@@ -77,8 +78,9 @@ func TestServer_WebhookGitlab(t *testing.T) {
 					statusCode: http.StatusOK,
 					responseBody: openapi.GetWorkV1Response{
 						RunID: 2,
-						Tasks: []openapi.GetWorkV1Task{
-							{Hash: "35e6e13d4ec91723e96cf0e93998043d042d98a637fe56f09bee1cd8558ea950", Name: "unittest"},
+						Task: openapi.WorkTaskV1{
+							Hash: "35e6e13d4ec91723e96cf0e93998043d042d98a637fe56f09bee1cd8558ea950",
+							Name: "unittest",
 						},
 					},
 				},
@@ -109,8 +111,9 @@ func TestServer_WebhookGitlab(t *testing.T) {
 					statusCode: http.StatusOK,
 					responseBody: openapi.GetWorkV1Response{
 						RunID: 1,
-						Tasks: []openapi.GetWorkV1Task{
-							{Hash: "35e6e13d4ec91723e96cf0e93998043d042d98a637fe56f09bee1cd8558ea950", Name: "unittest"},
+						Task: openapi.WorkTaskV1{
+							Hash: "35e6e13d4ec91723e96cf0e93998043d042d98a637fe56f09bee1cd8558ea950",
+							Name: "unittest",
 						},
 					},
 				},
@@ -168,8 +171,9 @@ func TestServer_WebhookGitlab(t *testing.T) {
 					statusCode: http.StatusOK,
 					responseBody: openapi.GetWorkV1Response{
 						RunID: 1,
-						Tasks: []openapi.GetWorkV1Task{
-							{Hash: "e42a6e186f31b860f22f07ed468b99c6dc75318542fc9ac8383358fae1b5ab8b", Name: "unittest"},
+						Task: openapi.WorkTaskV1{
+							Hash: "e42a6e186f31b860f22f07ed468b99c6dc75318542fc9ac8383358fae1b5ab8b",
+							Name: "unittest",
 						},
 					},
 				},
@@ -234,8 +238,9 @@ func TestServer_WebhookGitlab(t *testing.T) {
 					statusCode: http.StatusOK,
 					responseBody: openapi.GetWorkV1Response{
 						RunID: 1,
-						Tasks: []openapi.GetWorkV1Task{
-							{Hash: "ef99cc7f5c98b01042d78394fa938bd6746c82f10033868e7302daf586ba33a2", Name: "unittest"},
+						Task: openapi.WorkTaskV1{
+							Hash: "ef99cc7f5c98b01042d78394fa938bd6746c82f10033868e7302daf586ba33a2",
+							Name: "unittest",
 						},
 					},
 				},

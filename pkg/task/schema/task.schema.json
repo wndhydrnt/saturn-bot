@@ -132,6 +132,10 @@
       "description": "Experimental: Define when the task gets executed. Only relevant in server mode.",
       "type": "object",
       "properties": {
+        "cron": {
+          "description": "Experimental: Trigger the task based on a cron schedule.",
+          "type": "string"
+        },
         "webhook": {
           "description": "Experimental: Execute the task when the server receives a webhook.",
           "type": "object",

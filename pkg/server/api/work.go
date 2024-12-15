@@ -37,10 +37,7 @@ func (a *APIServer) GetWorkV1(ctx context.Context, _ openapi.GetWorkV1RequestObj
 	}
 
 	resp.RunID = int(run.ID) // #nosec G115 -- no info by gosec on how to fix this
-	resp.Tasks = []openapi.GetWorkV1Task{
-		{Hash: task.Checksum(), Name: task.Task.Name},
-	}
-
+	resp.Task = openapi.WorkTaskV1{Hash: task.Checksum(), Name: task.Task.Name}
 	return resp, nil
 }
 

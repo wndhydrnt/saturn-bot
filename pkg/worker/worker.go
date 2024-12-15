@@ -53,7 +53,7 @@ func (a *APIExecutionSource) Next() (Execution, error) {
 		return Execution{}, fmt.Errorf("api request to get work: %w", err)
 	}
 
-	if len(resp.JSON200.Tasks) == 0 {
+	if resp.JSON200.RunID == 0 {
 		return Execution{}, ErrNoExec
 	}
 
@@ -63,6 +63,7 @@ func (a *APIExecutionSource) Next() (Execution, error) {
 func (a *APIExecutionSource) Report(result Result) error {
 	payload := client.ReportWorkV1Request{
 		RunID:       result.Execution.RunID,
+		Task:        result.Execution.Task,
 		TaskResults: mapRunResultsToTaskResults(result.TaskResults),
 	}
 	if result.RunError != nil {
@@ -200,18 +201,15 @@ func (w *Worker) Stop() chan struct{} {
 }
 
 func (w *Worker) executeRun(exec Execution, result chan Result) {
-	var taskPaths []string
-	for _, taskReq := range exec.Tasks {
-		t, err := w.findTaskByName(taskReq.Name, taskReq.Hash)
-		if err != nil {
-			result <- Result{
-				RunError:  err,
-				Execution: exec,
-			}
-			return
+	t, err := w.findTaskByName(exec.Task.Name, exec.Task.Hash)
+	if err != nil {
+		result <- Result{
+			RunError:  err,
+			Execution: exec,
 		}
-		taskPaths = append(taskPaths, t.Path)
+		return
 	}
+	taskPaths := []string{t.Path}
 
 	var repositories []string
 	if exec.Repositories != nil {
@@ -257,7 +255,6 @@ func mapRunResultsToTaskResults(runResults []command.RunResult) []client.ReportW
 		result := client.ReportWorkV1TaskResult{
 			RepositoryName: rr.RepositoryName,
 			Result:         int(rr.Result),
-			TaskName:       rr.TaskName,
 		}
 		if rr.Error != nil {
 			result.Error = ptr.To(rr.Error.Error())

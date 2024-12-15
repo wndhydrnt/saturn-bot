@@ -63,17 +63,8 @@ type GetWorkV1Response struct {
 	// RunID Internal identifier of the unit of work.
 	RunID int `json:"runID"`
 
-	// Tasks Names of the tasks to execute.
-	Tasks []GetWorkV1Task `json:"tasks"`
-}
-
-// GetWorkV1Task defines model for GetWorkV1Task.
-type GetWorkV1Task struct {
-	// Hash Hash of the task. Used to detect if server and worker are out of sync.
-	Hash string `json:"hash"`
-
-	// Name Name of the task to execute.
-	Name string `json:"name"`
+	// Task The task to execute.
+	Task WorkTaskV1 `json:"task"`
 }
 
 // ListOptions defines model for ListOptions.
@@ -114,6 +105,9 @@ type ReportWorkV1Request struct {
 	// RunID Internal identifier of the unit of work.
 	RunID int `json:"runID"`
 
+	// Task The task to execute.
+	Task WorkTaskV1 `json:"task"`
+
 	// TaskResults Results of each task.
 	TaskResults []ReportWorkV1TaskResult `json:"taskResults"`
 }
@@ -137,9 +131,6 @@ type ReportWorkV1TaskResult struct {
 
 	// Result Identifier of the result.
 	Result int `json:"result"`
-
-	// TaskName Name of the task.
-	TaskName string `json:"taskName"`
 }
 
 // RunV1 defines model for RunV1.
@@ -186,6 +177,15 @@ type ScheduleRunV1Request struct {
 type ScheduleRunV1Response struct {
 	// RunID Identifier of the newly scheduled run.
 	RunID int `json:"runID"`
+}
+
+// WorkTaskV1 The task to execute.
+type WorkTaskV1 struct {
+	// Hash Hash of the task. Used to detect if server and worker are out of sync.
+	Hash string `json:"hash"`
+
+	// Name Name of the task to execute.
+	Name string `json:"name"`
 }
 
 // ListRunsV1Params defines parameters for ListRunsV1.
