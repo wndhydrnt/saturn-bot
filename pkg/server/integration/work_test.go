@@ -278,3 +278,70 @@ func TestServer_API_ScheduleRunV1(t *testing.T) {
 		})
 	}
 }
+
+func TestServer_API_ReportWorkV1(t *testing.T) {
+	testCases := []testCase{
+		{
+			name: `Given a task that defines a cron trigger
+							When a worker reports the result of a run for that task
+							Then it schedules the next run according to the cron schedule`,
+			tasks: []schema.Task{
+				{
+					Name: "unittest",
+					Trigger: &schema.TaskTrigger{
+						Cron: ptr.To("34 4 * * *"),
+					},
+				},
+			},
+			apiCalls: []apiCall{
+				// Read the run that gets scheduled at the start of the server.
+				{
+					method:     "GET",
+					path:       "/api/v1/worker/work",
+					statusCode: http.StatusOK,
+					responseBody: openapi.GetWorkV1Response{
+						RunID: 1,
+						Task:  openapi.WorkTaskV1{Hash: "abc", Name: "unittest"},
+					},
+				},
+				// And report the result of the run.
+				{
+					method: "POST",
+					path:   "/api/v1/worker/work",
+					requestBody: openapi.ReportWorkV1Request{
+						RunID:       1,
+						TaskResults: []openapi.ReportWorkV1TaskResult{},
+					},
+					statusCode: http.StatusCreated,
+					responseBody: openapi.ReportWorkV1Response{
+						Result: "ok",
+					},
+				},
+				// List the runs of the task. Limit to one result to test pagination.
+				{
+					method:     "GET",
+					path:       "/api/v1/worker/runs",
+					statusCode: http.StatusOK,
+					responseBody: openapi.ListRunsV1Response{
+						Page: openapi.Page{Next: 2, Total: 2},
+						Result: []openapi.RunV1{
+							{
+								Id:            2,
+								Reason:        openapi.Next,
+								ScheduleAfter: testDate(1, 0, 4),
+								Status:        openapi.Pending,
+								Task:          defaultTask.Name,
+							},
+						},
+					},
+				},
+			},
+		},
+	}
+
+	for _, tc := range testCases {
+		t.Run(tc.name, func(t *testing.T) {
+			executeTestCase(t, tc)
+		})
+	}
+}

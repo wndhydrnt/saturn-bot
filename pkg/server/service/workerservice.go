@@ -220,12 +220,17 @@ func (ws *WorkerService) ReportRun(req openapi.ReportWorkV1Request) error {
 }
 
 type ListRunsOptions struct {
+	Status   *db.RunStatus
 	TaskName string
 }
 
 func (ws *WorkerService) ListRuns(opts ListRunsOptions, listOpts ListOptions) ([]db.Run, int64, error) {
 	var runs []db.Run
 	query := ws.db
+	if opts.Status != nil {
+		query = query.Where("status = ?", ptr.From(opts.Status))
+	}
+
 	if opts.TaskName != "" {
 		query = query.Where("task_name = ?", opts.TaskName)
 	}
@@ -242,6 +247,10 @@ func (ws *WorkerService) ListRuns(opts ListRunsOptions, listOpts ListOptions) ([
 
 	var count int64
 	queryCount := ws.db.Model(&db.Run{})
+	if opts.Status != nil {
+		queryCount = queryCount.Where("status = ?", ptr.From(opts.Status))
+	}
+
 	if opts.TaskName != "" {
 		queryCount = queryCount.Where("task_name = ?", opts.TaskName)
 	}

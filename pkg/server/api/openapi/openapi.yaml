@@ -128,6 +128,10 @@ paths:
           name: listOptions
           schema:
             $ref: "#/components/schemas/ListOptions"
+        - in: query
+          name: status
+          schema:
+            $ref: "#/components/schemas/RunStatusV1"
       responses:
         "200":
           description: OK
@@ -341,12 +345,14 @@ components:
           type: string
           format: date-time
         status:
-          type: string
-          enum:
-            - pending
-            - running
-            - finished
-            - failed
+          $ref: "#/components/schemas/RunStatusV1"
         task:
           type: string
       required: ["id", "reason", "scheduleAfter", "status", "task"]
+    RunStatusV1:
+      type: string
+      enum:
+        - pending
+        - running
+        - finished
+        - failed

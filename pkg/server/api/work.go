@@ -44,6 +44,11 @@ func (a *APIServer) GetWorkV1(ctx context.Context, _ openapi.GetWorkV1RequestObj
 func (a *APIServer) ListRunsV1(ctx context.Context, request openapi.ListRunsV1RequestObject) (openapi.ListRunsV1ResponseObject, error) {
 	listOpts := toListOptions(request.Params.ListOptions)
 	queryOpts := service.ListRunsOptions{}
+	if request.Params.Status != nil {
+		dbStatus := mapRunStatusFromApiToDb(ptr.From(request.Params.Status))
+		queryOpts.Status = &dbStatus
+	}
+
 	if request.Params.Task != nil {
 		queryOpts.TaskName = ptr.From(request.Params.Task)
 	}
@@ -162,7 +167,7 @@ func mapRunReason(r db.RunReason) openapi.RunV1Reason {
 	}
 }
 
-func mapRunStatus(s db.RunStatus) openapi.RunV1Status {
+func mapRunStatus(s db.RunStatus) openapi.RunStatusV1 {
 	switch s {
 	case db.RunStatusFailed:
 		return openapi.Failed
@@ -172,5 +177,18 @@ func mapRunStatus(s db.RunStatus) openapi.RunV1Status {
 		return openapi.Running
 	default:
 		return openapi.Pending
+	}
+}
+
+func mapRunStatusFromApiToDb(rs openapi.RunStatusV1) db.RunStatus {
+	switch rs {
+	case openapi.Failed:
+		return db.RunStatusFailed
+	case openapi.Finished:
+		return db.RunStatusFinished
+	case openapi.Pending:
+		return db.RunStatusPending
+	default:
+		return db.RunStatusRunning
 	}
 }
