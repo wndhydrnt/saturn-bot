@@ -5,7 +5,7 @@ import (
 	"fmt"
 	"time"
 
-	gron "github.com/adhocore/gronx"
+	"github.com/adhocore/gronx"
 	"github.com/wndhydrnt/saturn-bot/pkg/clock"
 	"github.com/wndhydrnt/saturn-bot/pkg/log"
 	"github.com/wndhydrnt/saturn-bot/pkg/processor"
@@ -18,7 +18,11 @@ import (
 	"gorm.io/gorm"
 )
 
-var ErrNoRun = errors.New("no next run")
+var (
+	ErrNoRun = errors.New("no next run")
+
+	nextDefault = 24 * time.Hour
+)
 
 type ErrorMissingInput struct {
 	InputName string
@@ -41,6 +45,29 @@ func NewWorkerService(clock clock.Clock, db *gorm.DB, taskService *TaskService) 
 		db:          db,
 		taskService: taskService,
 	}
+}
+
+func (ws *WorkerService) DeletePendingRuns(taskName string, tx *gorm.DB) error {
+	if tx == nil {
+		tx = ws.db
+	}
+
+	var runsOfTask []db.Run
+	result := tx.Where("task_name = ?", taskName).
+		Where("status = ?", db.RunStatusPending).
+		Find(&runsOfTask)
+	if result.Error != nil {
+		return fmt.Errorf("find pending runs: %w", result.Error)
+	}
+
+	for _, run := range runsOfTask {
+		result := tx.Delete(&run)
+		if result.Error != nil {
+			return fmt.Errorf("delete pending run %d: %w", run.ID, result.Error)
+		}
+	}
+
+	return nil
 }
 
 func (ws *WorkerService) ScheduleRun(
@@ -186,7 +213,9 @@ func (ws *WorkerService) ReportRun(req openapi.ReportWorkV1Request) error {
 			return err
 		}
 
-		next := 1 * time.Hour
+		task, _ := ws.taskService.GetTask(req.Task.Name)
+		now := ws.clock.Now()
+		next := determineBaseSchedule(now, task)
 		for _, taskResult := range req.TaskResults {
 			result := db.TaskResult{
 				RepositoryName: taskResult.RepositoryName,
@@ -202,15 +231,17 @@ func (ws *WorkerService) ReportRun(req openapi.ReportWorkV1Request) error {
 			}
 
 			procResult := processor.Result(taskResult.Result)
-			nextNew := ws.nextSchedule(procResult, nil)
-			if nextNew < next {
-				next = nextNew
+			nextNew := nextSchedule(now, procResult)
+			if nextNew != nil && nextNew.Before(next) {
+				next = ptr.From(nextNew)
 			}
 		}
 
-		_, err := ws.ScheduleRun(db.RunReasonNext, runCurrent.RepositoryNames, ws.clock.Now().Add(next), runCurrent.TaskName, runCurrent.RunData, tx)
-		if err != nil {
-			return err
+		if runCurrent.Reason != db.RunReasonManual {
+			_, err := ws.ScheduleRun(db.RunReasonNext, runCurrent.RepositoryNames, next, runCurrent.TaskName, runCurrent.RunData, tx)
+			if err != nil {
+				return err
+			}
 		}
 
 		return nil
@@ -263,27 +294,44 @@ func (ws *WorkerService) ListRuns(opts ListRunsOptions, listOpts ListOptions) ([
 	return runs, count, result.Error
 }
 
-func (ws *WorkerService) nextSchedule(r processor.Result, t *task.Task) time.Duration {
-	switch r {
-	case processor.ResultUnknown:
-		return 15 * time.Minute
-	case processor.ResultAutoMergeTooEarly:
-		return 60 * time.Minute
-	case processor.ResultPrCreated:
-		return 15 * time.Minute
-	case processor.ResultPrOpen:
-		return 15 * time.Minute
-	case processor.ResultNoChanges:
-		return 60 * time.Minute
-	default:
-		if t.Trigger.Cron != nil {
-			now := ws.clock.Now()
-			nextTick, _ := gron.NextTickAfter(ptr.From(t.Trigger.Cron), now, true)
-			return now.Sub(nextTick)
-		}
-
-		return 24 * time.Hour
+func determineBaseSchedule(now time.Time, t *task.Task) time.Time {
+	cronTime := calcNextCronTime(now, t)
+	if cronTime == nil {
+		return now.Add(nextDefault)
 	}
+
+	return ptr.From(cronTime)
+}
+
+func calcNextCronTime(now time.Time, t *task.Task) *time.Time {
+	if t == nil {
+		return nil
+	}
+
+	if t.Trigger == nil {
+		return nil
+	}
+
+	if t.Trigger.Cron == nil {
+		return nil
+	}
+
+	nextTick, _ := gronx.NextTickAfter(ptr.From(t.Trigger.Cron), now, true)
+	return ptr.To(nextTick)
+}
+
+func nextSchedule(now time.Time, r processor.Result) *time.Time {
+	var toAdd time.Duration
+	switch r {
+	case processor.ResultPrCreated:
+	case processor.ResultPrOpen:
+	case processor.ResultUnknown:
+		toAdd = 30 * time.Minute
+	default:
+		return nil
+	}
+
+	return ptr.To(now.Add(toAdd))
 }
 
 func checkRequiredInputs(t *task.Task, runData map[string]string) error {

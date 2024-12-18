@@ -134,7 +134,8 @@
       "properties": {
         "cron": {
           "description": "Experimental: Trigger the task based on a cron schedule.",
-          "type": "string"
+          "type": "string",
+          "format": "cron"
         },
         "webhook": {
           "description": "Experimental: Execute the task when the server receives a webhook.",

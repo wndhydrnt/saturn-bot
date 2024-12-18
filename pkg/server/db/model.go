@@ -37,9 +37,10 @@ type Run struct {
 }
 
 type Task struct {
-	ID   uint `gorm:"primarykey"`
-	Name string
-	Hash string
+	Active bool
+	ID     uint `gorm:"primarykey"`
+	Name   string
+	Hash   string
 }
 
 type TaskResult struct {

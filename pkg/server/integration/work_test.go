@@ -5,6 +5,7 @@ import (
 	"net/http"
 	"testing"
 
+	"github.com/wndhydrnt/saturn-bot/pkg/processor"
 	"github.com/wndhydrnt/saturn-bot/pkg/ptr"
 	"github.com/wndhydrnt/saturn-bot/pkg/server/api/openapi"
 	"github.com/wndhydrnt/saturn-bot/pkg/task/schema"
@@ -55,7 +56,7 @@ func TestServer_API_ListRunsV1(t *testing.T) {
 							{
 								Id:            2,
 								Reason:        openapi.Next,
-								ScheduleAfter: testDate(1, 0, 4),
+								ScheduleAfter: testDate(2, 0, 0, 4),
 								Status:        openapi.Pending,
 								Task:          defaultTask.Name,
 							},
@@ -72,11 +73,11 @@ func TestServer_API_ListRunsV1(t *testing.T) {
 						Page: openapi.Page{Next: 0, Total: 2},
 						Result: []openapi.RunV1{
 							{
-								FinishedAt:    ptr.To(testDate(0, 0, 3)),
+								FinishedAt:    ptr.To(testDate(1, 0, 0, 3)),
 								Id:            1,
 								Reason:        openapi.New,
-								ScheduleAfter: testDate(0, 0, 0),
-								StartedAt:     ptr.To(testDate(0, 0, 2)),
+								ScheduleAfter: testDate(1, 0, 0, 0),
+								StartedAt:     ptr.To(testDate(1, 0, 0, 2)),
 								Status:        openapi.Finished,
 								Task:          defaultTask.Name,
 							},
@@ -236,7 +237,7 @@ func TestServer_API_ScheduleRunV1(t *testing.T) {
 						RepositoryNames: ptr.To([]string{"git.local/unit/test"}),
 						Reviewers:       ptr.To([]string{"abby"}),
 						RunData:         ptr.To(map[string]string{"greeting": "Hello"}),
-						ScheduleAfter:   ptr.To(testDate(6, 0, 0)),
+						ScheduleAfter:   ptr.To(testDate(1, 6, 0, 0)),
 						TaskName:        "unittest",
 					},
 					statusCode: http.StatusOK,
@@ -261,7 +262,7 @@ func TestServer_API_ScheduleRunV1(t *testing.T) {
 									"sb.assignees": "ellie",
 									"sb.reviewers": "abby",
 								}),
-								ScheduleAfter: testDate(6, 0, 0),
+								ScheduleAfter: testDate(1, 6, 0, 0),
 								Status:        openapi.Pending,
 								Task:          "unittest",
 							},
@@ -289,7 +290,7 @@ func TestServer_API_ReportWorkV1(t *testing.T) {
 				{
 					Name: "unittest",
 					Trigger: &schema.TaskTrigger{
-						Cron: ptr.To("34 4 * * *"),
+						Cron: ptr.To("0 0 * * *"),
 					},
 				},
 			},
@@ -301,7 +302,10 @@ func TestServer_API_ReportWorkV1(t *testing.T) {
 					statusCode: http.StatusOK,
 					responseBody: openapi.GetWorkV1Response{
 						RunID: 1,
-						Task:  openapi.WorkTaskV1{Hash: "abc", Name: "unittest"},
+						Task: openapi.WorkTaskV1{
+							Hash: "b1aa18fdf03185694c7c4ddc443a9e7a895b5841c96a963919da990d5293849c",
+							Name: "unittest",
+						},
 					},
 				},
 				// And report the result of the run.
@@ -309,27 +313,39 @@ func TestServer_API_ReportWorkV1(t *testing.T) {
 					method: "POST",
 					path:   "/api/v1/worker/work",
 					requestBody: openapi.ReportWorkV1Request{
-						RunID:       1,
-						TaskResults: []openapi.ReportWorkV1TaskResult{},
+						RunID: 1,
+						Task:  openapi.WorkTaskV1{Name: "unittest", Hash: "abc"},
+						TaskResults: []openapi.ReportWorkV1TaskResult{
+							{RepositoryName: "git.local/unit/test", Result: int(processor.ResultNoChanges)},
+						},
 					},
 					statusCode: http.StatusCreated,
 					responseBody: openapi.ReportWorkV1Response{
 						Result: "ok",
 					},
 				},
-				// List the runs of the task. Limit to one result to test pagination.
+				// List the runs of the task.
 				{
 					method:     "GET",
 					path:       "/api/v1/worker/runs",
 					statusCode: http.StatusOK,
 					responseBody: openapi.ListRunsV1Response{
-						Page: openapi.Page{Next: 2, Total: 2},
+						Page: openapi.Page{Next: 0, Total: 2},
 						Result: []openapi.RunV1{
 							{
 								Id:            2,
 								Reason:        openapi.Next,
-								ScheduleAfter: testDate(1, 0, 4),
+								ScheduleAfter: testDate(2, 0, 0, 0),
 								Status:        openapi.Pending,
+								Task:          defaultTask.Name,
+							},
+							{
+								FinishedAt:    ptr.To(testDate(1, 0, 0, 3)),
+								Id:            1,
+								Reason:        openapi.New,
+								ScheduleAfter: testDate(1, 0, 0, 0),
+								StartedAt:     ptr.To(testDate(1, 0, 0, 2)),
+								Status:        openapi.Finished,
 								Task:          defaultTask.Name,
 							},
 						},

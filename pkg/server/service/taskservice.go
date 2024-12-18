@@ -11,13 +11,19 @@ import (
 	"gorm.io/gorm"
 )
 
+// A Registry stores tasks and allows retrieving them.
+type TaskRegistry interface {
+	// GetTasks returns a list of tasks in the registry.
+	GetTasks() []*task.Task
+}
+
 type TaskService struct {
 	clock        clock.Clock
 	db           *gorm.DB
-	taskRegistry *task.Registry
+	taskRegistry TaskRegistry
 }
 
-func NewTaskService(clock clock.Clock, db *gorm.DB, taskRegistry *task.Registry) *TaskService {
+func NewTaskService(clock clock.Clock, db *gorm.DB, taskRegistry TaskRegistry) *TaskService {
 	return &TaskService{
 		clock:        clock,
 		db:           db,
