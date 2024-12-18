@@ -8,7 +8,6 @@ import (
 	"github.com/adhocore/gronx"
 	"github.com/wndhydrnt/saturn-bot/pkg/clock"
 	"github.com/wndhydrnt/saturn-bot/pkg/log"
-	"github.com/wndhydrnt/saturn-bot/pkg/processor"
 	"github.com/wndhydrnt/saturn-bot/pkg/ptr"
 	"github.com/wndhydrnt/saturn-bot/pkg/server/api/openapi"
 	"github.com/wndhydrnt/saturn-bot/pkg/server/db"
@@ -214,8 +213,7 @@ func (ws *WorkerService) ReportRun(req openapi.ReportWorkV1Request) error {
 		}
 
 		task, _ := ws.taskService.GetTask(req.Task.Name)
-		now := ws.clock.Now()
-		next := determineBaseSchedule(now, task)
+		next := calcNextScheduleTime(runCurrent.ScheduleAfter, ws.clock.Now(), task)
 		for _, taskResult := range req.TaskResults {
 			result := db.TaskResult{
 				RepositoryName: taskResult.RepositoryName,
@@ -228,12 +226,6 @@ func (ws *WorkerService) ReportRun(req openapi.ReportWorkV1Request) error {
 
 			if err := tx.Save(&result).Error; err != nil {
 				return err
-			}
-
-			procResult := processor.Result(taskResult.Result)
-			nextNew := nextSchedule(now, procResult)
-			if nextNew != nil && nextNew.Before(next) {
-				next = ptr.From(nextNew)
 			}
 		}
 
@@ -294,13 +286,13 @@ func (ws *WorkerService) ListRuns(opts ListRunsOptions, listOpts ListOptions) ([
 	return runs, count, result.Error
 }
 
-func determineBaseSchedule(now time.Time, t *task.Task) time.Time {
+func calcNextScheduleTime(last time.Time, now time.Time, t *task.Task) time.Time {
 	cronTime := calcNextCronTime(now, t)
 	if cronTime != nil {
 		return ptr.From(cronTime)
 	}
 
-	return now.Add(nextDefault)
+	return last.Add(nextDefault)
 }
 
 func calcNextCronTime(now time.Time, t *task.Task) *time.Time {
@@ -318,20 +310,6 @@ func calcNextCronTime(now time.Time, t *task.Task) *time.Time {
 
 	nextTick, _ := gronx.NextTickAfter(ptr.From(t.Trigger.Cron), now, true)
 	return ptr.To(nextTick)
-}
-
-func nextSchedule(now time.Time, r processor.Result) *time.Time {
-	var toAdd time.Duration
-	switch r {
-	case processor.ResultPrCreated:
-	case processor.ResultPrOpen:
-	case processor.ResultUnknown:
-		toAdd = 30 * time.Minute
-	default:
-		return nil
-	}
-
-	return ptr.To(now.Add(toAdd))
 }
 
 func checkRequiredInputs(t *task.Task, runData map[string]string) error {

@@ -56,7 +56,7 @@ func TestServer_API_ListRunsV1(t *testing.T) {
 							{
 								Id:            2,
 								Reason:        openapi.Next,
-								ScheduleAfter: testDate(2, 0, 0, 4),
+								ScheduleAfter: testDate(2, 0, 0, 0),
 								Status:        openapi.Pending,
 								Task:          defaultTask.Name,
 							},
