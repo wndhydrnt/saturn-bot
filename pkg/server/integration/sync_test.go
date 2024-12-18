@@ -41,7 +41,10 @@ func Test_Sync(t *testing.T) {
 	err = serverSecond.Start(opts, taskFilesSecond)
 	require.NoError(t, err, "Server starts up the second time")
 	time.Sleep(1 * time.Millisecond)
-	defer serverSecond.Stop()
+	defer func() {
+		err := serverSecond.Stop()
+		require.NoError(t, err, "Server stops the second time")
+	}()
 
 	e := httpexpect.Default(t, opts.Config.ServerBaseUrl)
 	assertApiCall(e, apiCall{
