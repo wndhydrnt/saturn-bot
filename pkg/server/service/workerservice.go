@@ -46,6 +46,7 @@ func NewWorkerService(clock clock.Clock, db *gorm.DB, taskService *TaskService) 
 	}
 }
 
+// DeletePendingRuns deletes all runs of the task identified by taskName that are pending.
 func (ws *WorkerService) DeletePendingRuns(taskName string, tx *gorm.DB) error {
 	if tx == nil {
 		tx = ws.db
