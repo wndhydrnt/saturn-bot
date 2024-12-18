@@ -62,7 +62,7 @@ func (s *Sync) SyncTasksInDatabase() error {
 	tx := s.db.Not(map[string]any{"name": knownTasksNames}).Find(&inactiveTasks)
 	if tx.Error == nil {
 		for _, inactiveTask := range inactiveTasks {
-			err := s.deleteTask(inactiveTask)
+			err := s.deactivateTask(inactiveTask)
 			if err != nil {
 				errs = append(errs, fmt.Errorf("find inactive tasks: %w", tx.Error))
 			}
@@ -106,12 +106,12 @@ func (s *Sync) createTask(t *task.Task) error {
 	})
 }
 
-func (s *Sync) deleteTask(t db.Task) error {
+func (s *Sync) deactivateTask(t db.Task) error {
 	return s.db.Transaction(func(tx *gorm.DB) error {
 		t.Active = false
 		saveResult := s.db.Save(t)
 		if saveResult.Error != nil {
-			return fmt.Errorf("set task %s to inactive: %w", t.Name, saveResult.Error)
+			return fmt.Errorf("deactivate task %s: %w", t.Name, saveResult.Error)
 		}
 
 		return s.workerService.DeletePendingRuns(t.Name, tx)
