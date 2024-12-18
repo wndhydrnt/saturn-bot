@@ -296,11 +296,11 @@ func (ws *WorkerService) ListRuns(opts ListRunsOptions, listOpts ListOptions) ([
 
 func determineBaseSchedule(now time.Time, t *task.Task) time.Time {
 	cronTime := calcNextCronTime(now, t)
-	if cronTime == nil {
-		return now.Add(nextDefault)
+	if cronTime != nil {
+		return ptr.From(cronTime)
 	}
 
-	return ptr.From(cronTime)
+	return now.Add(nextDefault)
 }
 
 func calcNextCronTime(now time.Time, t *task.Task) *time.Time {

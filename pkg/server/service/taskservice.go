@@ -25,6 +25,9 @@ func NewTaskService(clock clock.Clock, db *gorm.DB, taskRegistry *task.Registry)
 	}
 }
 
+// GetTask returns the task identified by taskName.
+//
+// It returns an error if no task matches taskName.
 func (ts *TaskService) GetTask(taskName string) (*task.Task, error) {
 	for _, entry := range ts.taskRegistry.GetTasks() {
 		if entry.Name == taskName {
@@ -35,6 +38,9 @@ func (ts *TaskService) GetTask(taskName string) (*task.Task, error) {
 	return nil, sberror.NewTaskNotFoundError(taskName)
 }
 
+// EncodeTaskBase64 returns the content of the task identified by taskName.
+//
+// It returns an error if no task matches taskName.
 func (ts *TaskService) EncodeTaskBase64(taskName string) (string, error) {
 	task, err := ts.GetTask(taskName)
 	if err != nil {
