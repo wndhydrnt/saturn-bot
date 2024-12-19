@@ -1,5 +1,14 @@
 # Changelog
 
+## [0.18.0](https://github.com/wndhydrnt/saturn-bot/compare/v0.17.0...v0.18.0) (2024-12-19)
+
+
+### Features
+
+* **filter:** New filter "gitlabCodeSearch" ([#120](https://github.com/wndhydrnt/saturn-bot/issues/120)) ([ce8003a](https://github.com/wndhydrnt/saturn-bot/commit/ce8003aaaace8ab662dba766254a399a9bfdc23f))
+* **server:** Support inputs of a task ([#118](https://github.com/wndhydrnt/saturn-bot/issues/118)) ([b597bf7](https://github.com/wndhydrnt/saturn-bot/commit/b597bf7380c740cdbf732667d9378ba2691aca98))
+* **server:** Trigger task via cron expression ([#122](https://github.com/wndhydrnt/saturn-bot/issues/122)) ([f75cd9f](https://github.com/wndhydrnt/saturn-bot/commit/f75cd9fd7f99c99c2fe051a2918ffcabbfd2da5a))
+
 ## [0.17.0](https://github.com/wndhydrnt/saturn-bot/compare/v0.16.0...v0.17.0) (2024-12-10)
 
 
