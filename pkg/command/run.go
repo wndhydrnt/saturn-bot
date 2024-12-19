@@ -284,7 +284,7 @@ func discoverRepositoriesFromCLI(
 	log.Log().Info("Discovering repositories from CLI")
 	go func() {
 		for _, repoName := range repositoryNames {
-			repo, err := findRepositoryInHosts(hosts, repoName)
+			repo, err := host.NewRepositoryFromName(hosts, repoName)
 			if err != nil {
 				errChan <- err
 				return
@@ -296,22 +296,6 @@ func discoverRepositoriesFromCLI(
 		errChan <- nil
 	}()
 	return 1
-}
-
-// findRepositoryInHosts queries all hosts to find the given repository, identified by its name.
-func findRepositoryInHosts(hosts []host.Host, repositoryName string) (host.Repository, error) {
-	for _, h := range hosts {
-		repo, err := h.CreateFromName(repositoryName)
-		if err != nil {
-			return nil, err
-		}
-
-		if repo != nil {
-			return repo, nil
-		}
-	}
-
-	return nil, fmt.Errorf("no host found for repository '%s'", repositoryName)
 }
 
 // setInputs sets inputs passed to Run().

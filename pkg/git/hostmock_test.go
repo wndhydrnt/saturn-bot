@@ -465,6 +465,21 @@ func (m *MockHost) EXPECT() *MockHostMockRecorder {
 	return m.recorder
 }
 
+// AuthenticatedUser mocks base method.
+func (m *MockHost) AuthenticatedUser() (*host.UserInfo, error) {
+	m.ctrl.T.Helper()
+	ret := m.ctrl.Call(m, "AuthenticatedUser")
+	ret0, _ := ret[0].(*host.UserInfo)
+	ret1, _ := ret[1].(error)
+	return ret0, ret1
+}
+
+// AuthenticatedUser indicates an expected call of AuthenticatedUser.
+func (mr *MockHostMockRecorder) AuthenticatedUser() *gomock.Call {
+	mr.mock.ctrl.T.Helper()
+	return mr.mock.ctrl.RecordCallWithMethodType(mr.mock, "AuthenticatedUser", reflect.TypeOf((*MockHost)(nil).AuthenticatedUser))
+}
+
 // CreateFromName mocks base method.
 func (m *MockHost) CreateFromName(name string) (host.Repository, error) {
 	m.ctrl.T.Helper()
@@ -502,6 +517,20 @@ func (m *MockHost) ListRepositoriesWithOpenPullRequests(result chan []host.Repos
 func (mr *MockHostMockRecorder) ListRepositoriesWithOpenPullRequests(result, errChan any) *gomock.Call {
 	mr.mock.ctrl.T.Helper()
 	return mr.mock.ctrl.RecordCallWithMethodType(mr.mock, "ListRepositoriesWithOpenPullRequests", reflect.TypeOf((*MockHost)(nil).ListRepositoriesWithOpenPullRequests), result, errChan)
+}
+
+// Name mocks base method.
+func (m *MockHost) Name() string {
+	m.ctrl.T.Helper()
+	ret := m.ctrl.Call(m, "Name")
+	ret0, _ := ret[0].(string)
+	return ret0
+}
+
+// Name indicates an expected call of Name.
+func (mr *MockHostMockRecorder) Name() *gomock.Call {
+	mr.mock.ctrl.T.Helper()
+	return mr.mock.ctrl.RecordCallWithMethodType(mr.mock, "Name", reflect.TypeOf((*MockHost)(nil).Name))
 }
 
 // MockHostDetail is a mock of HostDetail interface.
