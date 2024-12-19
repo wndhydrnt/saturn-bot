@@ -15,9 +15,7 @@ import (
 func TestServer_WebhookGitlab(t *testing.T) {
 	testCases := []testCase{
 		{
-			name: `Given a task that triggers on GitLab webhook event "push"
-							When it receives a GitLab webhook
-							Then it creates a new work item for the task`,
+			name: `When a task triggers on a GitLab webhook then it schedules a new run`,
 			tasks: []schema.Task{
 				{
 					Name: "unittest",
@@ -38,8 +36,9 @@ func TestServer_WebhookGitlab(t *testing.T) {
 					statusCode: http.StatusOK,
 					responseBody: openapi.GetWorkV1Response{
 						RunID: 1,
-						Tasks: []openapi.GetWorkV1Task{
-							{Hash: "35e6e13d4ec91723e96cf0e93998043d042d98a637fe56f09bee1cd8558ea950", Name: "unittest"},
+						Task: openapi.WorkTaskV1{
+							Hash: "35e6e13d4ec91723e96cf0e93998043d042d98a637fe56f09bee1cd8558ea950",
+							Name: "unittest",
 						},
 					},
 				},
@@ -49,6 +48,7 @@ func TestServer_WebhookGitlab(t *testing.T) {
 					path:   "/api/v1/worker/work",
 					requestBody: openapi.ReportWorkV1Request{
 						RunID:       1,
+						Task:        openapi.WorkTaskV1{Name: "unittest"},
 						TaskResults: []openapi.ReportWorkV1TaskResult{},
 					},
 					statusCode: http.StatusCreated,
@@ -77,8 +77,9 @@ func TestServer_WebhookGitlab(t *testing.T) {
 					statusCode: http.StatusOK,
 					responseBody: openapi.GetWorkV1Response{
 						RunID: 2,
-						Tasks: []openapi.GetWorkV1Task{
-							{Hash: "35e6e13d4ec91723e96cf0e93998043d042d98a637fe56f09bee1cd8558ea950", Name: "unittest"},
+						Task: openapi.WorkTaskV1{
+							Hash: "35e6e13d4ec91723e96cf0e93998043d042d98a637fe56f09bee1cd8558ea950",
+							Name: "unittest",
 						},
 					},
 				},
@@ -86,9 +87,7 @@ func TestServer_WebhookGitlab(t *testing.T) {
 		},
 
 		{
-			name: `Given a task that triggers on GitLab webhook event "push" and specifies a filter
-							When it receives a GitLab webhook that does not match the filter
-							Then it does not create a new work item for the task`,
+			name: `When a filter does not match the content of the webhook then it does not schedule a new run`,
 			tasks: []schema.Task{
 				{
 					Name: "unittest",
@@ -109,8 +108,9 @@ func TestServer_WebhookGitlab(t *testing.T) {
 					statusCode: http.StatusOK,
 					responseBody: openapi.GetWorkV1Response{
 						RunID: 1,
-						Tasks: []openapi.GetWorkV1Task{
-							{Hash: "35e6e13d4ec91723e96cf0e93998043d042d98a637fe56f09bee1cd8558ea950", Name: "unittest"},
+						Task: openapi.WorkTaskV1{
+							Hash: "35e6e13d4ec91723e96cf0e93998043d042d98a637fe56f09bee1cd8558ea950",
+							Name: "unittest",
 						},
 					},
 				},
@@ -120,6 +120,7 @@ func TestServer_WebhookGitlab(t *testing.T) {
 					path:   "/api/v1/worker/work",
 					requestBody: openapi.ReportWorkV1Request{
 						RunID:       1,
+						Task:        openapi.WorkTaskV1{Name: "unittest"},
 						TaskResults: []openapi.ReportWorkV1TaskResult{},
 					},
 					statusCode: http.StatusCreated,
@@ -152,9 +153,7 @@ func TestServer_WebhookGitlab(t *testing.T) {
 		},
 
 		{
-			name: `Given a task that does not trigger on a GitLab webhook event
-							When it receives a GitLab webhook
-							Then it does not create a new work item for the task`,
+			name: `When task does not trigger on a GitLab webhook then it does not schedule a run`,
 			tasks: []schema.Task{
 				{
 					Name: "unittest",
@@ -168,8 +167,9 @@ func TestServer_WebhookGitlab(t *testing.T) {
 					statusCode: http.StatusOK,
 					responseBody: openapi.GetWorkV1Response{
 						RunID: 1,
-						Tasks: []openapi.GetWorkV1Task{
-							{Hash: "e42a6e186f31b860f22f07ed468b99c6dc75318542fc9ac8383358fae1b5ab8b", Name: "unittest"},
+						Task: openapi.WorkTaskV1{
+							Hash: "e42a6e186f31b860f22f07ed468b99c6dc75318542fc9ac8383358fae1b5ab8b",
+							Name: "unittest",
 						},
 					},
 				},
@@ -179,6 +179,7 @@ func TestServer_WebhookGitlab(t *testing.T) {
 					path:   "/api/v1/worker/work",
 					requestBody: openapi.ReportWorkV1Request{
 						RunID:       1,
+						Task:        openapi.WorkTaskV1{Name: "unittest"},
 						TaskResults: []openapi.ReportWorkV1TaskResult{},
 					},
 					statusCode: http.StatusCreated,
@@ -209,10 +210,7 @@ func TestServer_WebhookGitlab(t *testing.T) {
 		},
 
 		{
-			name: `Given a task that triggers on a GitLab webhook event
-							And that defines a delay for the trigger
-							When it receives a GitLab webhook
-							Then schedules the run with a delay`,
+			name: `When the task defines a GitLab webhook with a delay then it schedules the run with a delay`,
 			tasks: []schema.Task{
 				{
 					Name: "unittest",
@@ -234,8 +232,9 @@ func TestServer_WebhookGitlab(t *testing.T) {
 					statusCode: http.StatusOK,
 					responseBody: openapi.GetWorkV1Response{
 						RunID: 1,
-						Tasks: []openapi.GetWorkV1Task{
-							{Hash: "ef99cc7f5c98b01042d78394fa938bd6746c82f10033868e7302daf586ba33a2", Name: "unittest"},
+						Task: openapi.WorkTaskV1{
+							Hash: "ef99cc7f5c98b01042d78394fa938bd6746c82f10033868e7302daf586ba33a2",
+							Name: "unittest",
 						},
 					},
 				},
@@ -245,6 +244,7 @@ func TestServer_WebhookGitlab(t *testing.T) {
 					path:   "/api/v1/worker/work",
 					requestBody: openapi.ReportWorkV1Request{
 						RunID:       1,
+						Task:        openapi.WorkTaskV1{Name: "unittest"},
 						TaskResults: []openapi.ReportWorkV1TaskResult{},
 					},
 					statusCode: http.StatusCreated,
@@ -277,16 +277,16 @@ func TestServer_WebhookGitlab(t *testing.T) {
 							{
 								Id:            2,
 								Reason:        openapi.Webhook,
-								ScheduleAfter: testDate(0, 5, 5),
+								ScheduleAfter: testDate(1, 0, 5, 5),
 								Status:        openapi.Pending,
 								Task:          "unittest",
 							},
 							{
-								FinishedAt:    ptr.To(testDate(0, 0, 3)),
+								FinishedAt:    ptr.To(testDate(1, 0, 0, 3)),
 								Id:            1,
 								Reason:        openapi.New,
-								ScheduleAfter: testDate(0, 0, 0),
-								StartedAt:     ptr.To(testDate(0, 0, 2)),
+								ScheduleAfter: testDate(1, 0, 0, 0),
+								StartedAt:     ptr.To(testDate(1, 0, 0, 2)),
 								Status:        openapi.Finished,
 								Task:          "unittest",
 							},

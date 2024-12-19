@@ -18,7 +18,7 @@ import (
 func TestServer_WebhookGithub(t *testing.T) {
 	testCases := []testCase{
 		{
-			name: `Given a task that triggers on GitHub webhook event "push" when it receives a GitHub webhook then it creates a new work item for the task`,
+			name: `When a task triggers on a GitHub webhook then it schedules a new run`,
 			tasks: []schema.Task{
 				{
 					Name: "unittest",
@@ -39,8 +39,9 @@ func TestServer_WebhookGithub(t *testing.T) {
 					statusCode: http.StatusOK,
 					responseBody: openapi.GetWorkV1Response{
 						RunID: 1,
-						Tasks: []openapi.GetWorkV1Task{
-							{Hash: "8a6affb94ff09af5491b02dbcb5dff22ff56108e2f7d2032a8dd7661245015f4", Name: "unittest"},
+						Task: openapi.WorkTaskV1{
+							Hash: "8a6affb94ff09af5491b02dbcb5dff22ff56108e2f7d2032a8dd7661245015f4",
+							Name: "unittest",
 						},
 					},
 				},
@@ -50,6 +51,7 @@ func TestServer_WebhookGithub(t *testing.T) {
 					path:   "/api/v1/worker/work",
 					requestBody: openapi.ReportWorkV1Request{
 						RunID:       1,
+						Task:        openapi.WorkTaskV1{Name: "unittest"},
 						TaskResults: []openapi.ReportWorkV1TaskResult{},
 					},
 					statusCode: http.StatusCreated,
@@ -76,8 +78,9 @@ func TestServer_WebhookGithub(t *testing.T) {
 					statusCode: http.StatusOK,
 					responseBody: openapi.GetWorkV1Response{
 						RunID: 2,
-						Tasks: []openapi.GetWorkV1Task{
-							{Hash: "8a6affb94ff09af5491b02dbcb5dff22ff56108e2f7d2032a8dd7661245015f4", Name: "unittest"},
+						Task: openapi.WorkTaskV1{
+							Hash: "8a6affb94ff09af5491b02dbcb5dff22ff56108e2f7d2032a8dd7661245015f4",
+							Name: "unittest",
 						},
 					},
 				},
@@ -85,7 +88,7 @@ func TestServer_WebhookGithub(t *testing.T) {
 		},
 
 		{
-			name: `Given a task that does not trigger on a GitHub webhook event when it receives a GitHub webhook then it does not create a new work item for the task`,
+			name: `When task does not trigger on a GitHub webhook then it does not schedule a run`,
 			tasks: []schema.Task{
 				{
 					Name: "unittest",
@@ -99,8 +102,9 @@ func TestServer_WebhookGithub(t *testing.T) {
 					statusCode: http.StatusOK,
 					responseBody: openapi.GetWorkV1Response{
 						RunID: 1,
-						Tasks: []openapi.GetWorkV1Task{
-							{Hash: "e42a6e186f31b860f22f07ed468b99c6dc75318542fc9ac8383358fae1b5ab8b", Name: "unittest"},
+						Task: openapi.WorkTaskV1{
+							Hash: "e42a6e186f31b860f22f07ed468b99c6dc75318542fc9ac8383358fae1b5ab8b",
+							Name: "unittest",
 						},
 					},
 				},
@@ -110,6 +114,7 @@ func TestServer_WebhookGithub(t *testing.T) {
 					path:   "/api/v1/worker/work",
 					requestBody: openapi.ReportWorkV1Request{
 						RunID:       1,
+						Task:        openapi.WorkTaskV1{Name: "unittest"},
 						TaskResults: []openapi.ReportWorkV1TaskResult{},
 					},
 					statusCode: http.StatusCreated,
@@ -140,10 +145,7 @@ func TestServer_WebhookGithub(t *testing.T) {
 		},
 
 		{
-			name: `Given a task that triggers on a GitHub webhook event
-							And that defines a delay for the trigger
-							When it receives a GitHub webhook
-							Then schedules the run with a delay`,
+			name: `When the task defines a GitHub webhook with a delay then it schedules the run with a delay`,
 			tasks: []schema.Task{
 				{
 					Name: "unittest",
@@ -165,8 +167,9 @@ func TestServer_WebhookGithub(t *testing.T) {
 					statusCode: http.StatusOK,
 					responseBody: openapi.GetWorkV1Response{
 						RunID: 1,
-						Tasks: []openapi.GetWorkV1Task{
-							{Hash: "e422f6dda5759ae9c366c901d9db999dc37deee9c9664d9d2421ca8e239807c2", Name: "unittest"},
+						Task: openapi.WorkTaskV1{
+							Hash: "e422f6dda5759ae9c366c901d9db999dc37deee9c9664d9d2421ca8e239807c2",
+							Name: "unittest",
 						},
 					},
 				},
@@ -176,6 +179,7 @@ func TestServer_WebhookGithub(t *testing.T) {
 					path:   "/api/v1/worker/work",
 					requestBody: openapi.ReportWorkV1Request{
 						RunID:       1,
+						Task:        openapi.WorkTaskV1{Name: "unittest"},
 						TaskResults: []openapi.ReportWorkV1TaskResult{},
 					},
 					statusCode: http.StatusCreated,
@@ -206,16 +210,16 @@ func TestServer_WebhookGithub(t *testing.T) {
 							{
 								Id:            2,
 								Reason:        openapi.Webhook,
-								ScheduleAfter: testDate(0, 5, 5),
+								ScheduleAfter: testDate(1, 0, 5, 5),
 								Status:        openapi.Pending,
 								Task:          "unittest",
 							},
 							{
-								FinishedAt:    ptr.To(testDate(0, 0, 3)),
+								FinishedAt:    ptr.To(testDate(1, 0, 0, 3)),
 								Id:            1,
 								Reason:        openapi.New,
-								ScheduleAfter: testDate(0, 0, 0),
-								StartedAt:     ptr.To(testDate(0, 0, 2)),
+								ScheduleAfter: testDate(1, 0, 0, 0),
+								StartedAt:     ptr.To(testDate(1, 0, 0, 2)),
 								Status:        openapi.Finished,
 								Task:          "unittest",
 							},

@@ -30,7 +30,6 @@ var (
 	defaultTask              = schema.Task{Name: "unittest"}
 	defaultTaskContentBase64 = "bmFtZTogdW5pdHRlc3QK"
 	defaultTaskHash          = "e42a6e186f31b860f22f07ed468b99c6dc75318542fc9ac8383358fae1b5ab8b"
-	fakeClock                = &clock.Fake{Base: time.Date(2000, 1, 1, 0, 0, 0, 0, time.UTC)}
 )
 
 type apiCall struct {
@@ -58,40 +57,17 @@ type testCase struct {
 	config   *config.Configuration
 	tasks    []schema.Task
 	apiCalls []apiCall
+	// Fake of a clock to make calls to Now() predictable.
+	// If nil, initializes a clock that starts at 2000-01-01T00:00:00Z.
+	fakeClock clock.Clock
 }
 
 func executeTestCase(t *testing.T, tc testCase) {
-	cfg := defaultServerConfig
-	if tc.config != nil {
-		cfg = ptr.From(tc.config)
-	}
-	port := randomPort()
-	addr := fmt.Sprintf("127.0.0.1:%d", port)
-	cfg.ServerAddr = addr
-	cfg.ServerBaseUrl = "http://" + addr
-
-	dbDir, err := os.MkdirTemp("", "")
-	require.NoError(t, err, "Creates database directory")
-	cfg.ServerDatabasePath = filepath.Join(dbDir, "saturn-bot.db")
-	t.Logf("Path to database: %s", cfg.ServerDatabasePath)
-
-	opts, err := options.ToOptions(cfg)
-	require.NoError(t, err, "Parses options")
-	// Always use a new registry to avoid a panic caused by attempts to register the same metrics twice.
-	promReg := prometheus.NewRegistry()
-	opts.SetPrometheusRegistry(promReg)
-
-	// Always add a fake clock make calls to Now() predictable.
-	opts.Clock = fakeClock
-	defer func(f *clock.Fake) {
-		// Reset the clock before the next test.
-		f.Base = time.Date(2000, 1, 1, 0, 0, 0, 0, time.UTC)
-	}(fakeClock)
-
+	opts := setupOptions(t, tc.config, tc.fakeClock)
 	taskFiles := bootstrapTaskFiles(t, tc.tasks)
 
 	server := &server.Server{}
-	err = server.Start(opts, taskFiles)
+	err := server.Start(opts, taskFiles)
 	require.NoError(t, err, "Server starts up")
 	defer func() {
 		err := server.Stop()
@@ -100,24 +76,9 @@ func executeTestCase(t *testing.T, tc testCase) {
 
 	// Give the HTTP server time to start up - works around flaky tests
 	time.Sleep(1 * time.Millisecond)
-	e := httpexpect.Default(t, cfg.ServerBaseUrl)
+	e := httpexpect.Default(t, opts.Config.ServerBaseUrl)
 	for _, call := range tc.apiCalls {
-		time.Sleep(call.sleep)
-		req := e.Request(call.method, call.path).
-			WithHeaders(call.requestHeaders)
-		if call.query != "" {
-			req = req.WithQueryString(call.query)
-		}
-		if call.requestBody != nil {
-			req = req.WithJSON(call.requestBody)
-		}
-
-		resp := req.Expect().Status(call.statusCode)
-		if call.responseBody == nil {
-			resp.NoContent()
-		} else {
-			resp.JSON().Object().IsEqual(call.responseBody)
-		}
+		assertApiCall(e, call)
 	}
 }
 
@@ -147,6 +108,56 @@ func bootstrapTaskFiles(t *testing.T, tasks []schema.Task) []string {
 	return filePaths
 }
 
-func testDate(hour int, min int, sec int) time.Time {
-	return time.Date(2000, 1, 1, hour, min, sec, 0, time.UTC)
+func setupOptions(t *testing.T, config *config.Configuration, fakeClock clock.Clock) options.Opts {
+	cfg := defaultServerConfig
+	if config != nil {
+		cfg = ptr.From(config)
+	}
+	port := randomPort()
+	addr := fmt.Sprintf("127.0.0.1:%d", port)
+	cfg.ServerAddr = addr
+	cfg.ServerBaseUrl = "http://" + addr
+
+	dbDir, err := os.MkdirTemp("", "")
+	require.NoError(t, err, "Creates database directory")
+	cfg.ServerDatabasePath = filepath.Join(dbDir, "saturn-bot.db")
+	t.Logf("Path to database: %s", cfg.ServerDatabasePath)
+
+	opts, err := options.ToOptions(cfg)
+	require.NoError(t, err, "Parses options")
+	// Always use a new registry to avoid a panic caused by attempts to register the same metrics twice.
+	promReg := prometheus.NewRegistry()
+	opts.SetPrometheusRegistry(promReg)
+
+	// Always add a fake clock to make calls to Now() predictable.
+	if fakeClock == nil {
+		opts.Clock = &clock.Fake{Base: time.Date(2000, 1, 1, 0, 0, 0, 0, time.UTC)}
+	} else {
+		opts.Clock = fakeClock
+	}
+
+	return opts
+}
+
+func testDate(day int, hour int, min int, sec int) time.Time {
+	return time.Date(2000, 1, day, hour, min, sec, 0, time.UTC)
+}
+
+func assertApiCall(e *httpexpect.Expect, call apiCall) {
+	time.Sleep(call.sleep)
+	req := e.Request(call.method, call.path).
+		WithHeaders(call.requestHeaders)
+	if call.query != "" {
+		req = req.WithQueryString(call.query)
+	}
+	if call.requestBody != nil {
+		req = req.WithJSON(call.requestBody)
+	}
+
+	resp := req.Expect().Status(call.statusCode)
+	if call.responseBody == nil {
+		resp.NoContent()
+	} else {
+		resp.JSON().Object().IsEqual(call.responseBody)
+	}
 }

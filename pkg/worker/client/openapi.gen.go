@@ -22,6 +22,14 @@ const (
 	Ok ReportWorkV1ResponseResult = "ok"
 )
 
+// Defines values for RunStatusV1.
+const (
+	Failed   RunStatusV1 = "failed"
+	Finished RunStatusV1 = "finished"
+	Pending  RunStatusV1 = "pending"
+	Running  RunStatusV1 = "running"
+)
+
 // Defines values for RunV1Reason.
 const (
 	Changed RunV1Reason = "changed"
@@ -29,14 +37,6 @@ const (
 	New     RunV1Reason = "new"
 	Next    RunV1Reason = "next"
 	Webhook RunV1Reason = "webhook"
-)
-
-// Defines values for RunV1Status.
-const (
-	Failed   RunV1Status = "failed"
-	Finished RunV1Status = "finished"
-	Pending  RunV1Status = "pending"
-	Running  RunV1Status = "running"
 )
 
 // Error defines model for Error.
@@ -63,17 +63,8 @@ type GetWorkV1Response struct {
 	// RunID Internal identifier of the unit of work.
 	RunID int `json:"runID"`
 
-	// Tasks Names of the tasks to execute.
-	Tasks []GetWorkV1Task `json:"tasks"`
-}
-
-// GetWorkV1Task defines model for GetWorkV1Task.
-type GetWorkV1Task struct {
-	// Hash Hash of the task. Used to detect if server and worker are out of sync.
-	Hash string `json:"hash"`
-
-	// Name Name of the task to execute.
-	Name string `json:"name"`
+	// Task The task to execute.
+	Task WorkTaskV1 `json:"task"`
 }
 
 // ListOptions defines model for ListOptions.
@@ -114,6 +105,9 @@ type ReportWorkV1Request struct {
 	// RunID Internal identifier of the unit of work.
 	RunID int `json:"runID"`
 
+	// Task The task to execute.
+	Task WorkTaskV1 `json:"task"`
+
 	// TaskResults Results of each task.
 	TaskResults []ReportWorkV1TaskResult `json:"taskResults"`
 }
@@ -137,10 +131,10 @@ type ReportWorkV1TaskResult struct {
 
 	// Result Identifier of the result.
 	Result int `json:"result"`
-
-	// TaskName Name of the task.
-	TaskName string `json:"taskName"`
 }
+
+// RunStatusV1 defines model for RunStatusV1.
+type RunStatusV1 string
 
 // RunV1 defines model for RunV1.
 type RunV1 struct {
@@ -151,15 +145,12 @@ type RunV1 struct {
 	RunData       *map[string]string `json:"runData,omitempty"`
 	ScheduleAfter time.Time          `json:"scheduleAfter"`
 	StartedAt     *time.Time         `json:"startedAt,omitempty"`
-	Status        RunV1Status        `json:"status"`
+	Status        RunStatusV1        `json:"status"`
 	Task          string             `json:"task"`
 }
 
 // RunV1Reason defines model for RunV1.Reason.
 type RunV1Reason string
-
-// RunV1Status defines model for RunV1.Status.
-type RunV1Status string
 
 // ScheduleRunV1Request defines model for ScheduleRunV1Request.
 type ScheduleRunV1Request struct {
@@ -188,11 +179,21 @@ type ScheduleRunV1Response struct {
 	RunID int `json:"runID"`
 }
 
+// WorkTaskV1 The task to execute.
+type WorkTaskV1 struct {
+	// Hash Hash of the task. Used to detect if server and worker are out of sync.
+	Hash string `json:"hash"`
+
+	// Name Name of the task to execute.
+	Name string `json:"name"`
+}
+
 // ListRunsV1Params defines parameters for ListRunsV1.
 type ListRunsV1Params struct {
 	// Task Name of the task to filter by.
 	Task        *string      `form:"task,omitempty" json:"task,omitempty"`
 	ListOptions *ListOptions `form:"listOptions,omitempty" json:"listOptions,omitempty"`
+	Status      *RunStatusV1 `form:"status,omitempty" json:"status,omitempty"`
 }
 
 // ScheduleRunV1JSONRequestBody defines body for ScheduleRunV1 for application/json ContentType.
@@ -535,6 +536,22 @@ func NewListRunsV1Request(server string, params *ListRunsV1Params) (*http.Reques
 		if params.ListOptions != nil {
 
 			if queryFrag, err := runtime.StyleParamWithLocation("form", true, "listOptions", runtime.ParamLocationQuery, *params.ListOptions); err != nil {
+				return nil, err
+			} else if parsed, err := url.ParseQuery(queryFrag); err != nil {
+				return nil, err
+			} else {
+				for k, v := range parsed {
+					for _, v2 := range v {
+						queryValues.Add(k, v2)
+					}
+				}
+			}
+
+		}
+
+		if params.Status != nil {
+
+			if queryFrag, err := runtime.StyleParamWithLocation("form", true, "status", runtime.ParamLocationQuery, *params.Status); err != nil {
 				return nil, err
 			} else if parsed, err := url.ParseQuery(queryFrag); err != nil {
 				return nil, err

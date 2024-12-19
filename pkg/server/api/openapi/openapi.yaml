@@ -128,6 +128,10 @@ paths:
           name: listOptions
           schema:
             $ref: "#/components/schemas/ListOptions"
+        - in: query
+          name: status
+          schema:
+            $ref: "#/components/schemas/RunStatusV1"
       responses:
         "200":
           description: OK
@@ -194,13 +198,11 @@ components:
           type: object
           additionalProperties:
             type: string
-        tasks:
-          description: Names of the tasks to execute.
-          type: array
-          items:
-            $ref: "#/components/schemas/GetWorkV1Task"
-      required: ["runID", "tasks"]
-    GetWorkV1Task:
+        task:
+          $ref: "#/components/schemas/WorkTaskV1"
+      required: ["runID", "task"]
+    WorkTaskV1:
+      description: The task to execute.
       type: object
       properties:
         hash:
@@ -235,12 +237,14 @@ components:
         runID:
           description: Internal identifier of the unit of work.
           type: integer
+        task:
+          $ref: "#/components/schemas/WorkTaskV1"
         taskResults:
           description: Results of each task.
           type: array
           items:
             $ref: "#/components/schemas/ReportWorkV1TaskResult"
-      required: ["runID", "taskResults"]
+      required: ["runID", "task", "taskResults"]
     ReportWorkV1TaskResult:
       description: Result of the run of a task.
       type: object
@@ -254,10 +258,7 @@ components:
         result:
           description: Identifier of the result.
           type: integer
-        taskName:
-          description: Name of the task.
-          type: string
-      required: ["repositoryName", "result", "taskName"]
+      required: ["repositoryName", "result"]
     ListTasksV1Response:
       type: object
       properties:
@@ -344,12 +345,14 @@ components:
           type: string
           format: date-time
         status:
-          type: string
-          enum:
-            - pending
-            - running
-            - finished
-            - failed
+          $ref: "#/components/schemas/RunStatusV1"
         task:
           type: string
       required: ["id", "reason", "scheduleAfter", "status", "task"]
+    RunStatusV1:
+      type: string
+      enum:
+        - pending
+        - running
+        - finished
+        - failed

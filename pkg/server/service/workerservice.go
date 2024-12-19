@@ -5,6 +5,7 @@ import (
 	"fmt"
 	"time"
 
+	"github.com/adhocore/gronx"
 	"github.com/wndhydrnt/saturn-bot/pkg/clock"
 	"github.com/wndhydrnt/saturn-bot/pkg/log"
 	"github.com/wndhydrnt/saturn-bot/pkg/processor"
@@ -17,7 +18,11 @@ import (
 	"gorm.io/gorm"
 )
 
-var ErrNoRun = errors.New("no next run")
+var (
+	ErrNoRun = errors.New("no next run")
+
+	nextDefault = 24 * time.Hour
+)
 
 type ErrorMissingInput struct {
 	InputName string
@@ -42,6 +47,30 @@ func NewWorkerService(clock clock.Clock, db *gorm.DB, taskService *TaskService) 
 	}
 }
 
+// DeletePendingRuns deletes all runs of the task identified by taskName that are pending.
+func (ws *WorkerService) DeletePendingRuns(taskName string, tx *gorm.DB) error {
+	if tx == nil {
+		tx = ws.db
+	}
+
+	var runsOfTask []db.Run
+	result := tx.Where("task_name = ?", taskName).
+		Where("status = ?", db.RunStatusPending).
+		Find(&runsOfTask)
+	if result.Error != nil {
+		return fmt.Errorf("find pending runs: %w", result.Error)
+	}
+
+	for _, run := range runsOfTask {
+		result := tx.Delete(&run)
+		if result.Error != nil {
+			return fmt.Errorf("delete pending run %d: %w", run.ID, result.Error)
+		}
+	}
+
+	return nil
+}
+
 func (ws *WorkerService) ScheduleRun(
 	reason db.RunReason,
 	repositoryNames []string,
@@ -50,7 +79,7 @@ func (ws *WorkerService) ScheduleRun(
 	runData map[string]string,
 	tx *gorm.DB,
 ) (uint, error) {
-	task, _, err := ws.taskService.GetTask(taskName)
+	task, err := ws.taskService.GetTask(taskName)
 	if err != nil {
 		return 0, err
 	}
@@ -121,7 +150,7 @@ func (ws *WorkerService) ScheduleRun(
 }
 
 func (ws *WorkerService) findTask(name string) (*task.Task, error) {
-	t, _, err := ws.taskService.GetTask(name)
+	t, err := ws.taskService.GetTask(name)
 	return t, err
 }
 
@@ -172,7 +201,12 @@ func (ws *WorkerService) ReportRun(req openapi.ReportWorkV1Request) error {
 		return tx.Error
 	}
 
-	err := ws.db.Transaction(func(tx *gorm.DB) error {
+	task, err := ws.taskService.GetTask(req.Task.Name)
+	if err != nil {
+		return err
+	}
+
+	err = ws.db.Transaction(func(tx *gorm.DB) error {
 		runCurrent.FinishedAt = ptr.To(ws.clock.Now())
 		if req.Error == nil {
 			runCurrent.Status = db.RunStatusFinished
@@ -185,13 +219,12 @@ func (ws *WorkerService) ReportRun(req openapi.ReportWorkV1Request) error {
 			return err
 		}
 
-		next := 1 * time.Hour
+		prIsOpen := false
 		for _, taskResult := range req.TaskResults {
 			result := db.TaskResult{
 				RepositoryName: taskResult.RepositoryName,
 				Result:         uint(taskResult.Result), // #nosec G115 -- no info by gosec on how to fix this
 				RunID:          runCurrent.ID,
-				TaskName:       taskResult.TaskName,
 			}
 			if taskResult.Error != nil {
 				result.Error = taskResult.Error
@@ -201,16 +234,15 @@ func (ws *WorkerService) ReportRun(req openapi.ReportWorkV1Request) error {
 				return err
 			}
 
-			procResult := processor.Result(taskResult.Result)
-			nextNew := nextSchedule(procResult)
-			if nextNew < next {
-				next = nextNew
-			}
+			prIsOpen = isPrOpen(taskResult.Result)
 		}
 
-		_, err := ws.ScheduleRun(db.RunReasonNext, runCurrent.RepositoryNames, ws.clock.Now().Add(next), runCurrent.TaskName, runCurrent.RunData, tx)
-		if err != nil {
-			return err
+		next := calcNextScheduleTime(runCurrent, ws.clock.Now(), task, prIsOpen)
+		if next != nil {
+			_, err := ws.ScheduleRun(db.RunReasonNext, runCurrent.RepositoryNames, ptr.From(next), runCurrent.TaskName, runCurrent.RunData, tx)
+			if err != nil {
+				return err
+			}
 		}
 
 		return nil
@@ -220,12 +252,17 @@ func (ws *WorkerService) ReportRun(req openapi.ReportWorkV1Request) error {
 }
 
 type ListRunsOptions struct {
+	Status   *db.RunStatus
 	TaskName string
 }
 
 func (ws *WorkerService) ListRuns(opts ListRunsOptions, listOpts ListOptions) ([]db.Run, int64, error) {
 	var runs []db.Run
 	query := ws.db
+	if opts.Status != nil {
+		query = query.Where("status = ?", ptr.From(opts.Status))
+	}
+
 	if opts.TaskName != "" {
 		query = query.Where("task_name = ?", opts.TaskName)
 	}
@@ -242,6 +279,10 @@ func (ws *WorkerService) ListRuns(opts ListRunsOptions, listOpts ListOptions) ([
 
 	var count int64
 	queryCount := ws.db.Model(&db.Run{})
+	if opts.Status != nil {
+		queryCount = queryCount.Where("status = ?", ptr.From(opts.Status))
+	}
+
 	if opts.TaskName != "" {
 		queryCount = queryCount.Where("task_name = ?", opts.TaskName)
 	}
@@ -254,21 +295,44 @@ func (ws *WorkerService) ListRuns(opts ListRunsOptions, listOpts ListOptions) ([
 	return runs, count, result.Error
 }
 
-func nextSchedule(r processor.Result) time.Duration {
-	switch r {
-	case processor.ResultUnknown:
-		return 15 * time.Minute
-	case processor.ResultAutoMergeTooEarly:
-		return 60 * time.Minute
-	case processor.ResultPrCreated:
-		return 15 * time.Minute
-	case processor.ResultPrOpen:
-		return 15 * time.Minute
-	case processor.ResultNoChanges:
-		return 60 * time.Minute
-	default:
-		return 60 * time.Minute
+func calcNextScheduleTime(run db.Run, now time.Time, t *task.Task, isOpen bool) *time.Time {
+	// If task defines a cron trigger, always adhere to the cron schedule.
+	cronTime := calcNextCronTime(now, t)
+	if cronTime != nil {
+		return cronTime
 	}
+
+	// If task enables auto-merging and at least one PR is open,
+	// schedule a new run sooner to auto-merge earlier.
+	if t.AutoMerge && isOpen {
+		return ptr.To(run.ScheduleAfter.Add(1 * time.Hour))
+	}
+
+	// If the run was triggered by a webhook or manually,
+	// return nil to not schedule a new run.
+	// Avoids infinite re-scheduling loops.
+	if run.Reason == db.RunReasonWebhook || run.Reason == db.RunReasonManual {
+		return nil
+	}
+
+	return ptr.To(run.ScheduleAfter.Add(nextDefault))
+}
+
+func calcNextCronTime(now time.Time, t *task.Task) *time.Time {
+	if t == nil {
+		return nil
+	}
+
+	if t.Trigger == nil {
+		return nil
+	}
+
+	if t.Trigger.Cron == nil {
+		return nil
+	}
+
+	nextTick, _ := gronx.NextTickAfter(ptr.From(t.Trigger.Cron), now, true)
+	return ptr.To(nextTick)
 }
 
 func checkRequiredInputs(t *task.Task, runData map[string]string) error {
@@ -285,4 +349,18 @@ func checkRequiredInputs(t *task.Task, runData map[string]string) error {
 	}
 
 	return nil
+}
+
+func isPrOpen(result int) bool {
+	switch processor.Result(result) {
+	case processor.ResultPrCreated:
+	case processor.ResultPrOpen:
+	case processor.ResultAutoMergeTooEarly:
+	case processor.ResultBranchModified:
+	case processor.ResultChecksFailed:
+	case processor.ResultConflict:
+		return true
+	}
+
+	return false
 }
