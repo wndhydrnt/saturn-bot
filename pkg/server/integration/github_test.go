@@ -18,7 +18,7 @@ import (
 func TestServer_WebhookGithub(t *testing.T) {
 	testCases := []testCase{
 		{
-			name: `Given a task that triggers on GitHub webhook event "push" when it receives a GitHub webhook then it creates a new work item for the task`,
+			name: `When a task triggers on a GitHub webhook then it schedules a new run`,
 			tasks: []schema.Task{
 				{
 					Name: "unittest",
@@ -51,6 +51,7 @@ func TestServer_WebhookGithub(t *testing.T) {
 					path:   "/api/v1/worker/work",
 					requestBody: openapi.ReportWorkV1Request{
 						RunID:       1,
+						Task:        openapi.WorkTaskV1{Name: "unittest"},
 						TaskResults: []openapi.ReportWorkV1TaskResult{},
 					},
 					statusCode: http.StatusCreated,
@@ -87,7 +88,7 @@ func TestServer_WebhookGithub(t *testing.T) {
 		},
 
 		{
-			name: `Given a task that does not trigger on a GitHub webhook event when it receives a GitHub webhook then it does not create a new work item for the task`,
+			name: `When task does not trigger on a GitHub webhook then it does not schedule a run`,
 			tasks: []schema.Task{
 				{
 					Name: "unittest",
@@ -113,6 +114,7 @@ func TestServer_WebhookGithub(t *testing.T) {
 					path:   "/api/v1/worker/work",
 					requestBody: openapi.ReportWorkV1Request{
 						RunID:       1,
+						Task:        openapi.WorkTaskV1{Name: "unittest"},
 						TaskResults: []openapi.ReportWorkV1TaskResult{},
 					},
 					statusCode: http.StatusCreated,
@@ -143,10 +145,7 @@ func TestServer_WebhookGithub(t *testing.T) {
 		},
 
 		{
-			name: `Given a task that triggers on a GitHub webhook event
-							And that defines a delay for the trigger
-							When it receives a GitHub webhook
-							Then schedules the run with a delay`,
+			name: `When the task defines a GitHub webhook with a delay then it schedules the run with a delay`,
 			tasks: []schema.Task{
 				{
 					Name: "unittest",
@@ -180,6 +179,7 @@ func TestServer_WebhookGithub(t *testing.T) {
 					path:   "/api/v1/worker/work",
 					requestBody: openapi.ReportWorkV1Request{
 						RunID:       1,
+						Task:        openapi.WorkTaskV1{Name: "unittest"},
 						TaskResults: []openapi.ReportWorkV1TaskResult{},
 					},
 					statusCode: http.StatusCreated,

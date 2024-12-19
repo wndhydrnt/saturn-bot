@@ -8,6 +8,7 @@ import (
 	"github.com/adhocore/gronx"
 	"github.com/wndhydrnt/saturn-bot/pkg/clock"
 	"github.com/wndhydrnt/saturn-bot/pkg/log"
+	"github.com/wndhydrnt/saturn-bot/pkg/processor"
 	"github.com/wndhydrnt/saturn-bot/pkg/ptr"
 	"github.com/wndhydrnt/saturn-bot/pkg/server/api/openapi"
 	"github.com/wndhydrnt/saturn-bot/pkg/server/db"
@@ -200,7 +201,12 @@ func (ws *WorkerService) ReportRun(req openapi.ReportWorkV1Request) error {
 		return tx.Error
 	}
 
-	err := ws.db.Transaction(func(tx *gorm.DB) error {
+	task, err := ws.taskService.GetTask(req.Task.Name)
+	if err != nil {
+		return err
+	}
+
+	err = ws.db.Transaction(func(tx *gorm.DB) error {
 		runCurrent.FinishedAt = ptr.To(ws.clock.Now())
 		if req.Error == nil {
 			runCurrent.Status = db.RunStatusFinished
@@ -213,8 +219,7 @@ func (ws *WorkerService) ReportRun(req openapi.ReportWorkV1Request) error {
 			return err
 		}
 
-		task, _ := ws.taskService.GetTask(req.Task.Name)
-		next := calcNextScheduleTime(runCurrent.ScheduleAfter, ws.clock.Now(), task)
+		prIsOpen := false
 		for _, taskResult := range req.TaskResults {
 			result := db.TaskResult{
 				RepositoryName: taskResult.RepositoryName,
@@ -228,10 +233,13 @@ func (ws *WorkerService) ReportRun(req openapi.ReportWorkV1Request) error {
 			if err := tx.Save(&result).Error; err != nil {
 				return err
 			}
+
+			prIsOpen = isPrOpen(taskResult.Result)
 		}
 
-		if runCurrent.Reason != db.RunReasonManual {
-			_, err := ws.ScheduleRun(db.RunReasonNext, runCurrent.RepositoryNames, next, runCurrent.TaskName, runCurrent.RunData, tx)
+		next := calcNextScheduleTime(runCurrent, ws.clock.Now(), task, prIsOpen)
+		if next != nil {
+			_, err := ws.ScheduleRun(db.RunReasonNext, runCurrent.RepositoryNames, ptr.From(next), runCurrent.TaskName, runCurrent.RunData, tx)
 			if err != nil {
 				return err
 			}
@@ -287,13 +295,27 @@ func (ws *WorkerService) ListRuns(opts ListRunsOptions, listOpts ListOptions) ([
 	return runs, count, result.Error
 }
 
-func calcNextScheduleTime(last time.Time, now time.Time, t *task.Task) time.Time {
+func calcNextScheduleTime(run db.Run, now time.Time, t *task.Task, isOpen bool) *time.Time {
+	// If task defines a cron trigger, always adhere to the cron schedule.
 	cronTime := calcNextCronTime(now, t)
 	if cronTime != nil {
-		return ptr.From(cronTime)
+		return cronTime
 	}
 
-	return last.Add(nextDefault)
+	// If task enables auto-merging and at least one PR is open,
+	// schedule a new run sooner to auto-merge earlier.
+	if t.AutoMerge && isOpen {
+		return ptr.To(run.ScheduleAfter.Add(1 * time.Hour))
+	}
+
+	// If the run was triggered by a webhook or manually,
+	// return nil to not schedule a new run.
+	// Avoids infinite re-scheduling loops.
+	if run.Reason == db.RunReasonWebhook || run.Reason == db.RunReasonManual {
+		return nil
+	}
+
+	return ptr.To(run.ScheduleAfter.Add(nextDefault))
 }
 
 func calcNextCronTime(now time.Time, t *task.Task) *time.Time {
@@ -327,4 +349,18 @@ func checkRequiredInputs(t *task.Task, runData map[string]string) error {
 	}
 
 	return nil
+}
+
+func isPrOpen(result int) bool {
+	switch processor.Result(result) {
+	case processor.ResultPrCreated:
+	case processor.ResultPrOpen:
+	case processor.ResultAutoMergeTooEarly:
+	case processor.ResultBranchModified:
+	case processor.ResultChecksFailed:
+	case processor.ResultConflict:
+		return true
+	}
+
+	return false
 }

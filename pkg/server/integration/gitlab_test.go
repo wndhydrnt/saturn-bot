@@ -15,9 +15,7 @@ import (
 func TestServer_WebhookGitlab(t *testing.T) {
 	testCases := []testCase{
 		{
-			name: `Given a task that triggers on GitLab webhook event "push"
-							When it receives a GitLab webhook
-							Then it creates a new work item for the task`,
+			name: `When a task triggers on a GitLab webhook then it schedules a new run`,
 			tasks: []schema.Task{
 				{
 					Name: "unittest",
@@ -50,6 +48,7 @@ func TestServer_WebhookGitlab(t *testing.T) {
 					path:   "/api/v1/worker/work",
 					requestBody: openapi.ReportWorkV1Request{
 						RunID:       1,
+						Task:        openapi.WorkTaskV1{Name: "unittest"},
 						TaskResults: []openapi.ReportWorkV1TaskResult{},
 					},
 					statusCode: http.StatusCreated,
@@ -88,9 +87,7 @@ func TestServer_WebhookGitlab(t *testing.T) {
 		},
 
 		{
-			name: `Given a task that triggers on GitLab webhook event "push" and specifies a filter
-							When it receives a GitLab webhook that does not match the filter
-							Then it does not create a new work item for the task`,
+			name: `When a filter does not match the content of the webhook then it does not schedule a new run`,
 			tasks: []schema.Task{
 				{
 					Name: "unittest",
@@ -123,6 +120,7 @@ func TestServer_WebhookGitlab(t *testing.T) {
 					path:   "/api/v1/worker/work",
 					requestBody: openapi.ReportWorkV1Request{
 						RunID:       1,
+						Task:        openapi.WorkTaskV1{Name: "unittest"},
 						TaskResults: []openapi.ReportWorkV1TaskResult{},
 					},
 					statusCode: http.StatusCreated,
@@ -155,9 +153,7 @@ func TestServer_WebhookGitlab(t *testing.T) {
 		},
 
 		{
-			name: `Given a task that does not trigger on a GitLab webhook event
-							When it receives a GitLab webhook
-							Then it does not create a new work item for the task`,
+			name: `When task does not trigger on a GitLab webhook then it does not schedule a run`,
 			tasks: []schema.Task{
 				{
 					Name: "unittest",
@@ -183,6 +179,7 @@ func TestServer_WebhookGitlab(t *testing.T) {
 					path:   "/api/v1/worker/work",
 					requestBody: openapi.ReportWorkV1Request{
 						RunID:       1,
+						Task:        openapi.WorkTaskV1{Name: "unittest"},
 						TaskResults: []openapi.ReportWorkV1TaskResult{},
 					},
 					statusCode: http.StatusCreated,
@@ -213,10 +210,7 @@ func TestServer_WebhookGitlab(t *testing.T) {
 		},
 
 		{
-			name: `Given a task that triggers on a GitLab webhook event
-							And that defines a delay for the trigger
-							When it receives a GitLab webhook
-							Then schedules the run with a delay`,
+			name: `When the task defines a GitLab webhook with a delay then it schedules the run with a delay`,
 			tasks: []schema.Task{
 				{
 					Name: "unittest",
@@ -250,6 +244,7 @@ func TestServer_WebhookGitlab(t *testing.T) {
 					path:   "/api/v1/worker/work",
 					requestBody: openapi.ReportWorkV1Request{
 						RunID:       1,
+						Task:        openapi.WorkTaskV1{Name: "unittest"},
 						TaskResults: []openapi.ReportWorkV1TaskResult{},
 					},
 					statusCode: http.StatusCreated,

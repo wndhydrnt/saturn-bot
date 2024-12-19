@@ -36,7 +36,10 @@ func TestServer_API_ListRunsV1(t *testing.T) {
 					method: "POST",
 					path:   "/api/v1/worker/work",
 					requestBody: openapi.ReportWorkV1Request{
-						RunID:       1,
+						RunID: 1,
+						Task: openapi.WorkTaskV1{
+							Name: defaultTask.Name,
+						},
 						TaskResults: []openapi.ReportWorkV1TaskResult{},
 					},
 					statusCode: http.StatusCreated,
