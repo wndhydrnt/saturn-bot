@@ -26,7 +26,7 @@ var (
 	//go:embed config.schema.json
 	schemaRaw string
 	// ErrNoToken informs the user that at least one token is required.
-	ErrNoToken = errors.New("no GitHub token or GitLab token configured")
+	ErrNoToken = errors.New("no githubToken or gitlabToken configured - https://saturn-bot.readthedocs.io/en/latest/configuration/")
 )
 
 func (c Configuration) GitUserEmail() string {

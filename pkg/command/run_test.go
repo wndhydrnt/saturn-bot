@@ -60,6 +60,14 @@ func (m *mockHost) ListRepositoriesWithOpenPullRequests(result chan []host.Repos
 	errChan <- nil
 }
 
+func (m *mockHost) AuthenticatedUser() (*host.UserInfo, error) {
+	return nil, nil
+}
+
+func (m *mockHost) Name() string {
+	return "mock"
+}
+
 func createTestCache(taskFilePath string) string {
 	f, err := os.Open(taskFilePath)
 	if err != nil {

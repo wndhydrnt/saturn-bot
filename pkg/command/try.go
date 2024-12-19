@@ -64,24 +64,12 @@ func (r *TryRunner) Run() error {
 		return fmt.Errorf("required flag `--task-file` is not set")
 	}
 
-	var repository host.Repository
-	for _, host := range r.Hosts {
-		var err error
-		repository, err = host.CreateFromName(r.RepositoryName)
-		if err != nil {
-			return fmt.Errorf("create repository: %w", err)
-		}
-
-		if repository != nil {
-			break
-		}
+	repository, err := host.NewRepositoryFromName(r.Hosts, r.RepositoryName)
+	if err != nil {
+		return err
 	}
 
-	if repository == nil {
-		return fmt.Errorf("no host supports the repository")
-	}
-
-	err := r.Registry.ReadAll([]string{r.TaskFile})
+	err = r.Registry.ReadAll([]string{r.TaskFile})
 	if err != nil {
 		return err
 	}

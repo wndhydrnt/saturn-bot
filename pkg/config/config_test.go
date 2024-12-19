@@ -49,7 +49,7 @@ func TestReadConfig(t *testing.T) {
 				GithubToken: nil,
 				GitlabToken: nil,
 			},
-			readErr: "no GitHub token or GitLab token configured",
+			readErr: "no githubToken or gitlabToken configured - https://saturn-bot.readthedocs.io/en/latest/configuration/",
 		},
 	}
 

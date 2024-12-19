@@ -128,6 +128,7 @@ type Repository interface {
 }
 
 type Host interface {
+	HostDetail
 	CreateFromName(name string) (Repository, error)
 	ListRepositories(since *time.Time, result chan []Repository, errChan chan error)
 	ListRepositoriesWithOpenPullRequests(result chan []Repository, errChan chan error)
@@ -188,4 +189,29 @@ func DeletePullRequestCommentByIdentifier(identifier string, pr interface{}, rep
 	}
 
 	return nil
+}
+
+// NewRepositoryFromName create a new [Repository] by finding the [Host] that serves
+// the repository.
+//
+// Returns an error if no [Host] can be identified.
+func NewRepositoryFromName(hosts []Host, repositoryName string) (Repository, error) {
+	for _, h := range hosts {
+		repo, err := h.CreateFromName(repositoryName)
+		if err != nil {
+			return nil, err
+		}
+
+		if repo != nil {
+			return repo, nil
+		}
+	}
+
+	var hostNameList []string
+	for _, h := range hosts {
+		hostNameList = append(hostNameList, "'"+h.Name()+"'")
+	}
+
+	hostNames := strings.Join(hostNameList, ",")
+	return nil, fmt.Errorf("no host found for repository '%s'\n  available hosts: %s\n  set githubAddress or gitlabAddress - https://saturn-bot.readthedocs.io/en/latest/configuration/", repositoryName, hostNames)
 }
