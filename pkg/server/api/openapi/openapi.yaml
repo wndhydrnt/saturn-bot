@@ -29,6 +29,33 @@ paths:
             application/json:
               schema:
                 $ref: "#/components/schemas/Error"
+  /api/v1/runs/{runId}:
+    post:
+      operationId: getRunV1
+      summary: View data of a run.
+      description: Returns details of a single run.
+      tags:
+        - worker
+      parameters:
+        - in: path
+          name: runId
+          schema:
+            type: integer
+          required: true
+          description: Numeric ID of the run.
+      responses:
+        "200":
+          description: Detailed data of the run.
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/GetRunV1Response"
+        "404":
+          description: The run does not exist.
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/Error"
   /api/v1/tasks:
     get:
       operationId: listTasksV1
@@ -131,7 +158,9 @@ paths:
         - in: query
           name: status
           schema:
-            $ref: "#/components/schemas/RunStatusV1"
+            type: array
+            items:
+              $ref: "#/components/schemas/RunStatusV1"
       responses:
         "200":
           description: OK
@@ -316,6 +345,8 @@ components:
     RunV1:
       type: object
       properties:
+        error:
+          type: string
         finishedAt:
           type: string
           format: date-time
@@ -356,3 +387,9 @@ components:
         - running
         - finished
         - failed
+    GetRunV1Response:
+      type: object
+      properties:
+        run:
+          $ref: "#/components/schemas/RunV1"
+      required: ["run"]

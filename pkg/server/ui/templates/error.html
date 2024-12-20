@@ -1,0 +1,15 @@
+{{define "title"}}Error{{end}}
+
+{{define "body"}}
+<div class="columns is-mobile">
+  <div class="column">
+    <h1>Error</h1>
+    {{if ne 0 .ID }}
+    <p>ID: {{.ID}}</p>
+    {{end}}
+    <p>{{.Message}}</p>
+  </div>
+</div>
+{{end}}
+
+{{ template "base.html" . }}

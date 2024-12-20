@@ -1,0 +1,71 @@
+{{define "title"}}Runs{{end}}
+
+{{define "breadcrumb"}}
+<nav class="breadcrumb" aria-label="breadcrumbs">
+  <ul>
+    <li><a href="/ui">Home</a></li>
+    <li class="is-active"><a href="/ui/runs" aria-current="page">Runs</a></li>
+  </ul>
+</nav>
+{{end}}
+
+{{define "body"}}
+<div class="columns">
+  <div class="column">
+    <table class="table is-striped is-fullwidth">
+      <thead>
+        <tr>
+          <th>Task</th>
+          <th>Repositories</th>
+          <th>Trigger</th>
+          <th>Status</th>
+          <th>Scheduled At</th>
+          <th>Started At</th>
+          <th>Finished At</th>
+          <th></th>
+        </tr>
+      </thead>
+      <tbody>
+        {{range .Runs.Result}}
+        <tr>
+          <td>{{.Task}}</td>
+          <td>*</td>
+          <td>{{.Reason}}</td>
+          <td class="{{.Status | runStatusToCssClass}}">
+            {{.Status}}
+          </td>
+          <td class="datetime">
+            {{.ScheduleAfter | unixEpoch}}
+          </td>
+          {{if .StartedAt}}
+          <td class="datetime">
+            {{.StartedAt | unixEpoch}}
+          </td>
+          {{else}}
+          <td></td>
+          {{end}}
+          {{if .FinishedAt}}
+          <td class="datetime">
+            {{.FinishedAt | unixEpoch}}
+          </td>
+          {{else}}
+          <td></td>
+          {{end}}
+          <td>
+            <a href="/ui/runs/{{.Id}}">Details</a>
+          </td>
+        </tr>
+        {{end}}
+      </tbody>
+    </table>
+  </div>
+</div>
+{{end}}
+
+{{define "script"}}
+<script>
+  formatDateTime(document);
+</script>
+{{end}}
+
+{{ template "base.html" . }}

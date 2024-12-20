@@ -21,6 +21,7 @@ import (
 	"github.com/wndhydrnt/saturn-bot/pkg/server/db"
 	"github.com/wndhydrnt/saturn-bot/pkg/server/metrics"
 	"github.com/wndhydrnt/saturn-bot/pkg/server/service"
+	"github.com/wndhydrnt/saturn-bot/pkg/server/ui"
 	"github.com/wndhydrnt/saturn-bot/pkg/task"
 	"github.com/wndhydrnt/saturn-bot/pkg/version"
 	"go.uber.org/zap"
@@ -77,12 +78,17 @@ func (s *Server) Start(opts options.Opts, taskPaths []string) error {
 		Router:               router,
 	})
 
-	handler := api.RegisterAPIServer(&api.NewAPIServerOptions{
+	handler, apiServer := api.RegisterAPIServer(&api.NewAPIServerOptions{
 		Clock:         opts.Clock,
 		Router:        router,
 		TaskService:   taskService,
 		WorkerService: workerService,
 	})
+	if opts.Config.ServerServeUi {
+		log.Log().Info("Registering UI routes")
+		ui.RegisterUiRoutes(router, apiServer)
+	}
+
 	s.httpServer = &http.Server{
 		ReadHeaderTimeout: 10 * time.Millisecond,
 		Addr:              opts.Config.ServerAddr,

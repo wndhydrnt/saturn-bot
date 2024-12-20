@@ -45,8 +45,10 @@ func (a *APIServer) ListRunsV1(ctx context.Context, request openapi.ListRunsV1Re
 	listOpts := toListOptions(request.Params.ListOptions)
 	queryOpts := service.ListRunsOptions{}
 	if request.Params.Status != nil {
-		dbStatus := mapRunStatusFromApiToDb(ptr.From(request.Params.Status))
-		queryOpts.Status = &dbStatus
+		for _, apiStatus := range ptr.From(request.Params.Status) {
+			dbStatus := mapRunStatusFromApiToDb(apiStatus)
+			queryOpts.Status = append(queryOpts.Status, dbStatus)
+		}
 	}
 
 	if request.Params.Task != nil {
@@ -133,6 +135,7 @@ func (a *APIServer) ScheduleRunV1(_ context.Context, req openapi.ScheduleRunV1Re
 
 func mapRun(r db.Run) openapi.RunV1 {
 	run := openapi.RunV1{
+		Error:         r.Error,
 		FinishedAt:    r.FinishedAt,
 		Id:            r.ID,
 		Reason:        mapRunReason(r.Reason),

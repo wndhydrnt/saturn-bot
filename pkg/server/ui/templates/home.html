@@ -1,0 +1,90 @@
+{{define "title"}}
+Home
+{{end}}
+
+{{define "breadcrumb"}}
+<nav class="breadcrumb" aria-label="breadcrumbs">
+  <ul>
+    <li class="is-active"><a href="/ui" aria-current="page">Home</a></li>
+  </ul>
+</nav>
+{{end}}
+
+{{define "body"}}
+<div class="columns">
+  <div class="column is-half">
+    <nav class="panel">
+      <p class="panel-heading">Upcoming runs</p>
+      <table class="table is-striped is-fullwidth">
+        <thead>
+          <tr>
+            <th>Task</th>
+            <th>Repositories</th>
+            <th>Trigger</th>
+            <th>Scheduled At</th>
+          </tr>
+        </thead>
+        <tbody>
+          {{range .UpcomingRuns.Result}}
+          <tr>
+            <td>{{.Task}}</td>
+            <td>*</td>
+            <td>{{.Reason}}</td>
+            <td class="datetime">
+              {{.ScheduleAfter | unixEpoch}}
+            </td>
+          </tr>
+          {{end}}
+        </tbody>
+      </table>
+      <div class="panel-block">
+        <a class="button is-link is-outlined is-fullwidth" href="/ui/runs">
+          View all runs
+        </a>
+      </div>
+    </nav>
+  </div>
+  <div class="column is-half">
+    <nav class="panel">
+      <p class="panel-heading">Recent runs</p>
+      <table class="table is-striped is-fullwidth">
+        <thead>
+          <tr>
+            <th>Task</th>
+            <th>Repositories</th>
+            <th>Result</th>
+            <th>Finished At</th>
+          </tr>
+        </thead>
+        <tbody>
+          {{range .RecentRuns.Result}}
+          <tr>
+            <td>{{.Task}}</td>
+            <td>*</td>
+            <td class="{{.Status | runStatusToCssClass}}">
+              {{.Status}}
+            </td>
+            <td class="datetime">
+              {{.FinishedAt | unixEpoch}}
+            </td>
+          </tr>
+          {{end}}
+        </tbody>
+      </table>
+      <div class="panel-block">
+        <a class="button is-link is-outlined is-fullwidth" href="/ui/runs">
+          View all runs
+        </a>
+      </div>
+    </nav>
+  </div>
+</div>
+{{end}}
+
+{{define "script"}}
+<script>
+  formatDateTime(document);
+</script>
+{{end}}
+
+{{ template "base.html" . }}

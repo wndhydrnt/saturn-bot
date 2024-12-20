@@ -45,6 +45,11 @@ type Error struct {
 	Message string `json:"message"`
 }
 
+// GetRunV1Response defines model for GetRunV1Response.
+type GetRunV1Response struct {
+	Run RunV1 `json:"run"`
+}
+
 // GetTaskV1Response defines model for GetTaskV1Response.
 type GetTaskV1Response struct {
 	Content string `json:"content"`
@@ -138,6 +143,7 @@ type RunStatusV1 string
 
 // RunV1 defines model for RunV1.
 type RunV1 struct {
+	Error         *string            `json:"error,omitempty"`
 	FinishedAt    *time.Time         `json:"finishedAt,omitempty"`
 	Id            uint               `json:"id"`
 	Reason        RunV1Reason        `json:"reason"`
@@ -191,9 +197,9 @@ type WorkTaskV1 struct {
 // ListRunsV1Params defines parameters for ListRunsV1.
 type ListRunsV1Params struct {
 	// Task Name of the task to filter by.
-	Task        *string      `form:"task,omitempty" json:"task,omitempty"`
-	ListOptions *ListOptions `form:"listOptions,omitempty" json:"listOptions,omitempty"`
-	Status      *RunStatusV1 `form:"status,omitempty" json:"status,omitempty"`
+	Task        *string        `form:"task,omitempty" json:"task,omitempty"`
+	ListOptions *ListOptions   `form:"listOptions,omitempty" json:"listOptions,omitempty"`
+	Status      *[]RunStatusV1 `form:"status,omitempty" json:"status,omitempty"`
 }
 
 // ScheduleRunV1JSONRequestBody defines body for ScheduleRunV1 for application/json ContentType.
@@ -280,6 +286,9 @@ type ClientInterface interface {
 
 	ScheduleRunV1(ctx context.Context, body ScheduleRunV1JSONRequestBody, reqEditors ...RequestEditorFn) (*http.Response, error)
 
+	// GetRunV1 request
+	GetRunV1(ctx context.Context, runId int, reqEditors ...RequestEditorFn) (*http.Response, error)
+
 	// ListTasksV1 request
 	ListTasksV1(ctx context.Context, reqEditors ...RequestEditorFn) (*http.Response, error)
 
@@ -312,6 +321,18 @@ func (c *Client) ScheduleRunV1WithBody(ctx context.Context, contentType string, 
 
 func (c *Client) ScheduleRunV1(ctx context.Context, body ScheduleRunV1JSONRequestBody, reqEditors ...RequestEditorFn) (*http.Response, error) {
 	req, err := NewScheduleRunV1Request(c.Server, body)
+	if err != nil {
+		return nil, err
+	}
+	req = req.WithContext(ctx)
+	if err := c.applyEditors(ctx, req, reqEditors); err != nil {
+		return nil, err
+	}
+	return c.Client.Do(req)
+}
+
+func (c *Client) GetRunV1(ctx context.Context, runId int, reqEditors ...RequestEditorFn) (*http.Response, error) {
+	req, err := NewGetRunV1Request(c.Server, runId)
 	if err != nil {
 		return nil, err
 	}
@@ -430,6 +451,40 @@ func NewScheduleRunV1RequestWithBody(server string, contentType string, body io.
 	}
 
 	req.Header.Add("Content-Type", contentType)
+
+	return req, nil
+}
+
+// NewGetRunV1Request generates requests for GetRunV1
+func NewGetRunV1Request(server string, runId int) (*http.Request, error) {
+	var err error
+
+	var pathParam0 string
+
+	pathParam0, err = runtime.StyleParamWithLocation("simple", false, "runId", runtime.ParamLocationPath, runId)
+	if err != nil {
+		return nil, err
+	}
+
+	serverURL, err := url.Parse(server)
+	if err != nil {
+		return nil, err
+	}
+
+	operationPath := fmt.Sprintf("/api/v1/runs/%s", pathParam0)
+	if operationPath[0] == '/' {
+		operationPath = "." + operationPath
+	}
+
+	queryURL, err := serverURL.Parse(operationPath)
+	if err != nil {
+		return nil, err
+	}
+
+	req, err := http.NewRequest("POST", queryURL.String(), nil)
+	if err != nil {
+		return nil, err
+	}
 
 	return req, nil
 }
@@ -691,6 +746,9 @@ type ClientWithResponsesInterface interface {
 
 	ScheduleRunV1WithResponse(ctx context.Context, body ScheduleRunV1JSONRequestBody, reqEditors ...RequestEditorFn) (*ScheduleRunV1ResponseBody, error)
 
+	// GetRunV1WithResponse request
+	GetRunV1WithResponse(ctx context.Context, runId int, reqEditors ...RequestEditorFn) (*GetRunV1ResponseBody, error)
+
 	// ListTasksV1WithResponse request
 	ListTasksV1WithResponse(ctx context.Context, reqEditors ...RequestEditorFn) (*ListTasksV1ResponseBody, error)
 
@@ -726,6 +784,29 @@ func (r ScheduleRunV1ResponseBody) Status() string {
 
 // StatusCode returns HTTPResponse.StatusCode
 func (r ScheduleRunV1ResponseBody) StatusCode() int {
+	if r.HTTPResponse != nil {
+		return r.HTTPResponse.StatusCode
+	}
+	return 0
+}
+
+type GetRunV1ResponseBody struct {
+	Body         []byte
+	HTTPResponse *http.Response
+	JSON200      *GetRunV1Response
+	JSON404      *Error
+}
+
+// Status returns HTTPResponse.Status
+func (r GetRunV1ResponseBody) Status() string {
+	if r.HTTPResponse != nil {
+		return r.HTTPResponse.Status
+	}
+	return http.StatusText(0)
+}
+
+// StatusCode returns HTTPResponse.StatusCode
+func (r GetRunV1ResponseBody) StatusCode() int {
 	if r.HTTPResponse != nil {
 		return r.HTTPResponse.StatusCode
 	}
@@ -861,6 +942,15 @@ func (c *ClientWithResponses) ScheduleRunV1WithResponse(ctx context.Context, bod
 	return ParseScheduleRunV1ResponseBody(rsp)
 }
 
+// GetRunV1WithResponse request returning *GetRunV1ResponseBody
+func (c *ClientWithResponses) GetRunV1WithResponse(ctx context.Context, runId int, reqEditors ...RequestEditorFn) (*GetRunV1ResponseBody, error) {
+	rsp, err := c.GetRunV1(ctx, runId, reqEditors...)
+	if err != nil {
+		return nil, err
+	}
+	return ParseGetRunV1ResponseBody(rsp)
+}
+
 // ListTasksV1WithResponse request returning *ListTasksV1ResponseBody
 func (c *ClientWithResponses) ListTasksV1WithResponse(ctx context.Context, reqEditors ...RequestEditorFn) (*ListTasksV1ResponseBody, error) {
 	rsp, err := c.ListTasksV1(ctx, reqEditors...)
@@ -941,6 +1031,39 @@ func ParseScheduleRunV1ResponseBody(rsp *http.Response) (*ScheduleRunV1ResponseB
 			return nil, err
 		}
 		response.JSON400 = &dest
+
+	}
+
+	return response, nil
+}
+
+// ParseGetRunV1ResponseBody parses an HTTP response from a GetRunV1WithResponse call
+func ParseGetRunV1ResponseBody(rsp *http.Response) (*GetRunV1ResponseBody, error) {
+	bodyBytes, err := io.ReadAll(rsp.Body)
+	defer func() { _ = rsp.Body.Close() }()
+	if err != nil {
+		return nil, err
+	}
+
+	response := &GetRunV1ResponseBody{
+		Body:         bodyBytes,
+		HTTPResponse: rsp,
+	}
+
+	switch {
+	case strings.Contains(rsp.Header.Get("Content-Type"), "json") && rsp.StatusCode == 200:
+		var dest GetRunV1Response
+		if err := json.Unmarshal(bodyBytes, &dest); err != nil {
+			return nil, err
+		}
+		response.JSON200 = &dest
+
+	case strings.Contains(rsp.Header.Get("Content-Type"), "json") && rsp.StatusCode == 404:
+		var dest Error
+		if err := json.Unmarshal(bodyBytes, &dest); err != nil {
+			return nil, err
+		}
+		response.JSON404 = &dest
 
 	}
 
