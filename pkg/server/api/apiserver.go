@@ -29,7 +29,7 @@ type NewAPIServerOptions struct {
 }
 
 // RegisterAPIServer registers the OpenAPI implementation with the router.
-func RegisterAPIServer(options *NewAPIServerOptions) http.Handler {
+func RegisterAPIServer(options *NewAPIServerOptions) (http.Handler, *APIServer) {
 	var c clock.Clock
 	if options.Clock == nil {
 		c = clock.Default
@@ -51,7 +51,7 @@ func RegisterAPIServer(options *NewAPIServerOptions) http.Handler {
 		openapi.NewStrictHandlerWithOptions(apiServer, nil, handlerOpts),
 		openapi.ChiServerOptions{
 			BaseRouter: options.Router,
-		})
+		}), apiServer
 }
 
 func handleHttpError(w http.ResponseWriter, _ *http.Request, err error) {

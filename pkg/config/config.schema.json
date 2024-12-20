@@ -143,6 +143,11 @@
       "description": "Secret to authenticate webhook requests sent by GitLab. See https://docs.gitlab.com/ee/user/project/integrations/webhooks.html#create-a-webhook for how to set up the token.",
       "type": "string"
     },
+    "serverServeUi": {
+      "default": true,
+      "description": "If `true`, serves the user interface.",
+      "type": "boolean"
+    },
     "workerLoopInterval": {
       "default": "10s",
       "description": "Interval at which a worker queries the server for new tasks to run.",

@@ -252,7 +252,7 @@ func (ws *WorkerService) ReportRun(req openapi.ReportWorkV1Request) error {
 }
 
 type ListRunsOptions struct {
-	Status   *db.RunStatus
+	Status   []db.RunStatus
 	TaskName string
 }
 
@@ -260,7 +260,7 @@ func (ws *WorkerService) ListRuns(opts ListRunsOptions, listOpts ListOptions) ([
 	var runs []db.Run
 	query := ws.db
 	if opts.Status != nil {
-		query = query.Where("status = ?", ptr.From(opts.Status))
+		query = query.Where("status IN ?", opts.Status)
 	}
 
 	if opts.TaskName != "" {
@@ -280,7 +280,7 @@ func (ws *WorkerService) ListRuns(opts ListRunsOptions, listOpts ListOptions) ([
 	var count int64
 	queryCount := ws.db.Model(&db.Run{})
 	if opts.Status != nil {
-		queryCount = queryCount.Where("status = ?", ptr.From(opts.Status))
+		queryCount = queryCount.Where("status IN ?", opts.Status)
 	}
 
 	if opts.TaskName != "" {
@@ -293,6 +293,23 @@ func (ws *WorkerService) ListRuns(opts ListRunsOptions, listOpts ListOptions) ([
 	}
 
 	return runs, count, result.Error
+}
+
+// GetRun returns a [db.Run] identified by id.
+//
+// It returns an error if no run is found.
+func (ws *WorkerService) GetRun(id int) (db.Run, error) {
+	var run db.Run
+	result := ws.db.Where("id = ?", id).First(&run)
+	if result.Error != nil {
+		if errors.Is(result.Error, gorm.ErrRecordNotFound) {
+			return run, sberror.NewRunNotFoundError(id)
+		}
+
+		return run, fmt.Errorf("get run by id: %w", result.Error)
+	}
+
+	return run, nil
 }
 
 func calcNextScheduleTime(run db.Run, now time.Time, t *task.Task, isOpen bool) *time.Time {

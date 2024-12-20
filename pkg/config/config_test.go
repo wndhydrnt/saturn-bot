@@ -38,6 +38,7 @@ func TestReadConfig(t *testing.T) {
 				ServerAddr:               ":3035",
 				ServerBaseUrl:            "http://localhost:3035",
 				ServerCompress:           true,
+				ServerServeUi:            true,
 				WorkerLoopInterval:       "10s",
 				WorkerParallelExecutions: 4,
 				WorkerServerAPIBaseURL:   "http://localhost:3035",

@@ -43,6 +43,11 @@ type Error struct {
 	Message string `json:"message"`
 }
 
+// GetRunV1Response defines model for GetRunV1Response.
+type GetRunV1Response struct {
+	Run RunV1 `json:"run"`
+}
+
 // GetTaskV1Response defines model for GetTaskV1Response.
 type GetTaskV1Response struct {
 	Content string `json:"content"`
@@ -136,6 +141,7 @@ type RunStatusV1 string
 
 // RunV1 defines model for RunV1.
 type RunV1 struct {
+	Error         *string            `json:"error,omitempty"`
 	FinishedAt    *time.Time         `json:"finishedAt,omitempty"`
 	Id            uint               `json:"id"`
 	Reason        RunV1Reason        `json:"reason"`
@@ -189,9 +195,9 @@ type WorkTaskV1 struct {
 // ListRunsV1Params defines parameters for ListRunsV1.
 type ListRunsV1Params struct {
 	// Task Name of the task to filter by.
-	Task        *string      `form:"task,omitempty" json:"task,omitempty"`
-	ListOptions *ListOptions `form:"listOptions,omitempty" json:"listOptions,omitempty"`
-	Status      *RunStatusV1 `form:"status,omitempty" json:"status,omitempty"`
+	Task        *string        `form:"task,omitempty" json:"task,omitempty"`
+	ListOptions *ListOptions   `form:"listOptions,omitempty" json:"listOptions,omitempty"`
+	Status      *[]RunStatusV1 `form:"status,omitempty" json:"status,omitempty"`
 }
 
 // ScheduleRunV1JSONRequestBody defines body for ScheduleRunV1 for application/json ContentType.
@@ -205,6 +211,9 @@ type ServerInterface interface {
 	// Schedule a run.
 	// (POST /api/v1/runs)
 	ScheduleRunV1(w http.ResponseWriter, r *http.Request)
+	// View data of a run.
+	// (GET /api/v1/runs/{runId})
+	GetRunV1(w http.ResponseWriter, r *http.Request, runId int)
 	// List tasks.
 	// (GET /api/v1/tasks)
 	ListTasksV1(w http.ResponseWriter, r *http.Request)
@@ -229,6 +238,12 @@ type Unimplemented struct{}
 // Schedule a run.
 // (POST /api/v1/runs)
 func (_ Unimplemented) ScheduleRunV1(w http.ResponseWriter, r *http.Request) {
+	w.WriteHeader(http.StatusNotImplemented)
+}
+
+// View data of a run.
+// (GET /api/v1/runs/{runId})
+func (_ Unimplemented) GetRunV1(w http.ResponseWriter, r *http.Request, runId int) {
 	w.WriteHeader(http.StatusNotImplemented)
 }
 
@@ -276,6 +291,31 @@ func (siw *ServerInterfaceWrapper) ScheduleRunV1(w http.ResponseWriter, r *http.
 
 	handler := http.Handler(http.HandlerFunc(func(w http.ResponseWriter, r *http.Request) {
 		siw.Handler.ScheduleRunV1(w, r)
+	}))
+
+	for _, middleware := range siw.HandlerMiddlewares {
+		handler = middleware(handler)
+	}
+
+	handler.ServeHTTP(w, r)
+}
+
+// GetRunV1 operation middleware
+func (siw *ServerInterfaceWrapper) GetRunV1(w http.ResponseWriter, r *http.Request) {
+
+	var err error
+
+	// ------------- Path parameter "runId" -------------
+	var runId int
+
+	err = runtime.BindStyledParameterWithOptions("simple", "runId", chi.URLParam(r, "runId"), &runId, runtime.BindStyledParameterOptions{ParamLocation: runtime.ParamLocationPath, Explode: false, Required: true})
+	if err != nil {
+		siw.ErrorHandlerFunc(w, r, &InvalidParamFormatError{ParamName: "runId", Err: err})
+		return
+	}
+
+	handler := http.Handler(http.HandlerFunc(func(w http.ResponseWriter, r *http.Request) {
+		siw.Handler.GetRunV1(w, r, runId)
 	}))
 
 	for _, middleware := range siw.HandlerMiddlewares {
@@ -512,6 +552,9 @@ func HandlerWithOptions(si ServerInterface, options ChiServerOptions) http.Handl
 		r.Post(options.BaseURL+"/api/v1/runs", wrapper.ScheduleRunV1)
 	})
 	r.Group(func(r chi.Router) {
+		r.Get(options.BaseURL+"/api/v1/runs/{runId}", wrapper.GetRunV1)
+	})
+	r.Group(func(r chi.Router) {
 		r.Get(options.BaseURL+"/api/v1/tasks", wrapper.ListTasksV1)
 	})
 	r.Group(func(r chi.Router) {
@@ -552,6 +595,32 @@ type ScheduleRunV1400JSONResponse Error
 func (response ScheduleRunV1400JSONResponse) VisitScheduleRunV1Response(w http.ResponseWriter) error {
 	w.Header().Set("Content-Type", "application/json")
 	w.WriteHeader(400)
+
+	return json.NewEncoder(w).Encode(response)
+}
+
+type GetRunV1RequestObject struct {
+	RunId int `json:"runId"`
+}
+
+type GetRunV1ResponseObject interface {
+	VisitGetRunV1Response(w http.ResponseWriter) error
+}
+
+type GetRunV1200JSONResponse GetRunV1Response
+
+func (response GetRunV1200JSONResponse) VisitGetRunV1Response(w http.ResponseWriter) error {
+	w.Header().Set("Content-Type", "application/json")
+	w.WriteHeader(200)
+
+	return json.NewEncoder(w).Encode(response)
+}
+
+type GetRunV1404JSONResponse Error
+
+func (response GetRunV1404JSONResponse) VisitGetRunV1Response(w http.ResponseWriter) error {
+	w.Header().Set("Content-Type", "application/json")
+	w.WriteHeader(404)
 
 	return json.NewEncoder(w).Encode(response)
 }
@@ -662,6 +731,9 @@ type StrictServerInterface interface {
 	// Schedule a run.
 	// (POST /api/v1/runs)
 	ScheduleRunV1(ctx context.Context, request ScheduleRunV1RequestObject) (ScheduleRunV1ResponseObject, error)
+	// View data of a run.
+	// (GET /api/v1/runs/{runId})
+	GetRunV1(ctx context.Context, request GetRunV1RequestObject) (GetRunV1ResponseObject, error)
 	// List tasks.
 	// (GET /api/v1/tasks)
 	ListTasksV1(ctx context.Context, request ListTasksV1RequestObject) (ListTasksV1ResponseObject, error)
@@ -732,6 +804,32 @@ func (sh *strictHandler) ScheduleRunV1(w http.ResponseWriter, r *http.Request) {
 		sh.options.ResponseErrorHandlerFunc(w, r, err)
 	} else if validResponse, ok := response.(ScheduleRunV1ResponseObject); ok {
 		if err := validResponse.VisitScheduleRunV1Response(w); err != nil {
+			sh.options.ResponseErrorHandlerFunc(w, r, err)
+		}
+	} else if response != nil {
+		sh.options.ResponseErrorHandlerFunc(w, r, fmt.Errorf("unexpected response type: %T", response))
+	}
+}
+
+// GetRunV1 operation middleware
+func (sh *strictHandler) GetRunV1(w http.ResponseWriter, r *http.Request, runId int) {
+	var request GetRunV1RequestObject
+
+	request.RunId = runId
+
+	handler := func(ctx context.Context, w http.ResponseWriter, r *http.Request, request interface{}) (interface{}, error) {
+		return sh.ssi.GetRunV1(ctx, request.(GetRunV1RequestObject))
+	}
+	for _, middleware := range sh.middlewares {
+		handler = middleware(handler, "GetRunV1")
+	}
+
+	response, err := handler(r.Context(), w, r, request)
+
+	if err != nil {
+		sh.options.ResponseErrorHandlerFunc(w, r, err)
+	} else if validResponse, ok := response.(GetRunV1ResponseObject); ok {
+		if err := validResponse.VisitGetRunV1Response(w); err != nil {
 			sh.options.ResponseErrorHandlerFunc(w, r, err)
 		}
 	} else if response != nil {
