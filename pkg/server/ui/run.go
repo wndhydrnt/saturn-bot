@@ -10,10 +10,11 @@ import (
 	"github.com/wndhydrnt/saturn-bot/pkg/server/api/openapi"
 )
 
-type DataListRuns struct {
+type dataListRuns struct {
 	Runs openapi.ListRunsV1200JSONResponse
 }
 
+// ListRun renders the list of known runs.
 func (u *Ui) ListRuns(w http.ResponseWriter, r *http.Request) {
 	req := openapi.ListRunsV1RequestObject{
 		Params: openapi.ListRunsV1Params{
@@ -28,7 +29,7 @@ func (u *Ui) ListRuns(w http.ResponseWriter, r *http.Request) {
 		return
 	}
 
-	tplData := DataListRuns{}
+	tplData := dataListRuns{}
 	switch payload := resp.(type) {
 	case openapi.ListRunsV1200JSONResponse:
 		tplData.Runs = payload
@@ -37,10 +38,11 @@ func (u *Ui) ListRuns(w http.ResponseWriter, r *http.Request) {
 	renderTemplate("run-list.html", tplData, w)
 }
 
-type DataGetRun struct {
+type dataGetRun struct {
 	Run openapi.RunV1
 }
 
+// GetRun renders the detail page of a run.
 func (u *Ui) GetRun(w http.ResponseWriter, r *http.Request) {
 	runId, err := strconv.Atoi(chi.URLParam(r, "runId"))
 	if err != nil {
@@ -57,7 +59,7 @@ func (u *Ui) GetRun(w http.ResponseWriter, r *http.Request) {
 		return
 	}
 
-	tplData := DataGetRun{}
+	tplData := dataGetRun{}
 	switch payload := resp.(type) {
 	case openapi.GetRunV1200JSONResponse:
 		tplData.Run = payload.Run

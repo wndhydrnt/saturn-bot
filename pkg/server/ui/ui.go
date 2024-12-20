@@ -9,13 +9,15 @@ import (
 	"github.com/wndhydrnt/saturn-bot/pkg/server/api/openapi"
 )
 
+// Ui defines all HTTP handlers that render views of the UI.
 type Ui struct {
 	API openapi.StrictServerInterface
 }
 
+// RegisterUiRoutes initializes [Ui] using apiServer and registers its handlers with the router.
 func RegisterUiRoutes(router chi.Router, apiServer *api.APIServer) {
 	app := &Ui{API: apiServer}
-	router.Get("/ui", app.HandleIndex)
+	router.Get("/ui", app.GetHome)
 	router.Get("/ui/runs", app.ListRuns)
 	router.Get("/ui/runs/{runId}", app.GetRun)
 	router.Group(func(r chi.Router) {

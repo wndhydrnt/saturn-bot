@@ -8,12 +8,13 @@ import (
 	"github.com/wndhydrnt/saturn-bot/pkg/server/api/openapi"
 )
 
-type DataIndex struct {
+type dataIndex struct {
 	RecentRuns   openapi.ListRunsV1200JSONResponse
 	UpcomingRuns openapi.ListRunsV1200JSONResponse
 }
 
-func (u *Ui) HandleIndex(w http.ResponseWriter, r *http.Request) {
+// GetHome renders the homepage.
+func (u *Ui) GetHome(w http.ResponseWriter, r *http.Request) {
 	reqUpcoming := openapi.ListRunsV1RequestObject{
 		Params: openapi.ListRunsV1Params{
 			ListOptions: &openapi.ListOptions{
@@ -28,7 +29,7 @@ func (u *Ui) HandleIndex(w http.ResponseWriter, r *http.Request) {
 		return
 	}
 
-	tplData := DataIndex{}
+	tplData := dataIndex{}
 	switch payload := respUpcoming.(type) {
 	case openapi.ListRunsV1200JSONResponse:
 		tplData.UpcomingRuns = payload

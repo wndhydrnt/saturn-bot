@@ -295,6 +295,9 @@ func (ws *WorkerService) ListRuns(opts ListRunsOptions, listOpts ListOptions) ([
 	return runs, count, result.Error
 }
 
+// GetRun returns a [db.Run] identified by id.
+//
+// It returns an error if no run is found.
 func (ws *WorkerService) GetRun(id int) (db.Run, error) {
 	var run db.Run
 	result := ws.db.Where("id = ?", id).First(&run)

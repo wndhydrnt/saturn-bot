@@ -8,6 +8,7 @@ import (
 	sberror "github.com/wndhydrnt/saturn-bot/pkg/server/error"
 )
 
+// GetRunV1 implements openapi.ServerInterface.
 func (a *APIServer) GetRunV1(_ context.Context, req openapi.GetRunV1RequestObject) (openapi.GetRunV1ResponseObject, error) {
 	run, err := a.WorkerService.GetRun(req.RunId)
 	var clientErr sberror.Client
