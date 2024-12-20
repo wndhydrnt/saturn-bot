@@ -30,7 +30,7 @@ paths:
               schema:
                 $ref: "#/components/schemas/Error"
   /api/v1/runs/{runId}:
-    post:
+    get:
       operationId: getRunV1
       summary: View data of a run.
       description: Returns details of a single run.

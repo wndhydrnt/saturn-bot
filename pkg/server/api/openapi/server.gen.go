@@ -212,7 +212,7 @@ type ServerInterface interface {
 	// (POST /api/v1/runs)
 	ScheduleRunV1(w http.ResponseWriter, r *http.Request)
 	// View data of a run.
-	// (POST /api/v1/runs/{runId})
+	// (GET /api/v1/runs/{runId})
 	GetRunV1(w http.ResponseWriter, r *http.Request, runId int)
 	// List tasks.
 	// (GET /api/v1/tasks)
@@ -242,7 +242,7 @@ func (_ Unimplemented) ScheduleRunV1(w http.ResponseWriter, r *http.Request) {
 }
 
 // View data of a run.
-// (POST /api/v1/runs/{runId})
+// (GET /api/v1/runs/{runId})
 func (_ Unimplemented) GetRunV1(w http.ResponseWriter, r *http.Request, runId int) {
 	w.WriteHeader(http.StatusNotImplemented)
 }
@@ -552,7 +552,7 @@ func HandlerWithOptions(si ServerInterface, options ChiServerOptions) http.Handl
 		r.Post(options.BaseURL+"/api/v1/runs", wrapper.ScheduleRunV1)
 	})
 	r.Group(func(r chi.Router) {
-		r.Post(options.BaseURL+"/api/v1/runs/{runId}", wrapper.GetRunV1)
+		r.Get(options.BaseURL+"/api/v1/runs/{runId}", wrapper.GetRunV1)
 	})
 	r.Group(func(r chi.Router) {
 		r.Get(options.BaseURL+"/api/v1/tasks", wrapper.ListTasksV1)
@@ -732,7 +732,7 @@ type StrictServerInterface interface {
 	// (POST /api/v1/runs)
 	ScheduleRunV1(ctx context.Context, request ScheduleRunV1RequestObject) (ScheduleRunV1ResponseObject, error)
 	// View data of a run.
-	// (POST /api/v1/runs/{runId})
+	// (GET /api/v1/runs/{runId})
 	GetRunV1(ctx context.Context, request GetRunV1RequestObject) (GetRunV1ResponseObject, error)
 	// List tasks.
 	// (GET /api/v1/tasks)
