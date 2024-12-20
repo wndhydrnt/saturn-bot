@@ -15,6 +15,7 @@ Home
   <div class="column is-half">
     <nav class="panel">
       <p class="panel-heading">Upcoming runs</p>
+      {{if .UpcomingRuns.Result}}
       <table class="table is-striped is-fullwidth">
         <thead>
           <tr>
@@ -37,6 +38,11 @@ Home
           {{end}}
         </tbody>
       </table>
+      {{else}}
+      <div class="panel-block">
+        No upcoming runs.
+      </div>
+      {{end}}
       <div class="panel-block">
         <a class="button is-link is-outlined is-fullwidth" href="/ui/runs">
           View all runs
@@ -47,12 +53,13 @@ Home
   <div class="column is-half">
     <nav class="panel">
       <p class="panel-heading">Recent runs</p>
+      {{if .RecentRuns.Result}}
       <table class="table is-striped is-fullwidth">
         <thead>
           <tr>
             <th>Task</th>
             <th>Repositories</th>
-            <th>Result</th>
+            <th>Status</th>
             <th>Finished At</th>
           </tr>
         </thead>
@@ -61,8 +68,8 @@ Home
           <tr>
             <td>{{.Task}}</td>
             <td>*</td>
-            <td class="{{.Status | runStatusToCssClass}}">
-              {{.Status}}
+            <td>
+              <span class="tag {{.Status | runStatusToCssClass}}">{{.Status}}</span>
             </td>
             <td class="datetime">
               {{.FinishedAt | unixEpoch}}
@@ -71,6 +78,11 @@ Home
           {{end}}
         </tbody>
       </table>
+      {{else}}
+      <div class="panel-block">
+        No recent runs.
+      </div>
+      {{end}}
       <div class="panel-block">
         <a class="button is-link is-outlined is-fullwidth" href="/ui/runs">
           View all runs

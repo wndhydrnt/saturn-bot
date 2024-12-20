@@ -27,9 +27,9 @@ func mapRunStatusToCssClass(status openapi.RunStatusV1) string {
 	case openapi.Finished:
 		return "is-success"
 	case openapi.Pending:
-		return "is-primary"
-	case openapi.Running:
 		return "is-info"
+	case openapi.Running:
+		return "is-primary"
 	}
 
 	return "is-warning"
