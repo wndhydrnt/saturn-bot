@@ -1,0 +1,37 @@
+{{define "title"}}Tasks{{end}}
+
+{{define "breadcrumb"}}
+<nav class="breadcrumb" aria-label="breadcrumbs">
+  <ul>
+    <li><a href="/ui">Home</a></li>
+    <li class="is-active"><a href="/ui/tasks" aria-current="page">Tasks</a></li>
+  </ul>
+</nav>
+{{end}}
+
+{{define "body"}}
+<div class="columns">
+  <div class="column">
+    <table class="table is-striped is-fullwidth">
+      <thead>
+        <tr>
+          <th>Task</th>
+          <th></th>
+        </tr>
+      </thead>
+      <tbody>
+        {{range .Tasks}}
+        <tr>
+          <td>{{.}}</td>
+          <td>
+            <a href="/ui/tasks/{{. | pathEscape}}">Details</a>
+          </td>
+        </tr>
+        {{end}}
+      </tbody>
+    </table>
+  </div>
+</div>
+{{end}}
+
+{{ template "base.html" . }}

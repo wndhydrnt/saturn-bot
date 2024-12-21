@@ -17,6 +17,7 @@ import (
 var templateFS embed.FS
 
 var templateFuncs = template.FuncMap{
+	"pathEscape":          url.PathEscape,
 	"renderUrl":           renderUrl,
 	"runStatusToCssClass": mapRunStatusToCssClass,
 }
