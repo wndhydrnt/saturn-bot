@@ -256,7 +256,7 @@ type ListRunsOptions struct {
 	TaskName string
 }
 
-func (ws *WorkerService) ListRuns(opts ListRunsOptions, listOpts ListOptions) ([]db.Run, int64, error) {
+func (ws *WorkerService) ListRuns(opts ListRunsOptions, listOpts *ListOptions) ([]db.Run, error) {
 	var runs []db.Run
 	query := ws.db
 	if opts.Status != nil {
@@ -274,7 +274,7 @@ func (ws *WorkerService) ListRuns(opts ListRunsOptions, listOpts ListOptions) ([
 		Find(&runs)
 
 	if result.Error != nil {
-		return nil, 0, result.Error
+		return nil, result.Error
 	}
 
 	var count int64
@@ -289,10 +289,11 @@ func (ws *WorkerService) ListRuns(opts ListRunsOptions, listOpts ListOptions) ([
 
 	countResult := queryCount.Count(&count)
 	if countResult.Error != nil {
-		return nil, 0, countResult.Error
+		return nil, countResult.Error
 	}
 
-	return runs, count, result.Error
+	listOpts.SetTotalItems(int(count))
+	return runs, result.Error
 }
 
 // GetRun returns a [db.Run] identified by id.

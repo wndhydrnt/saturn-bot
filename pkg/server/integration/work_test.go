@@ -54,7 +54,7 @@ func TestServer_API_ListRunsV1(t *testing.T) {
 					query:      fmt.Sprintf("limit=1&page=1&task=%s", defaultTask.Name),
 					statusCode: http.StatusOK,
 					responseBody: openapi.ListRunsV1Response{
-						Page: openapi.Page{Next: 2, Total: 2},
+						Page: openapi.Page{CurrentPage: 1, NextPage: 2, ItemsPerPage: 1, TotalItems: 2, TotalPages: 2},
 						Result: []openapi.RunV1{
 							{
 								Id:            2,
@@ -73,7 +73,7 @@ func TestServer_API_ListRunsV1(t *testing.T) {
 					query:      fmt.Sprintf("limit=1&page=2&task=%s", defaultTask.Name),
 					statusCode: http.StatusOK,
 					responseBody: openapi.ListRunsV1Response{
-						Page: openapi.Page{Next: 0, Total: 2},
+						Page: openapi.Page{PreviousPage: 1, CurrentPage: 2, NextPage: 0, ItemsPerPage: 1, TotalItems: 2, TotalPages: 2},
 						Result: []openapi.RunV1{
 							{
 								FinishedAt:    ptr.To(testDate(1, 0, 0, 3)),
@@ -254,7 +254,7 @@ func TestServer_API_ScheduleRunV1(t *testing.T) {
 					path:       "/api/v1/worker/runs",
 					statusCode: http.StatusOK,
 					responseBody: openapi.ListRunsV1Response{
-						Page: openapi.Page{Next: 0, Total: 1},
+						Page: openapi.Page{CurrentPage: 1, ItemsPerPage: 20, TotalItems: 1, TotalPages: 1},
 						Result: []openapi.RunV1{
 							{
 								Id:           1,
@@ -333,7 +333,7 @@ func TestServer_API_ReportWorkV1(t *testing.T) {
 					path:       "/api/v1/worker/runs",
 					statusCode: http.StatusOK,
 					responseBody: openapi.ListRunsV1Response{
-						Page: openapi.Page{Next: 0, Total: 2},
+						Page: openapi.Page{CurrentPage: 1, ItemsPerPage: 20, TotalItems: 2, TotalPages: 1},
 						Result: []openapi.RunV1{
 							{
 								Id:            2,

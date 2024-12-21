@@ -322,15 +322,29 @@ components:
     Page:
       type: object
       properties:
-        next:
+        previousPage:
+          description: |
+            Number of the previous page.
+            0 if there is no previous page.
+          type: integer
+        currentPage:
+          description: Number of the current page.
+          type: integer
+        nextPage:
           description: |
             Number of the page with the next results.
             0 if there is no next page.
           type: integer
-        total:
+        totalPages:
+          description: Total number of pages.
+          type: integer
+        itemsPerPage:
+          description: Count of items per page.
+          type: integer
+        totalItems:
           description: Total number of items.
           type: integer
-      required: ["next", "total"]
+      required: ["currentPage", "nextPage", "itemsPerPage", "previousPage", "totalItems", "totalPages"]
     ListRunsV1Response:
       type: object
       properties:
