@@ -286,9 +286,7 @@ func TestServer_API_ScheduleRunV1(t *testing.T) {
 func TestServer_API_ReportWorkV1(t *testing.T) {
 	testCases := []testCase{
 		{
-			name: `Given a task that defines a cron trigger
-							When a worker reports the result of a run for that task
-							Then it schedules the next run according to the cron schedule`,
+			name: `When a task defines a cron trigger then it schedules the next run according to the cron schedule`,
 			tasks: []schema.Task{
 				{
 					Name: "unittest",
@@ -339,6 +337,74 @@ func TestServer_API_ReportWorkV1(t *testing.T) {
 								Id:            2,
 								Reason:        openapi.Next,
 								ScheduleAfter: testDate(2, 0, 0, 0),
+								Status:        openapi.Pending,
+								Task:          defaultTask.Name,
+							},
+							{
+								FinishedAt:    ptr.To(testDate(1, 0, 0, 3)),
+								Id:            1,
+								Reason:        openapi.New,
+								ScheduleAfter: testDate(1, 0, 0, 0),
+								StartedAt:     ptr.To(testDate(1, 0, 0, 2)),
+								Status:        openapi.Finished,
+								Task:          defaultTask.Name,
+							},
+						},
+					},
+				},
+			},
+		},
+
+		{
+			name: `When a result reports an open pr and the task enables auto-merging then it schedules the next run sooner`,
+			tasks: []schema.Task{
+				{Name: "unittest", AutoMerge: true},
+			},
+			apiCalls: []apiCall{
+				// Read the run that gets scheduled at the start of the server.
+				{
+					method:     "GET",
+					path:       "/api/v1/worker/work",
+					statusCode: http.StatusOK,
+					responseBody: openapi.GetWorkV1Response{
+						RunID: 1,
+						Task: openapi.WorkTaskV1{
+							Hash: "4847b8b7624213ec8cec235367e318dead77a1efa093c24c7019e4aa806b128e",
+							Name: "unittest",
+						},
+					},
+				},
+				// And report the result of the run.
+				{
+					method: "POST",
+					path:   "/api/v1/worker/work",
+					requestBody: openapi.ReportWorkV1Request{
+						RunID: 1,
+						Task: openapi.WorkTaskV1{
+							Hash: "4847b8b7624213ec8cec235367e318dead77a1efa093c24c7019e4aa806b128e",
+							Name: "unittest",
+						},
+						TaskResults: []openapi.ReportWorkV1TaskResult{
+							{RepositoryName: "git.local/unit/test", Result: int(processor.ResultPrCreated)},
+						},
+					},
+					statusCode: http.StatusCreated,
+					responseBody: openapi.ReportWorkV1Response{
+						Result: "ok",
+					},
+				},
+				// List the runs of the task.
+				{
+					method:     "GET",
+					path:       "/api/v1/worker/runs",
+					statusCode: http.StatusOK,
+					responseBody: openapi.ListRunsV1Response{
+						Page: openapi.Page{CurrentPage: 1, ItemsPerPage: 20, TotalItems: 2, TotalPages: 1},
+						Result: []openapi.RunV1{
+							{
+								Id:            2,
+								Reason:        openapi.Next,
+								ScheduleAfter: testDate(1, 1, 0, 0),
 								Status:        openapi.Pending,
 								Task:          defaultTask.Name,
 							},

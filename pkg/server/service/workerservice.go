@@ -370,12 +370,18 @@ func checkRequiredInputs(t *task.Task, runData map[string]string) error {
 }
 
 func isPrOpen(result int) bool {
+	// A bit verbose bu better than a single, long case.
 	switch processor.Result(result) {
 	case processor.ResultPrCreated:
+		return true
 	case processor.ResultPrOpen:
+		return true
 	case processor.ResultAutoMergeTooEarly:
+		return true
 	case processor.ResultBranchModified:
+		return true
 	case processor.ResultChecksFailed:
+		return true
 	case processor.ResultConflict:
 		return true
 	}
