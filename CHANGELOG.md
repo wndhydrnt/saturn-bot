@@ -1,5 +1,23 @@
 # Changelog
 
+## [0.18.0](https://github.com/wndhydrnt/saturn-bot/compare/v0.17.0...v0.18.0) (2024-12-21)
+
+
+### Features
+
+* **filter:** New filter "gitlabCodeSearch" ([#120](https://github.com/wndhydrnt/saturn-bot/issues/120)) ([ce8003a](https://github.com/wndhydrnt/saturn-bot/commit/ce8003aaaace8ab662dba766254a399a9bfdc23f))
+* **server:** Add cache headers to static assets of UI ([0eb97e6](https://github.com/wndhydrnt/saturn-bot/commit/0eb97e6b067558efdc8bcaf3c01edc9c58846662))
+* **server:** Add filters to list of runs ([dd2a6c9](https://github.com/wndhydrnt/saturn-bot/commit/dd2a6c9819430a4dd3f327fce3792dc1aaff0c59))
+* **server:** Add pagination to UI ([#125](https://github.com/wndhydrnt/saturn-bot/issues/125)) ([eb41afd](https://github.com/wndhydrnt/saturn-bot/commit/eb41afdeca8823a301bd7547c16fe932cdfe3e6d))
+* **server:** Serve a UI ([#124](https://github.com/wndhydrnt/saturn-bot/issues/124)) ([d2e906c](https://github.com/wndhydrnt/saturn-bot/commit/d2e906c0eb0788d3ba1f854c7ba8c7ef1fbf55ca))
+* **server:** Support inputs of a task ([#118](https://github.com/wndhydrnt/saturn-bot/issues/118)) ([b597bf7](https://github.com/wndhydrnt/saturn-bot/commit/b597bf7380c740cdbf732667d9378ba2691aca98))
+* **server:** Trigger task via cron expression ([#122](https://github.com/wndhydrnt/saturn-bot/issues/122)) ([f75cd9f](https://github.com/wndhydrnt/saturn-bot/commit/f75cd9fd7f99c99c2fe051a2918ffcabbfd2da5a))
+
+
+### Bug Fixes
+
+* **server:** Next run not scheduled if PR is open ([1d97a94](https://github.com/wndhydrnt/saturn-bot/commit/1d97a94ddf86487dc5f6cb4ecb441c3c60279a18))
+
 ## [0.17.0](https://github.com/wndhydrnt/saturn-bot/compare/v0.16.0...v0.17.0) (2024-12-10)
 
 
