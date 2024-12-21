@@ -17,6 +17,7 @@ type Ui struct {
 // RegisterUiRoutes initializes [Ui] using apiServer and registers its handlers with the router.
 func RegisterUiRoutes(router chi.Router, apiServer *api.APIServer) {
 	app := &Ui{API: apiServer}
+	router.Handle("/", http.RedirectHandler("/ui", http.StatusMovedPermanently))
 	router.Get("/ui", app.GetHome)
 	router.Get("/ui/runs", app.ListRuns)
 	router.Get("/ui/runs/{runId}", app.GetRun)

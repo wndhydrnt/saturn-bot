@@ -23,17 +23,33 @@
   {{if eq .Page.PreviousPage 0}}
   <a class="pagination-previous is-disabled">Previous</a>
   {{else}}
-  <a href="{{.Path}}?page={{.Page.PreviousPage}}&limit={{.Page.ItemsPerPage}}" class="pagination-previous">Previous</a>
+  <a
+    href="{{renderUrl .URL "page" .Page.PreviousPage "limit" .Page.ItemsPerPage}}"
+    class="pagination-previous"
+  >
+    Previous
+  </a>
   {{end}}
   {{if eq .Page.NextPage 0}}
   <a class="pagination-next is-disabled">Next page</a>
   {{else}}
-  <a href="{{.Path}}?page={{.Page.NextPage}}&limit={{.Page.ItemsPerPage}}" class="pagination-next">Next page</a>
+  <a
+    href="{{renderUrl .URL "page" .Page.NextPage "limit" .Page.ItemsPerPage}}"
+    class="pagination-next"
+  >
+    Next page
+  </a>
   {{end}}
   <ul class="pagination-list">
     {{if ge .Page.PreviousPage 2 }}
     <li>
-      <a href="{{.Path}}?page=1&limit={{.Page.ItemsPerPage}}" class="pagination-link" aria-label="Goto page 1">1</a>
+      <a
+        href="{{renderUrl .URL "page" 1 "limit" .Page.ItemsPerPage}}"
+        class="pagination-link"
+        aria-label="Goto page 1"
+      >
+        1
+      </a>
     </li>
     <li>
       <span class="pagination-ellipsis">&hellip;</span>
@@ -42,7 +58,7 @@
     {{if ge .Page.PreviousPage 1 }}
     <li>
       <a
-        href="{{.Path}}?page={{.Page.PreviousPage}}&limit={{.Page.ItemsPerPage}}"
+        href="{{renderUrl .URL "page" .Page.PreviousPage "limit" .Page.ItemsPerPage}}"
         class="pagination-link"
         aria-label="Goto page {{.Page.PreviousPage}}"
       >
@@ -51,14 +67,18 @@
     </li>
     {{end}}
     <li>
-      <a class="pagination-link is-current" aria-label="Page {{.Page.CurrentPage}}" aria-current="page">
+      <a
+        class="pagination-link is-current"
+        aria-label="Page {{.Page.CurrentPage}}"
+        aria-current="page"
+      >
         {{.Page.CurrentPage}}
       </a>
     </li>
     {{if gt .Page.NextPage 0}}
     <li>
       <a
-        href="{{.Path}}?page={{.Page.NextPage}}&limit={{.Page.ItemsPerPage}}"
+        href="{{renderUrl .URL "page" .Page.NextPage "limit" .Page.ItemsPerPage}}"
         class="pagination-link"
         aria-label="Goto page {{.Page.NextPage}}"
       >
@@ -72,7 +92,7 @@
     </li>
     <li>
       <a
-        href="{{.Path}}?page={{.Page.TotalPages}}&limit={{.Page.ItemsPerPage}}"
+        href="{{renderUrl .URL "page" .Page.TotalPages "limit" .Page.ItemsPerPage}}"
         class="pagination-link"
         aria-label="Goto page {{.Page.TotalPages}}"
       >

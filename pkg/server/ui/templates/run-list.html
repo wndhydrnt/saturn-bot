@@ -11,6 +11,45 @@
 
 {{define "body"}}
 <div class="columns">
+  <div class="column is-full">
+    <form method="get" action="/ui/runs">
+      <div class="field is-grouped is-horizontal">
+        <p class="control">
+          <div class="select">
+            <select name="task">
+              <option value="">All</option>
+              {{range $name := .Filters.TaskNames}}
+              <option value="{{$name}}"{{if eq $name $.Filters.TaskNameCurrent}} selected{{end}}>
+                {{$name}}
+              </option>
+              {{end}}
+            </select>
+            <p class="help">Task</p>
+          </div>
+        </p>
+        <p class="control">
+          <div class="select">
+            <select name="status">
+              <option value="">All</option>
+              {{range $status := .Filters.RunStatusList}}
+              <option value="{{$status}}"{{if eq $status $.Filters.RunStatusCurrent}} selected{{end}}>
+                {{$status}}
+              </option>
+              {{end}}
+            </select>
+            <p class="help">Status</p>
+          </div>
+        </p>
+        <p class="control">
+          <button class="button is-primary">
+            Filter
+          </button>
+        </p>
+      </div>
+    </form>
+  </div>
+</div>
+<div class="columns">
   <div class="column">
     <table class="table is-striped is-fullwidth">
       <thead>
@@ -20,8 +59,6 @@
           <th>Trigger</th>
           <th>Status</th>
           <th>Scheduled At</th>
-          <th>Started At</th>
-          <th>Finished At</th>
           <th></th>
         </tr>
       </thead>
@@ -37,20 +74,6 @@
           <td class="datetime">
             {{.ScheduleAfter | unixEpoch}}
           </td>
-          {{if .StartedAt}}
-          <td class="datetime">
-            {{.StartedAt | unixEpoch}}
-          </td>
-          {{else}}
-          <td></td>
-          {{end}}
-          {{if .FinishedAt}}
-          <td class="datetime">
-            {{.FinishedAt | unixEpoch}}
-          </td>
-          {{else}}
-          <td></td>
-          {{end}}
           <td>
             <a href="/ui/runs/{{.Id}}">Details</a>
           </td>
