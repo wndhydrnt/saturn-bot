@@ -94,12 +94,25 @@ type ListTasksV1Response struct {
 
 // Page defines model for Page.
 type Page struct {
-	// Next Number of the page with the next results.
-	// 0 if there is no next page.
-	Next int `json:"next"`
+	// CurrentPage Number of the current page.
+	CurrentPage int `json:"currentPage"`
 
-	// Total Total number of items.
-	Total int `json:"total"`
+	// ItemsPerPage Count of items per page.
+	ItemsPerPage int `json:"itemsPerPage"`
+
+	// NextPage Number of the page with the next results.
+	// 0 if there is no next page.
+	NextPage int `json:"nextPage"`
+
+	// PreviousPage Number of the previous page.
+	// 0 if there is no previous page.
+	PreviousPage int `json:"previousPage"`
+
+	// TotalItems Total number of items.
+	TotalItems int `json:"totalItems"`
+
+	// TotalPages Total number of pages.
+	TotalPages int `json:"totalPages"`
 }
 
 // ReportWorkV1Request defines model for ReportWorkV1Request.

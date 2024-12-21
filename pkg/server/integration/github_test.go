@@ -205,7 +205,7 @@ func TestServer_WebhookGithub(t *testing.T) {
 					path:       "/api/v1/worker/runs",
 					statusCode: http.StatusOK,
 					responseBody: openapi.ListRunsV1Response{
-						Page: openapi.Page{Total: 2},
+						Page: openapi.Page{CurrentPage: 1, ItemsPerPage: 20, TotalItems: 2, TotalPages: 1},
 						Result: []openapi.RunV1{
 							{
 								Id:            2,

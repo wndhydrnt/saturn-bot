@@ -55,7 +55,7 @@ func (a *APIServer) ListRunsV1(ctx context.Context, request openapi.ListRunsV1Re
 		queryOpts.TaskName = ptr.From(request.Params.Task)
 	}
 
-	runs, totalCount, err := a.WorkerService.ListRuns(queryOpts, listOpts)
+	runs, err := a.WorkerService.ListRuns(queryOpts, &listOpts)
 	if err != nil {
 		log.Log().Errorw("Failed to list runs of task", zap.Error(err))
 		return nil, ErrInternal
@@ -68,8 +68,12 @@ func (a *APIServer) ListRunsV1(ctx context.Context, request openapi.ListRunsV1Re
 
 	resp := openapi.ListRunsV1200JSONResponse{
 		Page: openapi.Page{
-			Next:  listOpts.Next(int(totalCount)),
-			Total: int(totalCount),
+			PreviousPage: listOpts.Previous(),
+			CurrentPage:  listOpts.Page,
+			NextPage:     listOpts.Next(),
+			ItemsPerPage: listOpts.Limit,
+			TotalItems:   listOpts.TotalItems(),
+			TotalPages:   listOpts.TotalPages(),
 		},
 		Result: result,
 	}

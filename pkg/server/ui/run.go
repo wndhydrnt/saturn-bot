@@ -11,15 +11,19 @@ import (
 )
 
 type dataListRuns struct {
-	Runs openapi.ListRunsV1200JSONResponse
+	Runs       []openapi.RunV1
+	Pagination pagination
 }
 
 // ListRun renders the list of known runs.
 func (u *Ui) ListRuns(w http.ResponseWriter, r *http.Request) {
+	limit := parseIntParam(r, "limit", 10)
+	page := parseIntParam(r, "page", 1)
 	req := openapi.ListRunsV1RequestObject{
 		Params: openapi.ListRunsV1Params{
 			ListOptions: &openapi.ListOptions{
-				Limit: 10,
+				Limit: limit,
+				Page:  page,
 			},
 		},
 	}
@@ -29,17 +33,17 @@ func (u *Ui) ListRuns(w http.ResponseWriter, r *http.Request) {
 		return
 	}
 
-	tplData := dataListRuns{}
+	var tplData dataListRuns
 	switch payload := resp.(type) {
 	case openapi.ListRunsV1200JSONResponse:
-		tplData.Runs = payload
+		tplData.Pagination = pagination{
+			Page: payload.Page,
+			Path: r.URL.Path,
+		}
+		tplData.Runs = payload.Result
 	}
 
 	renderTemplate("run-list.html", tplData, w)
-}
-
-type dataGetRun struct {
-	Run openapi.RunV1
 }
 
 // GetRun renders the detail page of a run.
@@ -59,10 +63,10 @@ func (u *Ui) GetRun(w http.ResponseWriter, r *http.Request) {
 		return
 	}
 
-	tplData := dataGetRun{}
+	var tplData openapi.GetRunV1200JSONResponse
 	switch payload := resp.(type) {
 	case openapi.GetRunV1200JSONResponse:
-		tplData.Run = payload.Run
+		tplData = payload
 	case openapi.GetRunV1404JSONResponse:
 		renderApiError(openapi.Error(payload), w)
 		return

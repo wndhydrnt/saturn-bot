@@ -20,6 +20,14 @@ var templateFuncs = template.FuncMap{
 
 var templateRoot = template.Must(template.New("").Funcs(templateFuncs).Funcs(sprig.FuncMap()).ParseFS(templateFS, "templates/base.html"))
 
+type pagination struct {
+	// Page information.
+	Page openapi.Page
+	// Path of the page.
+	// Used to render links to previous/next pages.
+	Path string
+}
+
 func mapRunStatusToCssClass(status openapi.RunStatusV1) string {
 	switch status {
 	case openapi.Failed:
