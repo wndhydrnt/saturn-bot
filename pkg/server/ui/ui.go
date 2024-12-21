@@ -21,9 +21,13 @@ func RegisterUiRoutes(router chi.Router, apiServer *api.APIServer) {
 	router.Get("/ui/runs", app.ListRuns)
 	router.Get("/ui/runs/{runId}", app.GetRun)
 	router.Group(func(r chi.Router) {
-		// Strip the prefix "/ui" from request path
-		// because http.FileServerFS() doesn't expect it.
-		r.Use(middleware.PathRewrite("/ui", ""))
+		r.Use(
+			// Strip the prefix "/ui" from request path
+			// because http.FileServerFS() doesn't expect it.
+			middleware.PathRewrite("/ui", ""),
+			// Ensure that the static assets are cached.
+			addCacheHeaders(),
+		)
 		r.Handle("/ui/assets/*", http.FileServerFS(assetsFS))
 	})
 }
