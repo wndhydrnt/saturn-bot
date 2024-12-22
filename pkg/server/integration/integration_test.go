@@ -37,7 +37,8 @@ type apiCall struct {
 	method string
 	// Path of the request.
 	path string
-	// Query parameters of the request.
+	// Query parameters of the request,
+	// like a=b&c=d
 	query string
 	// Request headers, if any.
 	requestHeaders map[string]string

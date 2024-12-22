@@ -73,6 +73,7 @@ func (a *APIServer) ListTaskResultsV1(ctx context.Context, request openapi.ListT
 			TotalItems:   listOpts.TotalItems(),
 			TotalPages:   listOpts.TotalPages(),
 		},
+		TaskResults: []openapi.TaskResultV1{},
 	}
 	for _, tr := range taskResults {
 		resp.TaskResults = append(resp.TaskResults, mapTaskResultFromDbToApi(tr))
