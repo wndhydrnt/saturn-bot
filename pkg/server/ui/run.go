@@ -178,5 +178,5 @@ func (u *Ui) ListTaskResultsOfRun(w http.ResponseWriter, r *http.Request) {
 		URL:  r.URL,
 	}
 	data.TaskResults = listTaskResultsObj.TaskResults
-	renderTemplate(data, w, "task-results-table.html", "run-task-results.html")
+	renderTemplate(data, w, "task-results-table.html", "run-task-results-list.html")
 }
