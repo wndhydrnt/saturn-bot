@@ -24,9 +24,13 @@
       </td>
     </tr>
     {{end}}
+    {{else if eq .Run.Status "pending"}}
+    <tr>
+      <td colspan="4">The run hasn't started yet.</td>
+    </tr>
     {{else}}
     <tr>
-      <td colspan="4">No results found</td>
+      <td colspan="4">The run didn't create any pull requests.</td>
     </tr>
     {{end}}
   </tbody>

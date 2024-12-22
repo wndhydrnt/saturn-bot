@@ -2,7 +2,6 @@ package ui
 
 import (
 	"embed"
-	"fmt"
 	"html/template"
 	"net/http"
 	"net/url"
@@ -96,13 +95,11 @@ func renderUrl(u *url.URL, params ...any) string {
 }
 
 func renderTemplate(data any, w http.ResponseWriter, names ...string) {
-	fmt.Println(names)
 	var namesWithPrefix []string
 	for _, n := range names {
 		namesWithPrefix = append(namesWithPrefix, "templates/"+n)
 	}
 
-	fmt.Println(namesWithPrefix)
 	tpl, err := template.Must(templateRoot.Clone()).ParseFS(templateFS, namesWithPrefix...)
 	if err != nil {
 		log.Log().Errorw("Parse templates", zap.Error(err))
@@ -110,7 +107,6 @@ func renderTemplate(data any, w http.ResponseWriter, names ...string) {
 		return
 	}
 
-	fmt.Println(tpl.DefinedTemplates())
 	err = tpl.ExecuteTemplate(w, names[len(names)-1], data)
 	if err != nil {
 		log.Log().Errorw("Execute template", zap.Error(err))

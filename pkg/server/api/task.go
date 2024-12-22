@@ -53,7 +53,7 @@ func (a *APIServer) ListTaskResultsV1(ctx context.Context, request openapi.ListT
 	}
 
 	listOpts := toListOptions(request.Params.ListOptions)
-	taskResults, err := a.TaskService.ListTaskResults(opts, &listOpts)
+	taskResults, err := a.WorkerService.ListTaskResults(opts, &listOpts)
 	if err != nil {
 		return nil, err
 	}

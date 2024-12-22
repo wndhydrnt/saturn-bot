@@ -13,6 +13,16 @@
 {{define "body"}}
 <div class="columns">
   <div class="column">
+    <div class="tabs">
+      <ul>
+        <li class="is-active"><a>Details</a></li>
+        <li><a href="/ui/runs/{{.Run.Id}}/results">Results</a></li>
+      </ul>
+    </div>
+  </div>
+</div>
+<div class="columns">
+  <div class="column">
     <p>
       <strong>ID:</strong>
     </p>

@@ -47,15 +47,16 @@ func (u *Ui) GetTaskFile(w http.ResponseWriter, r *http.Request) {
 		renderTemplate(data, w, "task-get-file.html")
 
 	case openapi.GetTaskV1404JSONResponse:
-		renderApiError(openapi.Error(v), w)
+		renderApiError(openapi.Error(v), w, http.StatusNotFound)
 
 	case openapi.GetTaskV1500JSONResponse:
-		renderApiError(openapi.Error(v), w)
+		renderApiError(openapi.Error(v), w, http.StatusInternalServerError)
 	}
 }
 
 type dataGetTaskResults struct {
 	Pagination  pagination
+	Run         openapi.RunV1
 	TaskName    string
 	TaskResults []openapi.TaskResultV1
 }
@@ -111,6 +112,7 @@ func (u *Ui) GetTaskResults(w http.ResponseWriter, r *http.Request) {
 			Page: listTaskResultsObj.Page,
 			URL:  r.URL,
 		},
+		Run:         listRunsObj.Result[0],
 		TaskName:    name,
 		TaskResults: listTaskResultsObj.TaskResults,
 	}

@@ -13,11 +13,13 @@ type DataError struct {
 	Message string
 }
 
-func renderApiError(err openapi.Error, w http.ResponseWriter) {
+func renderApiError(err openapi.Error, w http.ResponseWriter, status int) {
+	w.WriteHeader(status)
 	renderTemplate(DataError{ID: err.Error, Message: err.Message}, w, "error.html")
 }
 
 func renderError(err error, w http.ResponseWriter) {
 	log.Log().Errorw("Rendering of UI failed", zap.Error(err))
+	w.WriteHeader(http.StatusInternalServerError)
 	renderTemplate(DataError{Message: err.Error()}, w, "error.html")
 }

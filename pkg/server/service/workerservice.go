@@ -314,6 +314,34 @@ func (ws *WorkerService) GetRun(id int) (db.Run, error) {
 	return run, nil
 }
 
+type ListTaskResultsOptions struct {
+	RunId  int
+	Status []db.TaskResultStatus
+}
+
+func (ws *WorkerService) ListTaskResults(opts ListTaskResultsOptions, listOpts *ListOptions) ([]db.TaskResult, error) {
+	query := ws.db
+	if opts.RunId != 0 {
+		query = query.Where("run_id = ?", opts.RunId)
+	}
+
+	if len(opts.Status) > 0 {
+		query = query.Where("result IN ?", opts.Status)
+	}
+
+	var taskResults []db.TaskResult
+	result := query.
+		Offset(listOpts.Offset()).
+		Limit(listOpts.Limit).
+		Order("created_at DESC").
+		Find(&taskResults)
+	if result.Error != nil {
+		return nil, fmt.Errorf("list task results: %w", result.Error)
+	}
+
+	return taskResults, nil
+}
+
 func calcNextScheduleTime(run db.Run, now time.Time, t *task.Task, isOpen bool) *time.Time {
 	// If task defines a cron trigger, always adhere to the cron schedule.
 	cronTime := calcNextCronTime(now, t)
