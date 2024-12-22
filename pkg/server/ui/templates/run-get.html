@@ -28,7 +28,9 @@
     </p>
   </div>
   <div class="column">
-    <p>{{.Run.Task}}</p>
+    <p>
+      <a href="/ui/tasks/{{.Run.Task | pathEscape}}/results">{{.Run.Task}}</a>
+    </p>
   </div>
 </div>
 <div class="columns">

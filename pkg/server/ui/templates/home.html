@@ -12,7 +12,7 @@ Home
 
 {{define "body"}}
 <div class="columns">
-  <div class="column is-half">
+  <div class="column is-one-third">
     <nav class="panel">
       <p class="panel-heading">Tasks</p>
       {{if .Tasks}}
@@ -20,12 +20,16 @@ Home
         <thead>
           <tr>
             <th>Task</th>
+            <th></th>
           </tr>
         </thead>
         <tbody>
           {{range .Tasks}}
           <tr>
             <td>{{.}}</td>
+            <td>
+              <a href="/ui/tasks/{{. | pathEscape}}/file">Details</a>
+            </td>
           </tr>
           {{end}}
         </tbody>
@@ -42,7 +46,7 @@ Home
       </div>
     </nav>
   </div>
-  <div class="column is-half">
+  <div class="column is-two-third">
     <nav class="panel">
       <p class="panel-heading">Recent runs</p>
       {{if .RecentRuns.Result}}
@@ -53,18 +57,24 @@ Home
             <th>Repositories</th>
             <th>Status</th>
             <th>Finished At</th>
+            <th></th>
           </tr>
         </thead>
         <tbody>
           {{range .RecentRuns.Result}}
           <tr>
-            <td>{{.Task}}</td>
+            <td>
+              <a href="/ui/tasks/{{.Task | pathEscape}}/results">{{.Task}}</a>
+            </td>
             <td>*</td>
             <td>
               <span class="tag {{.Status | runStatusToCssClass}}">{{.Status}}</span>
             </td>
             <td class="datetime">
               {{.FinishedAt | unixEpoch}}
+            </td>
+            <td>
+              <a href="/ui/runs/{{.Id}}">Details</a>
             </td>
           </tr>
           {{end}}
