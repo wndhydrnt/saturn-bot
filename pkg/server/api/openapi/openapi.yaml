@@ -103,7 +103,7 @@ paths:
             application/json:
               schema:
                 $ref: "#/components/schemas/Error"
-  /api/v1/tasks/{task}/results:
+  /api/v1/taskResults:
     get:
       operationId: listTaskResultsV1
       summary: Task results
@@ -111,17 +111,17 @@ paths:
       tags:
         - task
       parameters:
-        - in: path
-          name: task
-          schema:
-            type: string
-          required: true
-          description: Name of the task to return.
         - in: query
           name: runId
           schema:
             type: integer
           description: ID of a run to filter by.
+        - in: query
+          name: status
+          schema:
+            type: array
+            items:
+              $ref: "#/components/schemas/TaskResultStatusV1"
         - in: query
           name: listOptions
           schema:
@@ -450,17 +450,19 @@ components:
           description: URL of the pull request opened by saturn-bot.
           type: string
         status:
-          description: Status of the pull request.
-          type: string
-          enum:
-            - closed
-            - error
-            - merged
-            - open
+          $ref: "#/components/schemas/TaskResultStatusV1"
         runId:
           description: Numeric identifier of the run this result is a part of.
           type: integer
       required: ["repositoryName", "status", "runId"]
+    TaskResultStatusV1:
+      description: Status of the pull request.
+      type: string
+      enum:
+        - closed
+        - error
+        - merged
+        - open
     ListTaskResultsV1Response:
       type: object
       properties:

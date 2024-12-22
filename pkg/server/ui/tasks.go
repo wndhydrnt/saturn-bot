@@ -54,7 +54,13 @@ func (u *Ui) GetTaskFile(w http.ResponseWriter, r *http.Request) {
 	}
 }
 
+type dataTaskResultsFilters struct {
+	TaskResultStatusCurrent string
+	TaskResultStatusList    []openapi.TaskResultStatusV1
+}
+
 type dataGetTaskResults struct {
+	Filters     dataTaskResultsFilters
 	Pagination  pagination
 	Run         openapi.RunV1
 	TaskName    string
@@ -90,6 +96,14 @@ func (u *Ui) GetTaskResults(w http.ResponseWriter, r *http.Request) {
 		return
 	}
 
+	statusParam := r.URL.Query().Get("status")
+	data := dataGetTaskResults{
+		Filters: dataTaskResultsFilters{
+			TaskResultStatusCurrent: statusParam,
+			TaskResultStatusList:    taskResultStatusOptions,
+		},
+	}
+
 	listTaskResultsReq := openapi.ListTaskResultsV1RequestObject{
 		Params: openapi.ListTaskResultsV1Params{
 			RunId: ptr.To(int(listRunsObj.Result[0].Id)),
@@ -107,14 +121,12 @@ func (u *Ui) GetTaskResults(w http.ResponseWriter, r *http.Request) {
 	}
 
 	listTaskResultsObj := listTaskResultsResp.(openapi.ListTaskResultsV1200JSONResponse)
-	data := dataGetTaskResults{
-		Pagination: pagination{
-			Page: listTaskResultsObj.Page,
-			URL:  r.URL,
-		},
-		Run:         listRunsObj.Result[0],
-		TaskName:    name,
-		TaskResults: listTaskResultsObj.TaskResults,
+	data.Pagination = pagination{
+		Page: listTaskResultsObj.Page,
+		URL:  r.URL,
 	}
+	data.Run = listRunsObj.Result[0]
+	data.TaskName = name
+	data.TaskResults = listTaskResultsObj.TaskResults
 	renderTemplate(data, w, "task-results-table.html", "task-get-results.html")
 }

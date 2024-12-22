@@ -326,7 +326,7 @@ func (ws *WorkerService) ListTaskResults(opts ListTaskResultsOptions, listOpts *
 	}
 
 	if len(opts.Status) > 0 {
-		query = query.Where("result IN ?", opts.Status)
+		query = query.Where("status IN ?", opts.Status)
 	}
 
 	var taskResults []db.TaskResult

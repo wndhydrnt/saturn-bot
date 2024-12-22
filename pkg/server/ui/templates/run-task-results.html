@@ -16,16 +16,12 @@
     <div class="tabs">
       <ul>
         <li><a href="/ui/runs/{{.Run.Id}}">Details</a></li>
-        <li class="is-active"><a>Results</a></li>
+        <li class="is-active"><a>Pull requests</a></li>
       </ul>
     </div>
   </div>
 </div>
-<div class="columns">
-  <div class="column">
-    {{ template "task-results-table" . }}
-  </div>
-</div>
+{{ template "task-results-table" . }}
 {{end}}
 
 {{ template "base.html" . }}

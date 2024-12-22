@@ -39,12 +39,12 @@ const (
 	Webhook RunV1Reason = "webhook"
 )
 
-// Defines values for TaskResultV1Status.
+// Defines values for TaskResultStatusV1.
 const (
-	TaskResultV1StatusClosed TaskResultV1Status = "closed"
-	TaskResultV1StatusError  TaskResultV1Status = "error"
-	TaskResultV1StatusMerged TaskResultV1Status = "merged"
-	TaskResultV1StatusOpen   TaskResultV1Status = "open"
+	TaskResultStatusV1Closed TaskResultStatusV1 = "closed"
+	TaskResultStatusV1Error  TaskResultStatusV1 = "error"
+	TaskResultStatusV1Merged TaskResultStatusV1 = "merged"
+	TaskResultStatusV1Open   TaskResultStatusV1 = "open"
 )
 
 // Error defines model for Error.
@@ -212,6 +212,9 @@ type ScheduleRunV1Response struct {
 	RunID int `json:"runID"`
 }
 
+// TaskResultStatusV1 Status of the pull request.
+type TaskResultStatusV1 string
+
 // TaskResultV1 defines model for TaskResultV1.
 type TaskResultV1 struct {
 	// Error Error that occurred while creating the pull request, if any.
@@ -227,11 +230,8 @@ type TaskResultV1 struct {
 	RunId int `json:"runId"`
 
 	// Status Status of the pull request.
-	Status TaskResultV1Status `json:"status"`
+	Status TaskResultStatusV1 `json:"status"`
 }
-
-// TaskResultV1Status Status of the pull request.
-type TaskResultV1Status string
 
 // WorkTaskV1 The task to execute.
 type WorkTaskV1 struct {
@@ -245,8 +245,9 @@ type WorkTaskV1 struct {
 // ListTaskResultsV1Params defines parameters for ListTaskResultsV1.
 type ListTaskResultsV1Params struct {
 	// RunId ID of a run to filter by.
-	RunId       *int         `form:"runId,omitempty" json:"runId,omitempty"`
-	ListOptions *ListOptions `form:"listOptions,omitempty" json:"listOptions,omitempty"`
+	RunId       *int                  `form:"runId,omitempty" json:"runId,omitempty"`
+	Status      *[]TaskResultStatusV1 `form:"status,omitempty" json:"status,omitempty"`
+	ListOptions *ListOptions          `form:"listOptions,omitempty" json:"listOptions,omitempty"`
 }
 
 // ListRunsV1Params defines parameters for ListRunsV1.
@@ -344,14 +345,14 @@ type ClientInterface interface {
 	// GetRunV1 request
 	GetRunV1(ctx context.Context, runId int, reqEditors ...RequestEditorFn) (*http.Response, error)
 
+	// ListTaskResultsV1 request
+	ListTaskResultsV1(ctx context.Context, params *ListTaskResultsV1Params, reqEditors ...RequestEditorFn) (*http.Response, error)
+
 	// ListTasksV1 request
 	ListTasksV1(ctx context.Context, reqEditors ...RequestEditorFn) (*http.Response, error)
 
 	// GetTaskV1 request
 	GetTaskV1(ctx context.Context, task string, reqEditors ...RequestEditorFn) (*http.Response, error)
-
-	// ListTaskResultsV1 request
-	ListTaskResultsV1(ctx context.Context, task string, params *ListTaskResultsV1Params, reqEditors ...RequestEditorFn) (*http.Response, error)
 
 	// ListRunsV1 request
 	ListRunsV1(ctx context.Context, params *ListRunsV1Params, reqEditors ...RequestEditorFn) (*http.Response, error)
@@ -401,6 +402,18 @@ func (c *Client) GetRunV1(ctx context.Context, runId int, reqEditors ...RequestE
 	return c.Client.Do(req)
 }
 
+func (c *Client) ListTaskResultsV1(ctx context.Context, params *ListTaskResultsV1Params, reqEditors ...RequestEditorFn) (*http.Response, error) {
+	req, err := NewListTaskResultsV1Request(c.Server, params)
+	if err != nil {
+		return nil, err
+	}
+	req = req.WithContext(ctx)
+	if err := c.applyEditors(ctx, req, reqEditors); err != nil {
+		return nil, err
+	}
+	return c.Client.Do(req)
+}
+
 func (c *Client) ListTasksV1(ctx context.Context, reqEditors ...RequestEditorFn) (*http.Response, error) {
 	req, err := NewListTasksV1Request(c.Server)
 	if err != nil {
@@ -415,18 +428,6 @@ func (c *Client) ListTasksV1(ctx context.Context, reqEditors ...RequestEditorFn)
 
 func (c *Client) GetTaskV1(ctx context.Context, task string, reqEditors ...RequestEditorFn) (*http.Response, error) {
 	req, err := NewGetTaskV1Request(c.Server, task)
-	if err != nil {
-		return nil, err
-	}
-	req = req.WithContext(ctx)
-	if err := c.applyEditors(ctx, req, reqEditors); err != nil {
-		return nil, err
-	}
-	return c.Client.Do(req)
-}
-
-func (c *Client) ListTaskResultsV1(ctx context.Context, task string, params *ListTaskResultsV1Params, reqEditors ...RequestEditorFn) (*http.Response, error) {
-	req, err := NewListTaskResultsV1Request(c.Server, task, params)
 	if err != nil {
 		return nil, err
 	}
@@ -559,6 +560,87 @@ func NewGetRunV1Request(server string, runId int) (*http.Request, error) {
 	return req, nil
 }
 
+// NewListTaskResultsV1Request generates requests for ListTaskResultsV1
+func NewListTaskResultsV1Request(server string, params *ListTaskResultsV1Params) (*http.Request, error) {
+	var err error
+
+	serverURL, err := url.Parse(server)
+	if err != nil {
+		return nil, err
+	}
+
+	operationPath := fmt.Sprintf("/api/v1/taskResults")
+	if operationPath[0] == '/' {
+		operationPath = "." + operationPath
+	}
+
+	queryURL, err := serverURL.Parse(operationPath)
+	if err != nil {
+		return nil, err
+	}
+
+	if params != nil {
+		queryValues := queryURL.Query()
+
+		if params.RunId != nil {
+
+			if queryFrag, err := runtime.StyleParamWithLocation("form", true, "runId", runtime.ParamLocationQuery, *params.RunId); err != nil {
+				return nil, err
+			} else if parsed, err := url.ParseQuery(queryFrag); err != nil {
+				return nil, err
+			} else {
+				for k, v := range parsed {
+					for _, v2 := range v {
+						queryValues.Add(k, v2)
+					}
+				}
+			}
+
+		}
+
+		if params.Status != nil {
+
+			if queryFrag, err := runtime.StyleParamWithLocation("form", true, "status", runtime.ParamLocationQuery, *params.Status); err != nil {
+				return nil, err
+			} else if parsed, err := url.ParseQuery(queryFrag); err != nil {
+				return nil, err
+			} else {
+				for k, v := range parsed {
+					for _, v2 := range v {
+						queryValues.Add(k, v2)
+					}
+				}
+			}
+
+		}
+
+		if params.ListOptions != nil {
+
+			if queryFrag, err := runtime.StyleParamWithLocation("form", true, "listOptions", runtime.ParamLocationQuery, *params.ListOptions); err != nil {
+				return nil, err
+			} else if parsed, err := url.ParseQuery(queryFrag); err != nil {
+				return nil, err
+			} else {
+				for k, v := range parsed {
+					for _, v2 := range v {
+						queryValues.Add(k, v2)
+					}
+				}
+			}
+
+		}
+
+		queryURL.RawQuery = queryValues.Encode()
+	}
+
+	req, err := http.NewRequest("GET", queryURL.String(), nil)
+	if err != nil {
+		return nil, err
+	}
+
+	return req, nil
+}
+
 // NewListTasksV1Request generates requests for ListTasksV1
 func NewListTasksV1Request(server string) (*http.Request, error) {
 	var err error
@@ -610,78 +692,6 @@ func NewGetTaskV1Request(server string, task string) (*http.Request, error) {
 	queryURL, err := serverURL.Parse(operationPath)
 	if err != nil {
 		return nil, err
-	}
-
-	req, err := http.NewRequest("GET", queryURL.String(), nil)
-	if err != nil {
-		return nil, err
-	}
-
-	return req, nil
-}
-
-// NewListTaskResultsV1Request generates requests for ListTaskResultsV1
-func NewListTaskResultsV1Request(server string, task string, params *ListTaskResultsV1Params) (*http.Request, error) {
-	var err error
-
-	var pathParam0 string
-
-	pathParam0, err = runtime.StyleParamWithLocation("simple", false, "task", runtime.ParamLocationPath, task)
-	if err != nil {
-		return nil, err
-	}
-
-	serverURL, err := url.Parse(server)
-	if err != nil {
-		return nil, err
-	}
-
-	operationPath := fmt.Sprintf("/api/v1/tasks/%s/results", pathParam0)
-	if operationPath[0] == '/' {
-		operationPath = "." + operationPath
-	}
-
-	queryURL, err := serverURL.Parse(operationPath)
-	if err != nil {
-		return nil, err
-	}
-
-	if params != nil {
-		queryValues := queryURL.Query()
-
-		if params.RunId != nil {
-
-			if queryFrag, err := runtime.StyleParamWithLocation("form", true, "runId", runtime.ParamLocationQuery, *params.RunId); err != nil {
-				return nil, err
-			} else if parsed, err := url.ParseQuery(queryFrag); err != nil {
-				return nil, err
-			} else {
-				for k, v := range parsed {
-					for _, v2 := range v {
-						queryValues.Add(k, v2)
-					}
-				}
-			}
-
-		}
-
-		if params.ListOptions != nil {
-
-			if queryFrag, err := runtime.StyleParamWithLocation("form", true, "listOptions", runtime.ParamLocationQuery, *params.ListOptions); err != nil {
-				return nil, err
-			} else if parsed, err := url.ParseQuery(queryFrag); err != nil {
-				return nil, err
-			} else {
-				for k, v := range parsed {
-					for _, v2 := range v {
-						queryValues.Add(k, v2)
-					}
-				}
-			}
-
-		}
-
-		queryURL.RawQuery = queryValues.Encode()
 	}
 
 	req, err := http.NewRequest("GET", queryURL.String(), nil)
@@ -891,14 +901,14 @@ type ClientWithResponsesInterface interface {
 	// GetRunV1WithResponse request
 	GetRunV1WithResponse(ctx context.Context, runId int, reqEditors ...RequestEditorFn) (*GetRunV1ResponseBody, error)
 
+	// ListTaskResultsV1WithResponse request
+	ListTaskResultsV1WithResponse(ctx context.Context, params *ListTaskResultsV1Params, reqEditors ...RequestEditorFn) (*ListTaskResultsV1ResponseBody, error)
+
 	// ListTasksV1WithResponse request
 	ListTasksV1WithResponse(ctx context.Context, reqEditors ...RequestEditorFn) (*ListTasksV1ResponseBody, error)
 
 	// GetTaskV1WithResponse request
 	GetTaskV1WithResponse(ctx context.Context, task string, reqEditors ...RequestEditorFn) (*GetTaskV1ResponseBody, error)
-
-	// ListTaskResultsV1WithResponse request
-	ListTaskResultsV1WithResponse(ctx context.Context, task string, params *ListTaskResultsV1Params, reqEditors ...RequestEditorFn) (*ListTaskResultsV1ResponseBody, error)
 
 	// ListRunsV1WithResponse request
 	ListRunsV1WithResponse(ctx context.Context, params *ListRunsV1Params, reqEditors ...RequestEditorFn) (*ListRunsV1ResponseBody, error)
@@ -958,6 +968,28 @@ func (r GetRunV1ResponseBody) StatusCode() int {
 	return 0
 }
 
+type ListTaskResultsV1ResponseBody struct {
+	Body         []byte
+	HTTPResponse *http.Response
+	JSON200      *ListTaskResultsV1Response
+}
+
+// Status returns HTTPResponse.Status
+func (r ListTaskResultsV1ResponseBody) Status() string {
+	if r.HTTPResponse != nil {
+		return r.HTTPResponse.Status
+	}
+	return http.StatusText(0)
+}
+
+// StatusCode returns HTTPResponse.StatusCode
+func (r ListTaskResultsV1ResponseBody) StatusCode() int {
+	if r.HTTPResponse != nil {
+		return r.HTTPResponse.StatusCode
+	}
+	return 0
+}
+
 type ListTasksV1ResponseBody struct {
 	Body         []byte
 	HTTPResponse *http.Response
@@ -998,28 +1030,6 @@ func (r GetTaskV1ResponseBody) Status() string {
 
 // StatusCode returns HTTPResponse.StatusCode
 func (r GetTaskV1ResponseBody) StatusCode() int {
-	if r.HTTPResponse != nil {
-		return r.HTTPResponse.StatusCode
-	}
-	return 0
-}
-
-type ListTaskResultsV1ResponseBody struct {
-	Body         []byte
-	HTTPResponse *http.Response
-	JSON200      *ListTaskResultsV1Response
-}
-
-// Status returns HTTPResponse.Status
-func (r ListTaskResultsV1ResponseBody) Status() string {
-	if r.HTTPResponse != nil {
-		return r.HTTPResponse.Status
-	}
-	return http.StatusText(0)
-}
-
-// StatusCode returns HTTPResponse.StatusCode
-func (r ListTaskResultsV1ResponseBody) StatusCode() int {
 	if r.HTTPResponse != nil {
 		return r.HTTPResponse.StatusCode
 	}
@@ -1118,6 +1128,15 @@ func (c *ClientWithResponses) GetRunV1WithResponse(ctx context.Context, runId in
 	return ParseGetRunV1ResponseBody(rsp)
 }
 
+// ListTaskResultsV1WithResponse request returning *ListTaskResultsV1ResponseBody
+func (c *ClientWithResponses) ListTaskResultsV1WithResponse(ctx context.Context, params *ListTaskResultsV1Params, reqEditors ...RequestEditorFn) (*ListTaskResultsV1ResponseBody, error) {
+	rsp, err := c.ListTaskResultsV1(ctx, params, reqEditors...)
+	if err != nil {
+		return nil, err
+	}
+	return ParseListTaskResultsV1ResponseBody(rsp)
+}
+
 // ListTasksV1WithResponse request returning *ListTasksV1ResponseBody
 func (c *ClientWithResponses) ListTasksV1WithResponse(ctx context.Context, reqEditors ...RequestEditorFn) (*ListTasksV1ResponseBody, error) {
 	rsp, err := c.ListTasksV1(ctx, reqEditors...)
@@ -1134,15 +1153,6 @@ func (c *ClientWithResponses) GetTaskV1WithResponse(ctx context.Context, task st
 		return nil, err
 	}
 	return ParseGetTaskV1ResponseBody(rsp)
-}
-
-// ListTaskResultsV1WithResponse request returning *ListTaskResultsV1ResponseBody
-func (c *ClientWithResponses) ListTaskResultsV1WithResponse(ctx context.Context, task string, params *ListTaskResultsV1Params, reqEditors ...RequestEditorFn) (*ListTaskResultsV1ResponseBody, error) {
-	rsp, err := c.ListTaskResultsV1(ctx, task, params, reqEditors...)
-	if err != nil {
-		return nil, err
-	}
-	return ParseListTaskResultsV1ResponseBody(rsp)
 }
 
 // ListRunsV1WithResponse request returning *ListRunsV1ResponseBody
@@ -1246,6 +1256,32 @@ func ParseGetRunV1ResponseBody(rsp *http.Response) (*GetRunV1ResponseBody, error
 	return response, nil
 }
 
+// ParseListTaskResultsV1ResponseBody parses an HTTP response from a ListTaskResultsV1WithResponse call
+func ParseListTaskResultsV1ResponseBody(rsp *http.Response) (*ListTaskResultsV1ResponseBody, error) {
+	bodyBytes, err := io.ReadAll(rsp.Body)
+	defer func() { _ = rsp.Body.Close() }()
+	if err != nil {
+		return nil, err
+	}
+
+	response := &ListTaskResultsV1ResponseBody{
+		Body:         bodyBytes,
+		HTTPResponse: rsp,
+	}
+
+	switch {
+	case strings.Contains(rsp.Header.Get("Content-Type"), "json") && rsp.StatusCode == 200:
+		var dest ListTaskResultsV1Response
+		if err := json.Unmarshal(bodyBytes, &dest); err != nil {
+			return nil, err
+		}
+		response.JSON200 = &dest
+
+	}
+
+	return response, nil
+}
+
 // ParseListTasksV1ResponseBody parses an HTTP response from a ListTasksV1WithResponse call
 func ParseListTasksV1ResponseBody(rsp *http.Response) (*ListTasksV1ResponseBody, error) {
 	bodyBytes, err := io.ReadAll(rsp.Body)
@@ -1306,32 +1342,6 @@ func ParseGetTaskV1ResponseBody(rsp *http.Response) (*GetTaskV1ResponseBody, err
 			return nil, err
 		}
 		response.JSON500 = &dest
-
-	}
-
-	return response, nil
-}
-
-// ParseListTaskResultsV1ResponseBody parses an HTTP response from a ListTaskResultsV1WithResponse call
-func ParseListTaskResultsV1ResponseBody(rsp *http.Response) (*ListTaskResultsV1ResponseBody, error) {
-	bodyBytes, err := io.ReadAll(rsp.Body)
-	defer func() { _ = rsp.Body.Close() }()
-	if err != nil {
-		return nil, err
-	}
-
-	response := &ListTaskResultsV1ResponseBody{
-		Body:         bodyBytes,
-		HTTPResponse: rsp,
-	}
-
-	switch {
-	case strings.Contains(rsp.Header.Get("Content-Type"), "json") && rsp.StatusCode == 200:
-		var dest ListTaskResultsV1Response
-		if err := json.Unmarshal(bodyBytes, &dest); err != nil {
-			return nil, err
-		}
-		response.JSON200 = &dest
 
 	}
 

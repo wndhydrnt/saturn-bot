@@ -24,7 +24,10 @@ type dataListRunsFilters struct {
 	TaskNameCurrent  string
 }
 
-var runStatusOptions = []string{string(openapi.Failed), string(openapi.Finished), string(openapi.Pending), string(openapi.Running)}
+var (
+	runStatusOptions        = []string{string(openapi.Failed), string(openapi.Finished), string(openapi.Pending), string(openapi.Running)}
+	taskResultStatusOptions = []openapi.TaskResultStatusV1{openapi.TaskResultStatusV1Closed, openapi.TaskResultStatusV1Error, openapi.TaskResultStatusV1Merged, openapi.TaskResultStatusV1Open}
+)
 
 // ListRun renders the list of known runs.
 func (u *Ui) ListRuns(w http.ResponseWriter, r *http.Request) {
@@ -112,6 +115,7 @@ func (u *Ui) GetRun(w http.ResponseWriter, r *http.Request) {
 }
 
 type dataListTaskResultsOfRun struct {
+	Filters     dataTaskResultsFilters
 	Pagination  pagination
 	Run         openapi.RunV1
 	TaskResults []openapi.TaskResultV1
@@ -133,7 +137,13 @@ func (u *Ui) ListTaskResultsOfRun(w http.ResponseWriter, r *http.Request) {
 		return
 	}
 
-	data := dataListTaskResultsOfRun{}
+	statusParam := r.URL.Query().Get("status")
+	data := dataListTaskResultsOfRun{
+		Filters: dataTaskResultsFilters{
+			TaskResultStatusCurrent: statusParam,
+			TaskResultStatusList:    taskResultStatusOptions,
+		},
+	}
 	switch getRunObj := getRunResp.(type) {
 	case openapi.GetRunV1200JSONResponse:
 		data.Run = getRunObj.Run
@@ -150,6 +160,10 @@ func (u *Ui) ListTaskResultsOfRun(w http.ResponseWriter, r *http.Request) {
 				Page:  parseIntParam(r, "page", 1),
 			},
 		},
+	}
+
+	if statusParam != "" {
+		listTaskResultsReq.Params.Status = ptr.To([]openapi.TaskResultStatusV1{openapi.TaskResultStatusV1(statusParam)})
 	}
 
 	listTaskResultsResp, err := u.API.ListTaskResultsV1(r.Context(), listTaskResultsReq)

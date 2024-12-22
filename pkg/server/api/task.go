@@ -52,6 +52,12 @@ func (a *APIServer) ListTaskResultsV1(ctx context.Context, request openapi.ListT
 		opts.RunId = ptr.From(request.Params.RunId)
 	}
 
+	if request.Params.Status != nil {
+		for _, apiStatus := range ptr.From(request.Params.Status) {
+			opts.Status = append(opts.Status, db.TaskResultStatus(apiStatus))
+		}
+	}
+
 	listOpts := toListOptions(request.Params.ListOptions)
 	taskResults, err := a.WorkerService.ListTaskResults(opts, &listOpts)
 	if err != nil {
@@ -79,7 +85,7 @@ func mapTaskResultFromDbToApi(db db.TaskResult) openapi.TaskResultV1 {
 	api := openapi.TaskResultV1{
 		RepositoryName: db.RepositoryName,
 		RunId:          int(db.RunID),
-		Status:         openapi.TaskResultV1Status(db.Status),
+		Status:         openapi.TaskResultStatusV1(db.Status),
 	}
 	if db.Error != nil {
 		api.Error = db.Error

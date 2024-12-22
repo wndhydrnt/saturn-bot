@@ -15,15 +15,11 @@
 {{define "body"}}
 <div class="tabs">
   <ul>
-    <li class="is-active"><a>Results</a></li>
+    <li class="is-active"><a>Pull requests</a></li>
     <li><a href="/ui/tasks/{{.TaskName | pathEscape}}/file">File</a></li>
   </ul>
 </div>
-<div class="columns">
-  <div class="column">
-    {{ template "task-results-table" . }}
-  </div>
-</div>
+{{ template "task-results-table" . }}
 {{end}}
 
 {{ template "base.html" . }}
