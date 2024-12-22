@@ -1,4 +1,4 @@
-{{define "title"}}{{.Name}}{{end}}
+{{define "title"}}{{.TaskName}}{{end}}
 
 {{define "breadcrumb"}}
 <nav class="breadcrumb" aria-label="breadcrumbs">
@@ -6,7 +6,7 @@
     <li><a href="/ui">Home</a></li>
     <li><a href="/ui/tasks">Tasks</a></li>
     <li class="is-active">
-      <a href="/ui/tasks/{{.Name | pathEscape}}" aria-current="page">{{.Name}}</a>
+      <a href="/ui/tasks/{{.TaskName | pathEscape}}/file" aria-current="page">{{.TaskName}}</a>
     </li>
   </ul>
 </nav>
@@ -15,7 +15,7 @@
 {{define "body"}}
 <div class="tabs">
   <ul>
-    <li><a>Results</a></li>
+    <li><a href="/ui/tasks/{{.TaskName | pathEscape}}/results">Results</a></li>
     <li class="is-active"><a>File</a></li>
   </ul>
 </div>

@@ -248,7 +248,7 @@ func (w *Worker) findTaskByName(name string, hash string) (schema.ReadResult, er
 func mapRunResultsToTaskResults(runResults []command.RunResult) []client.ReportWorkV1TaskResult {
 	var results []client.ReportWorkV1TaskResult
 	for _, rr := range runResults {
-		if rr.Result == processor.ResultNoMatch {
+		if !canReport(rr.Result) {
 			continue
 		}
 
@@ -289,4 +289,17 @@ func Run(configPath string, taskPaths []string) error {
 	<-s.Stop()
 	log.Log().Info("Worker stopped")
 	return nil
+}
+
+func canReport(result processor.Result) bool {
+	switch result {
+	case processor.ResultNoChanges:
+		return false
+	case processor.ResultNoMatch:
+		return false
+	case processor.ResultSkip:
+		return false
+	default:
+		return true
+	}
 }

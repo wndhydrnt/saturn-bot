@@ -37,6 +37,14 @@ const (
 	Webhook RunV1Reason = "webhook"
 )
 
+// Defines values for TaskResultV1Status.
+const (
+	TaskResultV1StatusClosed TaskResultV1Status = "closed"
+	TaskResultV1StatusError  TaskResultV1Status = "error"
+	TaskResultV1StatusMerged TaskResultV1Status = "merged"
+	TaskResultV1StatusOpen   TaskResultV1Status = "open"
+)
+
 // Error defines model for Error.
 type Error struct {
 	Error   int    `json:"error"`
@@ -82,6 +90,12 @@ type ListRunsV1Response struct {
 
 	// Result List of runs.
 	Result []RunV1 `json:"result"`
+}
+
+// ListTaskResultsV1Response defines model for ListTaskResultsV1Response.
+type ListTaskResultsV1Response struct {
+	Page        Page           `json:"page"`
+	TaskResults []TaskResultV1 `json:"taskResults"`
 }
 
 // ListTasksV1Response defines model for ListTasksV1Response.
@@ -196,6 +210,27 @@ type ScheduleRunV1Response struct {
 	RunID int `json:"runID"`
 }
 
+// TaskResultV1 defines model for TaskResultV1.
+type TaskResultV1 struct {
+	// Error Error that occurred while creating the pull request, if any.
+	Error *string `json:"error,omitempty"`
+
+	// PullRequestUrl URL of the pull request opened by saturn-bot.
+	PullRequestUrl *string `json:"pullRequestUrl,omitempty"`
+
+	// RepositoryName Name of the repository.
+	RepositoryName string `json:"repositoryName"`
+
+	// RunId Numeric identifier of the run this result is a part of.
+	RunId int `json:"runId"`
+
+	// Status Status of the pull request.
+	Status TaskResultV1Status `json:"status"`
+}
+
+// TaskResultV1Status Status of the pull request.
+type TaskResultV1Status string
+
 // WorkTaskV1 The task to execute.
 type WorkTaskV1 struct {
 	// Hash Hash of the task. Used to detect if server and worker are out of sync.
@@ -203,6 +238,13 @@ type WorkTaskV1 struct {
 
 	// Name Name of the task to execute.
 	Name string `json:"name"`
+}
+
+// ListTaskResultsV1Params defines parameters for ListTaskResultsV1.
+type ListTaskResultsV1Params struct {
+	// RunId ID of a run to filter by.
+	RunId       *int         `form:"runId,omitempty" json:"runId,omitempty"`
+	ListOptions *ListOptions `form:"listOptions,omitempty" json:"listOptions,omitempty"`
 }
 
 // ListRunsV1Params defines parameters for ListRunsV1.
@@ -233,6 +275,9 @@ type ServerInterface interface {
 	// Get information about a task.
 	// (GET /api/v1/tasks/{task})
 	GetTaskV1(w http.ResponseWriter, r *http.Request, task string)
+	// Task results
+	// (GET /api/v1/tasks/{task}/results)
+	ListTaskResultsV1(w http.ResponseWriter, r *http.Request, task string, params ListTaskResultsV1Params)
 	// List of runs.
 	// (GET /api/v1/worker/runs)
 	ListRunsV1(w http.ResponseWriter, r *http.Request, params ListRunsV1Params)
@@ -269,6 +314,12 @@ func (_ Unimplemented) ListTasksV1(w http.ResponseWriter, r *http.Request) {
 // Get information about a task.
 // (GET /api/v1/tasks/{task})
 func (_ Unimplemented) GetTaskV1(w http.ResponseWriter, r *http.Request, task string) {
+	w.WriteHeader(http.StatusNotImplemented)
+}
+
+// Task results
+// (GET /api/v1/tasks/{task}/results)
+func (_ Unimplemented) ListTaskResultsV1(w http.ResponseWriter, r *http.Request, task string, params ListTaskResultsV1Params) {
 	w.WriteHeader(http.StatusNotImplemented)
 }
 
@@ -368,6 +419,50 @@ func (siw *ServerInterfaceWrapper) GetTaskV1(w http.ResponseWriter, r *http.Requ
 
 	handler := http.Handler(http.HandlerFunc(func(w http.ResponseWriter, r *http.Request) {
 		siw.Handler.GetTaskV1(w, r, task)
+	}))
+
+	for _, middleware := range siw.HandlerMiddlewares {
+		handler = middleware(handler)
+	}
+
+	handler.ServeHTTP(w, r)
+}
+
+// ListTaskResultsV1 operation middleware
+func (siw *ServerInterfaceWrapper) ListTaskResultsV1(w http.ResponseWriter, r *http.Request) {
+
+	var err error
+
+	// ------------- Path parameter "task" -------------
+	var task string
+
+	err = runtime.BindStyledParameterWithOptions("simple", "task", chi.URLParam(r, "task"), &task, runtime.BindStyledParameterOptions{ParamLocation: runtime.ParamLocationPath, Explode: false, Required: true})
+	if err != nil {
+		siw.ErrorHandlerFunc(w, r, &InvalidParamFormatError{ParamName: "task", Err: err})
+		return
+	}
+
+	// Parameter object where we will unmarshal all parameters from the context
+	var params ListTaskResultsV1Params
+
+	// ------------- Optional query parameter "runId" -------------
+
+	err = runtime.BindQueryParameter("form", true, false, "runId", r.URL.Query(), &params.RunId)
+	if err != nil {
+		siw.ErrorHandlerFunc(w, r, &InvalidParamFormatError{ParamName: "runId", Err: err})
+		return
+	}
+
+	// ------------- Optional query parameter "listOptions" -------------
+
+	err = runtime.BindQueryParameter("form", true, false, "listOptions", r.URL.Query(), &params.ListOptions)
+	if err != nil {
+		siw.ErrorHandlerFunc(w, r, &InvalidParamFormatError{ParamName: "listOptions", Err: err})
+		return
+	}
+
+	handler := http.Handler(http.HandlerFunc(func(w http.ResponseWriter, r *http.Request) {
+		siw.Handler.ListTaskResultsV1(w, r, task, params)
 	}))
 
 	for _, middleware := range siw.HandlerMiddlewares {
@@ -574,6 +669,9 @@ func HandlerWithOptions(si ServerInterface, options ChiServerOptions) http.Handl
 		r.Get(options.BaseURL+"/api/v1/tasks/{task}", wrapper.GetTaskV1)
 	})
 	r.Group(func(r chi.Router) {
+		r.Get(options.BaseURL+"/api/v1/tasks/{task}/results", wrapper.ListTaskResultsV1)
+	})
+	r.Group(func(r chi.Router) {
 		r.Get(options.BaseURL+"/api/v1/worker/runs", wrapper.ListRunsV1)
 	})
 	r.Group(func(r chi.Router) {
@@ -689,6 +787,24 @@ func (response GetTaskV1500JSONResponse) VisitGetTaskV1Response(w http.ResponseW
 	return json.NewEncoder(w).Encode(response)
 }
 
+type ListTaskResultsV1RequestObject struct {
+	Task   string `json:"task"`
+	Params ListTaskResultsV1Params
+}
+
+type ListTaskResultsV1ResponseObject interface {
+	VisitListTaskResultsV1Response(w http.ResponseWriter) error
+}
+
+type ListTaskResultsV1200JSONResponse ListTaskResultsV1Response
+
+func (response ListTaskResultsV1200JSONResponse) VisitListTaskResultsV1Response(w http.ResponseWriter) error {
+	w.Header().Set("Content-Type", "application/json")
+	w.WriteHeader(200)
+
+	return json.NewEncoder(w).Encode(response)
+}
+
 type ListRunsV1RequestObject struct {
 	Params ListRunsV1Params
 }
@@ -753,6 +869,9 @@ type StrictServerInterface interface {
 	// Get information about a task.
 	// (GET /api/v1/tasks/{task})
 	GetTaskV1(ctx context.Context, request GetTaskV1RequestObject) (GetTaskV1ResponseObject, error)
+	// Task results
+	// (GET /api/v1/tasks/{task}/results)
+	ListTaskResultsV1(ctx context.Context, request ListTaskResultsV1RequestObject) (ListTaskResultsV1ResponseObject, error)
 	// List of runs.
 	// (GET /api/v1/worker/runs)
 	ListRunsV1(ctx context.Context, request ListRunsV1RequestObject) (ListRunsV1ResponseObject, error)
@@ -893,6 +1012,33 @@ func (sh *strictHandler) GetTaskV1(w http.ResponseWriter, r *http.Request, task 
 		sh.options.ResponseErrorHandlerFunc(w, r, err)
 	} else if validResponse, ok := response.(GetTaskV1ResponseObject); ok {
 		if err := validResponse.VisitGetTaskV1Response(w); err != nil {
+			sh.options.ResponseErrorHandlerFunc(w, r, err)
+		}
+	} else if response != nil {
+		sh.options.ResponseErrorHandlerFunc(w, r, fmt.Errorf("unexpected response type: %T", response))
+	}
+}
+
+// ListTaskResultsV1 operation middleware
+func (sh *strictHandler) ListTaskResultsV1(w http.ResponseWriter, r *http.Request, task string, params ListTaskResultsV1Params) {
+	var request ListTaskResultsV1RequestObject
+
+	request.Task = task
+	request.Params = params
+
+	handler := func(ctx context.Context, w http.ResponseWriter, r *http.Request, request interface{}) (interface{}, error) {
+		return sh.ssi.ListTaskResultsV1(ctx, request.(ListTaskResultsV1RequestObject))
+	}
+	for _, middleware := range sh.middlewares {
+		handler = middleware(handler, "ListTaskResultsV1")
+	}
+
+	response, err := handler(r.Context(), w, r, request)
+
+	if err != nil {
+		sh.options.ResponseErrorHandlerFunc(w, r, err)
+	} else if validResponse, ok := response.(ListTaskResultsV1ResponseObject); ok {
+		if err := validResponse.VisitListTaskResultsV1Response(w); err != nil {
 			sh.options.ResponseErrorHandlerFunc(w, r, err)
 		}
 	} else if response != nil {

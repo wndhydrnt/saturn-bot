@@ -17,9 +17,10 @@ import (
 var templateFS embed.FS
 
 var templateFuncs = template.FuncMap{
-	"pathEscape":          url.PathEscape,
-	"renderUrl":           renderUrl,
-	"runStatusToCssClass": mapRunStatusToCssClass,
+	"pathEscape":                 url.PathEscape,
+	"renderUrl":                  renderUrl,
+	"runStatusToCssClass":        mapRunStatusToCssClass,
+	"taskResultStatusToCssClass": mapTaskResultStatusToCssClass,
 }
 
 var templateRoot = template.Must(template.New("").Funcs(templateFuncs).Funcs(sprig.FuncMap()).ParseFS(templateFS, "templates/base.html"))
@@ -45,6 +46,19 @@ func mapRunStatusToCssClass(status openapi.RunStatusV1) string {
 	}
 
 	return "is-warning"
+}
+
+func mapTaskResultStatusToCssClass(status openapi.TaskResultV1Status) string {
+	switch status {
+	case openapi.TaskResultV1StatusClosed:
+		return "is-warning"
+	case openapi.TaskResultV1StatusError:
+		return "is-danger"
+	case openapi.TaskResultV1StatusMerged:
+		return "is-success"
+	default:
+		return "is-info"
+	}
 }
 
 // renderUrl takes a [url.URL] and returns its string representation.

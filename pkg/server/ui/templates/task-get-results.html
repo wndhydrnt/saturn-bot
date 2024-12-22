@@ -1,0 +1,61 @@
+{{define "title"}}{{.TaskName}}{{end}}
+
+{{define "breadcrumb"}}
+<nav class="breadcrumb" aria-label="breadcrumbs">
+  <ul>
+    <li><a href="/ui">Home</a></li>
+    <li><a href="/ui/tasks">Tasks</a></li>
+    <li class="is-active">
+      <a href="/ui/tasks/{{.TaskName | pathEscape}}/results" aria-current="page">{{.TaskName}}</a>
+    </li>
+  </ul>
+</nav>
+{{end}}
+
+{{define "body"}}
+<div class="tabs">
+  <ul>
+    <li class="is-active"><a>Results</a></li>
+    <li><a href="/ui/tasks/{{.TaskName | pathEscape}}/file">File</a></li>
+  </ul>
+</div>
+<div class="columns">
+  <div class="column">
+    <table class="table is-striped is-fullwidth">
+      <thead>
+        <tr>
+          <th>Repository</th>
+          <th>Pull request</th>
+          <th>Status</th>
+          <th>Run</th>
+        </tr>
+      </thead>
+      <tbody>
+        {{if .TaskResults}}
+        {{range .TaskResults}}
+        <tr>
+          <td>
+            <a href="https://{{.RepositoryName}}">{{.RepositoryName}}</a>
+          </td>
+          <td></td>
+          <td>
+            <span class="tag {{.Status | taskResultStatusToCssClass}}">{{.Status}}</span>
+          </td>
+          <td>
+            <a href="/ui/runs/{{.RunId}}">#{{.RunId}}</a>
+          </td>
+        </tr>
+        {{end}}
+        {{else}}
+        <tr>
+          <td colspan="4">No results found</td>
+        </tr>
+        {{end}}
+      </tbody>
+    </table>
+    {{ template "pagination" .Pagination }}
+  </div>
+</div>
+{{end}}
+
+{{ template "base.html" . }}

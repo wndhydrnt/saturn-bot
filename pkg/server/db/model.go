@@ -48,7 +48,6 @@ type TaskResult struct {
 	Error          *string
 	ID             uint `gorm:"primarykey"`
 	RepositoryName string
-	Result         uint
+	Result         int
 	RunID          uint
-	TaskName       string
 }

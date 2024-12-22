@@ -223,7 +223,7 @@ func (ws *WorkerService) ReportRun(req openapi.ReportWorkV1Request) error {
 		for _, taskResult := range req.TaskResults {
 			result := db.TaskResult{
 				RepositoryName: taskResult.RepositoryName,
-				Result:         uint(taskResult.Result), // #nosec G115 -- no info by gosec on how to fix this
+				Result:         taskResult.Result,
 				RunID:          runCurrent.ID,
 			}
 			if taskResult.Error != nil {
@@ -257,9 +257,8 @@ type ListRunsOptions struct {
 }
 
 func (ws *WorkerService) ListRuns(opts ListRunsOptions, listOpts *ListOptions) ([]db.Run, error) {
-	var runs []db.Run
 	query := ws.db
-	if opts.Status != nil {
+	if len(opts.Status) > 0 {
 		query = query.Where("status IN ?", opts.Status)
 	}
 
@@ -267,6 +266,7 @@ func (ws *WorkerService) ListRuns(opts ListRunsOptions, listOpts *ListOptions) (
 		query = query.Where("task_name = ?", opts.TaskName)
 	}
 
+	var runs []db.Run
 	result := query.
 		Offset(listOpts.Offset()).
 		Limit(listOpts.Limit).

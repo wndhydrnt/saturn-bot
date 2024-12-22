@@ -6,6 +6,7 @@ import (
 	"os"
 
 	"github.com/wndhydrnt/saturn-bot/pkg/clock"
+	"github.com/wndhydrnt/saturn-bot/pkg/server/db"
 	sberror "github.com/wndhydrnt/saturn-bot/pkg/server/error"
 	"github.com/wndhydrnt/saturn-bot/pkg/task"
 	"gorm.io/gorm"
@@ -61,4 +62,37 @@ func encodeBase64(path string) (string, error) {
 	}
 
 	return base64.StdEncoding.EncodeToString(content), nil
+}
+
+type ListTaskResultsOptions struct {
+	Result   []int
+	RunId    int
+	TaskName string
+}
+
+func (ts *TaskService) ListTaskResults(opts ListTaskResultsOptions, listOpts *ListOptions) ([]db.TaskResult, error) {
+	query := ts.db
+	if opts.RunId != 0 {
+		query = query.Where("run_id = ?", opts.RunId)
+	}
+
+	if opts.TaskName != "" {
+		query = query.Where("task_name = ?", opts.TaskName)
+	}
+
+	if len(opts.Result) > 0 {
+		query = query.Where("result IN ?", opts.Result)
+	}
+
+	var taskResults []db.TaskResult
+	result := query.
+		Offset(listOpts.Offset()).
+		Limit(listOpts.Limit).
+		Order("created_at DESC").
+		Find(&taskResults)
+	if result.Error != nil {
+		return nil, fmt.Errorf("list task results: %w", result.Error)
+	}
+
+	return taskResults, nil
 }

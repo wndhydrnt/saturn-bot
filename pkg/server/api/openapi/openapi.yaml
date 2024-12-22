@@ -103,6 +103,36 @@ paths:
             application/json:
               schema:
                 $ref: "#/components/schemas/Error"
+  /api/v1/tasks/{task}/results:
+    get:
+      operationId: listTaskResultsV1
+      summary: Task results
+      description: A list of the recent run results of the task.
+      tags:
+        - task
+      parameters:
+        - in: path
+          name: task
+          schema:
+            type: string
+          required: true
+          description: Name of the task to return.
+        - in: query
+          name: runId
+          schema:
+            type: integer
+          description: ID of a run to filter by.
+        - in: query
+          name: listOptions
+          schema:
+            $ref: "#/components/schemas/ListOptions"
+      responses:
+        "200":
+          description: OK
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/ListTaskResultsV1Response"
   /api/v1/worker/work:
     get:
       operationId: getWorkV1
@@ -407,3 +437,37 @@ components:
         run:
           $ref: "#/components/schemas/RunV1"
       required: ["run"]
+    TaskResultV1:
+      type: object
+      properties:
+        error:
+          description: Error that occurred while creating the pull request, if any.
+          type: string
+        repositoryName:
+          description: Name of the repository.
+          type: string
+        pullRequestUrl:
+          description: URL of the pull request opened by saturn-bot.
+          type: string
+        status:
+          description: Status of the pull request.
+          type: string
+          enum:
+            - closed
+            - error
+            - merged
+            - open
+        runId:
+          description: Numeric identifier of the run this result is a part of.
+          type: integer
+      required: ["repositoryName", "status", "runId"]
+    ListTaskResultsV1Response:
+      type: object
+      properties:
+        page:
+          $ref: "#/components/schemas/Page"
+        taskResults:
+          type: array
+          items:
+            $ref: "#/components/schemas/TaskResultV1"
+      required: ["page", "taskResults"]

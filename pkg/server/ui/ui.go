@@ -22,7 +22,8 @@ func RegisterUiRoutes(router chi.Router, apiServer *api.APIServer) {
 	router.Get("/ui/runs", app.ListRuns)
 	router.Get("/ui/runs/{runId}", app.GetRun)
 	router.Get("/ui/tasks", app.ListTasks)
-	router.Get("/ui/tasks/{name}", app.GetTaskFile)
+	router.Get("/ui/tasks/{name}/file", app.GetTaskFile)
+	router.Get("/ui/tasks/{name}/results", app.GetTaskResults)
 	router.Group(func(r chi.Router) {
 		r.Use(
 			// Strip the prefix "/ui" from request path
