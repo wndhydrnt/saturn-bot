@@ -1,0 +1,35 @@
+{{define "task-results-table"}}
+<table class="table is-striped is-fullwidth">
+  <thead>
+    <tr>
+      <th>Repository</th>
+      <th>Pull request</th>
+      <th>Status</th>
+      <th>Run</th>
+    </tr>
+  </thead>
+  <tbody>
+    {{if .TaskResults}}
+    {{range .TaskResults}}
+    <tr>
+      <td>
+        <a href="https://{{.RepositoryName}}">{{.RepositoryName}}</a>
+      </td>
+      <td></td>
+      <td>
+        <span class="tag {{.Status | taskResultStatusToCssClass}}">{{.Status}}</span>
+      </td>
+      <td>
+        <a href="/ui/runs/{{.RunId}}">#{{.RunId}}</a>
+      </td>
+    </tr>
+    {{end}}
+    {{else}}
+    <tr>
+      <td colspan="4">No results found</td>
+    </tr>
+    {{end}}
+  </tbody>
+</table>
+{{ template "pagination" .Pagination }}
+{{end}}

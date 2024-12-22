@@ -85,7 +85,7 @@ func (u *Ui) GetTaskResults(w http.ResponseWriter, r *http.Request) {
 		data := dataGetTaskResults{
 			TaskName: name,
 		}
-		renderTemplate(data, w, "task-get-results.html")
+		renderTemplate(data, w, "task-results-table.html", "task-get-results.html")
 		return
 	}
 
@@ -114,5 +114,5 @@ func (u *Ui) GetTaskResults(w http.ResponseWriter, r *http.Request) {
 		TaskName:    name,
 		TaskResults: listTaskResultsObj.TaskResults,
 	}
-	renderTemplate(data, w, "task-get-results.html")
+	renderTemplate(data, w, "task-results-table.html", "task-get-results.html")
 }
