@@ -65,9 +65,8 @@ func encodeBase64(path string) (string, error) {
 }
 
 type ListTaskResultsOptions struct {
-	Result   []int
-	RunId    int
-	TaskName string
+	RunId  int
+	Status []db.TaskResultStatus
 }
 
 func (ts *TaskService) ListTaskResults(opts ListTaskResultsOptions, listOpts *ListOptions) ([]db.TaskResult, error) {
@@ -76,19 +75,15 @@ func (ts *TaskService) ListTaskResults(opts ListTaskResultsOptions, listOpts *Li
 		query = query.Where("run_id = ?", opts.RunId)
 	}
 
-	if opts.TaskName != "" {
-		query = query.Where("task_name = ?", opts.TaskName)
-	}
-
-	if len(opts.Result) > 0 {
-		query = query.Where("result IN ?", opts.Result)
+	if len(opts.Status) > 0 {
+		query = query.Where("result IN ?", opts.Status)
 	}
 
 	var taskResults []db.TaskResult
 	result := query.
 		Offset(listOpts.Offset()).
 		Limit(listOpts.Limit).
-		Order("created_at DESC").
+		Order("created_at ASC").
 		Find(&taskResults)
 	if result.Error != nil {
 		return nil, fmt.Errorf("list task results: %w", result.Error)

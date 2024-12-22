@@ -79,7 +79,7 @@ func (u *Ui) ListRuns(w http.ResponseWriter, r *http.Request) {
 		tplData.Runs = payload.Result
 	}
 
-	renderTemplate("run-list.html", tplData, w)
+	renderTemplate(tplData, w, "run-list.html")
 }
 
 // GetRun renders the detail page of a run.
@@ -108,5 +108,5 @@ func (u *Ui) GetRun(w http.ResponseWriter, r *http.Request) {
 		return
 	}
 
-	renderTemplate("run-get.html", tplData, w)
+	renderTemplate(tplData, w, "run-get.html")
 }

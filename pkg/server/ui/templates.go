@@ -94,15 +94,20 @@ func renderUrl(u *url.URL, params ...any) string {
 	return u.Path + "?" + urlValues.Encode()
 }
 
-func renderTemplate(name string, data any, w http.ResponseWriter) {
-	tpl, err := template.Must(templateRoot.Clone()).ParseFS(templateFS, "templates/"+name)
+func renderTemplate(data any, w http.ResponseWriter, names ...string) {
+	var namesWithPrefix []string
+	for _, n := range names {
+		namesWithPrefix = append(namesWithPrefix, "templates/"+n)
+	}
+
+	tpl, err := template.Must(templateRoot.Clone()).ParseFS(templateFS, namesWithPrefix...)
 	if err != nil {
 		log.Log().Errorw("Parse templates", zap.Error(err))
 		w.WriteHeader(http.StatusInternalServerError)
 		return
 	}
 
-	err = tpl.ExecuteTemplate(w, name, data)
+	err = tpl.ExecuteTemplate(w, names[len(names)-1], data)
 	if err != nil {
 		log.Log().Errorw("Execute template", zap.Error(err))
 		w.WriteHeader(http.StatusInternalServerError)

@@ -47,5 +47,5 @@ func (u *Ui) GetHome(w http.ResponseWriter, r *http.Request) {
 		tplData.RecentRuns = recentRunsObj
 	}
 
-	renderTemplate("home.html", tplData, w)
+	renderTemplate(tplData, w, "home.html")
 }

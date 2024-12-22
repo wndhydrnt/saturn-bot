@@ -14,10 +14,10 @@ type DataError struct {
 }
 
 func renderApiError(err openapi.Error, w http.ResponseWriter) {
-	renderTemplate("error.html", DataError{ID: err.Error, Message: err.Message}, w)
+	renderTemplate(DataError{ID: err.Error, Message: err.Message}, w, "error.html")
 }
 
 func renderError(err error, w http.ResponseWriter) {
 	log.Log().Errorw("Rendering of UI failed", zap.Error(err))
-	renderTemplate("error.html", DataError{Message: err.Error()}, w)
+	renderTemplate(DataError{Message: err.Error()}, w, "error.html")
 }

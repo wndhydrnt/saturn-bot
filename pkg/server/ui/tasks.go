@@ -23,7 +23,7 @@ func (u *Ui) ListTasks(w http.ResponseWriter, r *http.Request) {
 	taskList := listTasksResp.(openapi.ListTasksV1200JSONResponse)
 	var data dataListTasks
 	data.Tasks = taskList.Tasks
-	renderTemplate("task-list.html", data, w)
+	renderTemplate(data, w, "task-list.html")
 }
 
 type dataGetTaskFile struct {
@@ -44,7 +44,7 @@ func (u *Ui) GetTaskFile(w http.ResponseWriter, r *http.Request) {
 	switch v := resp.(type) {
 	case openapi.GetTaskV1200JSONResponse:
 		data := dataGetTaskFile{Content: v.Content, TaskName: v.Name}
-		renderTemplate("task-get-file.html", data, w)
+		renderTemplate(data, w, "task-get-file.html")
 
 	case openapi.GetTaskV1404JSONResponse:
 		renderApiError(openapi.Error(v), w)
@@ -85,7 +85,7 @@ func (u *Ui) GetTaskResults(w http.ResponseWriter, r *http.Request) {
 		data := dataGetTaskResults{
 			TaskName: name,
 		}
-		renderTemplate("task-get-results.html", data, w)
+		renderTemplate(data, w, "task-get-results.html")
 		return
 	}
 
@@ -114,5 +114,5 @@ func (u *Ui) GetTaskResults(w http.ResponseWriter, r *http.Request) {
 		TaskName:    name,
 		TaskResults: listTaskResultsObj.TaskResults,
 	}
-	renderTemplate("task-get-results.html", data, w)
+	renderTemplate(data, w, "task-get-results.html")
 }

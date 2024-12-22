@@ -225,6 +225,7 @@ func (ws *WorkerService) ReportRun(req openapi.ReportWorkV1Request) error {
 				RepositoryName: taskResult.RepositoryName,
 				Result:         taskResult.Result,
 				RunID:          runCurrent.ID,
+				Status:         mapTaskResultIdentifierToStatus(taskResult.Result),
 			}
 			if taskResult.Error != nil {
 				result.Error = taskResult.Error
@@ -387,4 +388,17 @@ func isPrOpen(result int) bool {
 	}
 
 	return false
+}
+
+func mapTaskResultIdentifierToStatus(result int) db.TaskResultStatus {
+	switch processor.Result(result) {
+	case processor.ResultUnknown:
+		return db.TaskResultStatusError
+	case processor.ResultPrClosedBefore, processor.ResultPrClosed:
+		return db.TaskResultStatusClosed
+	case processor.ResultPrMergedBefore, processor.ResultPrMerged:
+		return db.TaskResultStatusMerged
+	default:
+		return db.TaskResultStatusOpen
+	}
 }
