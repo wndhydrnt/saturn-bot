@@ -319,6 +319,10 @@ type ListTaskResultsOptions struct {
 	Status []db.TaskResultStatus
 }
 
+// ListTaskResults returns a list of [db.TaskResult].
+// Items are ordered by the field CreatedAt in descending order.
+//
+// Allows filtering via [ListTaskResultsOptions] and pagination via [ListOptions].
 func (ws *WorkerService) ListTaskResults(opts ListTaskResultsOptions, listOpts *ListOptions) ([]db.TaskResult, error) {
 	query := ws.db
 	if opts.RunId != 0 {
@@ -339,6 +343,22 @@ func (ws *WorkerService) ListTaskResults(opts ListTaskResultsOptions, listOpts *
 		return nil, fmt.Errorf("list task results: %w", result.Error)
 	}
 
+	var count int64
+	queryCount := ws.db.Model(&db.TaskResult{})
+	if opts.RunId != 0 {
+		queryCount = queryCount.Where("run_id = ?", opts.RunId)
+	}
+
+	if len(opts.Status) > 0 {
+		queryCount = queryCount.Where("status IN ?", opts.Status)
+	}
+
+	countResult := queryCount.Count(&count)
+	if countResult.Error != nil {
+		return nil, countResult.Error
+	}
+
+	listOpts.SetTotalItems(int(count))
 	return taskResults, nil
 }
 

@@ -53,7 +53,7 @@ func Test_API_ListTaskResultsV1(t *testing.T) {
 					path:       "/api/v1/taskResults",
 					statusCode: http.StatusOK,
 					responseBody: openapi.ListTaskResultsV1Response{
-						Page: openapi.Page{CurrentPage: 1, ItemsPerPage: 20},
+						Page: openapi.Page{CurrentPage: 1, ItemsPerPage: 20, TotalItems: 4, TotalPages: 1},
 						TaskResults: []openapi.TaskResultV1{
 							{RepositoryName: "git.local/unittest/four", RunId: 1, Error: ptr.To("error"), Status: openapi.TaskResultStatusV1Error},
 							{RepositoryName: "git.local/unittest/three", RunId: 1, Status: openapi.TaskResultStatusV1Merged},
@@ -69,7 +69,7 @@ func Test_API_ListTaskResultsV1(t *testing.T) {
 					query:      "status=merged",
 					statusCode: http.StatusOK,
 					responseBody: openapi.ListTaskResultsV1Response{
-						Page: openapi.Page{CurrentPage: 1, ItemsPerPage: 20},
+						Page: openapi.Page{CurrentPage: 1, ItemsPerPage: 20, TotalItems: 1, TotalPages: 1},
 						TaskResults: []openapi.TaskResultV1{
 							{RepositoryName: "git.local/unittest/three", RunId: 1, Status: openapi.TaskResultStatusV1Merged},
 						},

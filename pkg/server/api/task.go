@@ -46,6 +46,7 @@ func (th *APIServer) ListTasksV1(_ context.Context, request openapi.ListTasksV1R
 	return resp, nil
 }
 
+// ListTaskResultsV1 implements [openapi.ServerInterface].
 func (a *APIServer) ListTaskResultsV1(ctx context.Context, request openapi.ListTaskResultsV1RequestObject) (openapi.ListTaskResultsV1ResponseObject, error) {
 	opts := service.ListTaskResultsOptions{}
 	if request.Params.RunId != nil {

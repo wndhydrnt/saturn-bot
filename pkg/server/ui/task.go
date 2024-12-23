@@ -13,6 +13,7 @@ type dataListTasks struct {
 	Tasks []string
 }
 
+// ListTasks renders the list of all tasks known to saturn-bot.
 func (u *Ui) ListTasks(w http.ResponseWriter, r *http.Request) {
 	listTasksResp, err := u.API.ListTasksV1(r.Context(), openapi.ListTasksV1RequestObject{})
 	if err != nil {
@@ -31,6 +32,7 @@ type dataGetTaskFile struct {
 	TaskName string
 }
 
+// GetTaskFile renders the content of the file of a task.
 func (u *Ui) GetTaskFile(w http.ResponseWriter, r *http.Request) {
 	reqOpts := openapi.GetTaskV1RequestObject{
 		Task: chi.URLParam(r, "name"),
@@ -67,6 +69,7 @@ type dataGetTaskResults struct {
 	TaskResults []openapi.TaskResultV1
 }
 
+// GetTaskFile renders the list of results of the latest run of a task.
 func (u *Ui) GetTaskResults(w http.ResponseWriter, r *http.Request) {
 	name := chi.URLParam(r, "name")
 

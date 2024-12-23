@@ -121,6 +121,7 @@ type dataListTaskResultsOfRun struct {
 	TaskResults []openapi.TaskResultV1
 }
 
+// ListTaskResultsOfRun renders the results of a run.
 func (u *Ui) ListTaskResultsOfRun(w http.ResponseWriter, r *http.Request) {
 	runId, err := strconv.Atoi(chi.URLParam(r, "runId"))
 	if err != nil {
