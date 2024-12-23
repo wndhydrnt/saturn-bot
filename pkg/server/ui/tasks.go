@@ -106,7 +106,7 @@ func (u *Ui) GetTaskResults(w http.ResponseWriter, r *http.Request) {
 
 	listTaskResultsReq := openapi.ListTaskResultsV1RequestObject{
 		Params: openapi.ListTaskResultsV1Params{
-			RunId: ptr.To(int(listRunsObj.Result[0].Id)),
+			RunId: ptr.To(int(listRunsObj.Result[0].Id)), // #nosec G115 -- no info by gosec on how to fix this
 			ListOptions: &openapi.ListOptions{
 				Limit: parseIntParam(r, "limit", 10),
 				Page:  parseIntParam(r, "page", 1),

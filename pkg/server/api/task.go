@@ -85,7 +85,7 @@ func (a *APIServer) ListTaskResultsV1(ctx context.Context, request openapi.ListT
 func mapTaskResultFromDbToApi(db db.TaskResult) openapi.TaskResultV1 {
 	api := openapi.TaskResultV1{
 		RepositoryName: db.RepositoryName,
-		RunId:          int(db.RunID),
+		RunId:          int(db.RunID), // #nosec G115 -- no info by gosec on how to fix this
 		Status:         openapi.TaskResultStatusV1(db.Status),
 	}
 	if db.Error != nil {
