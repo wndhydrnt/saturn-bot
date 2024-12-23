@@ -18,6 +18,7 @@ import (
 	"github.com/wndhydrnt/saturn-bot/pkg/metrics"
 	"github.com/wndhydrnt/saturn-bot/pkg/options"
 	"github.com/wndhydrnt/saturn-bot/pkg/processor"
+	"github.com/wndhydrnt/saturn-bot/pkg/ptr"
 	"github.com/wndhydrnt/saturn-bot/pkg/task"
 	"go.uber.org/zap"
 )
@@ -34,7 +35,7 @@ type RunResult struct {
 }
 
 type Run struct {
-	Cache        cache.Cache
+	Cache        *cache.Cache
 	DryRun       bool
 	Hosts        []host.Host
 	Processor    processor.RepositoryTaskProcessor
@@ -53,18 +54,7 @@ func (r *Run) Run(repositoryNames, taskFiles []string, inputs map[string]string)
 		return nil, ErrNoHostsConfigured
 	}
 
-	err := r.Cache.Read()
-	if err != nil {
-		return nil, err
-	}
-
-	var since *time.Time
-	if r.Cache.GetLastExecutionAt() != 0 {
-		ts := time.UnixMicro(r.Cache.GetLastExecutionAt())
-		since = &ts
-	}
-
-	err = r.TaskRegistry.ReadAll(taskFiles)
+	err := r.TaskRegistry.ReadAll(taskFiles)
 	if err != nil {
 		return nil, err
 	}
@@ -75,12 +65,17 @@ func (r *Run) Run(repositoryNames, taskFiles []string, inputs map[string]string)
 		return nil, nil
 	}
 
-	tasks = setInputs(tasks, inputs)
-	needsAllRepositories := hasUpdatedTasks(r.Cache.GetCachedTasks(), tasks)
-	if needsAllRepositories {
-		since = nil
+	oldestExecutionTs, err := r.Cache.GetOldestExecutionAt(tasks...)
+	if err != nil {
+		return nil, fmt.Errorf("get oldest execution of tasks: %w", err)
 	}
 
+	var since *time.Time
+	if oldestExecutionTs != 0 {
+		since = ptr.To(time.UnixMicro(oldestExecutionTs))
+	}
+
+	tasks = setInputs(tasks, inputs)
 	repos := make(chan []host.Repository)
 	errChan := make(chan error)
 	var expectedFinishes int
@@ -143,14 +138,12 @@ func (r *Run) Run(repositoryNames, taskFiles []string, inputs map[string]string)
 		}
 	}
 
-	if !r.DryRun {
-		// Only update cache if this is not a dry run.
+	if !r.DryRun && success {
+		// Update cache only if this is not a dry run and the run didn't encounter any errors.
 		// Without this guard, subsequent non dry runs would not recognize that they need to do anything.
-		r.Cache.SetLastExecutionAt(time.Now().UnixMicro())
-		r.Cache.UpdateCachedTasks(tasks)
-		err = r.Cache.Write()
+		err := r.Cache.Update(time.Now().UnixMicro(), tasks...)
 		if err != nil {
-			return results, err
+			return results, fmt.Errorf("update execution cache: %w", err)
 		}
 	}
 
@@ -178,7 +171,7 @@ func ExecuteRun(opts options.Opts, repositoryNames, taskFiles []string, inputs m
 		return nil, fmt.Errorf("initialize options: %w", err)
 	}
 
-	cache := cache.NewJsonFile(path.Join(opts.DataDir(), cache.DefaultJsonFileName))
+	executionCache := cache.NewFileCache(path.Join(opts.DataDir(), cache.DefaultJsonFileName))
 	taskRegistry := task.NewRegistry(opts)
 
 	gitClient, err := git.New(opts)
@@ -187,7 +180,7 @@ func ExecuteRun(opts options.Opts, repositoryNames, taskFiles []string, inputs m
 	}
 
 	e := &Run{
-		Cache:  cache,
+		Cache:  executionCache,
 		DryRun: opts.Config.DryRun,
 		Hosts:  opts.Hosts,
 		Processor: &processor.Processor{
@@ -198,26 +191,6 @@ func ExecuteRun(opts options.Opts, repositoryNames, taskFiles []string, inputs m
 		TaskRegistry: taskRegistry,
 	}
 	return e.Run(repositoryNames, taskFiles, inputs)
-}
-
-func hasUpdatedTasks(cachedTasks []cache.CachedTask, tasks []*task.Task) bool {
-	for _, t := range tasks {
-		found := false
-		for _, ct := range cachedTasks {
-			if t.Name == ct.Name {
-				found = true
-				if t.Checksum() != ct.Checksum {
-					return true
-				}
-			}
-		}
-
-		if !found {
-			return true
-		}
-	}
-
-	return false
 }
 
 func applyActionsInDirectory(actions []action.Action, ctx context.Context, dir string) error {
