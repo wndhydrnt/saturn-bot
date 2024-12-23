@@ -28,6 +28,10 @@ import (
 	"gopkg.in/yaml.v3"
 )
 
+const (
+	oldestExecutionAtMock = int64(1709382940609266)
+)
+
 var (
 	runTestOpts = options.Opts{
 		ActionFactories: action.BuiltInFactories,
@@ -94,10 +98,9 @@ func createTestCache(taskFilePath string) string {
 
 	checksum := fmt.Sprintf("%x", h.Sum(nil))
 	tpl := `{
-		"LastExecutionAt":1709382940609266,
-		"Tasks":[{"Checksum":"%s","Name":"Unit Test"}]
+		"%s":{"LastExecutionAt":%d, "Checksum":"%s"}
 	}`
-	content := fmt.Sprintf(tpl, checksum)
+	content := fmt.Sprintf(tpl, tempTask.Name, oldestExecutionAtMock, checksum)
 	return createTempFile(content, "*.json")
 }
 
@@ -164,9 +167,7 @@ func TestExecuteRunner_Run(t *testing.T) {
 	}
 	taskFile := createTestTaskFile(createTestTask("git.local/unittest/repo.*"))
 	cacheFile := createTestCache(taskFile)
-	cache := cache.NewJsonFile(cacheFile)
-	_ = cache.Read()
-	cacheLastExecutionBefore := cache.GetLastExecutionAt()
+	cache := cache.NewFileCache(cacheFile)
 	defer func() {
 		if err := os.Remove(cacheFile); err != nil {
 			panic(err)
@@ -191,6 +192,7 @@ func TestExecuteRunner_Run(t *testing.T) {
 		Put("/metrics/job/saturn-bot").
 		Reply(200)
 	pushGateway := push.New("http://pgw.local", "saturn-bot")
+	taskRegistry := task.NewRegistry(runTestOpts)
 
 	runner := &command.Run{
 		Cache:        cache,
@@ -198,12 +200,14 @@ func TestExecuteRunner_Run(t *testing.T) {
 		Hosts:        []host.Host{hostm},
 		Processor:    procMock,
 		PushGateway:  pushGateway,
-		TaskRegistry: task.NewRegistry(runTestOpts),
+		TaskRegistry: taskRegistry,
 	}
 	_, err := runner.Run([]string{}, []string{taskFile}, map[string]string{})
 
 	require.NoError(t, err)
-	assert.NotEqual(t, cacheLastExecutionBefore, cache.GetLastExecutionAt(), "Updates the lat execution time in the cache")
+	oldestExecutionAt, err := cache.GetOldestExecutionAt(taskRegistry.GetTasks()...)
+	require.NoError(t, err, "Reads oldest execution from cache")
+	assert.NotEqual(t, oldestExecutionAt, oldestExecutionAtMock, "Updates the last execution time in the cache")
 	require.True(t, gock.IsDone(), "All HTTP requests sent")
 }
 
@@ -215,10 +219,7 @@ func TestExecuteRunner_Run_DryRun(t *testing.T) {
 	}
 	taskFile := createTestTaskFile(createTestTask("git.local/unittest/repo.*"))
 	cacheFile := createTestCache(taskFile)
-	cache := cache.NewJsonFile(cacheFile)
-	_ = cache.Read()
-	cacheLastExecutionBefore := cache.GetLastExecutionAt()
-	cacheTasks := cache.GetCachedTasks()
+	cache := cache.NewFileCache(cacheFile)
 	defer func() {
 		if err := os.Remove(cacheFile); err != nil {
 			panic(err)
@@ -234,19 +235,21 @@ func TestExecuteRunner_Run_DryRun(t *testing.T) {
 	procMock.EXPECT().
 		Process(gomock.AssignableToTypeOf(ctx), true, repo, gomock.AssignableToTypeOf(anyTask), true).
 		Return(processor.ResultNoChanges, nil)
+	taskRegistry := task.NewRegistry(runTestOpts)
 
 	runner := &command.Run{
 		Cache:        cache,
 		DryRun:       true,
 		Hosts:        []host.Host{hostm},
 		Processor:    procMock,
-		TaskRegistry: task.NewRegistry(runTestOpts),
+		TaskRegistry: taskRegistry,
 	}
 	_, err := runner.Run([]string{}, []string{taskFile}, map[string]string{})
 
 	require.NoError(t, err)
-	assert.Equal(t, cacheLastExecutionBefore, cache.GetLastExecutionAt(), "Does not update the last execution time because dryRun is true")
-	assert.Equal(t, cacheTasks, cache.GetCachedTasks(), "Does not update the cached tasks because dryRun is true")
+	oldestExecutionAt, err := cache.GetOldestExecutionAt(taskRegistry.GetTasks()...)
+	require.NoError(t, err, "Reads oldest execution from cache")
+	assert.Equal(t, oldestExecutionAtMock, oldestExecutionAt, "Does not update the last execution time because dryRun is true")
 }
 
 func TestExecuteRunner_Run_RepositoriesCLI(t *testing.T) {
@@ -257,9 +260,7 @@ func TestExecuteRunner_Run_RepositoriesCLI(t *testing.T) {
 	}
 	taskFile := createTestTaskFile(createTestTask("git.local/unittest/repo.*"))
 	cacheFile := createTestCache(taskFile)
-	cache := cache.NewJsonFile(cacheFile)
-	_ = cache.Read()
-	cacheLastExecutionBefore := cache.GetLastExecutionAt()
+	cache := cache.NewFileCache(cacheFile)
 	defer func() {
 		if err := os.Remove(cacheFile); err != nil {
 			panic(err)
@@ -275,18 +276,21 @@ func TestExecuteRunner_Run_RepositoriesCLI(t *testing.T) {
 	procMock.EXPECT().
 		Process(gomock.AssignableToTypeOf(ctx), false, repo, gomock.AssignableToTypeOf(anyTask), false).
 		Return(processor.ResultNoChanges, nil)
+	taskRegistry := task.NewRegistry(runTestOpts)
 
 	runner := &command.Run{
 		Cache:        cache,
 		DryRun:       false,
 		Hosts:        []host.Host{hostm},
 		Processor:    procMock,
-		TaskRegistry: task.NewRegistry(runTestOpts),
+		TaskRegistry: taskRegistry,
 	}
 	_, err := runner.Run([]string{"git.local/unittest/repo"}, []string{taskFile}, map[string]string{})
 
 	require.NoError(t, err)
-	assert.NotEqual(t, cacheLastExecutionBefore, cache.GetLastExecutionAt(), "Updates the last execution time in the cache")
+	oldestExecutionAt, err := cache.GetOldestExecutionAt(taskRegistry.GetTasks()...)
+	require.NoError(t, err, "Reads oldest execution from cache")
+	assert.NotEqual(t, oldestExecutionAtMock, oldestExecutionAt, "Updates the last execution time in the cache")
 }
 
 func TestExecuteRunner_Run_Inputs(t *testing.T) {
@@ -311,8 +315,7 @@ func TestExecuteRunner_Run_Inputs(t *testing.T) {
 	taskMissingInputFile := createTestTaskFile(taskMissingInput)
 
 	cacheFile := createTestCache(taskOkFile)
-	cache := cache.NewJsonFile(cacheFile)
-	_ = cache.Read()
+	cache := cache.NewFileCache(cacheFile)
 	defer func() {
 		if err := os.Remove(cacheFile); err != nil {
 			panic(err)

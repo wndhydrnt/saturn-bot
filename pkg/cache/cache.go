@@ -13,80 +13,144 @@ const (
 	DefaultJsonFileName = "cache.json"
 )
 
-type Cache interface {
-	GetLastExecutionAt() int64
-	GetCachedTasks() []CachedTask
-	Read() error
-	SetLastExecutionAt(at int64)
-	UpdateCachedTasks(tasks []*task.Task)
-	Write() error
-}
-
-type jsonFile struct {
+// CachedTask represents a single cache entry.
+type CachedTask struct {
+	Checksum        string
 	LastExecutionAt int64
-	Tasks           []CachedTask
-
-	file string
 }
 
-func NewJsonFile(file string) Cache {
-	return &jsonFile{file: file}
+// CachedData is the root structure of the cache.
+type CachedData map[string]CachedTask
+
+// Reader defines the Read() method.
+// Types implementing this interface should return all cached data or an error.
+type Reader interface {
+	Read() (CachedData, error)
 }
 
-func (c *jsonFile) GetLastExecutionAt() int64 {
-	return c.LastExecutionAt
+// Writer defines the Write() method.
+// Types implementing this interface should update the whole cache.
+type Writer interface {
+	Write(CachedData) error
 }
 
-func (c *jsonFile) Read() error {
-	b, err := os.ReadFile(c.file)
+// Cache stores the latest timestamp of the execution of each task.
+// Based on methods exposed by Cache, other code can decide to
+// query all repositories or to only query repositories that have changed
+// since the previous execution.
+type Cache struct {
+	reader Reader
+	writer Writer
+}
+
+// NewCache returns a new [Cache] for the given [Reader] and [Writer].
+func NewCache(reader Reader, writer Writer) *Cache {
+	return &Cache{reader: reader, writer: writer}
+}
+
+// GetOldestExecutionAt returns the oldest timestamp of a task in tasks.
+// The timestamp is in microseconds.
+func (c *Cache) GetOldestExecutionAt(tasks ...*task.Task) (int64, error) {
+	cachedData, err := c.reader.Read()
 	if err != nil {
-		if errors.Is(err, os.ErrNotExist) {
-			return nil
+		return 0, fmt.Errorf("read cached data: %w", err)
+	}
+
+	var oldest int64
+	for _, t := range tasks {
+		cachedTask, known := cachedData[t.Name]
+		if !known {
+			// Task not in cache.
+			// Return 0 to indicate that a full run is necessary.
+			return 0, nil
 		}
 
-		return fmt.Errorf("read cache file %s: %w", c.file, err)
+		if cachedTask.Checksum != t.Checksum() {
+			// Task has changed on disk.
+			// Return 0 to indicate that a full run is necessary.
+			return 0, nil
+		}
+
+		if oldest == 0 {
+			oldest = cachedTask.LastExecutionAt
+		} else {
+			if oldest > cachedTask.LastExecutionAt {
+				oldest = cachedTask.LastExecutionAt
+			}
+		}
 	}
 
-	err = json.Unmarshal(b, c)
+	return oldest, nil
+}
+
+// Update updates all timestamps of the given tasks.
+func (c *Cache) Update(at int64, tasks ...*task.Task) error {
+	cachedData, err := c.reader.Read()
 	if err != nil {
-		return fmt.Errorf("unmarshal cache file %s: %w", c.file, err)
+		return fmt.Errorf("read cached data for update: %w", err)
 	}
 
-	return nil
-}
-
-func (c *jsonFile) SetLastExecutionAt(at int64) {
-	c.LastExecutionAt = at
-}
-
-func (c *jsonFile) GetCachedTasks() []CachedTask {
-	return c.Tasks
-}
-
-func (c *jsonFile) UpdateCachedTasks(tasks []*task.Task) {
-	var cachedTasks []CachedTask
 	for _, t := range tasks {
-		cachedTasks = append(cachedTasks, CachedTask{Checksum: t.Checksum(), Name: t.Name})
+		cachedData[t.Name] = CachedTask{
+			Checksum:        t.Checksum(),
+			LastExecutionAt: at,
+		}
 	}
 
-	c.Tasks = cachedTasks
-}
-
-func (c *jsonFile) Write() error {
-	b, err := json.Marshal(c)
+	err = c.writer.Write(cachedData)
 	if err != nil {
-		return fmt.Errorf("marshal cache file %s: %w", c.file, err)
-	}
-
-	err = os.WriteFile(c.file, b, 0600)
-	if err != nil {
-		return fmt.Errorf("write cache file %s: %w", c.file, err)
+		return fmt.Errorf("update cached data: %w", err)
 	}
 
 	return nil
 }
 
-type CachedTask struct {
-	Checksum string
-	Name     string
+// File is a [Reader] and [Writer] backed by a file.
+type File struct {
+	Path string
+}
+
+// NewFileCache returns a new [Cache] that is backed by a file at path.
+// The serialization format of the file is JSON.
+func NewFileCache(path string) *Cache {
+	storage := &File{Path: path}
+	return NewCache(storage, storage)
+}
+
+// Read implements [Reader].
+func (jf *File) Read() (CachedData, error) {
+	b, err := os.ReadFile(jf.Path)
+	if err != nil {
+		if errors.Is(err, os.ErrNotExist) {
+			return CachedData{}, nil
+		}
+
+		return nil, fmt.Errorf("read json cache file %s: %w", jf.Path, err)
+	}
+
+	var cachedData CachedData
+	err = json.Unmarshal(b, &cachedData)
+	if err != nil {
+		// If un-marshalling fails, assume that the file is broken or the format changed.
+		// Return empty data.
+		// File gets overwritten when Write() gets called.
+		return CachedData{}, nil
+	}
+
+	return cachedData, nil
+}
+
+// Write implements [Writer].
+func (jf *File) Write(data CachedData) error {
+	b, err := json.Marshal(data)
+	if err != nil {
+		return fmt.Errorf("marshal json cache file %s: %w", jf.Path, err)
+	}
+
+	err = os.WriteFile(jf.Path, b, 0600)
+	if err != nil {
+		return fmt.Errorf("write json cache file %s: %w", jf.Path, err)
+	}
+
+	return nil
 }
