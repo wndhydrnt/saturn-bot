@@ -131,7 +131,10 @@ func (jf *File) Read() (CachedData, error) {
 	var cachedData CachedData
 	err = json.Unmarshal(b, &cachedData)
 	if err != nil {
-		return nil, fmt.Errorf("unmarshal json cache file %s: %w", jf.Path, err)
+		// If un-marshalling fails, assume that the file is broken or the format changed.
+		// Return empty data.
+		// File gets overwritten when Write() gets called.
+		return CachedData{}, nil
 	}
 
 	return cachedData, nil
