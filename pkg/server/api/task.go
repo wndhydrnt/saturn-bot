@@ -4,8 +4,11 @@ import (
 	"context"
 	"errors"
 
+	"github.com/wndhydrnt/saturn-bot/pkg/ptr"
 	"github.com/wndhydrnt/saturn-bot/pkg/server/api/openapi"
+	"github.com/wndhydrnt/saturn-bot/pkg/server/db"
 	sberror "github.com/wndhydrnt/saturn-bot/pkg/server/error"
+	"github.com/wndhydrnt/saturn-bot/pkg/server/service"
 )
 
 // GetTaskV1 implements [openapi.ServerInterface].
@@ -41,4 +44,54 @@ func (th *APIServer) ListTasksV1(_ context.Context, request openapi.ListTasksV1R
 	}
 
 	return resp, nil
+}
+
+// ListTaskResultsV1 implements [openapi.ServerInterface].
+func (a *APIServer) ListTaskResultsV1(ctx context.Context, request openapi.ListTaskResultsV1RequestObject) (openapi.ListTaskResultsV1ResponseObject, error) {
+	opts := service.ListTaskResultsOptions{}
+	if request.Params.RunId != nil {
+		opts.RunId = ptr.From(request.Params.RunId)
+	}
+
+	if request.Params.Status != nil {
+		for _, apiStatus := range ptr.From(request.Params.Status) {
+			opts.Status = append(opts.Status, db.TaskResultStatus(apiStatus))
+		}
+	}
+
+	listOpts := toListOptions(request.Params.ListOptions)
+	taskResults, err := a.WorkerService.ListTaskResults(opts, &listOpts)
+	if err != nil {
+		return nil, err
+	}
+
+	resp := openapi.ListTaskResultsV1200JSONResponse{
+		Page: openapi.Page{
+			PreviousPage: listOpts.Previous(),
+			CurrentPage:  listOpts.Page,
+			NextPage:     listOpts.Next(),
+			ItemsPerPage: listOpts.Limit,
+			TotalItems:   listOpts.TotalItems(),
+			TotalPages:   listOpts.TotalPages(),
+		},
+		TaskResults: []openapi.TaskResultV1{},
+	}
+	for _, tr := range taskResults {
+		resp.TaskResults = append(resp.TaskResults, mapTaskResultFromDbToApi(tr))
+	}
+
+	return resp, nil
+}
+
+func mapTaskResultFromDbToApi(db db.TaskResult) openapi.TaskResultV1 {
+	api := openapi.TaskResultV1{
+		RepositoryName: db.RepositoryName,
+		RunId:          int(db.RunID), // #nosec G115 -- no info by gosec on how to fix this
+		Status:         openapi.TaskResultStatusV1(db.Status),
+	}
+	if db.Error != nil {
+		api.Error = db.Error
+	}
+
+	return api
 }

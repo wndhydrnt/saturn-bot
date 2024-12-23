@@ -1,0 +1,69 @@
+{{define "task-results-table"}}
+<div class="columns">
+  <div class="column is-full">
+    <form method="get" action="/ui/runs/{{.Run.Id}}/results">
+      <div class="field is-grouped is-horizontal">
+        <p class="control">
+          <div class="select">
+            <select name="status">
+              <option value="">All</option>
+              {{range $status := .Filters.TaskResultStatusList}}
+              <option value="{{$status}}"{{if eq $status $.Filters.TaskResultStatusCurrent}} selected{{end}}>
+                {{$status}}
+              </option>
+              {{end}}
+            </select>
+            <p class="help">Status</p>
+          </div>
+        </p>
+        <p class="control">
+          <button class="button is-primary">
+            Filter
+          </button>
+        </p>
+      </div>
+    </form>
+  </div>
+</div>
+<div class="columns">
+  <div class="column">
+    <table class="table is-striped is-fullwidth">
+      <thead>
+        <tr>
+          <th>Repository</th>
+          <th>Pull request</th>
+          <th>Status</th>
+          <th>Run</th>
+        </tr>
+      </thead>
+      <tbody>
+        {{if .TaskResults}}
+        {{range .TaskResults}}
+        <tr>
+          <td>
+            <a href="https://{{.RepositoryName}}">{{.RepositoryName}}</a>
+          </td>
+          <td></td>
+          <td>
+            <span class="tag {{.Status | taskResultStatusToCssClass}}">{{.Status}}</span>
+          </td>
+          <td>
+            <a href="/ui/runs/{{.RunId}}">#{{.RunId}}</a>
+          </td>
+        </tr>
+        {{end}}
+        {{else if eq .Run.Status "pending"}}
+        <tr>
+          <td colspan="4">The run hasn't started yet.</td>
+        </tr>
+        {{else}}
+        <tr>
+          <td colspan="4">No pull requests.</td>
+        </tr>
+        {{end}}
+      </tbody>
+    </table>
+  </div>
+</div>
+{{ template "pagination" .Pagination }}
+{{end}}

@@ -12,27 +12,23 @@ Home
 
 {{define "body"}}
 <div class="columns">
-  <div class="column is-half">
+  <div class="column is-one-third">
     <nav class="panel">
-      <p class="panel-heading">Upcoming runs</p>
-      {{if .UpcomingRuns.Result}}
+      <p class="panel-heading">Tasks</p>
+      {{if .Tasks}}
       <table class="table is-striped is-fullwidth">
         <thead>
           <tr>
             <th>Task</th>
-            <th>Repositories</th>
-            <th>Trigger</th>
-            <th>Scheduled At</th>
+            <th></th>
           </tr>
         </thead>
         <tbody>
-          {{range .UpcomingRuns.Result}}
+          {{range .Tasks}}
           <tr>
-            <td>{{.Task}}</td>
-            <td>*</td>
-            <td>{{.Reason}}</td>
-            <td class="datetime">
-              {{.ScheduleAfter | unixEpoch}}
+            <td>{{.}}</td>
+            <td>
+              <a href="/ui/tasks/{{. | pathEscape}}/results">Details</a>
             </td>
           </tr>
           {{end}}
@@ -40,17 +36,17 @@ Home
       </table>
       {{else}}
       <div class="panel-block">
-        No upcoming runs.
+        No tasks.
       </div>
       {{end}}
       <div class="panel-block">
-        <a class="button is-link is-outlined is-fullwidth" href="/ui/runs">
-          View all runs
+        <a class="button is-link is-outlined is-fullwidth" href="/ui/tasks">
+          View all tasks
         </a>
       </div>
     </nav>
   </div>
-  <div class="column is-half">
+  <div class="column is-two-third">
     <nav class="panel">
       <p class="panel-heading">Recent runs</p>
       {{if .RecentRuns.Result}}
@@ -61,18 +57,24 @@ Home
             <th>Repositories</th>
             <th>Status</th>
             <th>Finished At</th>
+            <th></th>
           </tr>
         </thead>
         <tbody>
           {{range .RecentRuns.Result}}
           <tr>
-            <td>{{.Task}}</td>
+            <td>
+              <a href="/ui/tasks/{{.Task | pathEscape}}/results">{{.Task}}</a>
+            </td>
             <td>*</td>
             <td>
               <span class="tag {{.Status | runStatusToCssClass}}">{{.Status}}</span>
             </td>
             <td class="datetime">
               {{.FinishedAt | unixEpoch}}
+            </td>
+            <td>
+              <a href="/ui/runs/{{.Id}}">Details</a>
             </td>
           </tr>
           {{end}}

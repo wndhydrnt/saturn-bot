@@ -24,7 +24,10 @@ type dataListRunsFilters struct {
 	TaskNameCurrent  string
 }
 
-var runStatusOptions = []string{string(openapi.Failed), string(openapi.Finished), string(openapi.Pending), string(openapi.Running)}
+var (
+	runStatusOptions        = []string{string(openapi.Failed), string(openapi.Finished), string(openapi.Pending), string(openapi.Running)}
+	taskResultStatusOptions = []openapi.TaskResultStatusV1{openapi.TaskResultStatusV1Closed, openapi.TaskResultStatusV1Error, openapi.TaskResultStatusV1Merged, openapi.TaskResultStatusV1Open}
+)
 
 // ListRun renders the list of known runs.
 func (u *Ui) ListRuns(w http.ResponseWriter, r *http.Request) {
@@ -79,7 +82,7 @@ func (u *Ui) ListRuns(w http.ResponseWriter, r *http.Request) {
 		tplData.Runs = payload.Result
 	}
 
-	renderTemplate("run-list.html", tplData, w)
+	renderTemplate(tplData, w, "run-list.html")
 }
 
 // GetRun renders the detail page of a run.
@@ -104,9 +107,77 @@ func (u *Ui) GetRun(w http.ResponseWriter, r *http.Request) {
 	case openapi.GetRunV1200JSONResponse:
 		tplData = payload
 	case openapi.GetRunV1404JSONResponse:
-		renderApiError(openapi.Error(payload), w)
+		renderApiError(openapi.Error(payload), w, http.StatusNotFound)
 		return
 	}
 
-	renderTemplate("run-get.html", tplData, w)
+	renderTemplate(tplData, w, "run-get.html")
+}
+
+type dataListTaskResultsOfRun struct {
+	Filters     dataTaskResultsFilters
+	Pagination  pagination
+	Run         openapi.RunV1
+	TaskResults []openapi.TaskResultV1
+}
+
+// ListTaskResultsOfRun renders the results of a run.
+func (u *Ui) ListTaskResultsOfRun(w http.ResponseWriter, r *http.Request) {
+	runId, err := strconv.Atoi(chi.URLParam(r, "runId"))
+	if err != nil {
+		renderError(fmt.Errorf("convert parameter runId to int: %w", err), w)
+		return
+	}
+
+	getRunReq := openapi.GetRunV1RequestObject{
+		RunId: runId,
+	}
+	getRunResp, err := u.API.GetRunV1(r.Context(), getRunReq)
+	if err != nil {
+		renderError(err, w)
+		return
+	}
+
+	statusParam := r.URL.Query().Get("status")
+	data := dataListTaskResultsOfRun{
+		Filters: dataTaskResultsFilters{
+			TaskResultStatusCurrent: statusParam,
+			TaskResultStatusList:    taskResultStatusOptions,
+		},
+	}
+	switch getRunObj := getRunResp.(type) {
+	case openapi.GetRunV1200JSONResponse:
+		data.Run = getRunObj.Run
+	case openapi.GetRunV1404JSONResponse:
+		renderApiError(openapi.Error(getRunObj), w, http.StatusNotFound)
+		return
+	}
+
+	listTaskResultsReq := openapi.ListTaskResultsV1RequestObject{
+		Params: openapi.ListTaskResultsV1Params{
+			RunId: ptr.To(runId),
+			ListOptions: &openapi.ListOptions{
+				Limit: parseIntParam(r, "limit", 10),
+				Page:  parseIntParam(r, "page", 1),
+			},
+		},
+	}
+
+	if statusParam != "" {
+		listTaskResultsReq.Params.Status = ptr.To([]openapi.TaskResultStatusV1{openapi.TaskResultStatusV1(statusParam)})
+	}
+
+	listTaskResultsResp, err := u.API.ListTaskResultsV1(r.Context(), listTaskResultsReq)
+	if err != nil {
+		renderError(err, w)
+		return
+	}
+
+	listTaskResultsObj := listTaskResultsResp.(openapi.ListTaskResultsV1200JSONResponse)
+	data.Pagination = pagination{
+		Page: listTaskResultsObj.Page,
+		URL:  r.URL,
+	}
+	data.TaskResults = listTaskResultsObj.TaskResults
+	renderTemplate(data, w, "task-results-table.html", "run-task-results-list.html")
 }

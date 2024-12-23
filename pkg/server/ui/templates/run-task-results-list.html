@@ -1,0 +1,27 @@
+{{define "title"}}Results run #{{.Run.Id}}{{end}}
+
+{{define "breadcrumb"}}
+<nav class="breadcrumb" aria-label="breadcrumbs">
+  <ul>
+    <li><a href="/ui">Home</a></li>
+    <li><a href="/ui/runs">Runs</a></li>
+    <li class="is-active"><a href="/ui/runs/{{.Run.Id}}" aria-current="page">#{{.Run.Id}}</a></li>
+  </ul>
+</nav>
+{{end}}
+
+{{define "body"}}
+<div class="columns">
+  <div class="column">
+    <div class="tabs">
+      <ul>
+        <li><a href="/ui/runs/{{.Run.Id}}">Details</a></li>
+        <li class="is-active"><a>Pull requests</a></li>
+      </ul>
+    </div>
+  </div>
+</div>
+{{ template "task-results-table" . }}
+{{end}}
+
+{{ template "base.html" . }}

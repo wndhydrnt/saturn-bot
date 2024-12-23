@@ -43,12 +43,21 @@ type Task struct {
 	Hash   string
 }
 
+type TaskResultStatus string
+
+const (
+	TaskResultStatusClosed = "closed"
+	TaskResultStatusError  = "error"
+	TaskResultStatusMerged = "merged"
+	TaskResultStatusOpen   = "open"
+)
+
 type TaskResult struct {
 	CreatedAt      time.Time
 	Error          *string
 	ID             uint `gorm:"primarykey"`
 	RepositoryName string
-	Result         uint
+	Result         int
+	Status         TaskResultStatus
 	RunID          uint
-	TaskName       string
 }

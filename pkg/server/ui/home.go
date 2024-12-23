@@ -1,7 +1,6 @@
 package ui
 
 import (
-	"context"
 	"net/http"
 
 	"github.com/wndhydrnt/saturn-bot/pkg/ptr"
@@ -9,30 +8,24 @@ import (
 )
 
 type dataIndex struct {
-	RecentRuns   openapi.ListRunsV1200JSONResponse
-	UpcomingRuns openapi.ListRunsV1200JSONResponse
+	RecentRuns openapi.ListRunsV1200JSONResponse
+	Tasks      []string
 }
 
 // GetHome renders the homepage.
 func (u *Ui) GetHome(w http.ResponseWriter, r *http.Request) {
-	reqUpcoming := openapi.ListRunsV1RequestObject{
-		Params: openapi.ListRunsV1Params{
-			ListOptions: &openapi.ListOptions{
-				Limit: 5,
-			},
-			Status: ptr.To([]openapi.RunStatusV1{openapi.Pending}),
-		},
-	}
-	respUpcoming, err := u.API.ListRunsV1(context.Background(), reqUpcoming)
+	tasksResp, err := u.API.ListTasksV1(r.Context(), openapi.ListTasksV1RequestObject{})
 	if err != nil {
 		renderError(err, w)
 		return
 	}
 
 	tplData := dataIndex{}
-	switch payload := respUpcoming.(type) {
-	case openapi.ListRunsV1200JSONResponse:
-		tplData.UpcomingRuns = payload
+	tasksObj := tasksResp.(openapi.ListTasksV1200JSONResponse)
+	if len(tasksObj.Tasks) > 5 {
+		tplData.Tasks = tasksObj.Tasks[0:5]
+	} else {
+		tplData.Tasks = tasksObj.Tasks
 	}
 
 	reqRecent := openapi.ListRunsV1RequestObject{
@@ -43,16 +36,16 @@ func (u *Ui) GetHome(w http.ResponseWriter, r *http.Request) {
 			Status: ptr.To([]openapi.RunStatusV1{openapi.Finished, openapi.Failed}),
 		},
 	}
-	respRecent, err := u.API.ListRunsV1(context.Background(), reqRecent)
+	recentRunsResp, err := u.API.ListRunsV1(r.Context(), reqRecent)
 	if err != nil {
 		renderError(err, w)
 		return
 	}
 
-	switch payload := respRecent.(type) {
+	switch recentRunsObj := recentRunsResp.(type) {
 	case openapi.ListRunsV1200JSONResponse:
-		tplData.RecentRuns = payload
+		tplData.RecentRuns = recentRunsObj
 	}
 
-	renderTemplate("home.html", tplData, w)
+	renderTemplate(tplData, w, "home.html")
 }

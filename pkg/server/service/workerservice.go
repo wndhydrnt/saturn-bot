@@ -223,8 +223,9 @@ func (ws *WorkerService) ReportRun(req openapi.ReportWorkV1Request) error {
 		for _, taskResult := range req.TaskResults {
 			result := db.TaskResult{
 				RepositoryName: taskResult.RepositoryName,
-				Result:         uint(taskResult.Result), // #nosec G115 -- no info by gosec on how to fix this
+				Result:         taskResult.Result,
 				RunID:          runCurrent.ID,
+				Status:         mapTaskResultIdentifierToStatus(taskResult.Result),
 			}
 			if taskResult.Error != nil {
 				result.Error = taskResult.Error
@@ -257,9 +258,8 @@ type ListRunsOptions struct {
 }
 
 func (ws *WorkerService) ListRuns(opts ListRunsOptions, listOpts *ListOptions) ([]db.Run, error) {
-	var runs []db.Run
 	query := ws.db
-	if opts.Status != nil {
+	if len(opts.Status) > 0 {
 		query = query.Where("status IN ?", opts.Status)
 	}
 
@@ -267,6 +267,7 @@ func (ws *WorkerService) ListRuns(opts ListRunsOptions, listOpts *ListOptions) (
 		query = query.Where("task_name = ?", opts.TaskName)
 	}
 
+	var runs []db.Run
 	result := query.
 		Offset(listOpts.Offset()).
 		Limit(listOpts.Limit).
@@ -311,6 +312,54 @@ func (ws *WorkerService) GetRun(id int) (db.Run, error) {
 	}
 
 	return run, nil
+}
+
+type ListTaskResultsOptions struct {
+	RunId  int
+	Status []db.TaskResultStatus
+}
+
+// ListTaskResults returns a list of [db.TaskResult].
+// Items are ordered by the field CreatedAt in descending order.
+//
+// Allows filtering via [ListTaskResultsOptions] and pagination via [ListOptions].
+func (ws *WorkerService) ListTaskResults(opts ListTaskResultsOptions, listOpts *ListOptions) ([]db.TaskResult, error) {
+	query := ws.db
+	if opts.RunId != 0 {
+		query = query.Where("run_id = ?", opts.RunId)
+	}
+
+	if len(opts.Status) > 0 {
+		query = query.Where("status IN ?", opts.Status)
+	}
+
+	var taskResults []db.TaskResult
+	result := query.
+		Offset(listOpts.Offset()).
+		Limit(listOpts.Limit).
+		Order("created_at DESC").
+		Find(&taskResults)
+	if result.Error != nil {
+		return nil, fmt.Errorf("list task results: %w", result.Error)
+	}
+
+	var count int64
+	queryCount := ws.db.Model(&db.TaskResult{})
+	if opts.RunId != 0 {
+		queryCount = queryCount.Where("run_id = ?", opts.RunId)
+	}
+
+	if len(opts.Status) > 0 {
+		queryCount = queryCount.Where("status IN ?", opts.Status)
+	}
+
+	countResult := queryCount.Count(&count)
+	if countResult.Error != nil {
+		return nil, countResult.Error
+	}
+
+	listOpts.SetTotalItems(int(count))
+	return taskResults, nil
 }
 
 func calcNextScheduleTime(run db.Run, now time.Time, t *task.Task, isOpen bool) *time.Time {
@@ -387,4 +436,17 @@ func isPrOpen(result int) bool {
 	}
 
 	return false
+}
+
+func mapTaskResultIdentifierToStatus(result int) db.TaskResultStatus {
+	switch processor.Result(result) {
+	case processor.ResultUnknown:
+		return db.TaskResultStatusError
+	case processor.ResultPrClosedBefore, processor.ResultPrClosed:
+		return db.TaskResultStatusClosed
+	case processor.ResultPrMergedBefore, processor.ResultPrMerged:
+		return db.TaskResultStatusMerged
+	default:
+		return db.TaskResultStatusOpen
+	}
 }

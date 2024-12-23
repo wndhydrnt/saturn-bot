@@ -17,8 +17,10 @@ import (
 var templateFS embed.FS
 
 var templateFuncs = template.FuncMap{
-	"renderUrl":           renderUrl,
-	"runStatusToCssClass": mapRunStatusToCssClass,
+	"pathEscape":                 url.PathEscape,
+	"renderUrl":                  renderUrl,
+	"runStatusToCssClass":        mapRunStatusToCssClass,
+	"taskResultStatusToCssClass": mapTaskResultStatusToCssClass,
 }
 
 var templateRoot = template.Must(template.New("").Funcs(templateFuncs).Funcs(sprig.FuncMap()).ParseFS(templateFS, "templates/base.html"))
@@ -44,6 +46,19 @@ func mapRunStatusToCssClass(status openapi.RunStatusV1) string {
 	}
 
 	return "is-warning"
+}
+
+func mapTaskResultStatusToCssClass(status openapi.TaskResultStatusV1) string {
+	switch status {
+	case openapi.TaskResultStatusV1Closed:
+		return "is-warning"
+	case openapi.TaskResultStatusV1Error:
+		return "is-danger"
+	case openapi.TaskResultStatusV1Merged:
+		return "is-success"
+	default:
+		return "is-info"
+	}
 }
 
 // renderUrl takes a [url.URL] and returns its string representation.
@@ -79,15 +94,20 @@ func renderUrl(u *url.URL, params ...any) string {
 	return u.Path + "?" + urlValues.Encode()
 }
 
-func renderTemplate(name string, data any, w http.ResponseWriter) {
-	tpl, err := template.Must(templateRoot.Clone()).ParseFS(templateFS, "templates/"+name)
+func renderTemplate(data any, w http.ResponseWriter, names ...string) {
+	var namesWithPrefix []string
+	for _, n := range names {
+		namesWithPrefix = append(namesWithPrefix, "templates/"+n)
+	}
+
+	tpl, err := template.Must(templateRoot.Clone()).ParseFS(templateFS, namesWithPrefix...)
 	if err != nil {
 		log.Log().Errorw("Parse templates", zap.Error(err))
 		w.WriteHeader(http.StatusInternalServerError)
 		return
 	}
 
-	err = tpl.ExecuteTemplate(w, name, data)
+	err = tpl.ExecuteTemplate(w, names[len(names)-1], data)
 	if err != nil {
 		log.Log().Errorw("Execute template", zap.Error(err))
 		w.WriteHeader(http.StatusInternalServerError)
