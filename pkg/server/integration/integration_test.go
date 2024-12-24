@@ -29,7 +29,7 @@ var (
 	}
 	defaultTask              = schema.Task{Name: "unittest"}
 	defaultTaskContentBase64 = "bmFtZTogdW5pdHRlc3QK"
-	defaultTaskHash          = "e42a6e186f31b860f22f07ed468b99c6dc75318542fc9ac8383358fae1b5ab8b"
+	defaultTaskHash          = "7d4262799e93d4fb6abc2f299a1846921256fc7aa64d80f87d2ad579e5c31306"
 )
 
 type apiCall struct {

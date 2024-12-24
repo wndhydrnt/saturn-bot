@@ -9,7 +9,6 @@ import (
 	"time"
 
 	"github.com/gosimple/slug"
-	"github.com/robfig/cron"
 	protoV1 "github.com/wndhydrnt/saturn-bot-go/protocol/v1"
 	"github.com/wndhydrnt/saturn-bot/pkg/action"
 	"github.com/wndhydrnt/saturn-bot/pkg/filter"
@@ -108,7 +107,6 @@ type Task struct {
 	openPRs                int
 	path                   string // Path to the file that contains the task.
 	plugins                []*plugin.Plugin
-	schedule               cron.Schedule
 	templateBranchName     *htmlTemplate.Template
 	templatePrTitle        *htmlTemplate.Template
 	inputData              map[string]string
@@ -236,16 +234,6 @@ func (tw *Task) InputData() map[string]string {
 	}
 
 	return tw.inputData
-}
-
-func (tw *Task) IsWithinSchedule() bool {
-	if tw.schedule == nil {
-		return true
-	}
-
-	now := time.Now()
-	zero := time.Date(now.Year(), now.Month(), now.Day(), 0, 0, 0, 0, now.Location())
-	return tw.schedule.Next(zero).Before(now)
 }
 
 var (
@@ -408,12 +396,6 @@ func (tr *Registry) ReadTasks(taskFile string) error {
 			wrapper.filters = append(wrapper.filters, p)
 			wrapper.plugins = append(wrapper.plugins, p)
 		}
-
-		schedule, err := cron.ParseStandard(entry.Task.Schedule)
-		if err != nil {
-			return fmt.Errorf("parse schedule: %w", err)
-		}
-		wrapper.schedule = schedule
 
 		tr.tasks = append(tr.tasks, wrapper)
 	}

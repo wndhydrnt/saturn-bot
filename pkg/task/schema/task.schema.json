@@ -123,11 +123,6 @@
         "type": "string"
       }
     },
-    "schedule": {
-      "default": "* * * * *",
-      "description": "Define times of week or month for when saturn-bot executes the task.",
-      "type": "string"
-    },
     "trigger": {
       "description": "Experimental: Define when the task gets executed. Only relevant in server mode.",
       "type": "object",

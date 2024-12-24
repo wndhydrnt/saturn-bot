@@ -227,27 +227,6 @@ name: Task Two
 	assert.Equal(t, "Task Two", tr.GetTasks()[0].Name)
 }
 
-func TestRegistry_ReadAll_InvalidSchedule(t *testing.T) {
-	tasksRaw := `
-name: Task Schedule Invalid
-schedule: "* * * *"
-`
-
-	f, err := os.CreateTemp("", "*.yaml")
-	require.NoError(t, err)
-	_, err = f.WriteString(tasksRaw)
-	require.NoError(t, err)
-	f.Close()
-	defer func() {
-		err := os.Remove(f.Name())
-		require.NoError(t, err)
-	}()
-
-	tr := &task.Registry{}
-	err = tr.ReadAll([]string{f.Name()})
-	require.Errorf(t, err, "failed to read tasks from file %s: parse schedule: Expected exactly 5 fields, found 4: * * * *", f.Name())
-}
-
 func TestRegistry_ReadAll_SortRepositoryFilterFirst(t *testing.T) {
 	tasksRaw := `
   name: Task

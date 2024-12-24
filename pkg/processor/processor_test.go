@@ -2,7 +2,6 @@ package processor_test
 
 import (
 	"context"
-	"fmt"
 	"os"
 	"testing"
 	"time"
@@ -12,7 +11,6 @@ import (
 	sbcontext "github.com/wndhydrnt/saturn-bot/pkg/context"
 	"github.com/wndhydrnt/saturn-bot/pkg/git"
 	"github.com/wndhydrnt/saturn-bot/pkg/host"
-	"github.com/wndhydrnt/saturn-bot/pkg/options"
 	"github.com/wndhydrnt/saturn-bot/pkg/processor"
 	"github.com/wndhydrnt/saturn-bot/pkg/task"
 	"github.com/wndhydrnt/saturn-bot/pkg/task/schema"
@@ -729,34 +727,4 @@ func TestProcessor_Process_EmptyRepository(t *testing.T) {
 
 	require.NoError(t, err)
 	assert.Equal(t, processor.ResultNoMatch, result)
-}
-
-func TestProcessor_Process_OutsideSchedule(t *testing.T) {
-	tempDir, err := os.MkdirTemp("", "")
-	require.NoError(t, err)
-	defer func() {
-		_ = os.RemoveAll(tempDir)
-	}()
-
-	future := time.Now().AddDate(0, 0, 1)
-	content := fmt.Sprintf(`name: unittest
-schedule: "* * %d * *"`, future.Day())
-	taskFile, err := os.CreateTemp("", "*.yaml")
-	require.NoError(t, err)
-	err = os.WriteFile(taskFile.Name(), []byte(content), 0600)
-	require.NoError(t, err)
-	_ = taskFile.Close()
-
-	ctrl := gomock.NewController(t)
-	repo := setupRepoMock(ctrl)
-	gitc := NewMockGitClient(ctrl)
-	reg := task.NewRegistry(options.Opts{})
-	err = reg.ReadAll([]string{taskFile.Name()})
-	require.NoError(t, err)
-
-	p := &processor.Processor{Git: gitc}
-	result, err := p.Process(context.Background(), false, repo, reg.GetTasks()[0], true)
-
-	require.NoError(t, err)
-	assert.Equal(t, processor.ResultSkip, result)
 }

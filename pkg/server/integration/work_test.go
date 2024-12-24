@@ -115,7 +115,7 @@ func TestServer_API_GetWorkV1(t *testing.T) {
 					statusCode: http.StatusOK,
 					responseBody: openapi.GetWorkV1Response{
 						RunID: 1,
-						Task:  openapi.WorkTaskV1{Hash: "ab5a03b44faf542081c9b54eab3ce7c10731b917ebca511b28b7723258ad49b2", Name: "unittest 1"},
+						Task:  openapi.WorkTaskV1{Hash: "5ac498db72aa17c5f0c213781e3b18a9330db1bdf934010e4489621c7d9ec422", Name: "unittest 1"},
 					},
 				},
 			},
@@ -150,7 +150,7 @@ func TestServer_API_GetWorkV1(t *testing.T) {
 						RunID:   1,
 						RunData: ptr.To(map[string]string{"example": "data"}),
 						Task: openapi.WorkTaskV1{
-							Hash: "5e9905415e0e41a1a99df7f6034a174c21ad07443f70773bb8de5a0aaecd8f62",
+							Hash: "b8113667c6c0dd4ab59129f042cbb6ca63ee905d8e32a7f684fc94b54dd68613",
 							Name: "unittest",
 						},
 					},
@@ -304,7 +304,7 @@ func TestServer_API_ReportWorkV1(t *testing.T) {
 					responseBody: openapi.GetWorkV1Response{
 						RunID: 1,
 						Task: openapi.WorkTaskV1{
-							Hash: "b1aa18fdf03185694c7c4ddc443a9e7a895b5841c96a963919da990d5293849c",
+							Hash: "84e3a25fc87b09b007d80d8aeacc2a5c4f3ba9a3f35590174148954486c56f16",
 							Name: "unittest",
 						},
 					},
@@ -369,7 +369,7 @@ func TestServer_API_ReportWorkV1(t *testing.T) {
 					responseBody: openapi.GetWorkV1Response{
 						RunID: 1,
 						Task: openapi.WorkTaskV1{
-							Hash: "4847b8b7624213ec8cec235367e318dead77a1efa093c24c7019e4aa806b128e",
+							Hash: "7ec41bb59c284620c38d2d01a8a26c96947b3ed96f28acf6051df054d56ae844",
 							Name: "unittest",
 						},
 					},
@@ -381,7 +381,7 @@ func TestServer_API_ReportWorkV1(t *testing.T) {
 					requestBody: openapi.ReportWorkV1Request{
 						RunID: 1,
 						Task: openapi.WorkTaskV1{
-							Hash: "4847b8b7624213ec8cec235367e318dead77a1efa093c24c7019e4aa806b128e",
+							Hash: "7ec41bb59c284620c38d2d01a8a26c96947b3ed96f28acf6051df054d56ae844",
 							Name: "unittest",
 						},
 						TaskResults: []openapi.ReportWorkV1TaskResult{
