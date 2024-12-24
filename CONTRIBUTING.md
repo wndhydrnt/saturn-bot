@@ -29,6 +29,12 @@ Tutorial:
     DROP TABLE `example`;
     ```
 
+Conventions:
+
+-   Use the schema `<table>-<action>` to name migrations.
+    For example, `runs-create` to create the table runs or `runs-add-index-status`.
+-   Prefer modifying a single table per migration file.
+
 ## Documentation
 
 Documentation is written in [Markdown](https://www.markdownguide.org/) and rendered by [Material for MkDocs](https://squidfunk.github.io/mkdocs-material/).

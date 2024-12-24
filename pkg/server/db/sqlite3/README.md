@@ -4,4 +4,4 @@ It makes golang-migrate compatible with [github.com/ncruces/go-sqlite3](https://
 and removes the need for CGO, which `github.com/mattn/go-sqlite3` would introduce.
 
 golang-migrate is distributed under the MIT license.
-The license can be viewed [here](./LICENSE).
+A copy of the license can be viewed [here](./LICENSE).
