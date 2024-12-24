@@ -57,11 +57,6 @@ func (p *Processor) Process(
 	ctx = sbcontext.WithRunData(ctx, task.InputData())
 	logger := sbcontext.Log(ctx)
 	logger.Debug("Processing repository")
-	if !task.IsWithinSchedule() {
-		logger.Debug("Skipping task because it is outside of schedule")
-		return ResultSkip, nil
-	}
-
 	if task.HasReachMaxOpenPRs() {
 		logger.Debug("Skipping task because Max Open PRs have been reached")
 		return ResultSkip, nil

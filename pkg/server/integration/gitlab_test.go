@@ -37,7 +37,7 @@ func TestServer_WebhookGitlab(t *testing.T) {
 					responseBody: openapi.GetWorkV1Response{
 						RunID: 1,
 						Task: openapi.WorkTaskV1{
-							Hash: "35e6e13d4ec91723e96cf0e93998043d042d98a637fe56f09bee1cd8558ea950",
+							Hash: "41f8becac4691a4b990e6a92fd58810a17c20866abb07726eee0d588e703bfa5",
 							Name: "unittest",
 						},
 					},
@@ -78,7 +78,7 @@ func TestServer_WebhookGitlab(t *testing.T) {
 					responseBody: openapi.GetWorkV1Response{
 						RunID: 2,
 						Task: openapi.WorkTaskV1{
-							Hash: "35e6e13d4ec91723e96cf0e93998043d042d98a637fe56f09bee1cd8558ea950",
+							Hash: "41f8becac4691a4b990e6a92fd58810a17c20866abb07726eee0d588e703bfa5",
 							Name: "unittest",
 						},
 					},
@@ -109,7 +109,7 @@ func TestServer_WebhookGitlab(t *testing.T) {
 					responseBody: openapi.GetWorkV1Response{
 						RunID: 1,
 						Task: openapi.WorkTaskV1{
-							Hash: "35e6e13d4ec91723e96cf0e93998043d042d98a637fe56f09bee1cd8558ea950",
+							Hash: "41f8becac4691a4b990e6a92fd58810a17c20866abb07726eee0d588e703bfa5",
 							Name: "unittest",
 						},
 					},
@@ -168,7 +168,7 @@ func TestServer_WebhookGitlab(t *testing.T) {
 					responseBody: openapi.GetWorkV1Response{
 						RunID: 1,
 						Task: openapi.WorkTaskV1{
-							Hash: "e42a6e186f31b860f22f07ed468b99c6dc75318542fc9ac8383358fae1b5ab8b",
+							Hash: "7d4262799e93d4fb6abc2f299a1846921256fc7aa64d80f87d2ad579e5c31306",
 							Name: "unittest",
 						},
 					},
@@ -233,7 +233,7 @@ func TestServer_WebhookGitlab(t *testing.T) {
 					responseBody: openapi.GetWorkV1Response{
 						RunID: 1,
 						Task: openapi.WorkTaskV1{
-							Hash: "ef99cc7f5c98b01042d78394fa938bd6746c82f10033868e7302daf586ba33a2",
+							Hash: "f860d1d4d9df4181f2fed1feef78bb2cd9991ae5009e4f037ed1d18e620eeac0",
 							Name: "unittest",
 						},
 					},
