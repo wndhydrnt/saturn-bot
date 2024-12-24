@@ -13,6 +13,9 @@ import (
 	"github.com/golang-migrate/migrate/v4"
 	"github.com/golang-migrate/migrate/v4/database"
 	"github.com/hashicorp/go-multierror"
+
+	// This line is the only change compared to
+	// https://github.com/golang-migrate/migrate/blob/c378583d782e026f472dff657bfd088bf2510038/database/sqlite3/sqlite3.go
 	_ "github.com/ncruces/go-sqlite3/embed"
 )
 
