@@ -1,7 +1,5 @@
 # Contributing
 
-[TOC]
-
 ## Database migrations
 
 Requirements:
