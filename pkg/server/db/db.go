@@ -1,11 +1,13 @@
 package db
 
 import (
+	"database/sql"
 	"errors"
 	"fmt"
 	"os"
 	"path/filepath"
 
+	_ "github.com/ncruces/go-sqlite3/driver"
 	_ "github.com/ncruces/go-sqlite3/embed"
 	"github.com/ncruces/go-sqlite3/gormlite"
 	"gorm.io/gorm"
@@ -39,24 +41,29 @@ func New(enableLog, migrate bool, path string) (*gorm.DB, error) {
 		cfg.Logger = logger.Discard
 	}
 
-	db, err := gorm.Open(gormlite.Open(path), cfg)
+	db, err := sql.Open("sqlite3", path)
+	if err != nil {
+		return nil, fmt.Errorf("open sql driver sqlite3: %w", err)
+	}
+
+	gormDb, err := gorm.Open(gormlite.OpenDB(db), cfg)
 	if err != nil {
 		return nil, err
 	}
 
 	if migrate {
-		err := db.AutoMigrate(&Run{}, &Task{}, &TaskResult{})
+		err := Migrate(db)
 		if err != nil {
 			return nil, fmt.Errorf("db migration failed: %w", err)
 		}
 	}
 
-	err = configureSqlite(db, sqlitePragmaJournalMode, sqlitePragmaSynchronous, sqlitePragmaCacheSize, sqlitePragmaForeignKeys, sqlitePragmaBusyTimeout)
+	err = configureSqlite(gormDb, sqlitePragmaJournalMode, sqlitePragmaSynchronous, sqlitePragmaCacheSize, sqlitePragmaForeignKeys, sqlitePragmaBusyTimeout)
 	if err != nil {
 		return nil, fmt.Errorf("configure sqlite: %w", err)
 	}
 
-	return db, nil
+	return gormDb, nil
 }
 
 func configureSqlite(db *gorm.DB, stmts ...string) error {
