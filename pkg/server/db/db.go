@@ -46,7 +46,7 @@ func New(enableLog, migrate bool, path string) (*gorm.DB, error) {
 		return nil, fmt.Errorf("open sql driver sqlite3: %w", err)
 	}
 
-	gormDb, err := gorm.Open(gormlite.OpenDB(db))
+	gormDb, err := gorm.Open(gormlite.OpenDB(db), cfg)
 	if err != nil {
 		return nil, err
 	}

@@ -3,6 +3,7 @@ package db
 import (
 	"database/sql"
 	"embed"
+	"errors"
 	"fmt"
 
 	"github.com/golang-migrate/migrate/v4"
@@ -30,7 +31,7 @@ func Migrate(db *sql.DB) error {
 	}
 
 	err = m.Up()
-	if err != nil {
+	if err != nil && !errors.Is(err, migrate.ErrNoChange) {
 		return fmt.Errorf("up migration: %w", err)
 	}
 
