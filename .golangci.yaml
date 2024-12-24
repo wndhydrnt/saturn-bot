@@ -1,3 +1,9 @@
+issues:
+  exclude-dirs:
+    # Copied code from upstream.
+    # Don't want to change it.
+    - pkg/server/db/sqlite3
+
 linters:
   enable:
     - gofmt
