@@ -60,6 +60,7 @@ func TestProcessor_Process_CreatePullRequestLocalChanges(t *testing.T) {
 	ctrl := gomock.NewController(t)
 	repo := setupRepoMock(ctrl)
 	repo.EXPECT().FindPullRequest("saturn-bot--unittest").Return(nil, nil)
+	repo.EXPECT().PullRequest(nil).Return(nil).AnyTimes()
 	repo.EXPECT().IsPullRequestClosed(nil).Return(false).AnyTimes()
 	repo.EXPECT().IsPullRequestMerged(nil).Return(false).AnyTimes()
 	repo.EXPECT().GetPullRequestBody(nil).Return("").AnyTimes()
@@ -78,7 +79,7 @@ func TestProcessor_Process_CreatePullRequestLocalChanges(t *testing.T) {
 	tw.AddFilters(&trueFilter{})
 
 	p := &processor.Processor{Git: gitc}
-	result, err := p.Process(context.Background(), false, repo, tw, true)
+	result, _, err := p.Process(context.Background(), false, repo, tw, true)
 
 	require.NoError(t, err)
 	assert.Equal(t, processor.ResultPrCreated, result)
@@ -94,6 +95,7 @@ func TestProcessor_Process_CreatePullRequestRemoteChanges(t *testing.T) {
 	ctrl := gomock.NewController(t)
 	repo := setupRepoMock(ctrl)
 	repo.EXPECT().FindPullRequest("saturn-bot--unittest").Return(nil, nil)
+	repo.EXPECT().PullRequest(nil).Return(nil).AnyTimes()
 	repo.EXPECT().IsPullRequestClosed(nil).Return(false).AnyTimes()
 	repo.EXPECT().IsPullRequestMerged(nil).Return(false).AnyTimes()
 	repo.EXPECT().GetPullRequestBody(nil).Return("").AnyTimes()
@@ -111,7 +113,7 @@ func TestProcessor_Process_CreatePullRequestRemoteChanges(t *testing.T) {
 	tw.AddFilters(&trueFilter{})
 
 	p := &processor.Processor{Git: gitc}
-	result, err := p.Process(context.Background(), false, repo, tw, true)
+	result, _, err := p.Process(context.Background(), false, repo, tw, true)
 
 	require.NoError(t, err)
 	assert.Equal(t, processor.ResultPrCreated, result)
@@ -128,6 +130,7 @@ func TestProcessor_Process_CreatePullRequestPreviouslyClosed(t *testing.T) {
 	ctrl := gomock.NewController(t)
 	repo := setupRepoMock(ctrl)
 	repo.EXPECT().FindPullRequest("saturn-bot--unittest").Return(prID, nil)
+	repo.EXPECT().PullRequest(prID).Return(nil).AnyTimes()
 	repo.EXPECT().IsPullRequestClosed(prID).Return(true).AnyTimes()
 	repo.EXPECT().IsPullRequestMerged(prID).Return(false).AnyTimes()
 	repo.EXPECT().GetPullRequestBody(nil).Return("").AnyTimes()
@@ -144,7 +147,7 @@ func TestProcessor_Process_CreatePullRequestPreviouslyClosed(t *testing.T) {
 	tw.AddFilters(&trueFilter{})
 
 	p := &processor.Processor{Git: gitc}
-	result, err := p.Process(context.Background(), false, repo, tw, true)
+	result, _, err := p.Process(context.Background(), false, repo, tw, true)
 
 	require.NoError(t, err)
 	assert.Equal(t, processor.ResultPrCreated, result)
@@ -155,6 +158,7 @@ func TestProcessor_Process_PullRequestClosedAndMergeOnceActive(t *testing.T) {
 	ctrl := gomock.NewController(t)
 	repo := setupRepoMock(ctrl)
 	repo.EXPECT().FindPullRequest("saturn-bot--unittest").Return(prID, nil)
+	repo.EXPECT().PullRequest(prID).Return(nil).AnyTimes()
 	repo.EXPECT().IsPullRequestClosed(prID).Return(true)
 	gitc := NewMockGitClient(ctrl)
 	gitc.EXPECT().Prepare(repo, false).Return("/tmp", nil)
@@ -162,7 +166,7 @@ func TestProcessor_Process_PullRequestClosedAndMergeOnceActive(t *testing.T) {
 	tw.AddFilters(&trueFilter{})
 
 	p := &processor.Processor{Git: gitc}
-	result, err := p.Process(context.Background(), false, repo, tw, true)
+	result, _, err := p.Process(context.Background(), false, repo, tw, true)
 
 	require.NoError(t, err)
 	assert.Equal(t, processor.ResultPrClosedBefore, result)
@@ -173,6 +177,7 @@ func TestProcessor_Process_PullRequestMergedAndMergeOnceActive(t *testing.T) {
 	ctrl := gomock.NewController(t)
 	repo := setupRepoMock(ctrl)
 	repo.EXPECT().FindPullRequest("saturn-bot--unittest").Return(prID, nil)
+	repo.EXPECT().PullRequest(prID).Return(nil).AnyTimes()
 	repo.EXPECT().IsPullRequestClosed(prID).Return(false)
 	repo.EXPECT().IsPullRequestMerged(prID).Return(true)
 	gitc := NewMockGitClient(ctrl)
@@ -181,7 +186,7 @@ func TestProcessor_Process_PullRequestMergedAndMergeOnceActive(t *testing.T) {
 	tw.AddFilters(&trueFilter{})
 
 	p := &processor.Processor{Git: gitc}
-	result, err := p.Process(context.Background(), false, repo, tw, true)
+	result, _, err := p.Process(context.Background(), false, repo, tw, true)
 
 	require.NoError(t, err)
 	assert.Equal(t, processor.ResultPrMergedBefore, result)
@@ -192,6 +197,7 @@ func TestProcessor_Process_CreateOnly(t *testing.T) {
 	ctrl := gomock.NewController(t)
 	repo := setupRepoMock(ctrl)
 	repo.EXPECT().FindPullRequest("saturn-bot--unittest").Return(prID, nil)
+	repo.EXPECT().PullRequest(prID).Return(nil).AnyTimes()
 	repo.EXPECT().IsPullRequestClosed(prID).Return(false)
 	repo.EXPECT().IsPullRequestMerged(prID).Return(false)
 	gitc := NewMockGitClient(ctrl)
@@ -200,7 +206,7 @@ func TestProcessor_Process_CreateOnly(t *testing.T) {
 	tw.AddFilters(&trueFilter{})
 
 	p := &processor.Processor{Git: gitc}
-	result, err := p.Process(context.Background(), false, repo, tw, true)
+	result, _, err := p.Process(context.Background(), false, repo, tw, true)
 
 	require.NoError(t, err)
 	assert.Equal(t, processor.ResultPrOpen, result)
@@ -236,7 +242,7 @@ func TestProcessor_Process_ClosePullRequestIfChangesExistInBaseBranch(t *testing
 	tw.AddFilters(&trueFilter{})
 
 	p := &processor.Processor{Git: gitc}
-	result, err := p.Process(context.Background(), false, repo, tw, true)
+	result, _, err := p.Process(context.Background(), false, repo, tw, true)
 
 	require.NoError(t, err)
 	assert.Equal(t, processor.ResultPrClosed, result)
@@ -273,7 +279,7 @@ func TestProcessor_Process_MergePullRequest(t *testing.T) {
 	tw.AddFilters(&trueFilter{})
 
 	p := &processor.Processor{Git: gitc}
-	result, err := p.Process(context.Background(), false, repo, tw, true)
+	result, _, err := p.Process(context.Background(), false, repo, tw, true)
 
 	require.NoError(t, err)
 	assert.Equal(t, processor.ResultPrMerged, result)
@@ -307,7 +313,7 @@ func TestProcessor_Process_MergePullRequest_FailedMergeChecks(t *testing.T) {
 	tw.AddFilters(&trueFilter{})
 
 	p := &processor.Processor{Git: gitc}
-	result, err := p.Process(context.Background(), false, repo, tw, true)
+	result, _, err := p.Process(context.Background(), false, repo, tw, true)
 
 	require.NoError(t, err)
 	assert.Equal(t, processor.ResultChecksFailed, result)
@@ -346,7 +352,7 @@ func TestProcessor_Process_MergePullRequest_AutoMergeAfter(t *testing.T) {
 	tw.AddFilters(&trueFilter{})
 
 	p := &processor.Processor{Git: gitc}
-	result, err := p.Process(context.Background(), false, repo, tw, true)
+	result, _, err := p.Process(context.Background(), false, repo, tw, true)
 
 	require.NoError(t, err)
 	assert.Equal(t, processor.ResultAutoMergeTooEarly, result)
@@ -385,7 +391,7 @@ func TestProcessor_Process_MergePullRequest_MergeConflict(t *testing.T) {
 	tw.AddFilters(&trueFilter{})
 
 	p := &processor.Processor{Git: gitc}
-	result, err := p.Process(context.Background(), false, repo, tw, true)
+	result, _, err := p.Process(context.Background(), false, repo, tw, true)
 
 	require.NoError(t, err)
 	assert.Equal(t, processor.ResultConflict, result)
@@ -431,7 +437,7 @@ func TestProcessor_Process_UpdatePullRequest(t *testing.T) {
 		Title: "saturn-bot: task unittest",
 	}
 	repo.EXPECT().UpdatePullRequest(prData, prID).Return(nil)
-	repo.EXPECT().PullRequest(prID).Return(nil)
+	repo.EXPECT().PullRequest(prID).Return(nil).AnyTimes()
 	gitc := NewMockGitClient(ctrl)
 	gitc.EXPECT().Prepare(repo, false).Return(tempDir, nil)
 	gitc.EXPECT().UpdateTaskBranch("saturn-bot--unittest", false, repo)
@@ -460,7 +466,7 @@ func TestProcessor_Process_UpdatePullRequest(t *testing.T) {
 	})
 
 	p := &processor.Processor{Git: gitc}
-	result, err := p.Process(ctx, false, repo, tw, true)
+	result, _, err := p.Process(ctx, false, repo, tw, true)
 
 	require.NoError(t, err)
 	assert.Equal(t, processor.ResultPrOpen, result)
@@ -477,6 +483,7 @@ func TestProcessor_Process_NoChanges(t *testing.T) {
 	ctrl := gomock.NewController(t)
 	repo := setupRepoMock(ctrl)
 	repo.EXPECT().FindPullRequest("saturn-bot--unittest").Return(prID, nil)
+	repo.EXPECT().PullRequest(prID).Return(nil).AnyTimes()
 	repo.EXPECT().IsPullRequestClosed(prID).Return(false).AnyTimes()
 	repo.EXPECT().IsPullRequestMerged(prID).Return(false).AnyTimes()
 	repo.EXPECT().GetPullRequestBody(prID).Return("")
@@ -492,7 +499,7 @@ func TestProcessor_Process_NoChanges(t *testing.T) {
 	tw.AddFilters(&trueFilter{})
 
 	p := &processor.Processor{Git: gitc}
-	result, err := p.Process(context.Background(), false, repo, tw, true)
+	result, _, err := p.Process(context.Background(), false, repo, tw, true)
 
 	require.NoError(t, err)
 	assert.Equal(t, processor.ResultNoChanges, result)
@@ -544,7 +551,7 @@ The commit(s) that modified the pull request:
 	tw.AddFilters(&trueFilter{})
 
 	p := &processor.Processor{Git: gitc}
-	result, err := p.Process(context.Background(), false, repo, tw, true)
+	result, _, err := p.Process(context.Background(), false, repo, tw, true)
 
 	require.NoError(t, err)
 	assert.Equal(t, processor.ResultBranchModified, result)
@@ -572,7 +579,7 @@ func TestProcessor_Process_ForceRebaseByUser(t *testing.T) {
 		Return([]host.PullRequestComment{prComment}, nil)
 	repo.EXPECT().DeletePullRequestComment(prComment, prID).Return(nil)
 	repo.EXPECT().UpdatePullRequest(gomock.AssignableToTypeOf(host.PullRequestData{}), prID).Return(nil)
-	repo.EXPECT().PullRequest(prID).Return(nil)
+	repo.EXPECT().PullRequest(prID).Return(nil).AnyTimes()
 	gitc := NewMockGitClient(ctrl)
 	gitc.EXPECT().Prepare(repo, false).Return(tempDir, nil)
 	gitc.EXPECT().UpdateTaskBranch("saturn-bot--unittest", true, repo).Return(false, nil)
@@ -584,7 +591,7 @@ func TestProcessor_Process_ForceRebaseByUser(t *testing.T) {
 	tw.AddFilters(&trueFilter{})
 
 	p := &processor.Processor{Git: gitc}
-	result, err := p.Process(context.Background(), false, repo, tw, true)
+	result, _, err := p.Process(context.Background(), false, repo, tw, true)
 
 	require.NoError(t, err)
 	assert.Equal(t, processor.ResultPrOpen, result)
@@ -598,7 +605,7 @@ func TestProcessor_Process_ChangeLimit(t *testing.T) {
 	tw.IncChangeLimitCount()
 
 	p := &processor.Processor{Git: gitc}
-	result, err := p.Process(context.Background(), false, repo, tw, true)
+	result, _, err := p.Process(context.Background(), false, repo, tw, true)
 
 	require.NoError(t, err)
 	assert.Equal(t, processor.ResultSkip, result)
@@ -612,7 +619,7 @@ func TestProcessor_Process_MaxOpenPRs(t *testing.T) {
 	tw.IncOpenPRsCount()
 
 	p := &processor.Processor{Git: gitc}
-	result, err := p.Process(context.Background(), false, repo, tw, true)
+	result, _, err := p.Process(context.Background(), false, repo, tw, true)
 
 	require.NoError(t, err)
 	assert.Equal(t, processor.ResultSkip, result)
@@ -626,7 +633,7 @@ func TestProcessor_Process_FilterNotMatching(t *testing.T) {
 	tw.AddFilters(&falseFilter{})
 
 	p := &processor.Processor{Git: gitc}
-	result, err := p.Process(context.Background(), false, repo, tw, true)
+	result, _, err := p.Process(context.Background(), false, repo, tw, true)
 
 	require.NoError(t, err)
 	assert.Equal(t, processor.ResultNoMatch, result)
@@ -639,7 +646,7 @@ func TestProcessor_Process_NoFilters(t *testing.T) {
 	tw := &task.Task{Task: schema.Task{Name: "unittest"}}
 
 	p := &processor.Processor{Git: gitc}
-	result, err := p.Process(context.Background(), false, repo, tw, true)
+	result, _, err := p.Process(context.Background(), false, repo, tw, true)
 
 	require.NoError(t, err)
 	assert.Equal(t, processor.ResultNoMatch, result)
@@ -663,7 +670,7 @@ func TestProcessor_Process_AutoCloseAfter_Close(t *testing.T) {
 	tw.AddFilters(&trueFilter{})
 
 	p := &processor.Processor{Git: gitc}
-	result, err := p.Process(context.Background(), false, repo, tw, true)
+	result, _, err := p.Process(context.Background(), false, repo, tw, true)
 
 	require.NoError(t, err)
 	assert.Equal(t, processor.ResultPrClosed, result)
@@ -692,7 +699,7 @@ func TestProcessor_Process_AutoCloseAfter_NotTimeYet(t *testing.T) {
 	tw.AddFilters(&trueFilter{})
 
 	p := &processor.Processor{Git: gitc}
-	result, err := p.Process(context.Background(), false, repo, tw, true)
+	result, _, err := p.Process(context.Background(), false, repo, tw, true)
 
 	require.NoError(t, err)
 	assert.Equal(t, processor.ResultPrOpen, result)
@@ -723,7 +730,7 @@ func TestProcessor_Process_EmptyRepository(t *testing.T) {
 	tw.AddFilters(&trueFilter{})
 
 	p := &processor.Processor{Git: gitc}
-	result, err := p.Process(context.Background(), false, repo, tw, true)
+	result, _, err := p.Process(context.Background(), false, repo, tw, true)
 
 	require.NoError(t, err)
 	assert.Equal(t, processor.ResultNoMatch, result)

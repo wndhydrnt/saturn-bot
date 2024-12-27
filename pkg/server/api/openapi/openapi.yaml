@@ -311,6 +311,9 @@ components:
         error:
           description: Error encountered during the run, if any.
           type: string
+        pullRequestUrl:
+          description: URL of the pull request for humans to view.
+          type: string
         repositoryName:
           description: Name of the repository.
           type: string

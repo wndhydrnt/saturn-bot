@@ -46,12 +46,13 @@ func (m *MockRepositoryTaskProcessor) EXPECT() *MockRepositoryTaskProcessorMockR
 }
 
 // Process mocks base method.
-func (m *MockRepositoryTaskProcessor) Process(ctx context.Context, dryRun bool, repo host.Repository, task *task.Task, doFilter bool) (processor.Result, error) {
+func (m *MockRepositoryTaskProcessor) Process(ctx context.Context, dryRun bool, repo host.Repository, task *task.Task, doFilter bool) (processor.Result, *host.PullRequest, error) {
 	m.ctrl.T.Helper()
 	ret := m.ctrl.Call(m, "Process", ctx, dryRun, repo, task, doFilter)
 	ret0, _ := ret[0].(processor.Result)
-	ret1, _ := ret[1].(error)
-	return ret0, ret1
+	ret1, _ := ret[1].(*host.PullRequest)
+	ret2, _ := ret[2].(error)
+	return ret0, ret1, ret2
 }
 
 // Process indicates an expected call of Process.

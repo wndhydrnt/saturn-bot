@@ -93,5 +93,9 @@ func mapTaskResultFromDbToApi(db db.TaskResult) openapi.TaskResultV1 {
 		api.Error = db.Error
 	}
 
+	if db.PullRequestUrl != nil {
+		api.PullRequestUrl = db.PullRequestUrl
+	}
+
 	return api
 }

@@ -44,7 +44,7 @@ type Processor struct {
 }
 
 type RepositoryTaskProcessor interface {
-	Process(ctx context.Context, dryRun bool, repo host.Repository, task *task.Task, doFilter bool) (Result, error)
+	Process(ctx context.Context, dryRun bool, repo host.Repository, task *task.Task, doFilter bool) (Result, *host.PullRequest, error)
 }
 
 func (p *Processor) Process(
@@ -53,18 +53,18 @@ func (p *Processor) Process(
 	repo host.Repository,
 	task *task.Task,
 	doFilter bool,
-) (Result, error) {
+) (Result, *host.PullRequest, error) {
 	ctx = sbcontext.WithRunData(ctx, task.InputData())
 	logger := sbcontext.Log(ctx)
 	logger.Debug("Processing repository")
 	if task.HasReachMaxOpenPRs() {
 		logger.Debug("Skipping task because Max Open PRs have been reached")
-		return ResultSkip, nil
+		return ResultSkip, nil, nil
 	}
 
 	if task.HasReachedChangeLimit() {
 		logger.Debug("Skipping task because Change Limit have been reached")
-		return ResultSkip, nil
+		return ResultSkip, nil, nil
 	}
 
 	ctx = context.WithValue(ctx, sbcontext.RepositoryKey{}, repo)
@@ -72,11 +72,11 @@ func (p *Processor) Process(
 	if doFilter {
 		match, err := matchTaskToRepository(ctx, task, logger)
 		if err != nil {
-			return ResultUnknown, err
+			return ResultUnknown, nil, err
 		}
 
 		if !match {
-			return ResultNoMatch, nil
+			return ResultNoMatch, nil, nil
 		}
 	}
 
@@ -84,7 +84,7 @@ func (p *Processor) Process(
 	lck := &locker{}
 	err := lck.lock(p.DataDir, repo)
 	if err != nil {
-		return ResultUnknown, fmt.Errorf("lock of repository '%s' failed: %w", repo.FullName(), err)
+		return ResultUnknown, nil, fmt.Errorf("lock of repository '%s' failed: %w", repo.FullName(), err)
 	}
 
 	defer func() {
@@ -96,13 +96,13 @@ func (p *Processor) Process(
 
 	workDir, err := p.Git.Prepare(repo, false)
 	if err != nil {
-		return ResultUnknown, fmt.Errorf("prepare of git repository failed: %w", err)
+		return ResultUnknown, nil, fmt.Errorf("prepare of git repository failed: %w", err)
 	}
 
 	ctx = context.WithValue(ctx, sbcontext.CheckoutPath{}, workDir)
-	result, err := applyTaskToRepository(ctx, dryRun, p.Git, logger, repo, task, workDir)
+	result, prDetail, err := applyTaskToRepository(ctx, dryRun, p.Git, logger, repo, task, workDir)
 	if err != nil {
-		return ResultUnknown, fmt.Errorf("task failed: %w", err)
+		return ResultUnknown, prDetail, fmt.Errorf("task failed: %w", err)
 	}
 
 	if result == ResultPrCreated || result == ResultPrOpen {
@@ -113,7 +113,7 @@ func (p *Processor) Process(
 		task.IncChangeLimitCount()
 	}
 
-	return result, nil
+	return result, prDetail, nil
 }
 
 func matchTaskToRepository(ctx context.Context, task *task.Task, logger *zap.SugaredLogger) (bool, error) {
@@ -139,23 +139,24 @@ func matchTaskToRepository(ctx context.Context, task *task.Task, logger *zap.Sug
 	return true, nil
 }
 
-func applyTaskToRepository(ctx context.Context, dryRun bool, gitc git.GitClient, logger *zap.SugaredLogger, repo host.Repository, task *task.Task, workDir string) (Result, error) {
+func applyTaskToRepository(ctx context.Context, dryRun bool, gitc git.GitClient, logger *zap.SugaredLogger, repo host.Repository, task *task.Task, workDir string) (Result, *host.PullRequest, error) {
 	logger.Debug("Applying actions of task to repository")
 	ctx = updateTemplateVars(ctx, repo, task)
 	branchName, err := task.RenderBranchName(template.FromContext(ctx))
 	if err != nil {
-		return ResultUnknown, fmt.Errorf("get branch name: %w", err)
+		return ResultUnknown, nil, fmt.Errorf("get branch name: %w", err)
 	}
 
 	prID, err := repo.FindPullRequest(branchName)
 	if err != nil && !errors.Is(err, host.ErrPullRequestNotFound) {
-		return ResultUnknown, fmt.Errorf("find pull request: %w", err)
+		return ResultUnknown, nil, fmt.Errorf("find pull request: %w", err)
 	}
 
+	prDetail := repo.PullRequest(prID)
 	if prID != nil && repo.IsPullRequestClosed(prID) {
 		if task.MergeOnce {
 			logger.Info("Existing PR has been closed")
-			return ResultPrClosedBefore, nil
+			return ResultPrClosedBefore, prDetail, nil
 		} else {
 			logger.Debug("Previous pull request closed - resetting to create a new pull request")
 			prID = nil
@@ -164,33 +165,32 @@ func applyTaskToRepository(ctx context.Context, dryRun bool, gitc git.GitClient,
 
 	if prID != nil && repo.IsPullRequestMerged(prID) && task.MergeOnce {
 		logger.Info("Existing PR has been merged")
-		return ResultPrMergedBefore, nil
+		return ResultPrMergedBefore, prDetail, nil
 	}
 
 	if prID != nil && task.CreateOnly {
 		logger.Info("PR exists and is create only")
-		return ResultPrOpen, nil
+		return ResultPrOpen, prDetail, nil
 	}
 
 	if prID != nil && repo.IsPullRequestOpen(prID) {
-		prInfo := repo.PullRequest(prID)
-		if prInfo != nil {
-			ctx = context.WithValue(ctx, sbcontext.PullRequestKey{}, *prInfo)
+		if prDetail != nil {
+			ctx = context.WithValue(ctx, sbcontext.PullRequestKey{}, *prDetail)
 		}
 
-		if task.AutoCloseAfter > 0 && prInfo.CreatedAt != nil {
+		if task.AutoCloseAfter > 0 && prDetail != nil && prDetail.CreatedAt != nil {
 			dur := time.Duration(task.AutoCloseAfter) * time.Second
-			if time.Now().After(prInfo.CreatedAt.Add(dur)) {
+			if time.Now().After(prDetail.CreatedAt.Add(dur)) {
 				logger.Info("Auto-closing pull request")
 				if !dryRun {
 					msg := fmt.Sprintf("Pull request has been open for longer than %s. Closing automatically.", dur.String())
 					err := repo.ClosePullRequest(msg, prID)
 					if err != nil {
-						return ResultUnknown, fmt.Errorf("auto-close pull request: %w", err)
+						return ResultUnknown, prDetail, fmt.Errorf("auto-close pull request: %w", err)
 					}
 				}
 
-				return ResultPrClosed, nil
+				return ResultPrClosed, prDetail, nil
 			}
 		}
 	}
@@ -202,7 +202,7 @@ func applyTaskToRepository(ctx context.Context, dryRun bool, gitc git.GitClient,
 		if !dryRun {
 			err := host.DeletePullRequestCommentByIdentifier("branch-modified", prID, repo)
 			if err != nil {
-				return ResultUnknown, err
+				return ResultUnknown, prDetail, err
 			}
 		}
 	}
@@ -217,50 +217,50 @@ func applyTaskToRepository(ctx context.Context, dryRun bool, gitc git.GitClient,
 				DefaultBranch: repo.BaseBranch(),
 			})
 			if err != nil {
-				return ResultUnknown, err
+				return ResultUnknown, prDetail, err
 			}
 
 			logger.Debug("Creating pull request comment because the branch was modified")
 			if !dryRun {
 				err := host.CreatePullRequestCommentWithIdentifier(body, "branch-modified", prID, repo)
 				if err != nil {
-					return ResultUnknown, fmt.Errorf("create comment on merge request: %w", err)
+					return ResultUnknown, prDetail, fmt.Errorf("create comment on merge request: %w", err)
 				}
 			}
 
-			return ResultBranchModified, nil
+			return ResultBranchModified, prDetail, nil
 		}
 
 		var emptyErr git.EmptyRepositoryError
 		if errors.Is(err, emptyErr) {
 			logger.Debug("Repository is empty")
-			return ResultNoMatch, nil
+			return ResultNoMatch, prDetail, nil
 		}
 
-		return ResultUnknown, fmt.Errorf("update of git branch of task failed: %w", err)
+		return ResultUnknown, prDetail, fmt.Errorf("update of git branch of task failed: %w", err)
 	}
 
 	err = applyActionsInDirectory(task.Actions(), ctx, workDir)
 	if err != nil {
-		return ResultUnknown, err
+		return ResultUnknown, prDetail, err
 	}
 
 	hasLocalChanges, err := gitc.HasLocalChanges()
 	if err != nil {
-		return ResultUnknown, fmt.Errorf("check for local changes failed: %w", err)
+		return ResultUnknown, prDetail, fmt.Errorf("check for local changes failed: %w", err)
 	}
 
 	if hasLocalChanges {
 		commitMsg := task.CommitMessage
 		err := gitc.CommitChanges(commitMsg)
 		if err != nil {
-			return ResultUnknown, fmt.Errorf("committing changes failed: %w", err)
+			return ResultUnknown, prDetail, fmt.Errorf("committing changes failed: %w", err)
 		}
 	}
 
 	hasChangesInRemoteDefaultBranch, err := gitc.HasRemoteChanges(repo.BaseBranch())
 	if err != nil {
-		return ResultUnknown, fmt.Errorf("check for remote changes in default branch failed: %w", err)
+		return ResultUnknown, prDetail, fmt.Errorf("check for remote changes in default branch failed: %w", err)
 	}
 
 	if !hasChangesInRemoteDefaultBranch && prID != nil && repo.IsPullRequestOpen(prID) {
@@ -268,7 +268,7 @@ func applyTaskToRepository(ctx context.Context, dryRun bool, gitc git.GitClient,
 		if !dryRun {
 			err := repo.ClosePullRequest("Everything up-to-date. Closing.", prID)
 			if err != nil {
-				return ResultUnknown, fmt.Errorf("close pull request: %w", err)
+				return ResultUnknown, prDetail, fmt.Errorf("close pull request: %w", err)
 			}
 		}
 
@@ -276,21 +276,21 @@ func applyTaskToRepository(ctx context.Context, dryRun bool, gitc git.GitClient,
 		if !dryRun {
 			err := repo.DeleteBranch(prID)
 			if err != nil {
-				return ResultUnknown, fmt.Errorf("delete branch: %w", err)
+				return ResultUnknown, prDetail, fmt.Errorf("delete branch: %w", err)
 			}
 		}
 
 		err = task.OnPrClosed(ctx)
 		if err != nil {
-			return ResultUnknown, fmt.Errorf("pr closed event failed: %w", err)
+			return ResultUnknown, prDetail, fmt.Errorf("pr closed event failed: %w", err)
 		}
 
-		return ResultPrClosed, nil
+		return ResultPrClosed, prDetail, nil
 	}
 
 	hasRemoteChanges, err := gitc.HasRemoteChanges(branchName)
 	if err != nil {
-		return ResultUnknown, fmt.Errorf("check for remote changes failed: %w", err)
+		return ResultUnknown, prDetail, fmt.Errorf("check for remote changes failed: %w", err)
 	}
 
 	hasChanges := (hasLocalChanges && hasRemoteChanges) || hasConflict
@@ -299,7 +299,7 @@ func applyTaskToRepository(ctx context.Context, dryRun bool, gitc git.GitClient,
 		if !dryRun {
 			err := gitc.Push(branchName)
 			if err != nil {
-				return ResultUnknown, fmt.Errorf("push failed: %w", err)
+				return ResultUnknown, prDetail, fmt.Errorf("push failed: %w", err)
 			}
 		}
 	} else {
@@ -309,7 +309,7 @@ func applyTaskToRepository(ctx context.Context, dryRun bool, gitc git.GitClient,
 	ctx = updateTemplateVars(ctx, repo, task)
 	prTitle, err := task.RenderPrTitle(template.FromContext(ctx))
 	if err != nil {
-		return ResultUnknown, err
+		return ResultUnknown, prDetail, err
 	}
 
 	prData := host.PullRequestData{
@@ -332,58 +332,58 @@ func applyTaskToRepository(ctx context.Context, dryRun bool, gitc git.GitClient,
 		if !dryRun {
 			err := repo.CreatePullRequest(branchName, prData)
 			if err != nil {
-				return ResultUnknown, fmt.Errorf("failed to create pull request: %w", err)
+				return ResultUnknown, prDetail, fmt.Errorf("failed to create pull request: %w", err)
 			}
 		}
 
 		err = task.OnPrCreated(ctx)
 		if err != nil {
-			return ResultUnknown, fmt.Errorf("pr created event failed: %w", err)
+			return ResultUnknown, prDetail, fmt.Errorf("pr created event failed: %w", err)
 		}
 
-		return ResultPrCreated, nil
+		return ResultPrCreated, prDetail, nil
 	}
 
 	// Try to merge if auto-merge is enabled, no new changes have been detected and the pull request is open
 	if task.AutoMerge && !hasChanges && prID != nil && repo.IsPullRequestOpen(prID) {
 		success, err := repo.HasSuccessfulPullRequestBuild(prID)
 		if err != nil {
-			return ResultUnknown, fmt.Errorf("check for successful pull request build failed: %w", err)
+			return ResultUnknown, prDetail, fmt.Errorf("check for successful pull request build failed: %w", err)
 		}
 
 		if !success {
-			return ResultChecksFailed, nil
+			return ResultChecksFailed, prDetail, nil
 		}
 
 		if !canMergeAfter(repo.GetPullRequestCreationTime(prID), task.CalcAutoMergeAfter()) {
 			logger.Info("Too early to merge pull request")
-			return ResultAutoMergeTooEarly, nil
+			return ResultAutoMergeTooEarly, prDetail, nil
 		}
 
 		canMerge, err := repo.CanMergePullRequest(prID)
 		if err != nil {
-			return ResultUnknown, fmt.Errorf("check if pull request can be merged: %w", err)
+			return ResultUnknown, prDetail, fmt.Errorf("check if pull request can be merged: %w", err)
 		}
 
 		if !canMerge {
 			logger.Warn("Cannot merge pull request")
-			return ResultConflict, nil
+			return ResultConflict, prDetail, nil
 		}
 
 		logger.Info("Merging pull request")
 		if !dryRun {
 			err := repo.MergePullRequest(!task.KeepBranchAfterMerge, prID)
 			if err != nil {
-				return ResultUnknown, fmt.Errorf("failed to merge pull request: %w", err)
+				return ResultUnknown, prDetail, fmt.Errorf("failed to merge pull request: %w", err)
 			}
 		}
 
 		err = task.OnPrMerged(ctx)
 		if err != nil {
-			return ResultUnknown, fmt.Errorf("pr merged event failed: %w", err)
+			return ResultUnknown, prDetail, fmt.Errorf("pr merged event failed: %w", err)
 		}
 
-		return ResultPrMerged, nil
+		return ResultPrMerged, prDetail, nil
 	}
 
 	if prID != nil && repo.IsPullRequestOpen(prID) {
@@ -391,14 +391,14 @@ func applyTaskToRepository(ctx context.Context, dryRun bool, gitc git.GitClient,
 		if !dryRun {
 			err := repo.UpdatePullRequest(prData, prID)
 			if err != nil {
-				return ResultUnknown, fmt.Errorf("failed to update pull request: %w", err)
+				return ResultUnknown, prDetail, fmt.Errorf("failed to update pull request: %w", err)
 			}
 		}
 
-		return ResultPrOpen, nil
+		return ResultPrOpen, prDetail, nil
 	}
 
-	return ResultNoChanges, nil
+	return ResultNoChanges, prDetail, nil
 }
 
 func needsRebaseByUser(repo host.Repository, pr any) bool {

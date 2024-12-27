@@ -182,10 +182,10 @@ func TestExecuteRunner_Run(t *testing.T) {
 	var anyTask *task.Task = &task.Task{}
 	procMock.EXPECT().
 		Process(gomock.AssignableToTypeOf(ctx), false, repo, gomock.AssignableToTypeOf(anyTask), true).
-		Return(processor.ResultNoChanges, nil)
+		Return(processor.ResultNoChanges, nil, nil)
 	procMock.EXPECT().
 		Process(gomock.AssignableToTypeOf(ctx), false, repoWithPr, gomock.AssignableToTypeOf(anyTask), true).
-		Return(processor.ResultNoChanges, nil)
+		Return(processor.ResultNoChanges, nil, nil)
 
 	defer gock.Off()
 	gock.New("http://pgw.local").
@@ -234,7 +234,7 @@ func TestExecuteRunner_Run_DryRun(t *testing.T) {
 	var anyTask *task.Task = &task.Task{}
 	procMock.EXPECT().
 		Process(gomock.AssignableToTypeOf(ctx), true, repo, gomock.AssignableToTypeOf(anyTask), true).
-		Return(processor.ResultNoChanges, nil)
+		Return(processor.ResultNoChanges, nil, nil)
 	taskRegistry := task.NewRegistry(runTestOpts)
 
 	runner := &command.Run{
@@ -275,7 +275,7 @@ func TestExecuteRunner_Run_RepositoriesCLI(t *testing.T) {
 	var anyTask *task.Task = &task.Task{}
 	procMock.EXPECT().
 		Process(gomock.AssignableToTypeOf(ctx), false, repo, gomock.AssignableToTypeOf(anyTask), false).
-		Return(processor.ResultNoChanges, nil)
+		Return(processor.ResultNoChanges, nil, nil)
 	taskRegistry := task.NewRegistry(runTestOpts)
 
 	runner := &command.Run{
@@ -336,7 +336,7 @@ func TestExecuteRunner_Run_Inputs(t *testing.T) {
 
 	procMock.EXPECT().
 		Process(gomock.AssignableToTypeOf(ctx), false, repo, gomock.Cond(isTask), false).
-		Return(processor.ResultNoChanges, nil)
+		Return(processor.ResultNoChanges, nil, nil)
 
 	runner := &command.Run{
 		Cache:        cache,
