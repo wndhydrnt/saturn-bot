@@ -890,6 +890,7 @@ func TestGitLabHost_ListRepositoriesWithOpenPullRequests(t *testing.T) {
 		Get("/api/v4/merge_requests").
 		MatchParam("author_id", "4321").
 		MatchParam("per_page", "20").
+		MatchParam("state", "opened").
 		Reply(200).
 		JSON([]*gitlab.MergeRequest{
 			{IID: 1, ProjectID: 123},
@@ -942,6 +943,7 @@ func TestGitLabHost_ListRepositoriesWithOpenPullRequests(t *testing.T) {
 	require.IsType(t, &RepositoryProxy{}, result[0])
 	require.Equal(t, "gitlab.local/unittest/second", result[1].FullName())
 	require.IsType(t, &RepositoryProxy{}, result[1])
+	require.True(t, gock.IsDone())
 }
 
 func setupClient() *gitlab.Client {
