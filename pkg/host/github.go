@@ -75,10 +75,10 @@ func (g *GitHubRepository) CreatePullRequestComment(body string, pr interface{})
 	return nil
 }
 
-func (g *GitHubRepository) CreatePullRequest(branch string, data PullRequestData) error {
+func (g *GitHubRepository) CreatePullRequest(branch string, data PullRequestData) (*PullRequest, error) {
 	body, err := data.GetBody()
 	if err != nil {
-		return err
+		return nil, err
 	}
 
 	gpr := &github.NewPullRequest{
@@ -90,13 +90,13 @@ func (g *GitHubRepository) CreatePullRequest(branch string, data PullRequestData
 	}
 	pr, _, err := g.client.PullRequests.Create(ctx, g.repo.GetOwner().GetLogin(), g.repo.GetName(), gpr)
 	if err != nil {
-		return fmt.Errorf("create github pull request: %w", err)
+		return nil, fmt.Errorf("create github pull request: %w", err)
 	}
 
 	if len(data.Assignees) > 0 {
 		_, _, err := g.client.Issues.AddAssignees(ctx, g.repo.GetOwner().GetLogin(), g.repo.GetName(), pr.GetNumber(), data.Assignees)
 		if err != nil {
-			return fmt.Errorf("add assignees to pull request: %w", err)
+			return nil, fmt.Errorf("add assignees to pull request: %w", err)
 		}
 	}
 
@@ -109,11 +109,11 @@ func (g *GitHubRepository) CreatePullRequest(branch string, data PullRequestData
 			github.ReviewersRequest{Reviewers: data.Reviewers},
 		)
 		if err != nil {
-			return fmt.Errorf("request review for pull request: %w", err)
+			return nil, fmt.Errorf("request review for pull request: %w", err)
 		}
 	}
 
-	return nil
+	return g.PullRequest(pr), nil
 }
 
 func (g *GitHubRepository) FindPullRequest(branch string) (any, error) {

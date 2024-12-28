@@ -145,7 +145,7 @@ func (g *GitLabRepository) CreatePullRequestComment(body string, pr interface{})
 	return nil
 }
 
-func (g *GitLabRepository) CreatePullRequest(branch string, data PullRequestData) error {
+func (g *GitLabRepository) CreatePullRequest(branch string, data PullRequestData) (*PullRequest, error) {
 	opts := &gitlab.CreateMergeRequestOptions{
 		SourceBranch:       gitlab.Ptr(branch),
 		TargetBranch:       gitlab.Ptr(g.project.DefaultBranch),
@@ -154,7 +154,7 @@ func (g *GitLabRepository) CreatePullRequest(branch string, data PullRequestData
 
 	description, err := data.GetBody()
 	if err != nil {
-		return fmt.Errorf("create merge request for gitlab: %w", err)
+		return nil, fmt.Errorf("create merge request for gitlab: %w", err)
 	}
 	opts.Description = gitlab.Ptr(description)
 	opts.Title = gitlab.Ptr(data.Title)
@@ -199,12 +199,12 @@ func (g *GitLabRepository) CreatePullRequest(branch string, data PullRequestData
 		opts.Squash = gitlab.Ptr(true)
 	}
 
-	_, _, err = g.client.MergeRequests.CreateMergeRequest(g.project.ID, opts)
+	mr, _, err := g.client.MergeRequests.CreateMergeRequest(g.project.ID, opts)
 	if err != nil {
-		return fmt.Errorf("create merge request for project %d: %w", g.project.ID, err)
+		return nil, fmt.Errorf("create merge request for project %d: %w", g.project.ID, err)
 	}
 
-	return nil
+	return g.PullRequest(mr), nil
 }
 
 func (g *GitLabRepository) DeleteBranch(pr interface{}) error {

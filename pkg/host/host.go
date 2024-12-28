@@ -102,7 +102,7 @@ type Repository interface {
 	CloneUrlSsh() string
 	ClosePullRequest(msg string, pr interface{}) error
 	CreatePullRequestComment(body string, pr interface{}) error
-	CreatePullRequest(branch string, data PullRequestData) error
+	CreatePullRequest(branch string, data PullRequestData) (*PullRequest, error)
 	DeleteBranch(pr interface{}) error
 	DeletePullRequestComment(comment PullRequestComment, pr interface{}) error
 	FindPullRequest(branch string) (any, error)

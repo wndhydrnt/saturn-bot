@@ -139,6 +139,12 @@ func TestGitHubRepository_CreatePullRequestComment(t *testing.T) {
 	require.True(t, gock.IsDone())
 }
 
+var createPullRequestRespBody = github.PullRequest{
+	CreatedAt: &github.Timestamp{Time: time.Date(2000, 1, 1, 0, 0, 0, 0, time.UTC)},
+	Number:    github.Int(1),
+	HTMLURL:   github.String("https://api.github.com/pr/1"),
+}
+
 func TestGitHubRepository_CreatePullRequest(t *testing.T) {
 	defer gock.Off()
 	gock.New("https://api.github.com").
@@ -152,7 +158,7 @@ func TestGitHubRepository_CreatePullRequest(t *testing.T) {
 			Title:               github.String("pull request title"),
 		}).
 		Reply(200).
-		JSON(map[string]string{})
+		JSON(createPullRequestRespBody)
 	prData := PullRequestData{
 		Body:     "pull request body",
 		TaskName: "Unit Test",
@@ -163,9 +169,12 @@ func TestGitHubRepository_CreatePullRequest(t *testing.T) {
 		client: setupGitHubTestClient(),
 		repo:   setupGitHubRepository(),
 	}
-	err := repo.CreatePullRequest("unittest", prData)
+	pr, err := repo.CreatePullRequest("unittest", prData)
 
 	require.NoError(t, err)
+	require.Equal(t, "2000-01-01 00:00:00 +0000 UTC", pr.CreatedAt.String())
+	require.Equal(t, int64(1), pr.Number)
+	require.Equal(t, "https://api.github.com/pr/1", pr.WebURL)
 	require.True(t, gock.IsDone())
 }
 
@@ -182,9 +191,7 @@ func TestGitHubRepository_CreatePullRequest_WithAssignees(t *testing.T) {
 			Title:               github.String("pull request title"),
 		}).
 		Reply(200).
-		JSON(&github.PullRequest{
-			Number: github.Int(1),
-		})
+		JSON(createPullRequestRespBody)
 	gock.New("https://api.github.com").
 		Post("/repos/unit/test/issues/1/assignees").
 		MatchType("json").
@@ -203,7 +210,7 @@ func TestGitHubRepository_CreatePullRequest_WithAssignees(t *testing.T) {
 		client: setupGitHubTestClient(),
 		repo:   setupGitHubRepository(),
 	}
-	err := repo.CreatePullRequest("unittest", prData)
+	_, err := repo.CreatePullRequest("unittest", prData)
 
 	require.NoError(t, err)
 	require.True(t, gock.IsDone())
@@ -222,9 +229,7 @@ func TestGitHubRepository_CreatePullRequest_WithReviewers(t *testing.T) {
 			Title:               github.String("pull request title"),
 		}).
 		Reply(200).
-		JSON(&github.PullRequest{
-			Number: github.Int(1),
-		})
+		JSON(createPullRequestRespBody)
 	gock.New("https://api.github.com").
 		Post("/repos/unit/test/pulls/1/requested_reviewers").
 		MatchType("json").
@@ -244,7 +249,7 @@ func TestGitHubRepository_CreatePullRequest_WithReviewers(t *testing.T) {
 		client: setupGitHubTestClient(),
 		repo:   setupGitHubRepository(),
 	}
-	err := repo.CreatePullRequest("unittest", prData)
+	_, err := repo.CreatePullRequest("unittest", prData)
 
 	require.NoError(t, err)
 	require.True(t, gock.IsDone())

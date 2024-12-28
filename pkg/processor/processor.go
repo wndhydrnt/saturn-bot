@@ -159,6 +159,7 @@ func applyTaskToRepository(ctx context.Context, dryRun bool, gitc git.GitClient,
 			return ResultPrClosedBefore, prDetail, nil
 		} else {
 			logger.Debug("Previous pull request closed - resetting to create a new pull request")
+			prDetail = nil
 			prID = nil
 		}
 	}
@@ -330,7 +331,7 @@ func applyTaskToRepository(ctx context.Context, dryRun bool, gitc git.GitClient,
 	if (hasChangesInRemoteDefaultBranch && prID == nil) || (hasChanges && (prID == nil || repo.IsPullRequestMerged(prID) || repo.IsPullRequestClosed(prID))) {
 		logger.Info("Creating pull request")
 		if !dryRun {
-			err := repo.CreatePullRequest(branchName, prData)
+			prDetail, err = repo.CreatePullRequest(branchName, prData)
 			if err != nil {
 				return ResultUnknown, prDetail, fmt.Errorf("failed to create pull request: %w", err)
 			}

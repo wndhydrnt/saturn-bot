@@ -11,6 +11,7 @@ import (
 	"github.com/h2non/gock"
 	"github.com/stretchr/testify/assert"
 	"github.com/stretchr/testify/require"
+	"github.com/wndhydrnt/saturn-bot/pkg/ptr"
 	gitlab "gitlab.com/gitlab-org/api/client-go"
 )
 
@@ -124,14 +125,21 @@ func TestGitLabRepository_CreatePullRequest(t *testing.T) {
 			RemoveSourceBranch: gitlab.Ptr(false),
 		}).
 		Reply(200).
-		JSON(map[string]string{})
+		JSON(gitlab.MergeRequest{
+			CreatedAt: ptr.To(time.Date(2000, 1, 1, 0, 0, 0, 0, time.UTC)),
+			IID:       1,
+			WebURL:    "http://gitlab.local/mr/1",
+		})
 	project := &gitlab.Project{DefaultBranch: "main", ID: 123}
 	prData := PullRequestData{Body: "Unit Test Body", Title: "Unit Test Title"}
 
 	underTest := &GitLabRepository{client: setupClient(), project: project}
-	err := underTest.CreatePullRequest("saturn-bot--unit-test", prData)
+	mr, err := underTest.CreatePullRequest("saturn-bot--unit-test", prData)
 
 	require.NoError(t, err)
+	require.Equal(t, "2000-01-01 00:00:00 +0000 UTC", mr.CreatedAt.String())
+	require.Equal(t, int64(1), mr.Number)
+	require.Equal(t, "http://gitlab.local/mr/1", mr.WebURL)
 	require.True(t, gock.IsDone())
 }
 
@@ -186,7 +194,7 @@ func TestGitLabRepository_CreatePullRequest_WithAssigneesReviewers(t *testing.T)
 		data:   map[string]*gitlab.User{},
 	}
 	underTest := &GitLabRepository{client: client, project: project, userCache: uc}
-	err := underTest.CreatePullRequest("saturn-bot--unit-test", prData)
+	_, err := underTest.CreatePullRequest("saturn-bot--unit-test", prData)
 
 	require.NoError(t, err)
 	require.True(t, gock.IsDone())
@@ -211,7 +219,7 @@ func TestGitLabRepository_CreatePullRequest_WithLabels(t *testing.T) {
 	prData := PullRequestData{Body: "Unit Test Body", Labels: []string{"unit", "test"}, Title: "Unit Test Title"}
 
 	underTest := &GitLabRepository{client: setupClient(), project: project}
-	err := underTest.CreatePullRequest("saturn-bot--unit-test", prData)
+	_, err := underTest.CreatePullRequest("saturn-bot--unit-test", prData)
 
 	require.NoError(t, err)
 	require.True(t, gock.IsDone())
@@ -243,7 +251,7 @@ func TestGitLabRepository_CreatePullRequest_SquashOptionDefaultOn(t *testing.T) 
 	}
 
 	underTest := &GitLabRepository{client: setupClient(), project: project}
-	err := underTest.CreatePullRequest("saturn-bot--unit-test", prData)
+	_, err := underTest.CreatePullRequest("saturn-bot--unit-test", prData)
 
 	require.NoError(t, err)
 	require.True(t, gock.IsDone())
@@ -275,7 +283,7 @@ func TestGitLabRepository_CreatePullRequest_SquashOptionAlways(t *testing.T) {
 	}
 
 	underTest := &GitLabRepository{client: setupClient(), project: project}
-	err := underTest.CreatePullRequest("saturn-bot--unit-test", prData)
+	_, err := underTest.CreatePullRequest("saturn-bot--unit-test", prData)
 
 	require.NoError(t, err)
 	require.True(t, gock.IsDone())

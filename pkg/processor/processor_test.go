@@ -66,7 +66,10 @@ func TestProcessor_Process_CreatePullRequestLocalChanges(t *testing.T) {
 	repo.EXPECT().GetPullRequestBody(nil).Return("").AnyTimes()
 	repo.EXPECT().BaseBranch().Return("main")
 	repo.EXPECT().IsPullRequestOpen(nil).Return(false).AnyTimes()
-	repo.EXPECT().CreatePullRequest("saturn-bot--unittest", gomock.Any()).Return(nil)
+	prCreate := &host.PullRequest{Number: 1}
+	repo.EXPECT().
+		CreatePullRequest("saturn-bot--unittest", gomock.Any()).
+		Return(prCreate, nil)
 	gitc := NewMockGitClient(ctrl)
 	gitc.EXPECT().Prepare(repo, false).Return(tempDir, nil)
 	gitc.EXPECT().UpdateTaskBranch("saturn-bot--unittest", false, repo)
@@ -79,10 +82,11 @@ func TestProcessor_Process_CreatePullRequestLocalChanges(t *testing.T) {
 	tw.AddFilters(&trueFilter{})
 
 	p := &processor.Processor{Git: gitc}
-	result, _, err := p.Process(context.Background(), false, repo, tw, true)
+	result, pr, err := p.Process(context.Background(), false, repo, tw, true)
 
 	require.NoError(t, err)
 	assert.Equal(t, processor.ResultPrCreated, result)
+	assert.Equal(t, prCreate, pr)
 }
 
 func TestProcessor_Process_CreatePullRequestRemoteChanges(t *testing.T) {
@@ -101,7 +105,10 @@ func TestProcessor_Process_CreatePullRequestRemoteChanges(t *testing.T) {
 	repo.EXPECT().GetPullRequestBody(nil).Return("").AnyTimes()
 	repo.EXPECT().BaseBranch().Return("main")
 	repo.EXPECT().IsPullRequestOpen(nil).Return(false).AnyTimes()
-	repo.EXPECT().CreatePullRequest("saturn-bot--unittest", gomock.Any()).Return(nil)
+	prCreate := &host.PullRequest{Number: 1}
+	repo.EXPECT().
+		CreatePullRequest("saturn-bot--unittest", gomock.Any()).
+		Return(prCreate, nil)
 	gitc := NewMockGitClient(ctrl)
 	gitc.EXPECT().Prepare(repo, false).Return(tempDir, nil)
 	gitc.EXPECT().UpdateTaskBranch("saturn-bot--unittest", false, repo)
@@ -113,9 +120,10 @@ func TestProcessor_Process_CreatePullRequestRemoteChanges(t *testing.T) {
 	tw.AddFilters(&trueFilter{})
 
 	p := &processor.Processor{Git: gitc}
-	result, _, err := p.Process(context.Background(), false, repo, tw, true)
+	result, pr, err := p.Process(context.Background(), false, repo, tw, true)
 
 	require.NoError(t, err)
+	assert.Equal(t, prCreate, pr)
 	assert.Equal(t, processor.ResultPrCreated, result)
 }
 
@@ -136,7 +144,10 @@ func TestProcessor_Process_CreatePullRequestPreviouslyClosed(t *testing.T) {
 	repo.EXPECT().GetPullRequestBody(nil).Return("").AnyTimes()
 	repo.EXPECT().BaseBranch().Return("main")
 	repo.EXPECT().IsPullRequestOpen(nil).Return(false).AnyTimes()
-	repo.EXPECT().CreatePullRequest("saturn-bot--unittest", gomock.Any()).Return(nil)
+	prCreate := &host.PullRequest{Number: 1}
+	repo.EXPECT().
+		CreatePullRequest("saturn-bot--unittest", gomock.Any()).
+		Return(prCreate, nil)
 	gitc := NewMockGitClient(ctrl)
 	gitc.EXPECT().Prepare(repo, false).Return(tempDir, nil)
 	gitc.EXPECT().UpdateTaskBranch("saturn-bot--unittest", false, repo)
@@ -147,10 +158,11 @@ func TestProcessor_Process_CreatePullRequestPreviouslyClosed(t *testing.T) {
 	tw.AddFilters(&trueFilter{})
 
 	p := &processor.Processor{Git: gitc}
-	result, _, err := p.Process(context.Background(), false, repo, tw, true)
+	result, pr, err := p.Process(context.Background(), false, repo, tw, true)
 
 	require.NoError(t, err)
 	assert.Equal(t, processor.ResultPrCreated, result)
+	assert.Equal(t, prCreate, pr)
 }
 
 func TestProcessor_Process_PullRequestClosedAndMergeOnceActive(t *testing.T) {
