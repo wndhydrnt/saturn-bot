@@ -107,6 +107,7 @@ func (s *Sync) createTask(t *task.Task) error {
 }
 
 func (s *Sync) deactivateTask(t db.Task) error {
+	log.Log().Debugf("Deactivating task in DB - %s", t.Name)
 	return s.db.Transaction(func(tx *gorm.DB) error {
 		t.Active = false
 		saveResult := s.db.Save(t)
@@ -120,10 +121,11 @@ func (s *Sync) deactivateTask(t db.Task) error {
 
 func (s *Sync) updateTask(t *task.Task, taskDB db.Task) error {
 	if taskDB.Hash == t.Checksum() {
+		log.Log().Debugf("Not updating task in DB - %s", taskDB.Name)
 		return nil
 	}
 
-	log.Log().Debugf("Updating task %s in DB", taskDB.Name)
+	log.Log().Debugf("Updating task in DB - %s", taskDB.Name)
 	return s.db.Transaction(func(tx *gorm.DB) error {
 		now := s.clock.Now()
 		scheduleAfter := now
@@ -137,6 +139,7 @@ func (s *Sync) updateTask(t *task.Task, taskDB db.Task) error {
 			return fmt.Errorf("schedule run for updated task '%s' in db: %w", t.Name, err)
 		}
 
+		taskDB.Hash = t.Checksum()
 		if err := tx.Save(&taskDB).Error; err != nil {
 			return fmt.Errorf("update task '%s' in db: %w", t.Name, err)
 		}
