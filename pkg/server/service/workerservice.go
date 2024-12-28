@@ -231,6 +231,10 @@ func (ws *WorkerService) ReportRun(req openapi.ReportWorkV1Request) error {
 				result.Error = taskResult.Error
 			}
 
+			if taskResult.PullRequestUrl != nil {
+				result.PullRequestUrl = taskResult.PullRequestUrl
+			}
+
 			if err := tx.Save(&result).Error; err != nil {
 				return err
 			}

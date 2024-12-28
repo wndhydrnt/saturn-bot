@@ -56,6 +56,7 @@ type TaskResult struct {
 	CreatedAt      time.Time
 	Error          *string
 	ID             uint `gorm:"primarykey"`
+	PullRequestUrl *string
 	RepositoryName string
 	Result         int
 	Status         TaskResultStatus

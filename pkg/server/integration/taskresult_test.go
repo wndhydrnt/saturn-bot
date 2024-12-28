@@ -36,10 +36,25 @@ func Test_API_ListTaskResultsV1(t *testing.T) {
 							Name: defaultTask.Name,
 						},
 						TaskResults: []openapi.ReportWorkV1TaskResult{
-							{RepositoryName: "git.local/unittest/one", Result: int(processor.ResultPrOpen)},
-							{RepositoryName: "git.local/unittest/two", Result: int(processor.ResultPrClosed)},
-							{RepositoryName: "git.local/unittest/three", Result: int(processor.ResultPrMerged)},
-							{RepositoryName: "git.local/unittest/four", Result: int(processor.ResultUnknown), Error: ptr.To("error")},
+							{
+								PullRequestUrl: ptr.To("https://git.local/unittest/one/pr/1"),
+								RepositoryName: "git.local/unittest/one",
+								Result:         int(processor.ResultPrOpen),
+							},
+							{
+								PullRequestUrl: ptr.To("https://git.local/unittest/two/pr/1"),
+								RepositoryName: "git.local/unittest/two",
+								Result:         int(processor.ResultPrClosed),
+							},
+							{
+								PullRequestUrl: ptr.To("https://git.local/unittest/three/pr/1"),
+								RepositoryName: "git.local/unittest/three",
+								Result:         int(processor.ResultPrMerged),
+							},
+							{
+								RepositoryName: "git.local/unittest/four",
+								Result:         int(processor.ResultUnknown), Error: ptr.To("error"),
+							},
 						},
 					},
 					statusCode: http.StatusCreated,
@@ -55,10 +70,30 @@ func Test_API_ListTaskResultsV1(t *testing.T) {
 					responseBody: openapi.ListTaskResultsV1Response{
 						Page: openapi.Page{CurrentPage: 1, ItemsPerPage: 20, TotalItems: 4, TotalPages: 1},
 						TaskResults: []openapi.TaskResultV1{
-							{RepositoryName: "git.local/unittest/four", RunId: 1, Error: ptr.To("error"), Status: openapi.TaskResultStatusV1Error},
-							{RepositoryName: "git.local/unittest/three", RunId: 1, Status: openapi.TaskResultStatusV1Merged},
-							{RepositoryName: "git.local/unittest/two", RunId: 1, Status: openapi.TaskResultStatusV1Closed},
-							{RepositoryName: "git.local/unittest/one", RunId: 1, Status: openapi.TaskResultStatusV1Open},
+							{
+								RepositoryName: "git.local/unittest/four",
+								RunId:          1,
+								Error:          ptr.To("error"),
+								Status:         openapi.TaskResultStatusV1Error,
+							},
+							{
+								PullRequestUrl: ptr.To("https://git.local/unittest/three/pr/1"),
+								RepositoryName: "git.local/unittest/three",
+								RunId:          1,
+								Status:         openapi.TaskResultStatusV1Merged,
+							},
+							{
+								PullRequestUrl: ptr.To("https://git.local/unittest/two/pr/1"),
+								RepositoryName: "git.local/unittest/two",
+								RunId:          1,
+								Status:         openapi.TaskResultStatusV1Closed,
+							},
+							{
+								PullRequestUrl: ptr.To("https://git.local/unittest/one/pr/1"),
+								RepositoryName: "git.local/unittest/one",
+								RunId:          1,
+								Status:         openapi.TaskResultStatusV1Open,
+							},
 						},
 					},
 				},
@@ -71,7 +106,12 @@ func Test_API_ListTaskResultsV1(t *testing.T) {
 					responseBody: openapi.ListTaskResultsV1Response{
 						Page: openapi.Page{CurrentPage: 1, ItemsPerPage: 20, TotalItems: 1, TotalPages: 1},
 						TaskResults: []openapi.TaskResultV1{
-							{RepositoryName: "git.local/unittest/three", RunId: 1, Status: openapi.TaskResultStatusV1Merged},
+							{
+								PullRequestUrl: ptr.To("https://git.local/unittest/three/pr/1"),
+								RepositoryName: "git.local/unittest/three",
+								RunId:          1,
+								Status:         openapi.TaskResultStatusV1Merged,
+							},
 						},
 					},
 				},

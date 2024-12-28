@@ -260,6 +260,10 @@ func mapRunResultsToTaskResults(runResults []command.RunResult) []client.ReportW
 			result.Error = ptr.To(rr.Error.Error())
 		}
 
+		if rr.PullRequest != nil {
+			result.PullRequestUrl = ptr.To(rr.PullRequest.WebURL)
+		}
+
 		results = append(results, result)
 	}
 

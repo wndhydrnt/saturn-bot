@@ -1,7 +1,7 @@
 openapi: 3.0.3
 info:
   title: saturn-bot server API
-  version: 1.0.0
+  version: 0.1.0
 paths:
   /api/v1/runs:
     post:
@@ -310,6 +310,9 @@ components:
       properties:
         error:
           description: Error encountered during the run, if any.
+          type: string
+        pullRequestUrl:
+          description: URL of the pull request for humans to view.
           type: string
         repositoryName:
           description: Name of the repository.

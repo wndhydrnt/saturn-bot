@@ -156,6 +156,9 @@ type ReportWorkV1TaskResult struct {
 	// Error Error encountered during the run, if any.
 	Error *string `json:"error,omitempty"`
 
+	// PullRequestUrl URL of the pull request for humans to view.
+	PullRequestUrl *string `json:"pullRequestUrl,omitempty"`
+
 	// RepositoryName Name of the repository.
 	RepositoryName string `json:"repositoryName"`
 
