@@ -684,7 +684,7 @@ func (g *GitHubHost) ListRepositoriesWithOpenPullRequests(result chan []Reposito
 		return
 	}
 
-	query := fmt.Sprintf("is:open is:pr author:%s archived:false", user.GetLogin())
+	query := fmt.Sprintf("is:pr author:%s archived:false", user.GetLogin())
 	opts := &github.SearchOptions{
 		ListOptions: github.ListOptions{
 			Page:    1,

@@ -890,7 +890,6 @@ func TestGitLabHost_ListRepositoriesWithOpenPullRequests(t *testing.T) {
 		Get("/api/v4/merge_requests").
 		MatchParam("author_id", "4321").
 		MatchParam("per_page", "20").
-		MatchParam("state", "opened").
 		Reply(200).
 		JSON([]*gitlab.MergeRequest{
 			{IID: 1, ProjectID: 123},

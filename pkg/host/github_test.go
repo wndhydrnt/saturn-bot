@@ -1123,7 +1123,7 @@ func TestGitHubHost_ListRepositoriesWithOpenPullRequests(t *testing.T) {
 		MatchParams(map[string]string{
 			"page":     "1",
 			"per_page": "20",
-			"q":        `is:open is:pr author:unittest archived:false`,
+			"q":        `is:pr author:unittest archived:false`,
 		}).
 		Reply(200).
 		JSON(&github.IssuesSearchResult{

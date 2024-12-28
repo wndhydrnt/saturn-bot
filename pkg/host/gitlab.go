@@ -665,7 +665,6 @@ func (g *GitLabHost) ListRepositoriesWithOpenPullRequests(result chan []Reposito
 			Page:    1,
 			PerPage: 20,
 		},
-		State: gitlab.Ptr("opened"),
 	}
 	visitedProjectsIDs := map[int]struct{}{}
 	for {
