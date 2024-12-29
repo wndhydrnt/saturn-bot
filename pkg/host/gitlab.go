@@ -2,6 +2,7 @@ package host
 
 import (
 	"encoding/base64"
+	"encoding/json"
 	"errors"
 	"fmt"
 	"net/url"
@@ -539,6 +540,10 @@ func (g *GitLabRepository) diffUsers(assigned []*gitlab.BasicUser, in []string) 
 	return ids, needsUpdate
 }
 
+func (g *GitLabRepository) Raw() any {
+	return g.project
+}
+
 type GitLabHost struct {
 	authenticatedUser *UserInfo
 	client            *gitlab.Client
@@ -584,6 +589,17 @@ func (g *GitLabHost) AuthenticatedUser() (*UserInfo, error) {
 	}
 
 	return g.authenticatedUser, nil
+}
+
+func (g *GitLabHost) CreateFromJson(dec *json.Decoder) (Repository, error) {
+	project := &gitlab.Project{}
+	err := dec.Decode(project)
+	if err != nil {
+		return nil, fmt.Errorf("decode GitLab project from JSON: %w", err)
+	}
+
+	repo := &GitLabRepository{client: g.client, host: g, project: project, userCache: g.userCache}
+	return NewRepositoryProxy(repo, nil), nil
 }
 
 func (g *GitLabHost) CreateFromName(name string) (Repository, error) {

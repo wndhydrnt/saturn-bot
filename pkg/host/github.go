@@ -2,6 +2,7 @@ package host
 
 import (
 	"context"
+	"encoding/json"
 	"fmt"
 	"net/http"
 	"net/url"
@@ -450,6 +451,10 @@ func (g *GitHubRepository) WebUrl() string {
 	return g.repo.GetHTMLURL()
 }
 
+func (g *GitHubRepository) Raw() any {
+	return g.repo
+}
+
 // listAllReviews lists all reviews done for a pull request.
 // The function is necessary because the GitHub API removes a user from the list of "requested reviewers"
 // and adds the user to the list of reviews.
@@ -598,6 +603,16 @@ func (g *GitHubHost) AuthenticatedUser() (*UserInfo, error) {
 		Name:  user.GetLogin(),
 	}
 	return g.authenticatedUser, nil
+}
+
+func (g *GitHubHost) CreateFromJson(dec *json.Decoder) (Repository, error) {
+	ghRepo := &github.Repository{}
+	err := dec.Decode(ghRepo)
+	if err != nil {
+		return nil, fmt.Errorf("decode GitHub repository from JSON: %w", err)
+	}
+
+	return NewRepositoryProxy(&GitHubRepository{client: g.client, host: g, repo: ghRepo}, nil), nil
 }
 
 func (g *GitHubHost) CreateFromName(name string) (Repository, error) {

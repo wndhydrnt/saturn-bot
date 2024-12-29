@@ -3,9 +3,10 @@ package command_test
 import (
 	"bytes"
 	"context"
-	"crypto/sha256"
+	"encoding/json"
 	"fmt"
 	"os"
+	"path/filepath"
 	"reflect"
 	"strings"
 	"testing"
@@ -13,10 +14,9 @@ import (
 
 	"github.com/h2non/gock"
 	"github.com/prometheus/client_golang/prometheus/push"
-	"github.com/stretchr/testify/assert"
 	"github.com/stretchr/testify/require"
 	"github.com/wndhydrnt/saturn-bot/pkg/action"
-	"github.com/wndhydrnt/saturn-bot/pkg/cache"
+	"github.com/wndhydrnt/saturn-bot/pkg/clock"
 	"github.com/wndhydrnt/saturn-bot/pkg/command"
 	"github.com/wndhydrnt/saturn-bot/pkg/filter"
 	"github.com/wndhydrnt/saturn-bot/pkg/host"
@@ -28,10 +28,6 @@ import (
 	"gopkg.in/yaml.v3"
 )
 
-const (
-	oldestExecutionAtMock = int64(1709382940609266)
-)
-
 var (
 	runTestOpts = options.Opts{
 		ActionFactories: action.BuiltInFactories,
@@ -39,9 +35,29 @@ var (
 	}
 )
 
+type repoCacheItem struct {
+	Name string
+}
+
 type mockHost struct {
 	repositories                     []host.Repository
 	repositoriesWithOpenPullRequests []host.Repository
+}
+
+func (m *mockHost) CreateFromJson(dec *json.Decoder) (host.Repository, error) {
+	item := &repoCacheItem{}
+	err := dec.Decode(item)
+	if err != nil {
+		return nil, fmt.Errorf("host mock: decode cache item: %w", err)
+	}
+
+	for _, repo := range m.repositories {
+		if repo.FullName() == item.Name {
+			return repo, nil
+		}
+	}
+
+	return nil, fmt.Errorf("Repository not found")
 }
 
 func (m *mockHost) CreateFromName(name string) (host.Repository, error) {
@@ -69,39 +85,7 @@ func (m *mockHost) AuthenticatedUser() (*host.UserInfo, error) {
 }
 
 func (m *mockHost) Name() string {
-	return "mock"
-}
-
-func createTestCache(taskFilePath string) string {
-	f, err := os.Open(taskFilePath)
-	if err != nil {
-		panic(fmt.Sprintf("createTestCache: open task file: %s", err))
-	}
-
-	// Decode and encode the task to align with what saturn-bot does
-	defer f.Close()
-	var tempTask schema.Task
-	dec := yaml.NewDecoder(f)
-	if err := dec.Decode(&tempTask); err != nil {
-		panic(fmt.Sprintf("createTestCache: decode from YAML: %s", err))
-	}
-
-	h := sha256.New()
-	enc := yaml.NewEncoder(h)
-	if err := enc.Encode(&tempTask); err != nil {
-		panic(fmt.Sprintf("createTestCache: encode to YAML: %s", err))
-	}
-
-	if err := enc.Close(); err != nil {
-		panic(fmt.Sprintf("createTestCache: close YAML encoder: %s", err))
-	}
-
-	checksum := fmt.Sprintf("%x", h.Sum(nil))
-	tpl := `{
-		"%s":{"LastExecutionAt":%d, "Checksum":"%s"}
-	}`
-	content := fmt.Sprintf(tpl, tempTask.Name, oldestExecutionAtMock, checksum)
-	return createTempFile(content, "*.json")
+	return "git.local"
 }
 
 func createTestTask(nameFilter string) schema.Task {
@@ -150,29 +134,25 @@ func setupRunRepoMock(ctrl *gomock.Controller, name string) *MockRepository {
 	hostDetailMock := NewMockHostDetail(ctrl)
 	hostDetailMock.EXPECT().Name().Return("git.local").AnyTimes()
 	repo := NewMockRepository(ctrl)
-	repo.EXPECT().FullName().Return("git.local/unittest/" + name).AnyTimes()
+	fullName := "git.local/unittest/" + name
+	repo.EXPECT().FullName().Return(fullName).AnyTimes()
 	repo.EXPECT().Host().Return(hostDetailMock).AnyTimes()
 	repo.EXPECT().Owner().Return("unittest").AnyTimes()
 	repo.EXPECT().Name().Return(name).AnyTimes()
+	repo.EXPECT().Raw().Return(repoCacheItem{Name: fullName}).AnyTimes()
 	return repo
 }
 
 func TestExecuteRunner_Run(t *testing.T) {
+	tmpDir := t.TempDir()
 	ctrl := gomock.NewController(t)
-	repo := setupRunRepoMock(ctrl, "repo")
-	repoWithPr := setupRunRepoMock(ctrl, "repoWithPr")
+	repoOne := setupRunRepoMock(ctrl, "repoOne")
+	repoTwo := setupRunRepoMock(ctrl, "repoTwo")
 	hostm := &mockHost{
-		repositories:                     []host.Repository{repo},
-		repositoriesWithOpenPullRequests: []host.Repository{repoWithPr},
+		repositories: []host.Repository{repoOne, repoTwo},
 	}
 	taskFile := createTestTaskFile(createTestTask("git.local/unittest/repo.*"))
-	cacheFile := createTestCache(taskFile)
-	cache := cache.NewFileCache(cacheFile)
 	defer func() {
-		if err := os.Remove(cacheFile); err != nil {
-			panic(err)
-		}
-
 		if err := os.Remove(taskFile); err != nil {
 			panic(err)
 		}
@@ -181,10 +161,10 @@ func TestExecuteRunner_Run(t *testing.T) {
 	var ctx = reflect.TypeOf((*context.Context)(nil)).Elem()
 	var anyTask *task.Task = &task.Task{}
 	procMock.EXPECT().
-		Process(gomock.AssignableToTypeOf(ctx), false, repo, gomock.AssignableToTypeOf(anyTask), true).
+		Process(gomock.AssignableToTypeOf(ctx), false, repoOne, gomock.AssignableToTypeOf(anyTask), true).
 		Return(processor.ResultNoChanges, nil, nil)
 	procMock.EXPECT().
-		Process(gomock.AssignableToTypeOf(ctx), false, repoWithPr, gomock.AssignableToTypeOf(anyTask), true).
+		Process(gomock.AssignableToTypeOf(ctx), false, repoTwo, gomock.AssignableToTypeOf(anyTask), true).
 		Return(processor.ResultNoChanges, nil, nil)
 
 	defer gock.Off()
@@ -195,36 +175,31 @@ func TestExecuteRunner_Run(t *testing.T) {
 	taskRegistry := task.NewRegistry(runTestOpts)
 
 	runner := &command.Run{
-		Cache:        cache,
-		DryRun:       false,
-		Hosts:        []host.Host{hostm},
-		Processor:    procMock,
-		PushGateway:  pushGateway,
+		DryRun:      false,
+		Hosts:       []host.Host{hostm},
+		Processor:   procMock,
+		PushGateway: pushGateway,
+		RepositoryCache: &host.RepositoryCache{
+			Clock: clock.Default,
+			Dir:   filepath.Join(tmpDir, "cache"),
+		},
 		TaskRegistry: taskRegistry,
 	}
 	_, err := runner.Run([]string{}, []string{taskFile}, map[string]string{})
 
 	require.NoError(t, err)
-	oldestExecutionAt, err := cache.GetOldestExecutionAt(taskRegistry.GetTasks()...)
-	require.NoError(t, err, "Reads oldest execution from cache")
-	assert.NotEqual(t, oldestExecutionAt, oldestExecutionAtMock, "Updates the last execution time in the cache")
 	require.True(t, gock.IsDone(), "All HTTP requests sent")
 }
 
 func TestExecuteRunner_Run_DryRun(t *testing.T) {
+	tmpDir := t.TempDir()
 	ctrl := gomock.NewController(t)
 	repo := setupRunRepoMock(ctrl, "repo")
 	hostm := &mockHost{
 		repositories: []host.Repository{repo},
 	}
 	taskFile := createTestTaskFile(createTestTask("git.local/unittest/repo.*"))
-	cacheFile := createTestCache(taskFile)
-	cache := cache.NewFileCache(cacheFile)
 	defer func() {
-		if err := os.Remove(cacheFile); err != nil {
-			panic(err)
-		}
-
 		if err := os.Remove(taskFile); err != nil {
 			panic(err)
 		}
@@ -238,18 +213,18 @@ func TestExecuteRunner_Run_DryRun(t *testing.T) {
 	taskRegistry := task.NewRegistry(runTestOpts)
 
 	runner := &command.Run{
-		Cache:        cache,
-		DryRun:       true,
-		Hosts:        []host.Host{hostm},
-		Processor:    procMock,
+		DryRun:    true,
+		Hosts:     []host.Host{hostm},
+		Processor: procMock,
+		RepositoryCache: &host.RepositoryCache{
+			Clock: clock.Default,
+			Dir:   filepath.Join(tmpDir, "cache"),
+		},
 		TaskRegistry: taskRegistry,
 	}
 	_, err := runner.Run([]string{}, []string{taskFile}, map[string]string{})
 
 	require.NoError(t, err)
-	oldestExecutionAt, err := cache.GetOldestExecutionAt(taskRegistry.GetTasks()...)
-	require.NoError(t, err, "Reads oldest execution from cache")
-	assert.Equal(t, oldestExecutionAtMock, oldestExecutionAt, "Does not update the last execution time because dryRun is true")
 }
 
 func TestExecuteRunner_Run_RepositoriesCLI(t *testing.T) {
@@ -259,13 +234,7 @@ func TestExecuteRunner_Run_RepositoriesCLI(t *testing.T) {
 		repositories: []host.Repository{repo},
 	}
 	taskFile := createTestTaskFile(createTestTask("git.local/unittest/repo.*"))
-	cacheFile := createTestCache(taskFile)
-	cache := cache.NewFileCache(cacheFile)
 	defer func() {
-		if err := os.Remove(cacheFile); err != nil {
-			panic(err)
-		}
-
 		if err := os.Remove(taskFile); err != nil {
 			panic(err)
 		}
@@ -279,7 +248,6 @@ func TestExecuteRunner_Run_RepositoriesCLI(t *testing.T) {
 	taskRegistry := task.NewRegistry(runTestOpts)
 
 	runner := &command.Run{
-		Cache:        cache,
 		DryRun:       false,
 		Hosts:        []host.Host{hostm},
 		Processor:    procMock,
@@ -288,9 +256,6 @@ func TestExecuteRunner_Run_RepositoriesCLI(t *testing.T) {
 	_, err := runner.Run([]string{"git.local/unittest/repo"}, []string{taskFile}, map[string]string{})
 
 	require.NoError(t, err)
-	oldestExecutionAt, err := cache.GetOldestExecutionAt(taskRegistry.GetTasks()...)
-	require.NoError(t, err, "Reads oldest execution from cache")
-	assert.NotEqual(t, oldestExecutionAtMock, oldestExecutionAt, "Updates the last execution time in the cache")
 }
 
 func TestExecuteRunner_Run_Inputs(t *testing.T) {
@@ -314,13 +279,7 @@ func TestExecuteRunner_Run_Inputs(t *testing.T) {
 	taskOk.Name = "TaskMissingInput"
 	taskMissingInputFile := createTestTaskFile(taskMissingInput)
 
-	cacheFile := createTestCache(taskOkFile)
-	cache := cache.NewFileCache(cacheFile)
 	defer func() {
-		if err := os.Remove(cacheFile); err != nil {
-			panic(err)
-		}
-
 		if err := os.Remove(taskOkFile); err != nil {
 			panic(err)
 		}
@@ -339,7 +298,6 @@ func TestExecuteRunner_Run_Inputs(t *testing.T) {
 		Return(processor.ResultNoChanges, nil, nil)
 
 	runner := &command.Run{
-		Cache:        cache,
 		DryRun:       false,
 		Hosts:        []host.Host{hostm},
 		Processor:    procMock,

@@ -5,12 +5,11 @@ import (
 	"errors"
 	"fmt"
 	"os"
-	"path"
-	"time"
+	"path/filepath"
 
 	"github.com/prometheus/client_golang/prometheus/push"
 	"github.com/wndhydrnt/saturn-bot/pkg/action"
-	"github.com/wndhydrnt/saturn-bot/pkg/cache"
+	"github.com/wndhydrnt/saturn-bot/pkg/clock"
 	sContext "github.com/wndhydrnt/saturn-bot/pkg/context"
 	"github.com/wndhydrnt/saturn-bot/pkg/git"
 	"github.com/wndhydrnt/saturn-bot/pkg/host"
@@ -18,7 +17,6 @@ import (
 	"github.com/wndhydrnt/saturn-bot/pkg/metrics"
 	"github.com/wndhydrnt/saturn-bot/pkg/options"
 	"github.com/wndhydrnt/saturn-bot/pkg/processor"
-	"github.com/wndhydrnt/saturn-bot/pkg/ptr"
 	"github.com/wndhydrnt/saturn-bot/pkg/task"
 	"go.uber.org/zap"
 )
@@ -36,12 +34,12 @@ type RunResult struct {
 }
 
 type Run struct {
-	Cache        *cache.Cache
-	DryRun       bool
-	Hosts        []host.Host
-	Processor    processor.RepositoryTaskProcessor
-	PushGateway  *push.Pusher
-	TaskRegistry *task.Registry
+	DryRun          bool
+	Hosts           []host.Host
+	Processor       processor.RepositoryTaskProcessor
+	PushGateway     *push.Pusher
+	RepositoryCache *host.RepositoryCache
+	TaskRegistry    *task.Registry
 }
 
 func (r *Run) Run(repositoryNames, taskFiles []string, inputs map[string]string) ([]RunResult, error) {
@@ -60,95 +58,66 @@ func (r *Run) Run(repositoryNames, taskFiles []string, inputs map[string]string)
 		return nil, err
 	}
 
+	defer r.TaskRegistry.Stop()
 	tasks := r.TaskRegistry.GetTasks()
 	if len(tasks) == 0 {
 		log.Log().Warn("0 tasks loaded from files - stopping")
 		return nil, nil
 	}
 
-	oldestExecutionTs, err := r.Cache.GetOldestExecutionAt(tasks...)
-	if err != nil {
-		return nil, fmt.Errorf("get oldest execution of tasks: %w", err)
-	}
-
-	var since *time.Time
-	if oldestExecutionTs != 0 {
-		since = ptr.To(time.UnixMicro(oldestExecutionTs))
-	}
-
 	tasks = setInputs(tasks, inputs)
-	repos := make(chan []host.Repository)
-	errChan := make(chan error)
-	var expectedFinishes int
+	repos := make(chan host.Repository)
+	doneChan := make(chan error)
 	if len(repositoryNames) > 0 {
-		expectedFinishes = discoverRepositoriesFromCLI(r.Hosts, repositoryNames, repos, errChan)
+		go discoverRepositoriesFromCLI(r.Hosts, repositoryNames, repos, doneChan)
 	} else {
-		expectedFinishes = discoverRepositoriesFromHosts(r.Hosts, since, repos, errChan)
+		go r.RepositoryCache.ListRepositories(r.Hosts, repos, doneChan)
 	}
-	finishes := 0
-	visitedRepositories := map[string]struct{}{}
+
 	success := true
 	var results []RunResult
+	done := false
 	for {
 		select {
-		case repoList := <-repos:
-			for _, repo := range repoList {
-				log.Log().Debugf("Discovered repository %s", repo.FullName())
-				_, exists := visitedRepositories[repo.FullName()]
-				if exists {
-					log.Log().Debugf("Repository %s already visited", repo.FullName())
-					continue
+		case repo := <-repos:
+			// log.Log().Debugf("Discovered repository %s", repo.FullName())
+			ctx := context.Background()
+			doFilter := len(repositoryNames) == 0
+			for _, t := range tasks {
+				result := RunResult{
+					RepositoryName: repo.FullName(),
+					TaskName:       t.Name,
+				}
+				logger := log.Log().
+					WithOptions(zap.Fields(
+						log.FieldDryRun(r.DryRun),
+						log.FieldRepo(repo.FullName()),
+						log.FieldTask(t.Name),
+					))
+				ctx = sContext.WithLog(ctx, logger)
+				result.Result, result.PullRequest, result.Error = r.Processor.Process(ctx, r.DryRun, repo, t, doFilter)
+				if result.Error == nil {
+					metrics.RunTaskSuccess.WithLabelValues(t.Name).Set(1)
+				} else {
+					metrics.RunTaskSuccess.WithLabelValues(t.Name).Set(0)
+					success = false
+					logger.Errorw("Task failed", "error", result.Error)
 				}
 
-				visitedRepositories[repo.FullName()] = struct{}{}
-				ctx := context.Background()
-				doFilter := len(repositoryNames) == 0
-				for _, t := range tasks {
-					result := RunResult{
-						RepositoryName: repo.FullName(),
-						TaskName:       t.Name,
-					}
-					logger := log.Log().
-						WithOptions(zap.Fields(
-							log.FieldDryRun(r.DryRun),
-							log.FieldRepo(repo.FullName()),
-							log.FieldTask(t.Name),
-						))
-					ctx = sContext.WithLog(ctx, logger)
-					result.Result, result.PullRequest, result.Error = r.Processor.Process(ctx, r.DryRun, repo, t, doFilter)
-					if result.Error == nil {
-						metrics.RunTaskSuccess.WithLabelValues(t.Name).Set(1)
-					} else {
-						metrics.RunTaskSuccess.WithLabelValues(t.Name).Set(0)
-						success = false
-						logger.Errorw("Task failed", "error", result.Error)
-					}
-
-					results = append(results, result)
-				}
+				results = append(results, result)
 			}
-		case err := <-errChan:
+		case err := <-doneChan:
 			if err != nil {
 				return results, err
 			}
 
-			finishes += 1
+			done = true
 		}
-		if finishes == expectedFinishes {
+
+		if done {
 			break
 		}
 	}
-
-	if !r.DryRun && success {
-		// Update cache only if this is not a dry run and the run didn't encounter any errors.
-		// Without this guard, subsequent non dry runs would not recognize that they need to do anything.
-		err := r.Cache.Update(time.Now().UnixMicro(), tasks...)
-		if err != nil {
-			return results, fmt.Errorf("update execution cache: %w", err)
-		}
-	}
-
-	r.TaskRegistry.Stop()
 
 	if !success {
 		return results, fmt.Errorf("errors occurred, check previous log messages")
@@ -172,7 +141,6 @@ func ExecuteRun(opts options.Opts, repositoryNames, taskFiles []string, inputs m
 		return nil, fmt.Errorf("initialize options: %w", err)
 	}
 
-	executionCache := cache.NewFileCache(path.Join(opts.DataDir(), cache.DefaultJsonFileName))
 	taskRegistry := task.NewRegistry(opts)
 
 	gitClient, err := git.New(opts)
@@ -181,14 +149,17 @@ func ExecuteRun(opts options.Opts, repositoryNames, taskFiles []string, inputs m
 	}
 
 	e := &Run{
-		Cache:  executionCache,
 		DryRun: opts.Config.DryRun,
 		Hosts:  opts.Hosts,
 		Processor: &processor.Processor{
 			DataDir: opts.DataDir(),
 			Git:     gitClient,
 		},
-		PushGateway:  opts.PushGateway,
+		PushGateway: opts.PushGateway,
+		RepositoryCache: &host.RepositoryCache{
+			Clock: clock.Default,
+			Dir:   filepath.Join(opts.DataDir(), "cache"),
+		},
 		TaskRegistry: taskRegistry,
 	}
 	return e.Run(repositoryNames, taskFiles, inputs)
@@ -227,49 +198,25 @@ func inDirectory(dir string, f func() error) error {
 	return funcErr
 }
 
-// discoverRepositoriesFromHosts queries all hosts for available repositories.
-func discoverRepositoriesFromHosts(
-	hosts []host.Host,
-	since *time.Time,
-	repoChan chan []host.Repository,
-	errChan chan error,
-) int {
-	expectedFinishes := len(hosts)
-	for _, host := range hosts {
-		log.Log().Infof("Listing repositories since %v", since)
-		go host.ListRepositories(since, repoChan, errChan)
-		if since != nil {
-			expectedFinishes += 1
-			log.Log().Info("Listing repositories with open pull requests")
-			go host.ListRepositoriesWithOpenPullRequests(repoChan, errChan)
-		}
-	}
-
-	return expectedFinishes
-}
-
 // discoverRepositoriesFromCLI takes a list of repository names and turns them into repositories.
 func discoverRepositoriesFromCLI(
 	hosts []host.Host,
 	repositoryNames []string,
-	repoChan chan []host.Repository,
+	repoChan chan host.Repository,
 	errChan chan error,
-) int {
+) {
 	log.Log().Info("Discovering repositories from CLI")
-	go func() {
-		for _, repoName := range repositoryNames {
-			repo, err := host.NewRepositoryFromName(hosts, repoName)
-			if err != nil {
-				errChan <- err
-				return
-			}
-
-			repoChan <- []host.Repository{repo}
+	for _, repoName := range repositoryNames {
+		repo, err := host.NewRepositoryFromName(hosts, repoName)
+		if err != nil {
+			errChan <- err
+			return
 		}
 
-		errChan <- nil
-	}()
-	return 1
+		repoChan <- repo
+	}
+
+	errChan <- nil
 }
 
 // setInputs sets inputs passed to Run().

@@ -2,6 +2,7 @@ package host
 
 import (
 	"bytes"
+	"encoding/json"
 	"errors"
 	"fmt"
 	htmlTemplate "html/template"
@@ -125,11 +126,13 @@ type Repository interface {
 	Owner() string
 	UpdatePullRequest(data PullRequestData, pr interface{}) error
 	WebUrl() string
+	Raw() any
 }
 
 type Host interface {
 	HostDetail
 	CreateFromName(name string) (Repository, error)
+	CreateFromJson(dec *json.Decoder) (Repository, error)
 	ListRepositories(since *time.Time, result chan []Repository, errChan chan error)
 	ListRepositoriesWithOpenPullRequests(result chan []Repository, errChan chan error)
 }

@@ -10,6 +10,7 @@
 package command_test
 
 import (
+	json "encoding/json"
 	reflect "reflect"
 	time "time"
 
@@ -414,6 +415,20 @@ func (mr *MockRepositoryMockRecorder) PullRequest(pr any) *gomock.Call {
 	return mr.mock.ctrl.RecordCallWithMethodType(mr.mock, "PullRequest", reflect.TypeOf((*MockRepository)(nil).PullRequest), pr)
 }
 
+// Raw mocks base method.
+func (m *MockRepository) Raw() any {
+	m.ctrl.T.Helper()
+	ret := m.ctrl.Call(m, "Raw")
+	ret0, _ := ret[0].(any)
+	return ret0
+}
+
+// Raw indicates an expected call of Raw.
+func (mr *MockRepositoryMockRecorder) Raw() *gomock.Call {
+	mr.mock.ctrl.T.Helper()
+	return mr.mock.ctrl.RecordCallWithMethodType(mr.mock, "Raw", reflect.TypeOf((*MockRepository)(nil).Raw))
+}
+
 // UpdatePullRequest mocks base method.
 func (m *MockRepository) UpdatePullRequest(data host.PullRequestData, pr any) error {
 	m.ctrl.T.Helper()
@@ -479,6 +494,21 @@ func (m *MockHost) AuthenticatedUser() (*host.UserInfo, error) {
 func (mr *MockHostMockRecorder) AuthenticatedUser() *gomock.Call {
 	mr.mock.ctrl.T.Helper()
 	return mr.mock.ctrl.RecordCallWithMethodType(mr.mock, "AuthenticatedUser", reflect.TypeOf((*MockHost)(nil).AuthenticatedUser))
+}
+
+// CreateFromJson mocks base method.
+func (m *MockHost) CreateFromJson(dec *json.Decoder) (host.Repository, error) {
+	m.ctrl.T.Helper()
+	ret := m.ctrl.Call(m, "CreateFromJson", dec)
+	ret0, _ := ret[0].(host.Repository)
+	ret1, _ := ret[1].(error)
+	return ret0, ret1
+}
+
+// CreateFromJson indicates an expected call of CreateFromJson.
+func (mr *MockHostMockRecorder) CreateFromJson(dec any) *gomock.Call {
+	mr.mock.ctrl.T.Helper()
+	return mr.mock.ctrl.RecordCallWithMethodType(mr.mock, "CreateFromJson", reflect.TypeOf((*MockHost)(nil).CreateFromJson), dec)
 }
 
 // CreateFromName mocks base method.
