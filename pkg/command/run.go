@@ -80,7 +80,7 @@ func (r *Run) Run(repositoryNames, taskFiles []string, inputs map[string]string)
 	for {
 		select {
 		case repo := <-repos:
-			// log.Log().Debugf("Discovered repository %s", repo.FullName())
+			log.Log().Debugf("Discovered repository %s", repo.FullName())
 			ctx := context.Background()
 			doFilter := len(repositoryNames) == 0
 			for _, t := range tasks {
