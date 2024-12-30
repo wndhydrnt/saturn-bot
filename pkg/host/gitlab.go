@@ -1,9 +1,7 @@
 package host
 
 import (
-	"encoding/base64"
 	"encoding/json"
-	"errors"
 	"fmt"
 	"net/url"
 	"path"
@@ -249,76 +247,6 @@ func (g *GitLabRepository) FindPullRequest(branch string) (any, error) {
 	}
 
 	return mrs[0], nil
-}
-
-func (g *GitLabRepository) GetFile(fileName string) (string, error) {
-	file, _, err := g.client.RepositoryFiles.GetFile(g.project.ID, fileName, &gitlab.GetFileOptions{Ref: gitlab.Ptr(g.project.DefaultBranch)})
-	if err != nil {
-		if errors.Is(err, gitlab.ErrNotFound) {
-			return "", ErrFileNotFound
-		}
-
-		return "", fmt.Errorf("get file %s: %w", fileName, err)
-	}
-
-	if file.Encoding == "base64" {
-		b, err := base64.StdEncoding.DecodeString(file.Content)
-		if err != nil {
-			return "", fmt.Errorf("decode base64-encoded content of file %s: %w", file.FileName, err)
-		}
-
-		return string(b), nil
-	}
-
-	return file.Content, nil
-}
-
-func (g *GitLabRepository) HasFile(p string) (bool, error) {
-	dir := path.Dir(p)
-	opts := &gitlab.ListTreeOptions{
-		ListOptions: gitlab.ListOptions{
-			PerPage: 10,
-			Page:    1,
-		},
-		Path: gitlab.Ptr(dir),
-	}
-
-	for {
-		tree, resp, err := g.client.Repositories.ListTree(
-			g.project.ID,
-			opts,
-		)
-		if err != nil {
-			if errors.Is(err, gitlab.ErrNotFound) {
-				log.Log().Warn("Tree not found - empty repository?")
-				return false, nil
-			}
-			return false, fmt.Errorf("list tree of repository %d: %w", g.project.ID, err)
-		}
-
-		for _, entry := range tree {
-			if entry.Type != "blob" {
-				continue
-			}
-
-			matched, err := path.Match(p, entry.Path)
-			if err != nil {
-				return false, fmt.Errorf("match file pattern %s: %w", p, err)
-			}
-
-			if matched {
-				return true, nil
-			}
-		}
-
-		if resp.NextPage == 0 {
-			break
-		}
-
-		opts.Page = resp.NextPage
-	}
-
-	return false, nil
 }
 
 func (g *GitLabRepository) HasSuccessfulPullRequestBuild(pr interface{}) (bool, error) {

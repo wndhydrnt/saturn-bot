@@ -108,10 +108,8 @@ type Repository interface {
 	DeletePullRequestComment(comment PullRequestComment, pr interface{}) error
 	FindPullRequest(branch string) (any, error)
 	FullName() string
-	GetFile(fileName string) (string, error)
 	GetPullRequestBody(pr interface{}) string
 	GetPullRequestCreationTime(pr interface{}) time.Time
-	HasFile(path string) (bool, error)
 	HasSuccessfulPullRequestBuild(pr interface{}) (bool, error)
 	Host() HostDetail
 	// ID returns the global, unique identifier of the repository in the host.

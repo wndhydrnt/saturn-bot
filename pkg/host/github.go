@@ -149,23 +149,6 @@ func (g *GitHubRepository) FullName() string {
 	return fmt.Sprintf("github.com/%s/%s", g.repo.GetOwner().GetLogin(), g.repo.GetName())
 }
 
-func (g *GitHubRepository) GetFile(fileName string) (string, error) {
-	opts := &github.RepositoryContentGetOptions{
-		Ref: g.BaseBranch(),
-	}
-	content, _, _, err := g.client.Repositories.GetContents(ctx, g.repo.GetOwner().GetLogin(), g.repo.GetName(), fileName, opts)
-	if err != nil {
-		return "", fmt.Errorf("get content of file '%s': %w", fileName, err)
-	}
-
-	payload, err := content.GetContent()
-	if err != nil {
-		return "", fmt.Errorf("decode content of file '%s': %w", fileName, err)
-	}
-
-	return payload, nil
-}
-
 func (g *GitHubRepository) GetPullRequestBody(pr interface{}) string {
 	gpr := pr.(*github.PullRequest)
 	return gpr.GetBody()
@@ -198,27 +181,6 @@ func (g *GitHubRepository) DeletePullRequestComment(comment PullRequestComment, 
 	}
 
 	return nil
-}
-
-func (g *GitHubRepository) HasFile(p string) (bool, error) {
-	// TODO test what happens on empty repository
-	tree, _, err := g.client.Git.GetTree(ctx, g.repo.GetOwner().GetLogin(), g.repo.GetName(), g.repo.GetDefaultBranch(), true)
-	if err != nil {
-		return false, fmt.Errorf("get github repository tree: %w", err)
-	}
-
-	for _, entry := range tree.Entries {
-		matched, err := path.Match(p, entry.GetPath())
-		if err != nil {
-			return false, fmt.Errorf("malformed pattern '%s': %w", p, err)
-		}
-
-		if matched {
-			return true, nil
-		}
-	}
-
-	return false, nil
 }
 
 func (g *GitHubRepository) HasSuccessfulPullRequestBuild(pr interface{}) (bool, error) {
