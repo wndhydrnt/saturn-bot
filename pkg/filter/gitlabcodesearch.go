@@ -15,7 +15,7 @@ import (
 type GitlabCodeSearchFactory struct{}
 
 // Create implements [Factory].
-func (f GitlabCodeSearchFactory) Create(opts CreateOptions, params params.Params) (Filter, error) {
+func (f GitlabCodeSearchFactory) CreatePreClone(opts CreateOptions, params params.Params) (Filter, error) {
 	query, err := params.String("query", "")
 	if err != nil {
 		return nil, err
@@ -50,6 +50,10 @@ func (f GitlabCodeSearchFactory) Create(opts CreateOptions, params params.Params
 	}
 
 	return gcs, nil
+}
+
+func (f GitlabCodeSearchFactory) CreatePostClone(_ CreateOptions, _ params.Params) (Filter, error) {
+	return nil, nil
 }
 
 // Name implements [Factory].

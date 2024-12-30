@@ -11,6 +11,7 @@ import (
 
 	"github.com/wndhydrnt/saturn-bot/pkg/action"
 	sbcontext "github.com/wndhydrnt/saturn-bot/pkg/context"
+	"github.com/wndhydrnt/saturn-bot/pkg/filter"
 	"github.com/wndhydrnt/saturn-bot/pkg/git"
 	"github.com/wndhydrnt/saturn-bot/pkg/host"
 	"github.com/wndhydrnt/saturn-bot/pkg/task"
@@ -70,7 +71,7 @@ func (p *Processor) Process(
 	ctx = context.WithValue(ctx, sbcontext.RepositoryKey{}, repo)
 
 	if doFilter {
-		match, err := matchTaskToRepository(ctx, task, logger)
+		match, err := matchTaskToRepository(ctx, task.FiltersPreClone(), logger)
 		if err != nil {
 			return ResultUnknown, nil, err
 		}
@@ -80,7 +81,6 @@ func (p *Processor) Process(
 		}
 	}
 
-	logger.Info("Task matches repository")
 	lck := &locker{}
 	err := lck.lock(p.DataDir, repo)
 	if err != nil {
@@ -100,6 +100,18 @@ func (p *Processor) Process(
 	}
 
 	ctx = context.WithValue(ctx, sbcontext.CheckoutPath{}, workDir)
+	if doFilter {
+		match, err := matchTaskToRepository(ctx, task.FiltersPostClone(), logger)
+		if err != nil {
+			return ResultUnknown, nil, err
+		}
+
+		if !match {
+			return ResultNoMatch, nil, nil
+		}
+	}
+
+	logger.Info("Task matches repository")
 	result, prDetail, err := applyTaskToRepository(ctx, dryRun, p.Git, logger, repo, task, workDir)
 	if err != nil {
 		return ResultUnknown, prDetail, fmt.Errorf("task failed: %w", err)
@@ -116,15 +128,15 @@ func (p *Processor) Process(
 	return result, prDetail, nil
 }
 
-func matchTaskToRepository(ctx context.Context, task *task.Task, logger *zap.SugaredLogger) (bool, error) {
-	if len(task.Filters()) == 0 {
+func matchTaskToRepository(ctx context.Context, filters []filter.Filter, logger *zap.SugaredLogger) (bool, error) {
+	if len(filters) == 0 {
 		// A task without filters is considered not matching.
 		// Avoids accidentally applying a task to all repositories
 		// because no filters are set.
 		return false, nil
 	}
 
-	for _, filter := range task.Filters() {
+	for _, filter := range filters {
 		match, err := filter.Do(ctx)
 		if err != nil {
 			return false, fmt.Errorf("filter %s failed: %w", filter.String(), err)

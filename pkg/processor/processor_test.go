@@ -79,7 +79,7 @@ func TestProcessor_Process_CreatePullRequestLocalChanges(t *testing.T) {
 	gitc.EXPECT().HasRemoteChanges("saturn-bot--unittest").Return(true, nil)
 	gitc.EXPECT().Push("saturn-bot--unittest").Return(nil)
 	tw := &task.Task{Task: schema.Task{CommitMessage: "commit test", Name: "unittest"}}
-	tw.AddFilters(&trueFilter{})
+	tw.AddPreCloneFilters(&trueFilter{})
 
 	p := &processor.Processor{Git: gitc}
 	result, pr, err := p.Process(context.Background(), false, repo, tw, true)
@@ -117,7 +117,7 @@ func TestProcessor_Process_CreatePullRequestRemoteChanges(t *testing.T) {
 	gitc.EXPECT().HasRemoteChanges("main").Return(true, nil)
 	gitc.EXPECT().HasRemoteChanges("saturn-bot--unittest").Return(false, nil)
 	tw := &task.Task{Task: schema.Task{CommitMessage: "commit test", Name: "unittest"}}
-	tw.AddFilters(&trueFilter{})
+	tw.AddPreCloneFilters(&trueFilter{})
 
 	p := &processor.Processor{Git: gitc}
 	result, pr, err := p.Process(context.Background(), false, repo, tw, true)
@@ -155,7 +155,7 @@ func TestProcessor_Process_CreatePullRequestPreviouslyClosed(t *testing.T) {
 	gitc.EXPECT().HasRemoteChanges("main").Return(true, nil)
 	gitc.EXPECT().HasRemoteChanges("saturn-bot--unittest").Return(false, nil)
 	tw := &task.Task{Task: schema.Task{CommitMessage: "commit test", Name: "unittest"}}
-	tw.AddFilters(&trueFilter{})
+	tw.AddPreCloneFilters(&trueFilter{})
 
 	p := &processor.Processor{Git: gitc}
 	result, pr, err := p.Process(context.Background(), false, repo, tw, true)
@@ -175,7 +175,7 @@ func TestProcessor_Process_PullRequestClosedAndMergeOnceActive(t *testing.T) {
 	gitc := NewMockGitClient(ctrl)
 	gitc.EXPECT().Prepare(repo, false).Return("/tmp", nil)
 	tw := &task.Task{Task: schema.Task{MergeOnce: true, Name: "unittest"}}
-	tw.AddFilters(&trueFilter{})
+	tw.AddPreCloneFilters(&trueFilter{})
 
 	p := &processor.Processor{Git: gitc}
 	result, _, err := p.Process(context.Background(), false, repo, tw, true)
@@ -195,7 +195,7 @@ func TestProcessor_Process_PullRequestMergedAndMergeOnceActive(t *testing.T) {
 	gitc := NewMockGitClient(ctrl)
 	gitc.EXPECT().Prepare(repo, false).Return("/tmp", nil)
 	tw := &task.Task{Task: schema.Task{MergeOnce: true, Name: "unittest"}}
-	tw.AddFilters(&trueFilter{})
+	tw.AddPreCloneFilters(&trueFilter{})
 
 	p := &processor.Processor{Git: gitc}
 	result, _, err := p.Process(context.Background(), false, repo, tw, true)
@@ -215,7 +215,7 @@ func TestProcessor_Process_CreateOnly(t *testing.T) {
 	gitc := NewMockGitClient(ctrl)
 	gitc.EXPECT().Prepare(repo, false).Return("/tmp", nil)
 	tw := &task.Task{Task: schema.Task{CreateOnly: true, Name: "unittest"}}
-	tw.AddFilters(&trueFilter{})
+	tw.AddPreCloneFilters(&trueFilter{})
 
 	p := &processor.Processor{Git: gitc}
 	result, _, err := p.Process(context.Background(), false, repo, tw, true)
@@ -251,7 +251,7 @@ func TestProcessor_Process_ClosePullRequestIfChangesExistInBaseBranch(t *testing
 	gitc.EXPECT().CommitChanges("").Return(nil)
 	gitc.EXPECT().HasRemoteChanges("main").Return(false, nil)
 	tw := &task.Task{Task: schema.Task{Name: "unittest"}}
-	tw.AddFilters(&trueFilter{})
+	tw.AddPreCloneFilters(&trueFilter{})
 
 	p := &processor.Processor{Git: gitc}
 	result, _, err := p.Process(context.Background(), false, repo, tw, true)
@@ -288,7 +288,7 @@ func TestProcessor_Process_MergePullRequest(t *testing.T) {
 	gitc.EXPECT().HasRemoteChanges("main").Return(true, nil)
 	gitc.EXPECT().HasRemoteChanges("saturn-bot--unittest").Return(false, nil)
 	tw := &task.Task{Task: schema.Task{AutoMerge: true, Name: "unittest"}}
-	tw.AddFilters(&trueFilter{})
+	tw.AddPreCloneFilters(&trueFilter{})
 
 	p := &processor.Processor{Git: gitc}
 	result, _, err := p.Process(context.Background(), false, repo, tw, true)
@@ -322,7 +322,7 @@ func TestProcessor_Process_MergePullRequest_FailedMergeChecks(t *testing.T) {
 	gitc.EXPECT().HasRemoteChanges("main").Return(true, nil)
 	gitc.EXPECT().HasRemoteChanges("saturn-bot--unittest").Return(false, nil)
 	tw := &task.Task{Task: schema.Task{AutoMerge: true, Name: "unittest"}}
-	tw.AddFilters(&trueFilter{})
+	tw.AddPreCloneFilters(&trueFilter{})
 
 	p := &processor.Processor{Git: gitc}
 	result, _, err := p.Process(context.Background(), false, repo, tw, true)
@@ -361,7 +361,7 @@ func TestProcessor_Process_MergePullRequest_AutoMergeAfter(t *testing.T) {
 		AutoMergeAfter: "48h",
 		Name:           "unittest",
 	}}
-	tw.AddFilters(&trueFilter{})
+	tw.AddPreCloneFilters(&trueFilter{})
 
 	p := &processor.Processor{Git: gitc}
 	result, _, err := p.Process(context.Background(), false, repo, tw, true)
@@ -400,7 +400,7 @@ func TestProcessor_Process_MergePullRequest_MergeConflict(t *testing.T) {
 		AutoMerge: true,
 		Name:      "unittest",
 	}}
-	tw.AddFilters(&trueFilter{})
+	tw.AddPreCloneFilters(&trueFilter{})
 
 	p := &processor.Processor{Git: gitc}
 	result, _, err := p.Process(context.Background(), false, repo, tw, true)
@@ -467,7 +467,7 @@ func TestProcessor_Process_UpdatePullRequest(t *testing.T) {
 		Assignees: []string{"dina"},
 		Reviewers: []string{"joel"},
 	}}
-	tw.AddFilters(&trueFilter{})
+	tw.AddPreCloneFilters(&trueFilter{})
 	err = tw.SetInputs(map[string]string{"inputOne": "iValueOne", "inputTwo": "iValueTwo"})
 	require.NoError(t, err)
 	ctx := context.Background()
@@ -508,7 +508,7 @@ func TestProcessor_Process_NoChanges(t *testing.T) {
 	gitc.EXPECT().HasRemoteChanges("main").Return(false, nil)
 	gitc.EXPECT().HasRemoteChanges("saturn-bot--unittest").Return(false, nil)
 	tw := &task.Task{Task: schema.Task{Name: "unittest"}}
-	tw.AddFilters(&trueFilter{})
+	tw.AddPreCloneFilters(&trueFilter{})
 
 	p := &processor.Processor{Git: gitc}
 	result, _, err := p.Process(context.Background(), false, repo, tw, true)
@@ -560,7 +560,7 @@ The commit(s) that modified the pull request:
 		UpdateTaskBranch("saturn-bot--unittest", false, repo).
 		Return(false, &git.BranchModifiedError{Checksums: []string{"abc", "def"}})
 	tw := &task.Task{Task: schema.Task{Name: "unittest"}}
-	tw.AddFilters(&trueFilter{})
+	tw.AddPreCloneFilters(&trueFilter{})
 
 	p := &processor.Processor{Git: gitc}
 	result, _, err := p.Process(context.Background(), false, repo, tw, true)
@@ -600,7 +600,7 @@ func TestProcessor_Process_ForceRebaseByUser(t *testing.T) {
 	gitc.EXPECT().HasRemoteChanges("main").Return(true, nil)
 	gitc.EXPECT().HasRemoteChanges("saturn-bot--unittest").Return(false, nil)
 	tw := &task.Task{Task: schema.Task{Name: "unittest"}}
-	tw.AddFilters(&trueFilter{})
+	tw.AddPreCloneFilters(&trueFilter{})
 
 	p := &processor.Processor{Git: gitc}
 	result, _, err := p.Process(context.Background(), false, repo, tw, true)
@@ -642,7 +642,7 @@ func TestProcessor_Process_FilterNotMatching(t *testing.T) {
 	gitc := NewMockGitClient(ctrl)
 	repo := setupRepoMock(ctrl)
 	tw := &task.Task{Task: schema.Task{Name: "unittest"}}
-	tw.AddFilters(&falseFilter{})
+	tw.AddPreCloneFilters(&falseFilter{})
 
 	p := &processor.Processor{Git: gitc}
 	result, _, err := p.Process(context.Background(), false, repo, tw, true)
@@ -679,7 +679,7 @@ func TestProcessor_Process_AutoCloseAfter_Close(t *testing.T) {
 	gitc := NewMockGitClient(ctrl)
 	gitc.EXPECT().Prepare(repo, false).Return("/tmp", nil)
 	tw := &task.Task{Task: schema.Task{AutoCloseAfter: 30, Name: "unittest"}}
-	tw.AddFilters(&trueFilter{})
+	tw.AddPreCloneFilters(&trueFilter{})
 
 	p := &processor.Processor{Git: gitc}
 	result, _, err := p.Process(context.Background(), false, repo, tw, true)
@@ -708,7 +708,7 @@ func TestProcessor_Process_AutoCloseAfter_NotTimeYet(t *testing.T) {
 	gitc.EXPECT().HasRemoteChanges("main").Return(true, nil)
 	gitc.EXPECT().HasRemoteChanges("saturn-bot--unittest").Return(false, nil)
 	tw := &task.Task{Task: schema.Task{AutoCloseAfter: 86_400, Name: "unittest"}}
-	tw.AddFilters(&trueFilter{})
+	tw.AddPreCloneFilters(&trueFilter{})
 
 	p := &processor.Processor{Git: gitc}
 	result, _, err := p.Process(context.Background(), false, repo, tw, true)
@@ -739,7 +739,7 @@ func TestProcessor_Process_EmptyRepository(t *testing.T) {
 		UpdateTaskBranch("saturn-bot--unittest", false, repo).
 		Return(false, git.EmptyRepositoryError{})
 	tw := &task.Task{Task: schema.Task{Name: "unittest"}}
-	tw.AddFilters(&trueFilter{})
+	tw.AddPreCloneFilters(&trueFilter{})
 
 	p := &processor.Processor{Git: gitc}
 	result, _, err := p.Process(context.Background(), false, repo, tw, true)

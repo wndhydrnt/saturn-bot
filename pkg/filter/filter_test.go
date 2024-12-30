@@ -3,6 +3,8 @@ package filter_test
 import (
 	"context"
 	"fmt"
+	"os"
+	"path/filepath"
 	"testing"
 
 	"github.com/stretchr/testify/require"
@@ -13,14 +15,15 @@ import (
 )
 
 type testCase struct {
-	name             string
-	factory          filter.Factory
-	createOpts       func(*gomock.Controller) filter.CreateOptions
-	params           params.Params
-	repoMockFunc     func(*MockRepository)
-	wantMatch        bool
-	wantFactoryError string
-	wantFilterError  string
+	name              string
+	factory           func(filter.CreateOptions, params.Params) (filter.Filter, error)
+	createOpts        func(*gomock.Controller) filter.CreateOptions
+	params            params.Params
+	repoMockFunc      func(*MockRepository)
+	filesInRepository map[string]string
+	wantMatch         bool
+	wantFactoryError  string
+	wantFilterError   string
 }
 
 func runTestCase(t *testing.T, tc testCase) {
@@ -35,7 +38,7 @@ func runTestCase(t *testing.T, tc testCase) {
 		createOpts = tc.createOpts(ctrl)
 	}
 
-	f, err := tc.factory.Create(createOpts, tc.params)
+	f, err := tc.factory(createOpts, tc.params)
 	if tc.wantFactoryError == "" {
 		require.NoError(t, err)
 	} else {
@@ -44,7 +47,19 @@ func runTestCase(t *testing.T, tc testCase) {
 	}
 
 	ctx := context.Background()
+
+	tmpDir := t.TempDir()
+	for name, content := range tc.filesInRepository {
+		full := filepath.Join(tmpDir, name)
+		dirPrefix := filepath.Dir(full)
+		err := os.MkdirAll(dirPrefix, 0755)
+		require.NoError(t, err, "Creates directory of test file")
+		err = os.WriteFile(full, []byte(content), 0600)
+		require.NoError(t, err, "Creates the test file")
+	}
+
 	ctx = context.WithValue(ctx, sbcontext.RepositoryKey{}, repoMock)
+	ctx = context.WithValue(ctx, sbcontext.CheckoutPath{}, tmpDir)
 	result, err := f.Do(ctx)
 	if tc.wantFilterError == "" {
 		require.NoError(t, err)
@@ -57,67 +72,75 @@ func runTestCase(t *testing.T, tc testCase) {
 func TestFileFactory_Create(t *testing.T) {
 	opts := filter.CreateOptions{}
 	fac := filter.FileFactory{}
-	_, err := fac.Create(opts, map[string]any{})
+	_, err := fac.CreatePostClone(opts, map[string]any{})
 	require.ErrorContains(t, err, "required parameter `paths` not set")
 
-	_, err = fac.Create(opts, map[string]any{"op": "invalid", "paths": []string{"test.yaml"}})
+	_, err = fac.CreatePostClone(opts, map[string]any{"op": "invalid", "paths": []string{"test.yaml"}})
 	require.ErrorContains(t, err, "value of parameter `op` can be and,or not 'invalid'")
 }
 
 func TestFile_Do(t *testing.T) {
-	opts := filter.CreateOptions{}
-	ctrl := gomock.NewController(t)
-	repoMock := NewMockRepository(ctrl)
-	repoMock.EXPECT().HasFile("test.yaml").Return(true, nil).AnyTimes()
-	repoMock.EXPECT().HasFile("test.json").Return(false, nil).AnyTimes()
-	repoMock.EXPECT().HasFile("test.toml").Return(true, nil).AnyTimes()
-	repoMock.EXPECT().HasFile("test.json5").Return(false, nil).AnyTimes()
-	ctx := context.Background()
-	ctx = context.WithValue(ctx, sbcontext.RepositoryKey{}, repoMock)
-
 	fac := filter.FileFactory{}
+	testCases := []testCase{
+		{
+			name:    "one file, exists",
+			factory: fac.CreatePostClone,
+			params:  params.Params{"paths": []any{"test.yaml"}},
+			filesInRepository: map[string]string{
+				"test.yaml": "",
+			},
+			wantMatch: true,
+		},
+		{
+			name:      "one file, missing",
+			factory:   fac.CreatePostClone,
+			params:    params.Params{"paths": []any{"test.json"}},
+			wantMatch: false,
+		},
+		{
+			name:    "two files, all exist, and",
+			factory: fac.CreatePostClone,
+			params:  params.Params{"op": "and", "paths": []any{"test.yaml", "test.toml"}},
+			filesInRepository: map[string]string{
+				"test.yaml": "",
+				"test.toml": "",
+			},
+			wantMatch: true,
+		},
+		{
+			name:    "two files, one missing, and",
+			factory: fac.CreatePostClone,
+			params:  params.Params{"op": "and", "paths": []any{"test.yaml", "test.json"}},
+			filesInRepository: map[string]string{
+				"test.yaml": "",
+			},
+			wantMatch: false,
+		},
+		{
+			name:    "two files, one exists, or",
+			factory: fac.CreatePostClone,
+			params:  params.Params{"op": "or", "paths": []any{"test.yaml", "test.json"}},
+			filesInRepository: map[string]string{
+				"test.yaml": "",
+			},
+			wantMatch: true,
+		},
+		{
+			name:    "two files, both missing, or",
+			factory: fac.CreatePostClone,
+			params:  params.Params{"op": "or", "paths": []any{"test.json", "test.json5"}},
+			filesInRepository: map[string]string{
+				"test.yaml": "",
+			},
+			wantMatch: false,
+		},
+	}
 
-	// One file, exists
-	f, err := fac.Create(opts, map[string]any{"paths": []any{"test.yaml"}})
-	require.NoError(t, err)
-	result, err := f.Do(ctx)
-	require.NoError(t, err)
-	require.True(t, result)
-
-	// One file, missing
-	f, err = fac.Create(opts, map[string]any{"paths": []any{"test.json"}})
-	require.NoError(t, err)
-	result, err = f.Do(ctx)
-	require.NoError(t, err)
-	require.False(t, result)
-
-	// Two files, all exist, and
-	f, err = fac.Create(opts, map[string]any{"op": "and", "paths": []any{"test.yaml", "test.toml"}})
-	require.NoError(t, err)
-	result, err = f.Do(ctx)
-	require.NoError(t, err)
-	require.True(t, result)
-
-	// Two files, one missing, and
-	f, err = fac.Create(opts, map[string]any{"op": "and", "paths": []any{"test.yaml", "test.json"}})
-	require.NoError(t, err)
-	result, err = f.Do(ctx)
-	require.NoError(t, err)
-	require.False(t, result)
-
-	// Two files, one exists, or
-	f, err = fac.Create(opts, map[string]any{"op": "or", "paths": []any{"test.yaml", "test.json"}})
-	require.NoError(t, err)
-	result, err = f.Do(ctx)
-	require.NoError(t, err)
-	require.True(t, result)
-
-	// Two files, both missing, or
-	f, err = fac.Create(opts, map[string]any{"op": "or", "paths": []any{"test.json", "test.json5"}})
-	require.NoError(t, err)
-	result, err = f.Do(ctx)
-	require.NoError(t, err)
-	require.False(t, result)
+	for _, tc := range testCases {
+		t.Run(tc.name, func(t *testing.T) {
+			runTestCase(t, tc)
+		})
+	}
 }
 
 func TestFileContentFactory_Create(t *testing.T) {
@@ -125,19 +148,19 @@ func TestFileContentFactory_Create(t *testing.T) {
 	testCases := []testCase{
 		{
 			name:             "missing parameter path",
-			factory:          fac,
+			factory:          fac.CreatePostClone,
 			params:           params.Params{},
 			wantFactoryError: "required parameter `path` not set",
 		},
 		{
 			name:             "missing parameter regexp",
-			factory:          fac,
+			factory:          fac.CreatePostClone,
 			params:           params.Params{"path": "path.txt"},
 			wantFactoryError: "required parameter `regexp` not set",
 		},
 		{
 			name:             "invalid regexp",
-			factory:          fac,
+			factory:          fac.CreatePostClone,
 			params:           params.Params{"path": "path.txt", "regexp": "[a-z"},
 			wantFactoryError: "compile parameter `regexp` to regular expression: error parsing regexp: missing closing ]: `[a-z`",
 		},
@@ -159,25 +182,19 @@ ghi
 	testCases := []testCase{
 		{
 			name:    "returns true when regexp matches content",
-			factory: fac,
+			factory: fac.CreatePostClone,
 			params:  params.Params{"path": "test.txt", "regexp": "d?f"},
-			repoMockFunc: func(mr *MockRepository) {
-				mr.EXPECT().
-					GetFile("test.txt").
-					Return(content, nil).
-					Times(1)
+			filesInRepository: map[string]string{
+				"test.txt": content,
 			},
 			wantMatch: true,
 		},
 		{
 			name:    "returns false when regexp does not match content",
-			factory: fac,
+			factory: fac.CreatePostClone,
 			params:  params.Params{"path": "test.txt", "regexp": "jkl"},
-			repoMockFunc: func(mr *MockRepository) {
-				mr.EXPECT().
-					GetFile("test.txt").
-					Return(content, nil).
-					Times(1)
+			filesInRepository: map[string]string{
+				"test.txt": content,
 			},
 			wantMatch: false,
 		},
@@ -193,36 +210,36 @@ ghi
 func TestRepositoryFactory_Create(t *testing.T) {
 	opts := filter.CreateOptions{}
 	fac := filter.RepositoryFactory{}
-	_, err := fac.Create(opts, map[string]any{})
+	_, err := fac.CreatePreClone(opts, map[string]any{})
 	require.ErrorContains(t, err, "required parameter `host` not set")
 
-	_, err = fac.Create(opts, map[string]any{"host": "github.com"})
+	_, err = fac.CreatePreClone(opts, map[string]any{"host": "github.com"})
 	require.ErrorContains(t, err, "required parameter `owner` not set")
 
-	_, err = fac.Create(opts, map[string]any{
+	_, err = fac.CreatePreClone(opts, map[string]any{
 		"host":  "github.com",
 		"owner": "wndhydrnt",
 	})
 	require.ErrorContains(t, err, "required parameter `name` not set")
 
-	_, err = fac.Create(opts, map[string]any{
+	_, err = fac.CreatePreClone(opts, map[string]any{
 		"host":  "github.com",
 		"owner": "wndhydrnt",
 	})
 	require.ErrorContains(t, err, "required parameter `name` not set")
 
-	_, err = fac.Create(opts, map[string]any{
+	_, err = fac.CreatePreClone(opts, map[string]any{
 		"host": "(github.com",
 	})
 	require.ErrorContains(t, err, "compile parameter `host` to regular expression: error parsing regexp: missing closing ): `^(github.com$`")
 
-	_, err = fac.Create(opts, map[string]any{
+	_, err = fac.CreatePreClone(opts, map[string]any{
 		"host":  "github.com",
 		"owner": "(wndhydrnt",
 	})
 	require.ErrorContains(t, err, "compile parameter `owner` to regular expression: error parsing regexp: missing closing ): `^(wndhydrnt$`")
 
-	_, err = fac.Create(opts, map[string]any{
+	_, err = fac.CreatePreClone(opts, map[string]any{
 		"host":  "github.com",
 		"owner": "wndhydrnt",
 		"name":  "(saturn-bot",
@@ -233,7 +250,7 @@ func TestRepositoryFactory_Create(t *testing.T) {
 func TestRepository_Do(t *testing.T) {
 	fac := filter.RepositoryFactory{}
 
-	f, err := fac.Create(filter.CreateOptions{}, map[string]any{"host": "github.com", "owner": "wndhydrnt", "name": "rcmt"})
+	f, err := fac.CreatePreClone(filter.CreateOptions{}, map[string]any{"host": "github.com", "owner": "wndhydrnt", "name": "rcmt"})
 	require.NoError(t, err)
 
 	cases := []struct {

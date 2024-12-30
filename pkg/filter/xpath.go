@@ -4,12 +4,12 @@ import (
 	"context"
 	"errors"
 	"fmt"
-	"strings"
+	"os"
+	"path/filepath"
 
 	"github.com/antchfx/xmlquery"
 	"github.com/antchfx/xpath"
 	sbcontext "github.com/wndhydrnt/saturn-bot/pkg/context"
-	"github.com/wndhydrnt/saturn-bot/pkg/host"
 	"github.com/wndhydrnt/saturn-bot/pkg/log"
 	"github.com/wndhydrnt/saturn-bot/pkg/params"
 )
@@ -17,8 +17,12 @@ import (
 // XpathFactory creates Xpath filters.
 type XpathFactory struct{}
 
+func (f XpathFactory) CreatePreClone(_ CreateOptions, params params.Params) (Filter, error) {
+	return nil, nil
+}
+
 // Create implements Factory.
-func (f XpathFactory) Create(_ CreateOptions, params params.Params) (Filter, error) {
+func (f XpathFactory) CreatePostClone(_ CreateOptions, params params.Params) (Filter, error) {
 	expressionsRaw, err := params.StringSlice("expressions", []string{})
 	if err != nil {
 		return nil, err
@@ -62,24 +66,25 @@ type Xpath struct {
 }
 
 // Do implements Filter.
-// It downloads a XML document from a repository and queries it via an XPath expression.
+// It reads a XML document in a cloned repository and queries it via an XPath expression.
 // It returns true if the XPath expression returns at least one node.
 func (x *Xpath) Do(ctx context.Context) (bool, error) {
-	repo, ok := ctx.Value(sbcontext.RepositoryKey{}).(FilterRepository)
+	checkoutPath, ok := ctx.Value(sbcontext.CheckoutPath{}).(string)
 	if !ok {
-		return false, errors.New("context does not contain a repository")
+		return false, errors.New("context does not contain the checkout path")
 	}
 
-	content, err := repo.GetFile(x.Path)
+	f, err := os.Open(filepath.Join(checkoutPath, x.Path))
 	if err != nil {
-		if errors.Is(err, host.ErrFileNotFound) {
+		if errors.Is(err, os.ErrNotExist) {
 			return false, nil
 		}
 
-		return false, fmt.Errorf("download file from repository: %w", err)
+		return false, fmt.Errorf("open file in checkout: %w", err)
 	}
 
-	doc, err := xmlquery.Parse(strings.NewReader(content))
+	defer f.Close()
+	doc, err := xmlquery.Parse(f)
 	if err != nil {
 		log.Log().Warnf("Failed to parse XML file %s: %s", x.Path, err)
 		return false, nil
