@@ -831,7 +831,7 @@ func TestGitLabHost_CreateFromName(t *testing.T) {
 
 			require.NoError(t, err)
 			assert.Equal(t, tc.want, repo.FullName())
-			assert.IsType(t, &RepositoryProxy{}, repo)
+			assert.IsType(t, &GitLabRepository{}, repo)
 		})
 	}
 }
@@ -883,9 +883,9 @@ func TestGitLabHost_ListRepositories(t *testing.T) {
 	require.NoError(t, wantErr)
 	require.Len(t, result, 2)
 	require.Equal(t, "gitlab.local/unittest/first", result[0].FullName())
-	require.IsType(t, &RepositoryProxy{}, result[0])
+	require.IsType(t, &GitLabRepository{}, result[0])
 	require.Equal(t, "gitlab.local/unittest/second", result[1].FullName())
-	require.IsType(t, &RepositoryProxy{}, result[1])
+	require.IsType(t, &GitLabRepository{}, result[1])
 }
 
 func TestGitLabHost_ListRepositoriesWithOpenPullRequests(t *testing.T) {
@@ -947,9 +947,9 @@ func TestGitLabHost_ListRepositoriesWithOpenPullRequests(t *testing.T) {
 	require.NoError(t, wantErr)
 	require.Len(t, result, 2)
 	require.Equal(t, "gitlab.local/unittest/first", result[0].FullName())
-	require.IsType(t, &RepositoryProxy{}, result[0])
+	require.IsType(t, &GitLabRepository{}, result[0])
 	require.Equal(t, "gitlab.local/unittest/second", result[1].FullName())
-	require.IsType(t, &RepositoryProxy{}, result[1])
+	require.IsType(t, &GitLabRepository{}, result[1])
 	require.True(t, gock.IsDone())
 }
 

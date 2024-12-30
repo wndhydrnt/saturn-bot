@@ -599,7 +599,7 @@ func (g *GitLabHost) CreateFromJson(dec *json.Decoder) (Repository, error) {
 	}
 
 	repo := &GitLabRepository{client: g.client, host: g, project: project, userCache: g.userCache}
-	return NewRepositoryProxy(repo, nil), nil
+	return repo, nil
 }
 
 func (g *GitLabHost) CreateFromName(name string) (Repository, error) {
@@ -628,7 +628,7 @@ func (g *GitLabHost) CreateFromName(name string) (Repository, error) {
 	}
 
 	repo := &GitLabRepository{client: g.client, host: g, project: project, userCache: g.userCache}
-	return NewRepositoryProxy(repo, nil), nil
+	return repo, nil
 }
 
 func (g *GitLabHost) Name() string {
@@ -655,7 +655,7 @@ func (g *GitLabHost) ListRepositories(since *time.Time, result chan []Repository
 		var batch []Repository
 		for _, project := range projects {
 			glr := &GitLabRepository{client: g.client, host: g, project: project, userCache: g.userCache}
-			batch = append(batch, NewRepositoryProxy(glr, nil))
+			batch = append(batch, glr)
 		}
 
 		result <- batch
@@ -709,10 +709,7 @@ func (g *GitLabHost) ListRepositoriesWithOpenPullRequests(result chan []Reposito
 				continue
 			}
 
-			repo := NewRepositoryProxy(
-				&GitLabRepository{client: g.client, host: g, project: project, userCache: g.userCache},
-				nil,
-			)
+			repo := &GitLabRepository{client: g.client, host: g, project: project, userCache: g.userCache}
 			batch = append(batch, repo)
 		}
 
