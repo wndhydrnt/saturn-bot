@@ -8,7 +8,6 @@ import (
 	"path/filepath"
 	"regexp"
 
-	gsContext "github.com/wndhydrnt/saturn-bot/pkg/context"
 	sbcontext "github.com/wndhydrnt/saturn-bot/pkg/context"
 	"github.com/wndhydrnt/saturn-bot/pkg/host"
 	"github.com/wndhydrnt/saturn-bot/pkg/params"
@@ -261,7 +260,7 @@ func (f RepositoryFactory) CreatePostClone(_ CreateOptions, params params.Params
 }
 
 func (r *Repository) Do(ctx context.Context) (bool, error) {
-	repo, ok := ctx.Value(gsContext.RepositoryKey{}).(FilterRepository)
+	repo, ok := ctx.Value(sbcontext.RepositoryKey{}).(FilterRepository)
 	if !ok {
 		return false, errors.New("context passed to filter repositoryName does not contain a repository")
 	}
