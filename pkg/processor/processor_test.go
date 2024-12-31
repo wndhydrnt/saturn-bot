@@ -2,6 +2,7 @@ package processor_test
 
 import (
 	"context"
+	"fmt"
 	"os"
 	"testing"
 	"time"
@@ -742,6 +743,32 @@ func TestProcessor_Process_EmptyRepository(t *testing.T) {
 	tw.AddPreCloneFilters(&trueFilter{})
 
 	p := &processor.Processor{Git: gitc}
+	result, _, err := p.Process(context.Background(), false, repo, tw, true)
+
+	require.NoError(t, err)
+	assert.Equal(t, processor.ResultNoMatch, result)
+}
+
+func TestProcessor_Process_CleanupOnPrepareError(t *testing.T) {
+	tempDir := t.TempDir()
+	ctrl := gomock.NewController(t)
+	repo := setupRepoMock(ctrl)
+	gitc := NewMockGitClient(ctrl)
+	gitc.EXPECT().
+		Prepare(repo, false).
+		Return(tempDir, fmt.Errorf("prepare error"))
+	gitc.EXPECT().
+		Cleanup(repo).
+		Return(nil)
+	repositoryCache := NewMockRepositoryCacheRemover(ctrl)
+	repositoryCache.EXPECT().
+		Remove(repo).
+		Return(nil)
+
+	tw := &task.Task{Task: schema.Task{Name: "unittest"}}
+	tw.AddPreCloneFilters(&trueFilter{})
+
+	p := &processor.Processor{Git: gitc, RepositoryCache: repositoryCache}
 	result, _, err := p.Process(context.Background(), false, repo, tw, true)
 
 	require.NoError(t, err)

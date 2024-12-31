@@ -40,8 +40,9 @@ const (
 )
 
 type Processor struct {
-	DataDir string
-	Git     git.GitClient
+	DataDir         string
+	Git             git.GitClient
+	RepositoryCache host.RepositoryCacheRemover
 }
 
 type RepositoryTaskProcessor interface {
@@ -66,6 +67,13 @@ func (p *Processor) Process(
 	if task.HasReachedChangeLimit() {
 		logger.Debug("Skipping task because Change Limit have been reached")
 		return ResultSkip, nil, nil
+	}
+
+	if !task.HasFilters() {
+		// A task without filters is considered not matching.
+		// Avoids accidentally applying a task to all repositories
+		// because no filters are set.
+		return ResultNoMatch, nil, nil
 	}
 
 	ctx = context.WithValue(ctx, sbcontext.RepositoryKey{}, repo)
@@ -96,7 +104,21 @@ func (p *Processor) Process(
 
 	workDir, err := p.Git.Prepare(repo, false)
 	if err != nil {
-		return ResultUnknown, nil, fmt.Errorf("prepare of git repository failed: %w", err)
+		// A error during the preparation of the git repository is the best indicator that
+		// the repository has been deleted.
+		// Log a warning, clean up and consider the repository as "not matching".
+		logger.Warnf("Failed to clone or pull repository - cleaning up the repository")
+		err := p.Git.Cleanup(repo)
+		if err != nil {
+			return ResultUnknown, nil, fmt.Errorf("cleanup of git repository clone: %w", err)
+		}
+
+		err = p.RepositoryCache.Remove(repo)
+		if err != nil {
+			return ResultUnknown, nil, fmt.Errorf("cleanup of host cache: %w", err)
+		}
+
+		return ResultNoMatch, nil, nil
 	}
 
 	ctx = context.WithValue(ctx, sbcontext.CheckoutPath{}, workDir)
@@ -129,13 +151,6 @@ func (p *Processor) Process(
 }
 
 func matchTaskToRepository(ctx context.Context, filters []filter.Filter, logger *zap.SugaredLogger) (bool, error) {
-	if len(filters) == 0 {
-		// A task without filters is considered not matching.
-		// Avoids accidentally applying a task to all repositories
-		// because no filters are set.
-		return false, nil
-	}
-
 	for _, filter := range filters {
 		match, err := filter.Do(ctx)
 		if err != nil {

@@ -201,21 +201,6 @@ func (mr *MockRepositoryMockRecorder) FullName() *gomock.Call {
 	return mr.mock.ctrl.RecordCallWithMethodType(mr.mock, "FullName", reflect.TypeOf((*MockRepository)(nil).FullName))
 }
 
-// GetFile mocks base method.
-func (m *MockRepository) GetFile(fileName string) (string, error) {
-	m.ctrl.T.Helper()
-	ret := m.ctrl.Call(m, "GetFile", fileName)
-	ret0, _ := ret[0].(string)
-	ret1, _ := ret[1].(error)
-	return ret0, ret1
-}
-
-// GetFile indicates an expected call of GetFile.
-func (mr *MockRepositoryMockRecorder) GetFile(fileName any) *gomock.Call {
-	mr.mock.ctrl.T.Helper()
-	return mr.mock.ctrl.RecordCallWithMethodType(mr.mock, "GetFile", reflect.TypeOf((*MockRepository)(nil).GetFile), fileName)
-}
-
 // GetPullRequestBody mocks base method.
 func (m *MockRepository) GetPullRequestBody(pr any) string {
 	m.ctrl.T.Helper()
@@ -242,21 +227,6 @@ func (m *MockRepository) GetPullRequestCreationTime(pr any) time.Time {
 func (mr *MockRepositoryMockRecorder) GetPullRequestCreationTime(pr any) *gomock.Call {
 	mr.mock.ctrl.T.Helper()
 	return mr.mock.ctrl.RecordCallWithMethodType(mr.mock, "GetPullRequestCreationTime", reflect.TypeOf((*MockRepository)(nil).GetPullRequestCreationTime), pr)
-}
-
-// HasFile mocks base method.
-func (m *MockRepository) HasFile(path string) (bool, error) {
-	m.ctrl.T.Helper()
-	ret := m.ctrl.Call(m, "HasFile", path)
-	ret0, _ := ret[0].(bool)
-	ret1, _ := ret[1].(error)
-	return ret0, ret1
-}
-
-// HasFile indicates an expected call of HasFile.
-func (mr *MockRepositoryMockRecorder) HasFile(path any) *gomock.Call {
-	mr.mock.ctrl.T.Helper()
-	return mr.mock.ctrl.RecordCallWithMethodType(mr.mock, "HasFile", reflect.TypeOf((*MockRepository)(nil).HasFile), path)
 }
 
 // HasSuccessfulPullRequestBuild mocks base method.
@@ -615,4 +585,78 @@ func (m *MockHostDetail) Name() string {
 func (mr *MockHostDetailMockRecorder) Name() *gomock.Call {
 	mr.mock.ctrl.T.Helper()
 	return mr.mock.ctrl.RecordCallWithMethodType(mr.mock, "Name", reflect.TypeOf((*MockHostDetail)(nil).Name))
+}
+
+// MockRepositoryCacheLister is a mock of RepositoryCacheLister interface.
+type MockRepositoryCacheLister struct {
+	ctrl     *gomock.Controller
+	recorder *MockRepositoryCacheListerMockRecorder
+	isgomock struct{}
+}
+
+// MockRepositoryCacheListerMockRecorder is the mock recorder for MockRepositoryCacheLister.
+type MockRepositoryCacheListerMockRecorder struct {
+	mock *MockRepositoryCacheLister
+}
+
+// NewMockRepositoryCacheLister creates a new mock instance.
+func NewMockRepositoryCacheLister(ctrl *gomock.Controller) *MockRepositoryCacheLister {
+	mock := &MockRepositoryCacheLister{ctrl: ctrl}
+	mock.recorder = &MockRepositoryCacheListerMockRecorder{mock}
+	return mock
+}
+
+// EXPECT returns an object that allows the caller to indicate expected use.
+func (m *MockRepositoryCacheLister) EXPECT() *MockRepositoryCacheListerMockRecorder {
+	return m.recorder
+}
+
+// List mocks base method.
+func (m *MockRepositoryCacheLister) List(hosts []host.Host, result chan host.Repository, errChan chan error) {
+	m.ctrl.T.Helper()
+	m.ctrl.Call(m, "List", hosts, result, errChan)
+}
+
+// List indicates an expected call of List.
+func (mr *MockRepositoryCacheListerMockRecorder) List(hosts, result, errChan any) *gomock.Call {
+	mr.mock.ctrl.T.Helper()
+	return mr.mock.ctrl.RecordCallWithMethodType(mr.mock, "List", reflect.TypeOf((*MockRepositoryCacheLister)(nil).List), hosts, result, errChan)
+}
+
+// MockRepositoryCacheRemover is a mock of RepositoryCacheRemover interface.
+type MockRepositoryCacheRemover struct {
+	ctrl     *gomock.Controller
+	recorder *MockRepositoryCacheRemoverMockRecorder
+	isgomock struct{}
+}
+
+// MockRepositoryCacheRemoverMockRecorder is the mock recorder for MockRepositoryCacheRemover.
+type MockRepositoryCacheRemoverMockRecorder struct {
+	mock *MockRepositoryCacheRemover
+}
+
+// NewMockRepositoryCacheRemover creates a new mock instance.
+func NewMockRepositoryCacheRemover(ctrl *gomock.Controller) *MockRepositoryCacheRemover {
+	mock := &MockRepositoryCacheRemover{ctrl: ctrl}
+	mock.recorder = &MockRepositoryCacheRemoverMockRecorder{mock}
+	return mock
+}
+
+// EXPECT returns an object that allows the caller to indicate expected use.
+func (m *MockRepositoryCacheRemover) EXPECT() *MockRepositoryCacheRemoverMockRecorder {
+	return m.recorder
+}
+
+// Remove mocks base method.
+func (m *MockRepositoryCacheRemover) Remove(repo host.Repository) error {
+	m.ctrl.T.Helper()
+	ret := m.ctrl.Call(m, "Remove", repo)
+	ret0, _ := ret[0].(error)
+	return ret0
+}
+
+// Remove indicates an expected call of Remove.
+func (mr *MockRepositoryCacheRemoverMockRecorder) Remove(repo any) *gomock.Call {
+	mr.mock.ctrl.T.Helper()
+	return mr.mock.ctrl.RecordCallWithMethodType(mr.mock, "Remove", reflect.TypeOf((*MockRepositoryCacheRemover)(nil).Remove), repo)
 }

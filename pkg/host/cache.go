@@ -14,12 +14,12 @@ import (
 	"github.com/wndhydrnt/saturn-bot/pkg/ptr"
 )
 
-type RepositoryCache struct {
+type RepositoryFileCache struct {
 	Clock clock.Clock
 	Dir   string
 }
 
-func (rc *RepositoryCache) ListRepositories(hosts []Host, result chan Repository, errChan chan error) {
+func (rc *RepositoryFileCache) List(hosts []Host, result chan Repository, errChan chan error) {
 	listRepos := make(chan []Repository)
 	listReposErrs := make(chan error)
 	start := rc.Clock.Now()
@@ -49,7 +49,12 @@ func (rc *RepositoryCache) ListRepositories(hosts []Host, result chan Repository
 	errChan <- nil
 }
 
-func (rc *RepositoryCache) readLastUpdateTimestamp(h Host) (*time.Time, error) {
+func (rc *RepositoryFileCache) Remove(repo Repository) error {
+	d := filepath.Join(rc.Dir, repo.FullName())
+	return os.RemoveAll(d)
+}
+
+func (rc *RepositoryFileCache) readLastUpdateTimestamp(h Host) (*time.Time, error) {
 	b, err := os.ReadFile(filepath.Join(rc.Dir, h.Name(), "timestamp"))
 	if err != nil {
 		if errors.Is(err, os.ErrNotExist) {
@@ -67,7 +72,7 @@ func (rc *RepositoryCache) readLastUpdateTimestamp(h Host) (*time.Time, error) {
 	return ptr.To(time.Unix(ts, 0)), nil
 }
 
-func (rc *RepositoryCache) readRepositoriesForHost(h Host, result chan Repository, errChan chan error) {
+func (rc *RepositoryFileCache) readRepositoriesForHost(h Host, result chan Repository, errChan chan error) {
 	err := filepath.WalkDir(filepath.Join(rc.Dir, h.Name()), func(path string, d fs.DirEntry, err error) error {
 		if err != nil {
 			return err
@@ -91,7 +96,7 @@ func (rc *RepositoryCache) readRepositoriesForHost(h Host, result chan Repositor
 	}
 }
 
-func (rc *RepositoryCache) readRepository(h Host, path string) (Repository, error) {
+func (rc *RepositoryFileCache) readRepository(h Host, path string) (Repository, error) {
 	cacheFile, err := os.Open(path)
 	if err != nil {
 		return nil, fmt.Errorf("read repository cache file of %s: %w", h.Name(), err)
@@ -107,7 +112,7 @@ func (rc *RepositoryCache) readRepository(h Host, path string) (Repository, erro
 	return repo, nil
 }
 
-func (rc *RepositoryCache) writeRepository(repo Repository) error {
+func (rc *RepositoryFileCache) writeRepository(repo Repository) error {
 	d := filepath.Join(rc.Dir, repo.FullName())
 	err := os.MkdirAll(d, 0755)
 	if err != nil {
@@ -128,7 +133,7 @@ func (rc *RepositoryCache) writeRepository(repo Repository) error {
 	return nil
 }
 
-func (rc *RepositoryCache) receiveRepositories(expectedFinishes int, results chan []Repository, errChan chan error) error {
+func (rc *RepositoryFileCache) receiveRepositories(expectedFinishes int, results chan []Repository, errChan chan error) error {
 	finishes := 0
 	for {
 		select {
@@ -156,7 +161,7 @@ func (rc *RepositoryCache) receiveRepositories(expectedFinishes int, results cha
 	}
 }
 
-func (rc *RepositoryCache) writeLastUpdateTimestamp(h Host, t time.Time) error {
+func (rc *RepositoryFileCache) writeLastUpdateTimestamp(h Host, t time.Time) error {
 	dir := filepath.Join(rc.Dir, h.Name())
 	err := os.MkdirAll(dir, 0755)
 	if err != nil {

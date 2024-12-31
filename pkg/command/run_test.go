@@ -179,7 +179,7 @@ func TestExecuteRunner_Run(t *testing.T) {
 		Hosts:       []host.Host{hostm},
 		Processor:   procMock,
 		PushGateway: pushGateway,
-		RepositoryCache: &host.RepositoryCache{
+		RepositoryCache: &host.RepositoryFileCache{
 			Clock: clock.Default,
 			Dir:   filepath.Join(tmpDir, "cache"),
 		},
@@ -216,7 +216,7 @@ func TestExecuteRunner_Run_DryRun(t *testing.T) {
 		DryRun:    true,
 		Hosts:     []host.Host{hostm},
 		Processor: procMock,
-		RepositoryCache: &host.RepositoryCache{
+		RepositoryCache: &host.RepositoryFileCache{
 			Clock: clock.Default,
 			Dir:   filepath.Join(tmpDir, "cache"),
 		},

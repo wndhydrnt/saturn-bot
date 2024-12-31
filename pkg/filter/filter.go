@@ -26,8 +26,6 @@ var (
 )
 
 type FilterRepository interface {
-	GetFile(fileName string) (string, error)
-	HasFile(path string) (bool, error)
 	Host() host.HostDetail
 	ID() int64
 	Name() string

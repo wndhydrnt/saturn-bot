@@ -125,7 +125,7 @@ func (tw *Task) FiltersPostClone() []filter.Filter {
 }
 
 func (tw *Task) HasFilters() bool {
-	return len(tw.filtersPreClone) > 0 && len(tw.filtersPostClone) > 0
+	return len(tw.filtersPreClone) > 0 || len(tw.filtersPostClone) > 0
 }
 
 func (tw *Task) RenderBranchName(data template.Data) (string, error) {

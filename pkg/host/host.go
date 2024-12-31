@@ -145,6 +145,20 @@ type HostDetail interface {
 	Name() string
 }
 
+// RepositoryCacheLister lists all repositories from the cache.
+//
+// An implementation queries all hosts to gather the list of repositories.
+// Every repository is then send to the result channel.
+// If an error occurs, then the error is sent to the errChan channel.
+type RepositoryCacheLister interface {
+	List(hosts []Host, result chan Repository, errChan chan error)
+}
+
+// RepositoryCacheRemover removes a repository from the cache.
+type RepositoryCacheRemover interface {
+	Remove(repo Repository) error
+}
+
 func CreatePullRequestCommentWithIdentifier(body string, identifier string, pr interface{}, repo Repository) error {
 	if identifier == "" {
 		return errors.New("identifier is empty")
