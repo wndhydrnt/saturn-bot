@@ -148,7 +148,6 @@ func (rc *RepositoryFileCache) receiveRepositories(expectedFinishes int, results
 
 				err := rc.writeRepository(repo)
 				if err != nil {
-					finishes += 1
 					return err
 				}
 			}
