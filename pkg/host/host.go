@@ -126,12 +126,15 @@ type Repository interface {
 	Owner() string
 	UpdatePullRequest(data PullRequestData, pr interface{}) error
 	WebUrl() string
+	// Raw returns the underlying data structure of the Repository struct.
+	// The raw struct is marshalled to JSON.
 	Raw() any
 }
 
 type Host interface {
 	HostDetail
 	CreateFromName(name string) (Repository, error)
+	// CreateFromJson takes a JSON decoder from which to unmarshal a Repository and return it.
 	CreateFromJson(dec *json.Decoder) (Repository, error)
 	ListRepositories(since *time.Time, result chan []Repository, errChan chan error)
 	ListRepositoriesWithOpenPullRequests(result chan []Repository, errChan chan error)

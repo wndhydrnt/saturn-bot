@@ -474,6 +474,7 @@ func (g *GitLabRepository) diffUsers(assigned []*gitlab.BasicUser, in []string) 
 	return ids, needsUpdate
 }
 
+// Raw implements [Repository].
 func (g *GitLabRepository) Raw() any {
 	return g.project
 }
@@ -525,6 +526,7 @@ func (g *GitLabHost) AuthenticatedUser() (*UserInfo, error) {
 	return g.authenticatedUser, nil
 }
 
+// CreateFromJson implements [Host].
 func (g *GitLabHost) CreateFromJson(dec *json.Decoder) (Repository, error) {
 	project := &gitlab.Project{}
 	err := dec.Decode(project)

@@ -413,6 +413,7 @@ func (g *GitHubRepository) WebUrl() string {
 	return g.repo.GetHTMLURL()
 }
 
+// Raw implements [Repository].
 func (g *GitHubRepository) Raw() any {
 	return g.repo
 }
@@ -572,6 +573,7 @@ func (g *GitHubHost) AuthenticatedUser() (*UserInfo, error) {
 	return g.authenticatedUser, nil
 }
 
+// CreateFromJson implements [Host].
 func (g *GitHubHost) CreateFromJson(dec *json.Decoder) (Repository, error) {
 	ghRepo := &github.Repository{}
 	err := dec.Decode(ghRepo)
