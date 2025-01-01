@@ -8,6 +8,7 @@ import (
 	"os"
 	"path/filepath"
 	"strconv"
+	"sync"
 	"time"
 
 	"github.com/wndhydrnt/saturn-bot/pkg/clock"
@@ -15,28 +16,21 @@ import (
 	"github.com/wndhydrnt/saturn-bot/pkg/ptr"
 )
 
+// RepositoryFileCache reads all repositories from hosts and stores them in a file cache.
+// It helps reduce API requests to the host.
 type RepositoryFileCache struct {
 	Clock clock.Clock
 	Dir   string
+
+	mu sync.Mutex
 }
 
+// List implements [RepositoryLister].
 func (rc *RepositoryFileCache) List(hosts []Host, result chan Repository, errChan chan error) {
-	listRepos := make(chan []Repository)
-	listReposErrs := make(chan error)
-	start := rc.Clock.Now()
-	for _, h := range hosts {
-		since, err := rc.readLastUpdateTimestamp(h)
-		if err != nil {
-			errChan <- err
-			return
-		}
-
-		go h.ListRepositories(since, listRepos, listReposErrs)
-	}
-
-	err := rc.receiveRepositories(len(hosts), listRepos, listReposErrs)
+	start, err := rc.updateCache(hosts)
 	if err != nil {
 		errChan <- err
+		return
 	}
 
 	for _, h := range hosts {
@@ -44,13 +38,17 @@ func (rc *RepositoryFileCache) List(hosts []Host, result chan Repository, errCha
 		err := rc.writeLastUpdateTimestamp(h, start)
 		if err != nil {
 			errChan <- err
+			return
 		}
 	}
 
 	errChan <- nil
 }
 
+// Remove implements [RepositoryCacheRemover].
 func (rc *RepositoryFileCache) Remove(repo Repository) error {
+	rc.mu.Lock()
+	defer rc.mu.Unlock()
 	d := filepath.Join(rc.Dir, repo.FullName())
 	return os.RemoveAll(d)
 }
@@ -179,4 +177,27 @@ func (rc *RepositoryFileCache) writeLastUpdateTimestamp(h Host, t time.Time) err
 	}
 
 	return nil
+}
+
+func (rc *RepositoryFileCache) updateCache(hosts []Host) (time.Time, error) {
+	rc.mu.Lock()
+	defer rc.mu.Unlock()
+	listRepos := make(chan []Repository)
+	listReposErrs := make(chan error)
+	start := rc.Clock.Now()
+	for _, h := range hosts {
+		since, err := rc.readLastUpdateTimestamp(h)
+		if err != nil {
+			return start, err
+		}
+
+		go h.ListRepositories(since, listRepos, listReposErrs)
+	}
+
+	err := rc.receiveRepositories(len(hosts), listRepos, listReposErrs)
+	if err != nil {
+		return start, err
+	}
+
+	return start, nil
 }

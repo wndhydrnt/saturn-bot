@@ -147,12 +147,12 @@ type HostDetail interface {
 	Name() string
 }
 
-// RepositoryCacheLister lists all repositories from the cache.
+// RepositoryLister lists all repositories from the cache.
 //
 // An implementation queries all hosts to gather the list of repositories.
 // Every repository is then send to the result channel.
 // If an error occurs, then the error is sent to the errChan channel.
-type RepositoryCacheLister interface {
+type RepositoryLister interface {
 	List(hosts []Host, result chan Repository, errChan chan error)
 }
 

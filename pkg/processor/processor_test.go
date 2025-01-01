@@ -760,15 +760,11 @@ func TestProcessor_Process_CleanupOnPrepareError(t *testing.T) {
 	gitc.EXPECT().
 		Cleanup(repo).
 		Return(nil)
-	repositoryCache := NewMockRepositoryCacheRemover(ctrl)
-	repositoryCache.EXPECT().
-		Remove(repo).
-		Return(nil)
 
 	tw := &task.Task{Task: schema.Task{Name: "unittest"}}
 	tw.AddPreCloneFilters(&trueFilter{})
 
-	p := &processor.Processor{Git: gitc, RepositoryCache: repositoryCache}
+	p := &processor.Processor{Git: gitc}
 	result, _, err := p.Process(context.Background(), false, repo, tw, true)
 
 	require.NoError(t, err)

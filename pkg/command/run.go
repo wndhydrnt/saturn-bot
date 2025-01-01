@@ -34,12 +34,12 @@ type RunResult struct {
 }
 
 type Run struct {
-	DryRun          bool
-	Hosts           []host.Host
-	Processor       processor.RepositoryTaskProcessor
-	PushGateway     *push.Pusher
-	RepositoryCache host.RepositoryCacheLister
-	TaskRegistry    *task.Registry
+	DryRun           bool
+	Hosts            []host.Host
+	Processor        processor.RepositoryTaskProcessor
+	PushGateway      *push.Pusher
+	RepositoryLister host.RepositoryLister
+	TaskRegistry     *task.Registry
 }
 
 func (r *Run) Run(repositoryNames, taskFiles []string, inputs map[string]string) ([]RunResult, error) {
@@ -71,7 +71,7 @@ func (r *Run) Run(repositoryNames, taskFiles []string, inputs map[string]string)
 	if len(repositoryNames) > 0 {
 		go discoverRepositoriesFromCLI(r.Hosts, repositoryNames, repos, doneChan)
 	} else {
-		go r.RepositoryCache.List(r.Hosts, repos, doneChan)
+		go r.RepositoryLister.List(r.Hosts, repos, doneChan)
 	}
 
 	success := true
@@ -148,7 +148,7 @@ func ExecuteRun(opts options.Opts, repositoryNames, taskFiles []string, inputs m
 		return nil, fmt.Errorf("new git client for run: %w", err)
 	}
 
-	repositoryCache := &host.RepositoryFileCache{
+	repositoryFileCache := &host.RepositoryFileCache{
 		Clock: clock.Default,
 		Dir:   filepath.Join(opts.DataDir(), "cache"),
 	}
@@ -157,13 +157,12 @@ func ExecuteRun(opts options.Opts, repositoryNames, taskFiles []string, inputs m
 		DryRun: opts.Config.DryRun,
 		Hosts:  opts.Hosts,
 		Processor: &processor.Processor{
-			DataDir:         opts.DataDir(),
-			Git:             gitClient,
-			RepositoryCache: repositoryCache,
+			DataDir: opts.DataDir(),
+			Git:     gitClient,
 		},
-		PushGateway:     opts.PushGateway,
-		RepositoryCache: repositoryCache,
-		TaskRegistry:    taskRegistry,
+		PushGateway:      opts.PushGateway,
+		RepositoryLister: repositoryFileCache,
+		TaskRegistry:     taskRegistry,
 	}
 	return e.Run(repositoryNames, taskFiles, inputs)
 }

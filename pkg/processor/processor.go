@@ -40,9 +40,8 @@ const (
 )
 
 type Processor struct {
-	DataDir         string
-	Git             git.GitClient
-	RepositoryCache host.RepositoryCacheRemover
+	DataDir string
+	Git     git.GitClient
 }
 
 type RepositoryTaskProcessor interface {
@@ -111,11 +110,6 @@ func (p *Processor) Process(
 		err := p.Git.Cleanup(repo)
 		if err != nil {
 			return ResultUnknown, nil, fmt.Errorf("cleanup of git repository clone: %w", err)
-		}
-
-		err = p.RepositoryCache.Remove(repo)
-		if err != nil {
-			return ResultUnknown, nil, fmt.Errorf("cleanup of host cache: %w", err)
 		}
 
 		return ResultNoMatch, nil, nil
