@@ -71,6 +71,11 @@ type Configuration struct {
 	// saturn-bot searches for the binary in $PATH.
 	PythonPath string `json:"pythonPath,omitempty" yaml:"pythonPath,omitempty" mapstructure:"pythonPath,omitempty"`
 
+	// Time-to-live of all items in the repository file cache. saturn-bot performs a
+	// full update of the cache once the TTL has expired. The format is a Go duration,
+	// like `30m` or `12h`.
+	RepositoryCacheTtl string `json:"repositoryCacheTtl,omitempty" yaml:"repositoryCacheTtl,omitempty" mapstructure:"repositoryCacheTtl,omitempty"`
+
 	// Turn access log of server on or off.
 	ServerAccessLog bool `json:"serverAccessLog,omitempty" yaml:"serverAccessLog,omitempty" mapstructure:"serverAccessLog,omitempty"`
 
@@ -433,6 +438,9 @@ func (j *Configuration) UnmarshalJSON(b []byte) error {
 	if v, ok := raw["pythonPath"]; !ok || v == nil {
 		plain.PythonPath = "python"
 	}
+	if v, ok := raw["repositoryCacheTtl"]; !ok || v == nil {
+		plain.RepositoryCacheTtl = "6h"
+	}
 	if v, ok := raw["serverAccessLog"]; !ok || v == nil {
 		plain.ServerAccessLog = false
 	}
@@ -528,6 +536,9 @@ func (j *Configuration) UnmarshalYAML(value *yaml.Node) error {
 	}
 	if v, ok := raw["pythonPath"]; !ok || v == nil {
 		plain.PythonPath = "python"
+	}
+	if v, ok := raw["repositoryCacheTtl"]; !ok || v == nil {
+		plain.RepositoryCacheTtl = "6h"
 	}
 	if v, ok := raw["serverAccessLog"]; !ok || v == nil {
 		plain.ServerAccessLog = false

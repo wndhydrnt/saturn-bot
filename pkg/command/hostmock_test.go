@@ -601,76 +601,38 @@ func (mr *MockHostDetailMockRecorder) Name() *gomock.Call {
 	return mr.mock.ctrl.RecordCallWithMethodType(mr.mock, "Name", reflect.TypeOf((*MockHostDetail)(nil).Name))
 }
 
-// MockRepositoryCacheLister is a mock of RepositoryCacheLister interface.
-type MockRepositoryCacheLister struct {
+// MockRepositoryLister is a mock of RepositoryLister interface.
+type MockRepositoryLister struct {
 	ctrl     *gomock.Controller
-	recorder *MockRepositoryCacheListerMockRecorder
+	recorder *MockRepositoryListerMockRecorder
 	isgomock struct{}
 }
 
-// MockRepositoryCacheListerMockRecorder is the mock recorder for MockRepositoryCacheLister.
-type MockRepositoryCacheListerMockRecorder struct {
-	mock *MockRepositoryCacheLister
+// MockRepositoryListerMockRecorder is the mock recorder for MockRepositoryLister.
+type MockRepositoryListerMockRecorder struct {
+	mock *MockRepositoryLister
 }
 
-// NewMockRepositoryCacheLister creates a new mock instance.
-func NewMockRepositoryCacheLister(ctrl *gomock.Controller) *MockRepositoryCacheLister {
-	mock := &MockRepositoryCacheLister{ctrl: ctrl}
-	mock.recorder = &MockRepositoryCacheListerMockRecorder{mock}
+// NewMockRepositoryLister creates a new mock instance.
+func NewMockRepositoryLister(ctrl *gomock.Controller) *MockRepositoryLister {
+	mock := &MockRepositoryLister{ctrl: ctrl}
+	mock.recorder = &MockRepositoryListerMockRecorder{mock}
 	return mock
 }
 
 // EXPECT returns an object that allows the caller to indicate expected use.
-func (m *MockRepositoryCacheLister) EXPECT() *MockRepositoryCacheListerMockRecorder {
+func (m *MockRepositoryLister) EXPECT() *MockRepositoryListerMockRecorder {
 	return m.recorder
 }
 
 // List mocks base method.
-func (m *MockRepositoryCacheLister) List(hosts []host.Host, result chan host.Repository, errChan chan error) {
+func (m *MockRepositoryLister) List(hosts []host.Host, result chan host.Repository, errChan chan error) {
 	m.ctrl.T.Helper()
 	m.ctrl.Call(m, "List", hosts, result, errChan)
 }
 
 // List indicates an expected call of List.
-func (mr *MockRepositoryCacheListerMockRecorder) List(hosts, result, errChan any) *gomock.Call {
+func (mr *MockRepositoryListerMockRecorder) List(hosts, result, errChan any) *gomock.Call {
 	mr.mock.ctrl.T.Helper()
-	return mr.mock.ctrl.RecordCallWithMethodType(mr.mock, "List", reflect.TypeOf((*MockRepositoryCacheLister)(nil).List), hosts, result, errChan)
-}
-
-// MockRepositoryCacheRemover is a mock of RepositoryCacheRemover interface.
-type MockRepositoryCacheRemover struct {
-	ctrl     *gomock.Controller
-	recorder *MockRepositoryCacheRemoverMockRecorder
-	isgomock struct{}
-}
-
-// MockRepositoryCacheRemoverMockRecorder is the mock recorder for MockRepositoryCacheRemover.
-type MockRepositoryCacheRemoverMockRecorder struct {
-	mock *MockRepositoryCacheRemover
-}
-
-// NewMockRepositoryCacheRemover creates a new mock instance.
-func NewMockRepositoryCacheRemover(ctrl *gomock.Controller) *MockRepositoryCacheRemover {
-	mock := &MockRepositoryCacheRemover{ctrl: ctrl}
-	mock.recorder = &MockRepositoryCacheRemoverMockRecorder{mock}
-	return mock
-}
-
-// EXPECT returns an object that allows the caller to indicate expected use.
-func (m *MockRepositoryCacheRemover) EXPECT() *MockRepositoryCacheRemoverMockRecorder {
-	return m.recorder
-}
-
-// Remove mocks base method.
-func (m *MockRepositoryCacheRemover) Remove(repo host.Repository) error {
-	m.ctrl.T.Helper()
-	ret := m.ctrl.Call(m, "Remove", repo)
-	ret0, _ := ret[0].(error)
-	return ret0
-}
-
-// Remove indicates an expected call of Remove.
-func (mr *MockRepositoryCacheRemoverMockRecorder) Remove(repo any) *gomock.Call {
-	mr.mock.ctrl.T.Helper()
-	return mr.mock.ctrl.RecordCallWithMethodType(mr.mock, "Remove", reflect.TypeOf((*MockRepositoryCacheRemover)(nil).Remove), repo)
+	return mr.mock.ctrl.RecordCallWithMethodType(mr.mock, "List", reflect.TypeOf((*MockRepositoryLister)(nil).List), hosts, result, errChan)
 }

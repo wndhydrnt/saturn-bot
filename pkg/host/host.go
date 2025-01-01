@@ -156,11 +156,6 @@ type RepositoryLister interface {
 	List(hosts []Host, result chan Repository, errChan chan error)
 }
 
-// RepositoryCacheRemover removes a repository from the cache.
-type RepositoryCacheRemover interface {
-	Remove(repo Repository) error
-}
-
 func CreatePullRequestCommentWithIdentifier(body string, identifier string, pr interface{}, repo Repository) error {
 	if identifier == "" {
 		return errors.New("identifier is empty")

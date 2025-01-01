@@ -219,3 +219,13 @@ Set to `ssh` to clone repositories via SSH.
 | Default | `python`                |
 | Env Var | `SATURN_BOT_PYTHONPATH` |
 | Type    | `string`                |
+
+## pythonPath
+
+[json-path:../pkg/config/config.schema.json:$.properties.repositoryCacheTtl.description]
+
+| Name    | Value                           |
+| ------- | ------------------------------- |
+| Default | `6h`                            |
+| Env Var | `SATURN_BOT_REPOSITORYCACHETTL` |
+| Type    | `string`                        |

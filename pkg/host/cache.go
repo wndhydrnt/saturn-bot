@@ -1,13 +1,13 @@
 package host
 
 import (
+	"bytes"
 	"encoding/json"
 	"errors"
 	"fmt"
 	"io/fs"
 	"os"
 	"path/filepath"
-	"strconv"
 	"sync"
 	"time"
 
@@ -16,18 +16,28 @@ import (
 	"github.com/wndhydrnt/saturn-bot/pkg/ptr"
 )
 
+const (
+	metadataFileName = "metadata.json"
+)
+
+type fileCacheMetadata struct {
+	NextFullUpdateAfter int64
+	LastUpdateTs        int64
+}
+
 // RepositoryFileCache reads all repositories from hosts and stores them in a file cache.
 // It helps reduce API requests to the host.
 type RepositoryFileCache struct {
 	Clock clock.Clock
 	Dir   string
+	Ttl   time.Duration
 
 	mu sync.Mutex
 }
 
 // List implements [RepositoryLister].
 func (rc *RepositoryFileCache) List(hosts []Host, result chan Repository, errChan chan error) {
-	start, err := rc.updateCache(hosts)
+	err := rc.updateCache(hosts)
 	if err != nil {
 		errChan <- err
 		return
@@ -35,40 +45,88 @@ func (rc *RepositoryFileCache) List(hosts []Host, result chan Repository, errCha
 
 	for _, h := range hosts {
 		rc.readRepositoriesForHost(h, result, errChan)
-		err := rc.writeLastUpdateTimestamp(h, start)
-		if err != nil {
-			errChan <- err
-			return
-		}
 	}
 
 	errChan <- nil
 }
 
-// Remove implements [RepositoryCacheRemover].
-func (rc *RepositoryFileCache) Remove(repo Repository) error {
-	rc.mu.Lock()
-	defer rc.mu.Unlock()
+func (rc *RepositoryFileCache) remove(repo Repository) error {
 	d := filepath.Join(rc.Dir, repo.FullName())
 	return os.RemoveAll(d)
 }
 
 func (rc *RepositoryFileCache) readLastUpdateTimestamp(h Host) (*time.Time, error) {
-	b, err := os.ReadFile(filepath.Join(rc.Dir, h.Name(), "timestamp"))
+	meta, err := rc.readMetadata(h)
+	if err != nil {
+		return nil, err
+	}
+
+	if meta.NextFullUpdateAfter < rc.Clock.Now().Unix() {
+		return nil, nil
+	}
+
+	if meta.LastUpdateTs == 0 {
+		// No update ever.
+		// Return nil to trigger a full update.
+		return nil, nil
+	}
+
+	// Return last update timestamp to trigger partial update.
+	return ptr.To(time.Unix(meta.LastUpdateTs, 0)), nil
+}
+
+func (rc *RepositoryFileCache) writeLastUpdateTimestamp(h Host, t time.Time) error {
+	meta, err := rc.readMetadata(h)
+	if err != nil {
+		return fmt.Errorf("read metadata before update: %w", err)
+	}
+
+	meta.LastUpdateTs = t.Unix()
+	if meta.NextFullUpdateAfter < rc.Clock.Now().Unix() {
+		meta.NextFullUpdateAfter = rc.Clock.Now().Add(rc.Ttl).Unix()
+	}
+
+	return rc.writeMetadata(h, meta)
+}
+
+func (rc *RepositoryFileCache) readMetadata(h Host) (fileCacheMetadata, error) {
+	var meta fileCacheMetadata
+	b, err := os.ReadFile(filepath.Join(rc.Dir, h.Name(), metadataFileName))
 	if err != nil {
 		if errors.Is(err, os.ErrNotExist) {
-			return nil, nil
+			return meta, nil
 		}
 
-		return nil, fmt.Errorf("read repository cache timestamp: %w", err)
+		return meta, fmt.Errorf("read repository cache metadata: %w", err)
 	}
 
-	ts, err := strconv.ParseInt(string(b), 10, 64)
+	err = json.NewDecoder(bytes.NewReader(b)).Decode(&meta)
 	if err != nil {
-		return nil, fmt.Errorf("parse raw timestamp to int: %w", err)
+		return meta, fmt.Errorf("decode metadata from JSON: %w", err)
 	}
 
-	return ptr.To(time.Unix(ts, 0)), nil
+	return meta, nil
+}
+
+func (rc *RepositoryFileCache) writeMetadata(h Host, meta fileCacheMetadata) error {
+	dir := filepath.Join(rc.Dir, h.Name())
+	err := os.MkdirAll(dir, 0755)
+	if err != nil {
+		return fmt.Errorf("create directory for metadata: %w", err)
+	}
+
+	buf := &bytes.Buffer{}
+	err = json.NewEncoder(buf).Encode(meta)
+	if err != nil {
+		return fmt.Errorf("encode cache metadata to JSON: %w", err)
+	}
+
+	err = os.WriteFile(filepath.Join(dir, metadataFileName), buf.Bytes(), 0600)
+	if err != nil {
+		return fmt.Errorf("write cache metadata to JSON: %w", err)
+	}
+
+	return nil
 }
 
 func (rc *RepositoryFileCache) readRepositoriesForHost(h Host, result chan Repository, errChan chan error) {
@@ -140,7 +198,7 @@ func (rc *RepositoryFileCache) receiveRepositories(expectedFinishes int, results
 			for _, repo := range repoList {
 				if repo.IsArchived() {
 					log.Log().Debugf("Removing archived repository from file cache %s", repo.FullName())
-					_ = rc.Remove(repo)
+					_ = rc.remove(repo)
 					continue
 				}
 
@@ -163,23 +221,7 @@ func (rc *RepositoryFileCache) receiveRepositories(expectedFinishes int, results
 	}
 }
 
-func (rc *RepositoryFileCache) writeLastUpdateTimestamp(h Host, t time.Time) error {
-	dir := filepath.Join(rc.Dir, h.Name())
-	err := os.MkdirAll(dir, 0755)
-	if err != nil {
-		return fmt.Errorf("create directory for timestamp: %w", err)
-	}
-
-	ts := strconv.FormatInt(t.Unix(), 10)
-	err = os.WriteFile(filepath.Join(dir, "timestamp"), []byte(ts), 0600)
-	if err != nil {
-		return fmt.Errorf("write repository cache timestamp: %w", err)
-	}
-
-	return nil
-}
-
-func (rc *RepositoryFileCache) updateCache(hosts []Host) (time.Time, error) {
+func (rc *RepositoryFileCache) updateCache(hosts []Host) error {
 	rc.mu.Lock()
 	defer rc.mu.Unlock()
 	listRepos := make(chan []Repository)
@@ -188,7 +230,13 @@ func (rc *RepositoryFileCache) updateCache(hosts []Host) (time.Time, error) {
 	for _, h := range hosts {
 		since, err := rc.readLastUpdateTimestamp(h)
 		if err != nil {
-			return start, err
+			return err
+		}
+
+		if since == nil {
+			log.Log().Infof("Full update of repository cache for host %s", h.Name())
+		} else {
+			log.Log().Infof("Partial update of repository cache for host %s since %s", h.Name(), since)
 		}
 
 		go h.ListRepositories(since, listRepos, listReposErrs)
@@ -196,8 +244,15 @@ func (rc *RepositoryFileCache) updateCache(hosts []Host) (time.Time, error) {
 
 	err := rc.receiveRepositories(len(hosts), listRepos, listReposErrs)
 	if err != nil {
-		return start, err
+		return err
 	}
 
-	return start, nil
+	for _, h := range hosts {
+		err := rc.writeLastUpdateTimestamp(h, start)
+		if err != nil {
+			return err
+		}
+	}
+
+	return nil
 }

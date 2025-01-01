@@ -103,6 +103,11 @@
       "description": "Path to the Python binary to execute plugins. If not set explicitly, then saturn-bot searches for the binary in $PATH.",
       "type": "string"
     },
+    "repositoryCacheTtl": {
+      "default": "6h",
+      "description": "Time-to-live of all items in the repository file cache. saturn-bot performs a full update of the cache once the TTL has expired. The format is a Go duration, like `30m` or `12h`.",
+      "type": "string"
+    },
     "serverAccessLog": {
       "default": false,
       "description": "Turn access log of server on or off.",

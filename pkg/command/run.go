@@ -151,6 +151,7 @@ func ExecuteRun(opts options.Opts, repositoryNames, taskFiles []string, inputs m
 	repositoryFileCache := &host.RepositoryFileCache{
 		Clock: clock.Default,
 		Dir:   filepath.Join(opts.DataDir(), "cache"),
+		Ttl:   opts.RepositoryCacheTtl(),
 	}
 
 	e := &Run{
