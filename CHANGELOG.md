@@ -1,5 +1,35 @@
 # Changelog
 
+## [0.18.0](https://github.com/wndhydrnt/saturn-bot/compare/v0.17.0...v0.18.0) (2025-01-01)
+
+
+### ⚠ BREAKING CHANGES
+
+* **task:** Remove setting "schedule" from task ([#129](https://github.com/wndhydrnt/saturn-bot/issues/129))
+
+### Features
+
+* **filter:** New filter "gitlabCodeSearch" ([#120](https://github.com/wndhydrnt/saturn-bot/issues/120)) ([ce8003a](https://github.com/wndhydrnt/saturn-bot/commit/ce8003aaaace8ab662dba766254a399a9bfdc23f))
+* **server:** Add cache headers to static assets of UI ([0eb97e6](https://github.com/wndhydrnt/saturn-bot/commit/0eb97e6b067558efdc8bcaf3c01edc9c58846662))
+* **server:** Add database migrations ([#128](https://github.com/wndhydrnt/saturn-bot/issues/128)) ([ec08f31](https://github.com/wndhydrnt/saturn-bot/commit/ec08f316785cbae46beb7625e634eaf6be6e6b2e))
+* **server:** Add filters to list of runs ([dd2a6c9](https://github.com/wndhydrnt/saturn-bot/commit/dd2a6c9819430a4dd3f327fce3792dc1aaff0c59))
+* **server:** Add pagination to UI ([#125](https://github.com/wndhydrnt/saturn-bot/issues/125)) ([eb41afd](https://github.com/wndhydrnt/saturn-bot/commit/eb41afdeca8823a301bd7547c16fe932cdfe3e6d))
+* **server:** Display link to pull request in UI ([#131](https://github.com/wndhydrnt/saturn-bot/issues/131)) ([8a7adc0](https://github.com/wndhydrnt/saturn-bot/commit/8a7adc08c9432573b24244b7770d5275322833b9))
+* **server:** Serve a UI ([#124](https://github.com/wndhydrnt/saturn-bot/issues/124)) ([d2e906c](https://github.com/wndhydrnt/saturn-bot/commit/d2e906c0eb0788d3ba1f854c7ba8c7ef1fbf55ca))
+* **server:** Support inputs of a task ([#118](https://github.com/wndhydrnt/saturn-bot/issues/118)) ([b597bf7](https://github.com/wndhydrnt/saturn-bot/commit/b597bf7380c740cdbf732667d9378ba2691aca98))
+* **server:** Trigger task via cron expression ([#122](https://github.com/wndhydrnt/saturn-bot/issues/122)) ([f75cd9f](https://github.com/wndhydrnt/saturn-bot/commit/f75cd9fd7f99c99c2fe051a2918ffcabbfd2da5a))
+* **server:** View tasks ([#126](https://github.com/wndhydrnt/saturn-bot/issues/126)) ([12d399a](https://github.com/wndhydrnt/saturn-bot/commit/12d399a41854fdc832d6a343143f35cc5c7a6dfa))
+* **task:** Remove setting "schedule" from task ([#129](https://github.com/wndhydrnt/saturn-bot/issues/129)) ([6f7c767](https://github.com/wndhydrnt/saturn-bot/commit/6f7c767cc4f7bfa2d986186af7a3df6e27c431e6))
+
+
+### Bug Fixes
+
+* **host:** Only return merge requests in state "opened" from GitLab API ([#130](https://github.com/wndhydrnt/saturn-bot/issues/130)) ([c79f2b7](https://github.com/wndhydrnt/saturn-bot/commit/c79f2b7b68899c5af3e463495f748e9446e36c7b))
+* **host:** Revert pull request [#130](https://github.com/wndhydrnt/saturn-bot/issues/130) ([000a232](https://github.com/wndhydrnt/saturn-bot/commit/000a232bedfbcfbfb37b97333310fe37141af36a))
+* **processor:** Wrong URL of pull request reported when creating a new one ([bab648a](https://github.com/wndhydrnt/saturn-bot/commit/bab648adaaddd0f119e9c02f435f979c7026c84b))
+* **server:** Next run not scheduled if PR is open ([1d97a94](https://github.com/wndhydrnt/saturn-bot/commit/1d97a94ddf86487dc5f6cb4ecb441c3c60279a18))
+* **server:** Update hash of task in database ([93ce5c5](https://github.com/wndhydrnt/saturn-bot/commit/93ce5c5f0dc375718c327c301415616cefe58923))
+
 ## [0.17.0](https://github.com/wndhydrnt/saturn-bot/compare/v0.16.0...v0.17.0) (2024-12-10)
 
 
