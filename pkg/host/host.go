@@ -114,6 +114,8 @@ type Repository interface {
 	Host() HostDetail
 	// ID returns the global, unique identifier of the repository in the host.
 	ID() int64
+	// IsArchived returns true if the repository has been archived on the host.
+	IsArchived() bool
 	IsPullRequestClosed(pr interface{}) bool
 	IsPullRequestMerged(pr interface{}) bool
 	IsPullRequestOpen(pr interface{}) bool

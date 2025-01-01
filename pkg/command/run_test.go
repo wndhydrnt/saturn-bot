@@ -140,6 +140,7 @@ func setupRunRepoMock(ctrl *gomock.Controller, name string) *MockRepository {
 	repo.EXPECT().Owner().Return("unittest").AnyTimes()
 	repo.EXPECT().Name().Return(name).AnyTimes()
 	repo.EXPECT().Raw().Return(repoCacheItem{Name: fullName}).AnyTimes()
+	repo.EXPECT().IsArchived().Return(false).AnyTimes()
 	return repo
 }
 

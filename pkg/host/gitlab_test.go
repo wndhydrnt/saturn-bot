@@ -3,7 +3,6 @@ package host
 import (
 	"errors"
 	"net/http"
-	"regexp"
 	"slices"
 	"testing"
 	"time"
@@ -730,11 +729,10 @@ func TestGitLabHost_ListRepositories(t *testing.T) {
 	gock.New("http://gitlab.local").
 		Get("/api/v4/projects").
 		MatchParams(map[string]string{
-			"archived": "false",
-			// Use regexp.QuoteMeta() because gock parses matchers as regular expressions
-			"last_activity_after": regexp.QuoteMeta(time.Unix(0, 0).Format("2006-01-02T15:04:05Z07:00")),
-			"min_access_level":    "30",
-			"per_page":            "20",
+			"min_access_level": "30",
+			"order_by":         "updated_at",
+			"per_page":         "20",
+			"sort":             "desc",
 		}).
 		Reply(200).
 		JSON([]*gitlab.Project{

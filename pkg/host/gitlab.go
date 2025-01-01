@@ -13,6 +13,7 @@ import (
 	"github.com/hashicorp/go-cleanhttp"
 	"github.com/wndhydrnt/saturn-bot/pkg/log"
 	"github.com/wndhydrnt/saturn-bot/pkg/metrics"
+	"github.com/wndhydrnt/saturn-bot/pkg/ptr"
 	gitlab "gitlab.com/gitlab-org/api/client-go"
 	"go.uber.org/zap"
 )
@@ -440,6 +441,11 @@ func (g *GitLabRepository) UpdatePullRequest(data PullRequestData, pr interface{
 	return nil
 }
 
+// IsArchived implements [Repository].
+func (g *GitLabRepository) IsArchived() bool {
+	return g.project.Archived
+}
+
 func (g *GitLabRepository) diffUsers(assigned []*gitlab.BasicUser, in []string) ([]int, bool) {
 	nameToAssignedUser := map[string]*gitlab.BasicUser{}
 	for _, user := range assigned {
@@ -564,10 +570,12 @@ func (g *GitLabHost) Name() string {
 }
 
 func (g *GitLabHost) ListRepositories(since *time.Time, result chan []Repository, errChan chan error) {
+	// NOTE: GitLab client currently doesn't support attribute `updated_after` of the API.
+	// Need to sort by `updated_at` in descending order and compare dates in code.
 	opts := &gitlab.ListProjectsOptions{
-		Archived:          gitlab.Ptr(false),
-		LastActivityAfter: since,
-		MinAccessLevel:    gitlab.Ptr(gitlab.AccessLevelValue(30)),
+		OrderBy:        gitlab.Ptr("updated_at"),
+		Sort:           gitlab.Ptr("desc"),
+		MinAccessLevel: gitlab.Ptr(gitlab.AccessLevelValue(30)),
 		ListOptions: gitlab.ListOptions{
 			Page:    1,
 			PerPage: 20,
@@ -582,6 +590,12 @@ func (g *GitLabHost) ListRepositories(since *time.Time, result chan []Repository
 
 		var batch []Repository
 		for _, project := range projects {
+			if since != nil && project.UpdatedAt != nil && project.UpdatedAt.Before(ptr.From(since)) {
+				result <- batch
+				errChan <- nil
+				return
+			}
+
 			glr := &GitLabRepository{client: g.client, host: g, project: project, userCache: g.userCache}
 			batch = append(batch, glr)
 		}

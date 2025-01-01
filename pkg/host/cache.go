@@ -11,6 +11,7 @@ import (
 	"time"
 
 	"github.com/wndhydrnt/saturn-bot/pkg/clock"
+	"github.com/wndhydrnt/saturn-bot/pkg/log"
 	"github.com/wndhydrnt/saturn-bot/pkg/ptr"
 )
 
@@ -139,6 +140,12 @@ func (rc *RepositoryFileCache) receiveRepositories(expectedFinishes int, results
 		select {
 		case repoList := <-results:
 			for _, repo := range repoList {
+				if repo.IsArchived() {
+					log.Log().Debugf("Removing archived repository from file cache %s", repo.FullName())
+					_ = rc.Remove(repo)
+					continue
+				}
+
 				err := rc.writeRepository(repo)
 				if err != nil {
 					finishes += 1
@@ -147,12 +154,10 @@ func (rc *RepositoryFileCache) receiveRepositories(expectedFinishes int, results
 			}
 
 		case err := <-errChan:
+			finishes += 1
 			if err != nil {
-				finishes += 1
 				return err
 			}
-
-			finishes += 1
 		}
 
 		if expectedFinishes == finishes {

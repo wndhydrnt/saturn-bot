@@ -30,7 +30,6 @@ require (
 	github.com/ncruces/go-sqlite3/gormlite v0.16.3
 	github.com/oapi-codegen/oapi-codegen/v2 v2.4.1
 	github.com/oapi-codegen/runtime v1.1.1
-	github.com/patrickmn/go-cache v2.1.0+incompatible
 	github.com/prometheus/client_golang v1.20.5
 	github.com/prometheus/common v0.55.0
 	github.com/santhosh-tekuri/jsonschema/v5 v5.3.1

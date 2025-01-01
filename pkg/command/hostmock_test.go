@@ -272,6 +272,20 @@ func (mr *MockRepositoryMockRecorder) ID() *gomock.Call {
 	return mr.mock.ctrl.RecordCallWithMethodType(mr.mock, "ID", reflect.TypeOf((*MockRepository)(nil).ID))
 }
 
+// IsArchived mocks base method.
+func (m *MockRepository) IsArchived() bool {
+	m.ctrl.T.Helper()
+	ret := m.ctrl.Call(m, "IsArchived")
+	ret0, _ := ret[0].(bool)
+	return ret0
+}
+
+// IsArchived indicates an expected call of IsArchived.
+func (mr *MockRepositoryMockRecorder) IsArchived() *gomock.Call {
+	mr.mock.ctrl.T.Helper()
+	return mr.mock.ctrl.RecordCallWithMethodType(mr.mock, "IsArchived", reflect.TypeOf((*MockRepository)(nil).IsArchived))
+}
+
 // IsPullRequestClosed mocks base method.
 func (m *MockRepository) IsPullRequestClosed(pr any) bool {
 	m.ctrl.T.Helper()
