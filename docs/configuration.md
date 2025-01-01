@@ -220,7 +220,7 @@ Set to `ssh` to clone repositories via SSH.
 | Env Var | `SATURN_BOT_PYTHONPATH` |
 | Type    | `string`                |
 
-## pythonPath
+## repositoryCacheTtl
 
 [json-path:../pkg/config/config.schema.json:$.properties.repositoryCacheTtl.description]
 
