@@ -24,6 +24,8 @@ import (
 	"github.com/wndhydrnt/saturn-bot/pkg/processor"
 	"github.com/wndhydrnt/saturn-bot/pkg/task"
 	"github.com/wndhydrnt/saturn-bot/pkg/task/schema"
+	hostmock "github.com/wndhydrnt/saturn-bot/test/mock/host"
+	processormock "github.com/wndhydrnt/saturn-bot/test/mock/processor"
 	"go.uber.org/mock/gomock"
 	"gopkg.in/yaml.v3"
 )
@@ -130,10 +132,10 @@ func createTempFile(content string, pattern string) string {
 	return f.Name()
 }
 
-func setupRunRepoMock(ctrl *gomock.Controller, name string) *MockRepository {
-	hostDetailMock := NewMockHostDetail(ctrl)
+func setupRunRepoMock(ctrl *gomock.Controller, name string) *hostmock.MockRepository {
+	hostDetailMock := hostmock.NewMockHostDetail(ctrl)
 	hostDetailMock.EXPECT().Name().Return("git.local").AnyTimes()
-	repo := NewMockRepository(ctrl)
+	repo := hostmock.NewMockRepository(ctrl)
 	fullName := "git.local/unittest/" + name
 	repo.EXPECT().FullName().Return(fullName).AnyTimes()
 	repo.EXPECT().Host().Return(hostDetailMock).AnyTimes()
@@ -158,7 +160,7 @@ func TestExecuteRunner_Run(t *testing.T) {
 			panic(err)
 		}
 	}()
-	procMock := NewMockRepositoryTaskProcessor(ctrl)
+	procMock := processormock.NewMockRepositoryTaskProcessor(ctrl)
 	var ctx = reflect.TypeOf((*context.Context)(nil)).Elem()
 	var anyTask *task.Task = &task.Task{}
 	procMock.EXPECT().
@@ -205,7 +207,7 @@ func TestExecuteRunner_Run_DryRun(t *testing.T) {
 			panic(err)
 		}
 	}()
-	procMock := NewMockRepositoryTaskProcessor(ctrl)
+	procMock := processormock.NewMockRepositoryTaskProcessor(ctrl)
 	var ctx = reflect.TypeOf((*context.Context)(nil)).Elem()
 	var anyTask *task.Task = &task.Task{}
 	procMock.EXPECT().
@@ -240,7 +242,7 @@ func TestExecuteRunner_Run_RepositoriesCLI(t *testing.T) {
 			panic(err)
 		}
 	}()
-	procMock := NewMockRepositoryTaskProcessor(ctrl)
+	procMock := processormock.NewMockRepositoryTaskProcessor(ctrl)
 	var ctx = reflect.TypeOf((*context.Context)(nil)).Elem()
 	var anyTask *task.Task = &task.Task{}
 	procMock.EXPECT().
@@ -285,7 +287,7 @@ func TestExecuteRunner_Run_Inputs(t *testing.T) {
 			panic(err)
 		}
 	}()
-	procMock := NewMockRepositoryTaskProcessor(ctrl)
+	procMock := processormock.NewMockRepositoryTaskProcessor(ctrl)
 	var ctx = reflect.TypeOf((*context.Context)(nil)).Elem()
 
 	// Verifies that procMock.Process() gets called with the expected value.

@@ -18,6 +18,8 @@ import (
 	"github.com/wndhydrnt/saturn-bot/pkg/options"
 	"github.com/wndhydrnt/saturn-bot/pkg/task"
 	"github.com/wndhydrnt/saturn-bot/pkg/task/schema"
+	gitmock "github.com/wndhydrnt/saturn-bot/test/mock/git"
+	hostmock "github.com/wndhydrnt/saturn-bot/test/mock/host"
 	"go.uber.org/mock/gomock"
 )
 
@@ -28,10 +30,10 @@ var (
 	}
 )
 
-func setupTryRepoMock(ctrl *gomock.Controller) *MockRepository {
-	hostDetailMock := NewMockHostDetail(ctrl)
+func setupTryRepoMock(ctrl *gomock.Controller) *hostmock.MockRepository {
+	hostDetailMock := hostmock.NewMockHostDetail(ctrl)
 	hostDetailMock.EXPECT().Name().Return("git.local").AnyTimes()
-	repoMock := NewMockRepository(ctrl)
+	repoMock := hostmock.NewMockRepository(ctrl)
 	repoMock.EXPECT().FullName().Return("git.local/unit/test").AnyTimes()
 	repoMock.EXPECT().Host().Return(hostDetailMock).AnyTimes()
 	repoMock.EXPECT().Owner().Return("unit").AnyTimes()
@@ -43,10 +45,10 @@ func setupTryRepoMock(ctrl *gomock.Controller) *MockRepository {
 func TestTryRunner_Run_FilesModified(t *testing.T) {
 	ctrl := gomock.NewController(t)
 	repoMock := setupTryRepoMock(ctrl)
-	hostMock := NewMockHost(ctrl)
+	hostMock := hostmock.NewMockHost(ctrl)
 	hostMock.EXPECT().CreateFromName("git.local/unit/test").Return(repoMock, nil)
 	registry := task.NewRegistry(tryTestOpts)
-	gitcMock := NewMockGitClient(ctrl)
+	gitcMock := gitmock.NewMockGitClient(ctrl)
 	gitcMock.EXPECT().Prepare(repoMock, false).Return("/checkout", nil)
 	gitcMock.EXPECT().UpdateTaskBranch("saturn-bot--unit-test", false, repoMock).Return(false, nil)
 	gitcMock.EXPECT().HasLocalChanges().Return(true, nil)
@@ -80,10 +82,10 @@ func TestTryRunner_Run_NoChanges(t *testing.T) {
 	repoName := "git.local/unit/test"
 	ctrl := gomock.NewController(t)
 	repoMock := setupTryRepoMock(ctrl)
-	hostMock := NewMockHost(ctrl)
+	hostMock := hostmock.NewMockHost(ctrl)
 	hostMock.EXPECT().CreateFromName(repoName).Return(repoMock, nil)
 	registry := task.NewRegistry(tryTestOpts)
-	gitcMock := NewMockGitClient(ctrl)
+	gitcMock := gitmock.NewMockGitClient(ctrl)
 	gitcMock.EXPECT().Prepare(repoMock, false).Return("/checkout", nil)
 	gitcMock.EXPECT().UpdateTaskBranch("saturn-bot--unit-test", false, repoMock).Return(false, nil)
 	gitcMock.EXPECT().HasLocalChanges().Return(false, nil)
@@ -108,11 +110,11 @@ func TestTryRunner_Run_NoChanges(t *testing.T) {
 func TestTryRunner_Run_EmptyTaskFile(t *testing.T) {
 	repoName := "git.local/unit/test"
 	ctrl := gomock.NewController(t)
-	repoMock := NewMockRepository(ctrl)
-	hostMock := NewMockHost(ctrl)
+	repoMock := hostmock.NewMockRepository(ctrl)
+	hostMock := hostmock.NewMockHost(ctrl)
 	hostMock.EXPECT().CreateFromName(repoName).Return(repoMock, nil)
 	registry := task.NewRegistry(tryTestOpts)
-	gitcMock := NewMockGitClient(ctrl)
+	gitcMock := gitmock.NewMockGitClient(ctrl)
 	out := &bytes.Buffer{}
 	taskFile := createTempFile("", "*.yaml")
 
@@ -134,11 +136,11 @@ func TestTryRunner_Run_EmptyTaskFile(t *testing.T) {
 func TestTryRunner_Run_TaskName(t *testing.T) {
 	repoName := "git.local/unit/test"
 	ctrl := gomock.NewController(t)
-	repoMock := NewMockRepository(ctrl)
-	hostMock := NewMockHost(ctrl)
+	repoMock := hostmock.NewMockRepository(ctrl)
+	hostMock := hostmock.NewMockHost(ctrl)
 	hostMock.EXPECT().CreateFromName(repoName).Return(repoMock, nil)
 	registry := task.NewRegistry(tryTestOpts)
-	gitcMock := NewMockGitClient(ctrl)
+	gitcMock := gitmock.NewMockGitClient(ctrl)
 	out := &bytes.Buffer{}
 	taskFile := createTestTaskFile(createTestTask(repoName))
 
@@ -161,10 +163,10 @@ func TestTryRunner_Run_TaskName(t *testing.T) {
 func TestTryRunner_Run_FilterDoesNotMatch(t *testing.T) {
 	ctrl := gomock.NewController(t)
 	repoMock := setupTryRepoMock(ctrl)
-	hostMock := NewMockHost(ctrl)
+	hostMock := hostmock.NewMockHost(ctrl)
 	hostMock.EXPECT().CreateFromName("git.local/unit/test").Return(repoMock, nil)
 	registry := task.NewRegistry(options.Opts{FilterFactories: filter.BuiltInFactories})
-	gitcMock := NewMockGitClient(ctrl)
+	gitcMock := gitmock.NewMockGitClient(ctrl)
 	out := &bytes.Buffer{}
 	content := `name: Unit Test
 filters:
@@ -192,9 +194,9 @@ filters:
 
 func TestTryRunner_Run_UnsetRepositoryName(t *testing.T) {
 	ctrl := gomock.NewController(t)
-	hostMock := NewMockHost(ctrl)
+	hostMock := hostmock.NewMockHost(ctrl)
 	registry := task.NewRegistry(tryTestOpts)
-	gitcMock := NewMockGitClient(ctrl)
+	gitcMock := gitmock.NewMockGitClient(ctrl)
 	taskFile := createTestTaskFile(createTestTask("git.local/unit/test"))
 
 	underTest := &command.TryRunner{
@@ -213,9 +215,9 @@ func TestTryRunner_Run_UnsetRepositoryName(t *testing.T) {
 
 func TestTryRunner_Run_UnsetTaskFile(t *testing.T) {
 	ctrl := gomock.NewController(t)
-	hostMock := NewMockHost(ctrl)
+	hostMock := hostmock.NewMockHost(ctrl)
 	registry := task.NewRegistry(tryTestOpts)
-	gitcMock := NewMockGitClient(ctrl)
+	gitcMock := gitmock.NewMockGitClient(ctrl)
 
 	underTest := &command.TryRunner{
 		ApplyActionsFunc: func(actions []action.Action, ctx context.Context, dir string) error { return nil },
@@ -233,11 +235,11 @@ func TestTryRunner_Run_UnsetTaskFile(t *testing.T) {
 
 func TestTryRunner_Run_InputsMissing(t *testing.T) {
 	ctrl := gomock.NewController(t)
-	repoMock := NewMockRepository(ctrl)
-	hostMock := NewMockHost(ctrl)
+	repoMock := hostmock.NewMockRepository(ctrl)
+	hostMock := hostmock.NewMockHost(ctrl)
 	hostMock.EXPECT().CreateFromName("git.local/unit/test").Return(repoMock, nil)
 	registry := task.NewRegistry(tryTestOpts)
-	gitcMock := NewMockGitClient(ctrl)
+	gitcMock := gitmock.NewMockGitClient(ctrl)
 	task := createTestTask("git.local/unit/test")
 	task.Inputs = append(task.Inputs, schema.Input{
 		Name: "test-input",

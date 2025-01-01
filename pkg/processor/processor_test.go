@@ -16,6 +16,8 @@ import (
 	"github.com/wndhydrnt/saturn-bot/pkg/task"
 	"github.com/wndhydrnt/saturn-bot/pkg/task/schema"
 	"github.com/wndhydrnt/saturn-bot/pkg/template"
+	gitmock "github.com/wndhydrnt/saturn-bot/test/mock/git"
+	hostmock "github.com/wndhydrnt/saturn-bot/test/mock/host"
 	"go.uber.org/mock/gomock"
 )
 
@@ -39,10 +41,10 @@ func (t *falseFilter) String() string {
 	return "false"
 }
 
-func setupRepoMock(ctrl *gomock.Controller) *MockRepository {
-	hostMock := NewMockHostDetail(ctrl)
+func setupRepoMock(ctrl *gomock.Controller) *hostmock.MockRepository {
+	hostMock := hostmock.NewMockHostDetail(ctrl)
 	hostMock.EXPECT().Name().Return("git.local").AnyTimes()
-	r := NewMockRepository(ctrl)
+	r := hostmock.NewMockRepository(ctrl)
 	r.EXPECT().FullName().Return("git.local/unit/test").AnyTimes()
 	r.EXPECT().Host().Return(hostMock).AnyTimes()
 	r.EXPECT().Name().Return("test").AnyTimes()
@@ -71,7 +73,7 @@ func TestProcessor_Process_CreatePullRequestLocalChanges(t *testing.T) {
 	repo.EXPECT().
 		CreatePullRequest("saturn-bot--unittest", gomock.Any()).
 		Return(prCreate, nil)
-	gitc := NewMockGitClient(ctrl)
+	gitc := gitmock.NewMockGitClient(ctrl)
 	gitc.EXPECT().Prepare(repo, false).Return(tempDir, nil)
 	gitc.EXPECT().UpdateTaskBranch("saturn-bot--unittest", false, repo)
 	gitc.EXPECT().HasLocalChanges().Return(true, nil)
@@ -110,7 +112,7 @@ func TestProcessor_Process_CreatePullRequestRemoteChanges(t *testing.T) {
 	repo.EXPECT().
 		CreatePullRequest("saturn-bot--unittest", gomock.Any()).
 		Return(prCreate, nil)
-	gitc := NewMockGitClient(ctrl)
+	gitc := gitmock.NewMockGitClient(ctrl)
 	gitc.EXPECT().Prepare(repo, false).Return(tempDir, nil)
 	gitc.EXPECT().UpdateTaskBranch("saturn-bot--unittest", false, repo)
 	gitc.EXPECT().HasLocalChanges().Return(true, nil)
@@ -149,7 +151,7 @@ func TestProcessor_Process_CreatePullRequestPreviouslyClosed(t *testing.T) {
 	repo.EXPECT().
 		CreatePullRequest("saturn-bot--unittest", gomock.Any()).
 		Return(prCreate, nil)
-	gitc := NewMockGitClient(ctrl)
+	gitc := gitmock.NewMockGitClient(ctrl)
 	gitc.EXPECT().Prepare(repo, false).Return(tempDir, nil)
 	gitc.EXPECT().UpdateTaskBranch("saturn-bot--unittest", false, repo)
 	gitc.EXPECT().HasLocalChanges().Return(false, nil)
@@ -173,7 +175,7 @@ func TestProcessor_Process_PullRequestClosedAndMergeOnceActive(t *testing.T) {
 	repo.EXPECT().FindPullRequest("saturn-bot--unittest").Return(prID, nil)
 	repo.EXPECT().PullRequest(prID).Return(nil).AnyTimes()
 	repo.EXPECT().IsPullRequestClosed(prID).Return(true)
-	gitc := NewMockGitClient(ctrl)
+	gitc := gitmock.NewMockGitClient(ctrl)
 	gitc.EXPECT().Prepare(repo, false).Return("/tmp", nil)
 	tw := &task.Task{Task: schema.Task{MergeOnce: true, Name: "unittest"}}
 	tw.AddPreCloneFilters(&trueFilter{})
@@ -193,7 +195,7 @@ func TestProcessor_Process_PullRequestMergedAndMergeOnceActive(t *testing.T) {
 	repo.EXPECT().PullRequest(prID).Return(nil).AnyTimes()
 	repo.EXPECT().IsPullRequestClosed(prID).Return(false)
 	repo.EXPECT().IsPullRequestMerged(prID).Return(true)
-	gitc := NewMockGitClient(ctrl)
+	gitc := gitmock.NewMockGitClient(ctrl)
 	gitc.EXPECT().Prepare(repo, false).Return("/tmp", nil)
 	tw := &task.Task{Task: schema.Task{MergeOnce: true, Name: "unittest"}}
 	tw.AddPreCloneFilters(&trueFilter{})
@@ -213,7 +215,7 @@ func TestProcessor_Process_CreateOnly(t *testing.T) {
 	repo.EXPECT().PullRequest(prID).Return(nil).AnyTimes()
 	repo.EXPECT().IsPullRequestClosed(prID).Return(false)
 	repo.EXPECT().IsPullRequestMerged(prID).Return(false)
-	gitc := NewMockGitClient(ctrl)
+	gitc := gitmock.NewMockGitClient(ctrl)
 	gitc.EXPECT().Prepare(repo, false).Return("/tmp", nil)
 	tw := &task.Task{Task: schema.Task{CreateOnly: true, Name: "unittest"}}
 	tw.AddPreCloneFilters(&trueFilter{})
@@ -245,7 +247,7 @@ func TestProcessor_Process_ClosePullRequestIfChangesExistInBaseBranch(t *testing
 	repo.EXPECT().IsPullRequestOpen(prID).Return(true)
 	repo.EXPECT().ClosePullRequest("Everything up-to-date. Closing.", prID)
 	repo.EXPECT().DeleteBranch(prID).Return(nil)
-	gitc := NewMockGitClient(ctrl)
+	gitc := gitmock.NewMockGitClient(ctrl)
 	gitc.EXPECT().Prepare(repo, false).Return(tempDir, nil)
 	gitc.EXPECT().UpdateTaskBranch("saturn-bot--unittest", false, repo)
 	gitc.EXPECT().HasLocalChanges().Return(true, nil)
@@ -282,7 +284,7 @@ func TestProcessor_Process_MergePullRequest(t *testing.T) {
 	repo.EXPECT().GetPullRequestCreationTime(prID).Return(time.Now().AddDate(0, 0, -1))
 	repo.EXPECT().CanMergePullRequest(prID).Return(true, nil)
 	repo.EXPECT().MergePullRequest(true, prID).Return(nil)
-	gitc := NewMockGitClient(ctrl)
+	gitc := gitmock.NewMockGitClient(ctrl)
 	gitc.EXPECT().Prepare(repo, false).Return(tempDir, nil)
 	gitc.EXPECT().UpdateTaskBranch("saturn-bot--unittest", false, repo)
 	gitc.EXPECT().HasLocalChanges().Return(false, nil)
@@ -316,7 +318,7 @@ func TestProcessor_Process_MergePullRequest_FailedMergeChecks(t *testing.T) {
 	repo.EXPECT().IsPullRequestOpen(prID).Return(true).AnyTimes()
 	repo.EXPECT().HasSuccessfulPullRequestBuild(prID).Return(false, nil)
 	repo.EXPECT().PullRequest(prID).Return(nil)
-	gitc := NewMockGitClient(ctrl)
+	gitc := gitmock.NewMockGitClient(ctrl)
 	gitc.EXPECT().Prepare(repo, false).Return(tempDir, nil)
 	gitc.EXPECT().UpdateTaskBranch("saturn-bot--unittest", false, repo)
 	gitc.EXPECT().HasLocalChanges().Return(false, nil)
@@ -351,7 +353,7 @@ func TestProcessor_Process_MergePullRequest_AutoMergeAfter(t *testing.T) {
 	repo.EXPECT().HasSuccessfulPullRequestBuild(prID).Return(true, nil)
 	repo.EXPECT().GetPullRequestCreationTime(prID).Return(time.Now().AddDate(0, 0, -1))
 	repo.EXPECT().PullRequest(prID).Return(nil)
-	gitc := NewMockGitClient(ctrl)
+	gitc := gitmock.NewMockGitClient(ctrl)
 	gitc.EXPECT().Prepare(repo, false).Return(tempDir, nil)
 	gitc.EXPECT().UpdateTaskBranch("saturn-bot--unittest", false, repo)
 	gitc.EXPECT().HasLocalChanges().Return(false, nil)
@@ -391,7 +393,7 @@ func TestProcessor_Process_MergePullRequest_MergeConflict(t *testing.T) {
 	repo.EXPECT().GetPullRequestCreationTime(prID).Return(time.Now().AddDate(0, 0, -1))
 	repo.EXPECT().CanMergePullRequest(prID).Return(false, nil)
 	repo.EXPECT().PullRequest(prID).Return(nil)
-	gitc := NewMockGitClient(ctrl)
+	gitc := gitmock.NewMockGitClient(ctrl)
 	gitc.EXPECT().Prepare(repo, false).Return(tempDir, nil)
 	gitc.EXPECT().UpdateTaskBranch("saturn-bot--unittest", false, repo)
 	gitc.EXPECT().HasLocalChanges().Return(false, nil)
@@ -451,7 +453,7 @@ func TestProcessor_Process_UpdatePullRequest(t *testing.T) {
 	}
 	repo.EXPECT().UpdatePullRequest(prData, prID).Return(nil)
 	repo.EXPECT().PullRequest(prID).Return(nil).AnyTimes()
-	gitc := NewMockGitClient(ctrl)
+	gitc := gitmock.NewMockGitClient(ctrl)
 	gitc.EXPECT().Prepare(repo, false).Return(tempDir, nil)
 	gitc.EXPECT().UpdateTaskBranch("saturn-bot--unittest", false, repo)
 	gitc.EXPECT().HasLocalChanges().Return(true, nil)
@@ -502,7 +504,7 @@ func TestProcessor_Process_NoChanges(t *testing.T) {
 	repo.EXPECT().GetPullRequestBody(prID).Return("")
 	repo.EXPECT().BaseBranch().Return("main")
 	repo.EXPECT().IsPullRequestOpen(prID).Return(false).AnyTimes()
-	gitc := NewMockGitClient(ctrl)
+	gitc := gitmock.NewMockGitClient(ctrl)
 	gitc.EXPECT().Prepare(repo, false).Return(tempDir, nil)
 	gitc.EXPECT().UpdateTaskBranch("saturn-bot--unittest", false, repo)
 	gitc.EXPECT().HasLocalChanges().Return(false, nil)
@@ -555,7 +557,7 @@ The commit(s) that modified the pull request:
 	repo.EXPECT().ListPullRequestComments(prID).Return([]host.PullRequestComment{}, nil)
 	repo.EXPECT().CreatePullRequestComment(prCommentBody, prID).Return(nil)
 	repo.EXPECT().PullRequest(prID).Return(nil)
-	gitc := NewMockGitClient(ctrl)
+	gitc := gitmock.NewMockGitClient(ctrl)
 	gitc.EXPECT().Prepare(repo, false).Return(tempDir, nil)
 	gitc.EXPECT().
 		UpdateTaskBranch("saturn-bot--unittest", false, repo).
@@ -593,7 +595,7 @@ func TestProcessor_Process_ForceRebaseByUser(t *testing.T) {
 	repo.EXPECT().DeletePullRequestComment(prComment, prID).Return(nil)
 	repo.EXPECT().UpdatePullRequest(gomock.AssignableToTypeOf(host.PullRequestData{}), prID).Return(nil)
 	repo.EXPECT().PullRequest(prID).Return(nil).AnyTimes()
-	gitc := NewMockGitClient(ctrl)
+	gitc := gitmock.NewMockGitClient(ctrl)
 	gitc.EXPECT().Prepare(repo, false).Return(tempDir, nil)
 	gitc.EXPECT().UpdateTaskBranch("saturn-bot--unittest", true, repo).Return(false, nil)
 	gitc.EXPECT().HasLocalChanges().Return(true, nil)
@@ -612,7 +614,7 @@ func TestProcessor_Process_ForceRebaseByUser(t *testing.T) {
 
 func TestProcessor_Process_ChangeLimit(t *testing.T) {
 	ctrl := gomock.NewController(t)
-	gitc := NewMockGitClient(ctrl)
+	gitc := gitmock.NewMockGitClient(ctrl)
 	repo := setupRepoMock(ctrl)
 	tw := &task.Task{Task: schema.Task{ChangeLimit: 1, Name: "unittest"}}
 	tw.IncChangeLimitCount()
@@ -626,7 +628,7 @@ func TestProcessor_Process_ChangeLimit(t *testing.T) {
 
 func TestProcessor_Process_MaxOpenPRs(t *testing.T) {
 	ctrl := gomock.NewController(t)
-	gitc := NewMockGitClient(ctrl)
+	gitc := gitmock.NewMockGitClient(ctrl)
 	repo := setupRepoMock(ctrl)
 	tw := &task.Task{Task: schema.Task{MaxOpenPRs: 1, Name: "unittest"}}
 	tw.IncOpenPRsCount()
@@ -640,7 +642,7 @@ func TestProcessor_Process_MaxOpenPRs(t *testing.T) {
 
 func TestProcessor_Process_FilterNotMatching(t *testing.T) {
 	ctrl := gomock.NewController(t)
-	gitc := NewMockGitClient(ctrl)
+	gitc := gitmock.NewMockGitClient(ctrl)
 	repo := setupRepoMock(ctrl)
 	tw := &task.Task{Task: schema.Task{Name: "unittest"}}
 	tw.AddPreCloneFilters(&falseFilter{})
@@ -654,7 +656,7 @@ func TestProcessor_Process_FilterNotMatching(t *testing.T) {
 
 func TestProcessor_Process_NoFilters(t *testing.T) {
 	ctrl := gomock.NewController(t)
-	gitc := NewMockGitClient(ctrl)
+	gitc := gitmock.NewMockGitClient(ctrl)
 	repo := setupRepoMock(ctrl)
 	tw := &task.Task{Task: schema.Task{Name: "unittest"}}
 
@@ -677,7 +679,7 @@ func TestProcessor_Process_AutoCloseAfter_Close(t *testing.T) {
 	repo.EXPECT().PullRequest(prID).Return(&host.PullRequest{CreatedAt: &createdAt})
 	msg := "Pull request has been open for longer than 30s. Closing automatically."
 	repo.EXPECT().ClosePullRequest(msg, prID).Return(nil)
-	gitc := NewMockGitClient(ctrl)
+	gitc := gitmock.NewMockGitClient(ctrl)
 	gitc.EXPECT().Prepare(repo, false).Return("/tmp", nil)
 	tw := &task.Task{Task: schema.Task{AutoCloseAfter: 30, Name: "unittest"}}
 	tw.AddPreCloneFilters(&trueFilter{})
@@ -702,7 +704,7 @@ func TestProcessor_Process_AutoCloseAfter_NotTimeYet(t *testing.T) {
 	repo.EXPECT().GetPullRequestBody(prID).Return("").AnyTimes()
 	repo.EXPECT().BaseBranch().Return("main").AnyTimes()
 	repo.EXPECT().UpdatePullRequest(gomock.Any(), prID).Return(nil)
-	gitc := NewMockGitClient(ctrl)
+	gitc := gitmock.NewMockGitClient(ctrl)
 	gitc.EXPECT().Prepare(repo, false).Return("/tmp", nil)
 	gitc.EXPECT().UpdateTaskBranch("saturn-bot--unittest", false, repo)
 	gitc.EXPECT().HasLocalChanges().Return(false, nil)
@@ -734,7 +736,7 @@ func TestProcessor_Process_EmptyRepository(t *testing.T) {
 	repo.EXPECT().GetPullRequestBody(prID).Return("")
 	repo.EXPECT().IsPullRequestOpen(prID).Return(true).AnyTimes()
 	repo.EXPECT().PullRequest(prID).Return(nil)
-	gitc := NewMockGitClient(ctrl)
+	gitc := gitmock.NewMockGitClient(ctrl)
 	gitc.EXPECT().Prepare(repo, false).Return(tempDir, nil)
 	gitc.EXPECT().
 		UpdateTaskBranch("saturn-bot--unittest", false, repo).
@@ -753,7 +755,7 @@ func TestProcessor_Process_CleanupOnPrepareError(t *testing.T) {
 	tempDir := t.TempDir()
 	ctrl := gomock.NewController(t)
 	repo := setupRepoMock(ctrl)
-	gitc := NewMockGitClient(ctrl)
+	gitc := gitmock.NewMockGitClient(ctrl)
 	gitc.EXPECT().
 		Prepare(repo, false).
 		Return(tempDir, fmt.Errorf("prepare error"))

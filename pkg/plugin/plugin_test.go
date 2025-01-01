@@ -10,11 +10,13 @@ import (
 	sbcontext "github.com/wndhydrnt/saturn-bot/pkg/context"
 	"github.com/wndhydrnt/saturn-bot/pkg/host"
 	"github.com/wndhydrnt/saturn-bot/pkg/plugin"
+	hostmock "github.com/wndhydrnt/saturn-bot/test/mock/host"
+	pluginmock "github.com/wndhydrnt/saturn-bot/test/mock/plugin"
 	"go.uber.org/mock/gomock"
 )
 
-func setupRepoPluginTest(ctrl *gomock.Controller) (repoMock *MockRepository, payload *protoV1.Repository) {
-	repoMock = NewMockRepository(ctrl)
+func setupRepoPluginTest(ctrl *gomock.Controller) (repoMock *hostmock.MockRepository, payload *protoV1.Repository) {
+	repoMock = hostmock.NewMockRepository(ctrl)
 	repoMock.EXPECT().FullName().Return("git.localhost/unit/test").AnyTimes()
 	repoMock.EXPECT().CloneUrlHttp().Return("https://git.localhost/unit/test.git").AnyTimes()
 	repoMock.EXPECT().CloneUrlSsh().Return("git@git.localhost/unit/test.git").AnyTimes()
@@ -33,7 +35,7 @@ func TestPlugin_Apply(t *testing.T) {
 	ctrl := gomock.NewController(t)
 	repo, payload := setupRepoPluginTest(ctrl)
 	runData := map[string]string{"a": "1"}
-	provider := NewMockProvider(ctrl)
+	provider := pluginmock.NewMockProvider(ctrl)
 	provider.EXPECT().ExecuteActions(&protoV1.ExecuteActionsRequest{
 		Context: &protoV1.Context{
 			RunData:    runData,
@@ -61,7 +63,7 @@ func TestPlugin_Apply(t *testing.T) {
 func TestPlugin_Apply_WithPullRequest(t *testing.T) {
 	ctrl := gomock.NewController(t)
 	repo, payload := setupRepoPluginTest(ctrl)
-	provider := NewMockProvider(ctrl)
+	provider := pluginmock.NewMockProvider(ctrl)
 	provider.EXPECT().ExecuteActions(&protoV1.ExecuteActionsRequest{
 		Context: &protoV1.Context{
 			RunData:     make(map[string]string),
@@ -88,7 +90,7 @@ func TestPlugin_Apply_Error(t *testing.T) {
 	ctrl := gomock.NewController(t)
 	repo, payload := setupRepoPluginTest(ctrl)
 	errMsg := "exception in plugin"
-	provider := NewMockProvider(ctrl)
+	provider := pluginmock.NewMockProvider(ctrl)
 	provider.EXPECT().ExecuteActions(&protoV1.ExecuteActionsRequest{
 		Context: &protoV1.Context{
 			RunData:    map[string]string{},
@@ -112,7 +114,7 @@ func TestPlugin_Do(t *testing.T) {
 	ctrl := gomock.NewController(t)
 	repo, payload := setupRepoPluginTest(ctrl)
 	runData := map[string]string{"a": "1"}
-	provider := NewMockProvider(ctrl)
+	provider := pluginmock.NewMockProvider(ctrl)
 	provider.EXPECT().ExecuteFilters(&protoV1.ExecuteFiltersRequest{
 		Context: &protoV1.Context{
 			Repository: payload,
@@ -141,7 +143,7 @@ func TestPlugin_Do(t *testing.T) {
 func TestPlugin_Do_WithPullRequest(t *testing.T) {
 	ctrl := gomock.NewController(t)
 	repo, payload := setupRepoPluginTest(ctrl)
-	provider := NewMockProvider(ctrl)
+	provider := pluginmock.NewMockProvider(ctrl)
 	provider.EXPECT().ExecuteFilters(&protoV1.ExecuteFiltersRequest{
 		Context: &protoV1.Context{
 			RunData:     make(map[string]string),
@@ -170,7 +172,7 @@ func TestPlugin_Do_Error(t *testing.T) {
 	ctrl := gomock.NewController(t)
 	repo, payload := setupRepoPluginTest(ctrl)
 	errMsg := "exception in plugin"
-	provider := NewMockProvider(ctrl)
+	provider := pluginmock.NewMockProvider(ctrl)
 	provider.EXPECT().ExecuteFilters(&protoV1.ExecuteFiltersRequest{
 		Context: &protoV1.Context{
 			Repository: payload,
@@ -193,7 +195,7 @@ func TestPlugin_Do_Error(t *testing.T) {
 func TestPlugin_Start(t *testing.T) {
 	opts := plugin.StartOptions{Config: map[string]string{"message": "Hello World"}}
 	ctrl := gomock.NewController(t)
-	provider := NewMockProvider(ctrl)
+	provider := pluginmock.NewMockProvider(ctrl)
 	provider.EXPECT().
 		GetPlugin(&protoV1.GetPluginRequest{Config: opts.Config}).
 		Return(&protoV1.GetPluginResponse{Name: "unittest", Priority: 10}, nil)
