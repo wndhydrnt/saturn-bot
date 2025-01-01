@@ -31,7 +31,7 @@ func TestGitlabCodeSearch_Do(t *testing.T) {
 	testCases := []testCase{
 		{
 			name:    "returns true when search result contains project ID",
-			factory: filter.GitlabCodeSearchFactory{},
+			factory: filter.GitlabCodeSearchFactory{}.CreatePreClone,
 			createOpts: func(ctrl *gomock.Controller) filter.CreateOptions {
 				m := &MockGitLabSearcher{projectIDs: []int64{10}, query: "func"}
 				return filter.CreateOptions{Hosts: []host.Host{m}}
@@ -47,7 +47,7 @@ func TestGitlabCodeSearch_Do(t *testing.T) {
 		},
 		{
 			name:    "returns false when search result does not contain project ID",
-			factory: filter.GitlabCodeSearchFactory{},
+			factory: filter.GitlabCodeSearchFactory{}.CreatePreClone,
 			createOpts: func(ctrl *gomock.Controller) filter.CreateOptions {
 				m := &MockGitLabSearcher{projectIDs: []int64{20}, query: "func"}
 				return filter.CreateOptions{Hosts: []host.Host{m}}
@@ -63,7 +63,7 @@ func TestGitlabCodeSearch_Do(t *testing.T) {
 		},
 		{
 			name:    "limits query by group ID of type int if set",
-			factory: filter.GitlabCodeSearchFactory{},
+			factory: filter.GitlabCodeSearchFactory{}.CreatePreClone,
 			createOpts: func(ctrl *gomock.Controller) filter.CreateOptions {
 				m := &MockGitLabSearcher{
 					groupID:    23,
@@ -83,7 +83,7 @@ func TestGitlabCodeSearch_Do(t *testing.T) {
 		},
 		{
 			name:    "limits query by group ID of type string if set",
-			factory: filter.GitlabCodeSearchFactory{},
+			factory: filter.GitlabCodeSearchFactory{}.CreatePreClone,
 			createOpts: func(ctrl *gomock.Controller) filter.CreateOptions {
 				m := &MockGitLabSearcher{
 					groupID:    "unit/test",
@@ -103,13 +103,13 @@ func TestGitlabCodeSearch_Do(t *testing.T) {
 		},
 		{
 			name:             "errors if parameter query is not set",
-			factory:          filter.GitlabCodeSearchFactory{},
+			factory:          filter.GitlabCodeSearchFactory{}.CreatePreClone,
 			params:           params.Params{},
 			wantFactoryError: "required parameter `query` not set",
 		},
 		{
 			name:    "errors if parameter groupID is neither int nor string",
-			factory: filter.GitlabCodeSearchFactory{},
+			factory: filter.GitlabCodeSearchFactory{}.CreatePreClone,
 			createOpts: func(ctrl *gomock.Controller) filter.CreateOptions {
 				m := &MockGitLabSearcher{}
 				return filter.CreateOptions{Hosts: []host.Host{m}}
@@ -119,7 +119,7 @@ func TestGitlabCodeSearch_Do(t *testing.T) {
 		},
 		{
 			name:             "errors if GitLab is not configured",
-			factory:          filter.GitlabCodeSearchFactory{},
+			factory:          filter.GitlabCodeSearchFactory{}.CreatePreClone,
 			params:           params.Params{"query": "func"},
 			wantFactoryError: "required host for GitLab not found",
 		},

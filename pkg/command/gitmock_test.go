@@ -42,6 +42,20 @@ func (m *MockGitClient) EXPECT() *MockGitClientMockRecorder {
 	return m.recorder
 }
 
+// Cleanup mocks base method.
+func (m *MockGitClient) Cleanup(repo host.Repository) error {
+	m.ctrl.T.Helper()
+	ret := m.ctrl.Call(m, "Cleanup", repo)
+	ret0, _ := ret[0].(error)
+	return ret0
+}
+
+// Cleanup indicates an expected call of Cleanup.
+func (mr *MockGitClientMockRecorder) Cleanup(repo any) *gomock.Call {
+	mr.mock.ctrl.T.Helper()
+	return mr.mock.ctrl.RecordCallWithMethodType(mr.mock, "Cleanup", reflect.TypeOf((*MockGitClient)(nil).Cleanup), repo)
+}
+
 // CommitChanges mocks base method.
 func (m *MockGitClient) CommitChanges(msg string) error {
 	m.ctrl.T.Helper()

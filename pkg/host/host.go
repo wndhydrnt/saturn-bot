@@ -2,6 +2,7 @@ package host
 
 import (
 	"bytes"
+	"encoding/json"
 	"errors"
 	"fmt"
 	htmlTemplate "html/template"
@@ -107,14 +108,14 @@ type Repository interface {
 	DeletePullRequestComment(comment PullRequestComment, pr interface{}) error
 	FindPullRequest(branch string) (any, error)
 	FullName() string
-	GetFile(fileName string) (string, error)
 	GetPullRequestBody(pr interface{}) string
 	GetPullRequestCreationTime(pr interface{}) time.Time
-	HasFile(path string) (bool, error)
 	HasSuccessfulPullRequestBuild(pr interface{}) (bool, error)
 	Host() HostDetail
 	// ID returns the global, unique identifier of the repository in the host.
 	ID() int64
+	// IsArchived returns true if the repository has been archived on the host.
+	IsArchived() bool
 	IsPullRequestClosed(pr interface{}) bool
 	IsPullRequestMerged(pr interface{}) bool
 	IsPullRequestOpen(pr interface{}) bool
@@ -125,11 +126,16 @@ type Repository interface {
 	Owner() string
 	UpdatePullRequest(data PullRequestData, pr interface{}) error
 	WebUrl() string
+	// Raw returns the underlying data structure of the Repository struct.
+	// The raw struct is marshalled to JSON.
+	Raw() any
 }
 
 type Host interface {
 	HostDetail
 	CreateFromName(name string) (Repository, error)
+	// CreateFromJson takes a JSON decoder from which to unmarshal a Repository and return it.
+	CreateFromJson(dec *json.Decoder) (Repository, error)
 	ListRepositories(since *time.Time, result chan []Repository, errChan chan error)
 	ListRepositoriesWithOpenPullRequests(result chan []Repository, errChan chan error)
 }
@@ -142,6 +148,15 @@ type UserInfo struct {
 type HostDetail interface {
 	AuthenticatedUser() (*UserInfo, error)
 	Name() string
+}
+
+// RepositoryLister lists all repositories from the cache.
+//
+// An implementation queries all hosts to gather the list of repositories.
+// Every repository is then send to the result channel.
+// If an error occurs, then the error is sent to the errChan channel.
+type RepositoryLister interface {
+	List(hosts []Host, result chan Repository, errChan chan error)
 }
 
 func CreatePullRequestCommentWithIdentifier(body string, identifier string, pr interface{}, repo Repository) error {

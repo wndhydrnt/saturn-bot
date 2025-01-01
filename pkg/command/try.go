@@ -7,7 +7,7 @@ import (
 	"os"
 
 	"github.com/wndhydrnt/saturn-bot/pkg/action"
-	saturnContext "github.com/wndhydrnt/saturn-bot/pkg/context"
+	sbcontext "github.com/wndhydrnt/saturn-bot/pkg/context"
 	"github.com/wndhydrnt/saturn-bot/pkg/git"
 	"github.com/wndhydrnt/saturn-bot/pkg/host"
 	"github.com/wndhydrnt/saturn-bot/pkg/options"
@@ -93,9 +93,9 @@ func (r *TryRunner) Run() error {
 			continue
 		}
 
-		ctx := context.WithValue(context.Background(), saturnContext.RepositoryKey{}, repository)
-		matched := true
-		for _, filter := range task.Filters() {
+		ctx := context.WithValue(context.Background(), sbcontext.RepositoryKey{}, repository)
+		matchedPreClone := true
+		for _, filter := range task.FiltersPreClone() {
 			match, err := filter.Do(ctx)
 			if err != nil {
 				fmt.Fprintf(r.Out, "⛔️ Filter %s of task %s failed: %s\n", filter.String(), task.Name, err)
@@ -106,11 +106,11 @@ func (r *TryRunner) Run() error {
 				fmt.Fprintf(r.Out, "✅ Filter %s of task %s matches\n", filter.String(), task.Name)
 			} else {
 				fmt.Fprintf(r.Out, "❌ Filter %s of task %s doesn't match\n", filter.String(), task.Name)
-				matched = false
+				matchedPreClone = false
 			}
 		}
 
-		if !matched {
+		if !matchedPreClone {
 			continue
 		}
 
@@ -118,6 +118,27 @@ func (r *TryRunner) Run() error {
 		checkoutPath, err := r.GitClient.Prepare(repository, false)
 		if err != nil {
 			fmt.Fprintf(r.Out, "⛔️ Failed to prepare repository %s: %s\n", repository.FullName(), err)
+			continue
+		}
+
+		ctx = context.WithValue(ctx, sbcontext.CheckoutPath{}, checkoutPath)
+		matchedPostClone := true
+		for _, filter := range task.FiltersPostClone() {
+			match, err := filter.Do(ctx)
+			if err != nil {
+				fmt.Fprintf(r.Out, "⛔️ Filter %s of task %s failed: %s\n", filter.String(), task.Name, err)
+				continue
+			}
+
+			if match {
+				fmt.Fprintf(r.Out, "✅ Filter %s of task %s matches\n", filter.String(), task.Name)
+			} else {
+				fmt.Fprintf(r.Out, "❌ Filter %s of task %s doesn't match\n", filter.String(), task.Name)
+				matchedPostClone = false
+			}
+		}
+
+		if !matchedPostClone {
 			continue
 		}
 
@@ -150,7 +171,7 @@ func (r *TryRunner) Run() error {
 		}
 
 		fmt.Fprintf(r.Out, "🚜 Applying actions of task\n")
-		ctx = context.WithValue(ctx, saturnContext.CheckoutPath{}, checkoutPath)
+		ctx = context.WithValue(ctx, sbcontext.CheckoutPath{}, checkoutPath)
 		err = r.ApplyActionsFunc(task.Actions(), ctx, checkoutPath)
 		if err != nil {
 			fmt.Fprintf(r.Out, "⛔️ %s\n", err)

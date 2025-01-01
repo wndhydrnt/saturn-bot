@@ -10,6 +10,7 @@
 package git_test
 
 import (
+	json "encoding/json"
 	reflect "reflect"
 	time "time"
 
@@ -200,21 +201,6 @@ func (mr *MockRepositoryMockRecorder) FullName() *gomock.Call {
 	return mr.mock.ctrl.RecordCallWithMethodType(mr.mock, "FullName", reflect.TypeOf((*MockRepository)(nil).FullName))
 }
 
-// GetFile mocks base method.
-func (m *MockRepository) GetFile(fileName string) (string, error) {
-	m.ctrl.T.Helper()
-	ret := m.ctrl.Call(m, "GetFile", fileName)
-	ret0, _ := ret[0].(string)
-	ret1, _ := ret[1].(error)
-	return ret0, ret1
-}
-
-// GetFile indicates an expected call of GetFile.
-func (mr *MockRepositoryMockRecorder) GetFile(fileName any) *gomock.Call {
-	mr.mock.ctrl.T.Helper()
-	return mr.mock.ctrl.RecordCallWithMethodType(mr.mock, "GetFile", reflect.TypeOf((*MockRepository)(nil).GetFile), fileName)
-}
-
 // GetPullRequestBody mocks base method.
 func (m *MockRepository) GetPullRequestBody(pr any) string {
 	m.ctrl.T.Helper()
@@ -241,21 +227,6 @@ func (m *MockRepository) GetPullRequestCreationTime(pr any) time.Time {
 func (mr *MockRepositoryMockRecorder) GetPullRequestCreationTime(pr any) *gomock.Call {
 	mr.mock.ctrl.T.Helper()
 	return mr.mock.ctrl.RecordCallWithMethodType(mr.mock, "GetPullRequestCreationTime", reflect.TypeOf((*MockRepository)(nil).GetPullRequestCreationTime), pr)
-}
-
-// HasFile mocks base method.
-func (m *MockRepository) HasFile(path string) (bool, error) {
-	m.ctrl.T.Helper()
-	ret := m.ctrl.Call(m, "HasFile", path)
-	ret0, _ := ret[0].(bool)
-	ret1, _ := ret[1].(error)
-	return ret0, ret1
-}
-
-// HasFile indicates an expected call of HasFile.
-func (mr *MockRepositoryMockRecorder) HasFile(path any) *gomock.Call {
-	mr.mock.ctrl.T.Helper()
-	return mr.mock.ctrl.RecordCallWithMethodType(mr.mock, "HasFile", reflect.TypeOf((*MockRepository)(nil).HasFile), path)
 }
 
 // HasSuccessfulPullRequestBuild mocks base method.
@@ -299,6 +270,20 @@ func (m *MockRepository) ID() int64 {
 func (mr *MockRepositoryMockRecorder) ID() *gomock.Call {
 	mr.mock.ctrl.T.Helper()
 	return mr.mock.ctrl.RecordCallWithMethodType(mr.mock, "ID", reflect.TypeOf((*MockRepository)(nil).ID))
+}
+
+// IsArchived mocks base method.
+func (m *MockRepository) IsArchived() bool {
+	m.ctrl.T.Helper()
+	ret := m.ctrl.Call(m, "IsArchived")
+	ret0, _ := ret[0].(bool)
+	return ret0
+}
+
+// IsArchived indicates an expected call of IsArchived.
+func (mr *MockRepositoryMockRecorder) IsArchived() *gomock.Call {
+	mr.mock.ctrl.T.Helper()
+	return mr.mock.ctrl.RecordCallWithMethodType(mr.mock, "IsArchived", reflect.TypeOf((*MockRepository)(nil).IsArchived))
 }
 
 // IsPullRequestClosed mocks base method.
@@ -414,6 +399,20 @@ func (mr *MockRepositoryMockRecorder) PullRequest(pr any) *gomock.Call {
 	return mr.mock.ctrl.RecordCallWithMethodType(mr.mock, "PullRequest", reflect.TypeOf((*MockRepository)(nil).PullRequest), pr)
 }
 
+// Raw mocks base method.
+func (m *MockRepository) Raw() any {
+	m.ctrl.T.Helper()
+	ret := m.ctrl.Call(m, "Raw")
+	ret0, _ := ret[0].(any)
+	return ret0
+}
+
+// Raw indicates an expected call of Raw.
+func (mr *MockRepositoryMockRecorder) Raw() *gomock.Call {
+	mr.mock.ctrl.T.Helper()
+	return mr.mock.ctrl.RecordCallWithMethodType(mr.mock, "Raw", reflect.TypeOf((*MockRepository)(nil).Raw))
+}
+
 // UpdatePullRequest mocks base method.
 func (m *MockRepository) UpdatePullRequest(data host.PullRequestData, pr any) error {
 	m.ctrl.T.Helper()
@@ -479,6 +478,21 @@ func (m *MockHost) AuthenticatedUser() (*host.UserInfo, error) {
 func (mr *MockHostMockRecorder) AuthenticatedUser() *gomock.Call {
 	mr.mock.ctrl.T.Helper()
 	return mr.mock.ctrl.RecordCallWithMethodType(mr.mock, "AuthenticatedUser", reflect.TypeOf((*MockHost)(nil).AuthenticatedUser))
+}
+
+// CreateFromJson mocks base method.
+func (m *MockHost) CreateFromJson(dec *json.Decoder) (host.Repository, error) {
+	m.ctrl.T.Helper()
+	ret := m.ctrl.Call(m, "CreateFromJson", dec)
+	ret0, _ := ret[0].(host.Repository)
+	ret1, _ := ret[1].(error)
+	return ret0, ret1
+}
+
+// CreateFromJson indicates an expected call of CreateFromJson.
+func (mr *MockHostMockRecorder) CreateFromJson(dec any) *gomock.Call {
+	mr.mock.ctrl.T.Helper()
+	return mr.mock.ctrl.RecordCallWithMethodType(mr.mock, "CreateFromJson", reflect.TypeOf((*MockHost)(nil).CreateFromJson), dec)
 }
 
 // CreateFromName mocks base method.
@@ -585,4 +599,40 @@ func (m *MockHostDetail) Name() string {
 func (mr *MockHostDetailMockRecorder) Name() *gomock.Call {
 	mr.mock.ctrl.T.Helper()
 	return mr.mock.ctrl.RecordCallWithMethodType(mr.mock, "Name", reflect.TypeOf((*MockHostDetail)(nil).Name))
+}
+
+// MockRepositoryLister is a mock of RepositoryLister interface.
+type MockRepositoryLister struct {
+	ctrl     *gomock.Controller
+	recorder *MockRepositoryListerMockRecorder
+	isgomock struct{}
+}
+
+// MockRepositoryListerMockRecorder is the mock recorder for MockRepositoryLister.
+type MockRepositoryListerMockRecorder struct {
+	mock *MockRepositoryLister
+}
+
+// NewMockRepositoryLister creates a new mock instance.
+func NewMockRepositoryLister(ctrl *gomock.Controller) *MockRepositoryLister {
+	mock := &MockRepositoryLister{ctrl: ctrl}
+	mock.recorder = &MockRepositoryListerMockRecorder{mock}
+	return mock
+}
+
+// EXPECT returns an object that allows the caller to indicate expected use.
+func (m *MockRepositoryLister) EXPECT() *MockRepositoryListerMockRecorder {
+	return m.recorder
+}
+
+// List mocks base method.
+func (m *MockRepositoryLister) List(hosts []host.Host, result chan host.Repository, errChan chan error) {
+	m.ctrl.T.Helper()
+	m.ctrl.Call(m, "List", hosts, result, errChan)
+}
+
+// List indicates an expected call of List.
+func (mr *MockRepositoryListerMockRecorder) List(hosts, result, errChan any) *gomock.Call {
+	mr.mock.ctrl.T.Helper()
+	return mr.mock.ctrl.RecordCallWithMethodType(mr.mock, "List", reflect.TypeOf((*MockRepositoryLister)(nil).List), hosts, result, errChan)
 }

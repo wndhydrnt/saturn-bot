@@ -1,8 +1,7 @@
 package host
 
 import (
-	"encoding/base64"
-	"errors"
+	"encoding/json"
 	"fmt"
 	"net/url"
 	"path"
@@ -14,6 +13,7 @@ import (
 	"github.com/hashicorp/go-cleanhttp"
 	"github.com/wndhydrnt/saturn-bot/pkg/log"
 	"github.com/wndhydrnt/saturn-bot/pkg/metrics"
+	"github.com/wndhydrnt/saturn-bot/pkg/ptr"
 	gitlab "gitlab.com/gitlab-org/api/client-go"
 	"go.uber.org/zap"
 )
@@ -250,76 +250,6 @@ func (g *GitLabRepository) FindPullRequest(branch string) (any, error) {
 	return mrs[0], nil
 }
 
-func (g *GitLabRepository) GetFile(fileName string) (string, error) {
-	file, _, err := g.client.RepositoryFiles.GetFile(g.project.ID, fileName, &gitlab.GetFileOptions{Ref: gitlab.Ptr(g.project.DefaultBranch)})
-	if err != nil {
-		if errors.Is(err, gitlab.ErrNotFound) {
-			return "", ErrFileNotFound
-		}
-
-		return "", fmt.Errorf("get file %s: %w", fileName, err)
-	}
-
-	if file.Encoding == "base64" {
-		b, err := base64.StdEncoding.DecodeString(file.Content)
-		if err != nil {
-			return "", fmt.Errorf("decode base64-encoded content of file %s: %w", file.FileName, err)
-		}
-
-		return string(b), nil
-	}
-
-	return file.Content, nil
-}
-
-func (g *GitLabRepository) HasFile(p string) (bool, error) {
-	dir := path.Dir(p)
-	opts := &gitlab.ListTreeOptions{
-		ListOptions: gitlab.ListOptions{
-			PerPage: 10,
-			Page:    1,
-		},
-		Path: gitlab.Ptr(dir),
-	}
-
-	for {
-		tree, resp, err := g.client.Repositories.ListTree(
-			g.project.ID,
-			opts,
-		)
-		if err != nil {
-			if errors.Is(err, gitlab.ErrNotFound) {
-				log.Log().Warn("Tree not found - empty repository?")
-				return false, nil
-			}
-			return false, fmt.Errorf("list tree of repository %d: %w", g.project.ID, err)
-		}
-
-		for _, entry := range tree {
-			if entry.Type != "blob" {
-				continue
-			}
-
-			matched, err := path.Match(p, entry.Path)
-			if err != nil {
-				return false, fmt.Errorf("match file pattern %s: %w", p, err)
-			}
-
-			if matched {
-				return true, nil
-			}
-		}
-
-		if resp.NextPage == 0 {
-			break
-		}
-
-		opts.Page = resp.NextPage
-	}
-
-	return false, nil
-}
-
 func (g *GitLabRepository) HasSuccessfulPullRequestBuild(pr interface{}) (bool, error) {
 	mr := pr.(*gitlab.MergeRequest)
 	state, _, err := g.client.MergeRequestApprovals.GetApprovalState(g.project.ID, mr.IID)
@@ -511,6 +441,11 @@ func (g *GitLabRepository) UpdatePullRequest(data PullRequestData, pr interface{
 	return nil
 }
 
+// IsArchived implements [Repository].
+func (g *GitLabRepository) IsArchived() bool {
+	return g.project.Archived
+}
+
 func (g *GitLabRepository) diffUsers(assigned []*gitlab.BasicUser, in []string) ([]int, bool) {
 	nameToAssignedUser := map[string]*gitlab.BasicUser{}
 	for _, user := range assigned {
@@ -537,6 +472,11 @@ func (g *GitLabRepository) diffUsers(assigned []*gitlab.BasicUser, in []string) 
 	}
 
 	return ids, needsUpdate
+}
+
+// Raw implements [Repository].
+func (g *GitLabRepository) Raw() any {
+	return g.project
 }
 
 type GitLabHost struct {
@@ -586,6 +526,18 @@ func (g *GitLabHost) AuthenticatedUser() (*UserInfo, error) {
 	return g.authenticatedUser, nil
 }
 
+// CreateFromJson implements [Host].
+func (g *GitLabHost) CreateFromJson(dec *json.Decoder) (Repository, error) {
+	project := &gitlab.Project{}
+	err := dec.Decode(project)
+	if err != nil {
+		return nil, fmt.Errorf("decode GitLab project from JSON: %w", err)
+	}
+
+	repo := &GitLabRepository{client: g.client, host: g, project: project, userCache: g.userCache}
+	return repo, nil
+}
+
 func (g *GitLabHost) CreateFromName(name string) (Repository, error) {
 	if !strings.HasPrefix(name, "https://") && !strings.HasPrefix(name, "http://") {
 		name = "https://" + name
@@ -612,7 +564,7 @@ func (g *GitLabHost) CreateFromName(name string) (Repository, error) {
 	}
 
 	repo := &GitLabRepository{client: g.client, host: g, project: project, userCache: g.userCache}
-	return NewRepositoryProxy(repo, nil), nil
+	return repo, nil
 }
 
 func (g *GitLabHost) Name() string {
@@ -620,10 +572,12 @@ func (g *GitLabHost) Name() string {
 }
 
 func (g *GitLabHost) ListRepositories(since *time.Time, result chan []Repository, errChan chan error) {
+	// NOTE: GitLab client currently doesn't support attribute `updated_after` of the API.
+	// Need to sort by `updated_at` in descending order and compare dates in code.
 	opts := &gitlab.ListProjectsOptions{
-		Archived:          gitlab.Ptr(false),
-		LastActivityAfter: since,
-		MinAccessLevel:    gitlab.Ptr(gitlab.AccessLevelValue(30)),
+		OrderBy:        gitlab.Ptr("updated_at"),
+		Sort:           gitlab.Ptr("desc"),
+		MinAccessLevel: gitlab.Ptr(gitlab.AccessLevelValue(30)),
 		ListOptions: gitlab.ListOptions{
 			Page:    1,
 			PerPage: 20,
@@ -638,8 +592,14 @@ func (g *GitLabHost) ListRepositories(since *time.Time, result chan []Repository
 
 		var batch []Repository
 		for _, project := range projects {
+			if since != nil && project.UpdatedAt != nil && project.UpdatedAt.Before(ptr.From(since)) {
+				result <- batch
+				errChan <- nil
+				return
+			}
+
 			glr := &GitLabRepository{client: g.client, host: g, project: project, userCache: g.userCache}
-			batch = append(batch, NewRepositoryProxy(glr, nil))
+			batch = append(batch, glr)
 		}
 
 		result <- batch
@@ -693,10 +653,7 @@ func (g *GitLabHost) ListRepositoriesWithOpenPullRequests(result chan []Reposito
 				continue
 			}
 
-			repo := NewRepositoryProxy(
-				&GitLabRepository{client: g.client, host: g, project: project, userCache: g.userCache},
-				nil,
-			)
+			repo := &GitLabRepository{client: g.client, host: g, project: project, userCache: g.userCache}
 			batch = append(batch, repo)
 		}
 

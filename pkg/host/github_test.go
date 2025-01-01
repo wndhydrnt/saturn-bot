@@ -314,27 +314,6 @@ func TestGitHubRepository_FullName(t *testing.T) {
 	assert.Equal(t, "github.com/unit/test", fullName)
 }
 
-func TestGitHubRepository_GetFile(t *testing.T) {
-	defer gock.Off()
-	gock.New("https://api.github.com").
-		Get("/repos/unit/test/contents/test/test.txt").
-		MatchParam("ref", "main").
-		Reply(200).
-		JSON(&github.RepositoryContent{
-			Content: github.String("test content"),
-		})
-
-	repo := &GitHubRepository{
-		client: setupGitHubTestClient(),
-		repo:   setupGitHubRepository(),
-	}
-	content, err := repo.GetFile("test/test.txt")
-
-	require.NoError(t, err)
-	assert.Equal(t, "test content", content)
-	assert.True(t, gock.IsDone())
-}
-
 func TestGitHubRepository_GetPullRequestBody(t *testing.T) {
 	pr := &github.PullRequest{
 		Body: github.String("pull request body"),
@@ -415,46 +394,6 @@ func TestGitHubRepository_DeletePullRequestComment(t *testing.T) {
 	err := repo.DeletePullRequestComment(comment, pr)
 
 	require.NoError(t, err)
-	assert.True(t, gock.IsDone())
-}
-
-func TestGitHubRepository_HasFile(t *testing.T) {
-	defer gock.Off()
-	gock.New("https://api.github.com").
-		Get("/repos/unit/test/git/trees/main").
-		MatchParam("recursive", "1").
-		Reply(200).
-		JSON(&github.Tree{
-			Entries: []*github.TreeEntry{
-				{Path: github.String("test.txt")},
-				{Path: github.String("config/prod.yaml")},
-			},
-		})
-
-	gock.New("https://api.github.com").
-		Get("/repos/unit/test/git/trees/main").
-		MatchParam("recursive", "1").
-		Reply(200).
-		JSON(&github.Tree{
-			Entries: []*github.TreeEntry{
-				{Path: github.String("test.txt")},
-				{Path: github.String("config/prod.yaml")},
-			},
-		})
-
-	repo := &GitHubRepository{
-		client: setupGitHubTestClient(),
-		repo:   setupGitHubRepository(),
-	}
-	success, err := repo.HasFile("**/*.yaml")
-
-	require.NoError(t, err)
-	assert.True(t, success)
-
-	fail, err := repo.HasFile("config/staging.yaml")
-	require.NoError(t, err)
-	assert.False(t, fail)
-
 	assert.True(t, gock.IsDone())
 }
 
@@ -998,7 +937,7 @@ func TestGitHubHost_CreateFromName(t *testing.T) {
 
 			require.NoError(t, err)
 			assert.Equal(t, tc.want, repo.FullName())
-			assert.IsType(t, &RepositoryProxy{}, repo)
+			assert.IsType(t, &GitHubRepository{}, repo)
 		})
 	}
 }
@@ -1051,9 +990,9 @@ func TestGitHubHost_ListRepositories(t *testing.T) {
 	require.NoError(t, wantErr)
 	assert.Len(t, result, 2)
 	assert.Equal(t, "github.com/unittest/first", result[0].FullName())
-	assert.IsType(t, &RepositoryProxy{}, result[0])
+	assert.IsType(t, &GitHubRepository{}, result[0])
 	assert.Equal(t, "github.com/unittest/second", result[1].FullName())
-	assert.IsType(t, &RepositoryProxy{}, result[1])
+	assert.IsType(t, &GitHubRepository{}, result[1])
 	assert.True(t, gock.IsDone())
 }
 
@@ -1107,9 +1046,9 @@ func TestGitHubHost_ListRepositories_Since(t *testing.T) {
 	require.NoError(t, wantErr)
 	require.Len(t, result, 2)
 	assert.Equal(t, "github.com/unittest/first", result[0].FullName())
-	assert.IsType(t, &RepositoryProxy{}, result[0])
+	assert.IsType(t, &GitHubRepository{}, result[0])
 	assert.Equal(t, "github.com/unittest/second", result[1].FullName())
-	assert.IsType(t, &RepositoryProxy{}, result[1])
+	assert.IsType(t, &GitHubRepository{}, result[1])
 	assert.True(t, gock.IsDone())
 }
 
@@ -1181,9 +1120,9 @@ func TestGitHubHost_ListRepositoriesWithOpenPullRequests(t *testing.T) {
 	require.NoError(t, wantErr)
 	require.Len(t, result, 2)
 	assert.Equal(t, "github.com/unittest/first", result[0].FullName())
-	assert.IsType(t, &RepositoryProxy{}, result[0])
+	assert.IsType(t, &GitHubRepository{}, result[0])
 	assert.Equal(t, "github.com/unittest/second", result[1].FullName())
-	assert.IsType(t, &RepositoryProxy{}, result[1])
+	assert.IsType(t, &GitHubRepository{}, result[1])
 	assert.True(t, gock.IsDone())
 }
 

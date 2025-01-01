@@ -2,6 +2,7 @@ package host
 
 import (
 	"context"
+	"encoding/json"
 	"fmt"
 	"net/http"
 	"net/url"
@@ -148,23 +149,6 @@ func (g *GitHubRepository) FullName() string {
 	return fmt.Sprintf("github.com/%s/%s", g.repo.GetOwner().GetLogin(), g.repo.GetName())
 }
 
-func (g *GitHubRepository) GetFile(fileName string) (string, error) {
-	opts := &github.RepositoryContentGetOptions{
-		Ref: g.BaseBranch(),
-	}
-	content, _, _, err := g.client.Repositories.GetContents(ctx, g.repo.GetOwner().GetLogin(), g.repo.GetName(), fileName, opts)
-	if err != nil {
-		return "", fmt.Errorf("get content of file '%s': %w", fileName, err)
-	}
-
-	payload, err := content.GetContent()
-	if err != nil {
-		return "", fmt.Errorf("decode content of file '%s': %w", fileName, err)
-	}
-
-	return payload, nil
-}
-
 func (g *GitHubRepository) GetPullRequestBody(pr interface{}) string {
 	gpr := pr.(*github.PullRequest)
 	return gpr.GetBody()
@@ -197,27 +181,6 @@ func (g *GitHubRepository) DeletePullRequestComment(comment PullRequestComment, 
 	}
 
 	return nil
-}
-
-func (g *GitHubRepository) HasFile(p string) (bool, error) {
-	// TODO test what happens on empty repository
-	tree, _, err := g.client.Git.GetTree(ctx, g.repo.GetOwner().GetLogin(), g.repo.GetName(), g.repo.GetDefaultBranch(), true)
-	if err != nil {
-		return false, fmt.Errorf("get github repository tree: %w", err)
-	}
-
-	for _, entry := range tree.Entries {
-		matched, err := path.Match(p, entry.GetPath())
-		if err != nil {
-			return false, fmt.Errorf("malformed pattern '%s': %w", p, err)
-		}
-
-		if matched {
-			return true, nil
-		}
-	}
-
-	return false, nil
 }
 
 func (g *GitHubRepository) HasSuccessfulPullRequestBuild(pr interface{}) (bool, error) {
@@ -450,6 +413,16 @@ func (g *GitHubRepository) WebUrl() string {
 	return g.repo.GetHTMLURL()
 }
 
+// Raw implements [Repository].
+func (g *GitHubRepository) Raw() any {
+	return g.repo
+}
+
+// IsArchived implements [Repository].
+func (g *GitHubRepository) IsArchived() bool {
+	return g.repo.GetArchived()
+}
+
 // listAllReviews lists all reviews done for a pull request.
 // The function is necessary because the GitHub API removes a user from the list of "requested reviewers"
 // and adds the user to the list of reviews.
@@ -600,6 +573,17 @@ func (g *GitHubHost) AuthenticatedUser() (*UserInfo, error) {
 	return g.authenticatedUser, nil
 }
 
+// CreateFromJson implements [Host].
+func (g *GitHubHost) CreateFromJson(dec *json.Decoder) (Repository, error) {
+	ghRepo := &github.Repository{}
+	err := dec.Decode(ghRepo)
+	if err != nil {
+		return nil, fmt.Errorf("decode GitHub repository from JSON: %w", err)
+	}
+
+	return &GitHubRepository{client: g.client, host: g, repo: ghRepo}, nil
+}
+
 func (g *GitHubHost) CreateFromName(name string) (Repository, error) {
 	if !strings.HasPrefix(name, "https://") && !strings.HasPrefix(name, "http://") {
 		name = "https://" + name
@@ -631,7 +615,7 @@ func (g *GitHubHost) CreateFromName(name string) (Repository, error) {
 		return nil, fmt.Errorf("get github repository: %w", err)
 	}
 
-	return NewRepositoryProxy(&GitHubRepository{client: g.client, host: g, repo: repo}, nil), nil
+	return &GitHubRepository{client: g.client, host: g, repo: repo}, nil
 }
 
 func (g *GitHubHost) ListRepositories(since *time.Time, result chan []Repository, errChan chan error) {
@@ -663,7 +647,7 @@ func (g *GitHubHost) ListRepositories(since *time.Time, result chan []Repository
 
 			batch = append(
 				batch,
-				NewRepositoryProxy(&GitHubRepository{client: g.client, host: g, repo: repo}, nil),
+				&GitHubRepository{client: g.client, host: g, repo: repo},
 			)
 		}
 
@@ -719,7 +703,7 @@ func (g *GitHubHost) ListRepositoriesWithOpenPullRequests(result chan []Reposito
 
 				batch = append(
 					batch,
-					NewRepositoryProxy(&GitHubRepository{client: g.client, host: g, repo: repo}, nil),
+					&GitHubRepository{client: g.client, host: g, repo: repo},
 				)
 			}
 		}

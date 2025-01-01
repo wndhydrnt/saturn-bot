@@ -4,11 +4,12 @@ import (
 	"context"
 	"errors"
 	"fmt"
+	"os"
+	"path/filepath"
 	"strings"
 
 	"github.com/itchyny/gojq"
 	sbcontext "github.com/wndhydrnt/saturn-bot/pkg/context"
-	"github.com/wndhydrnt/saturn-bot/pkg/host"
 	"github.com/wndhydrnt/saturn-bot/pkg/params"
 	"gopkg.in/yaml.v3"
 )
@@ -16,8 +17,12 @@ import (
 // JqFactory creates jq filters.
 type JqFactory struct{}
 
+func (f JqFactory) CreatePreClone(_ CreateOptions, params params.Params) (Filter, error) {
+	return nil, nil
+}
+
 // Create implements Factory.
-func (f JqFactory) Create(_ CreateOptions, params params.Params) (Filter, error) {
+func (f JqFactory) CreatePostClone(_ CreateOptions, params params.Params) (Filter, error) {
 	expressionsRaw, err := params.StringSlice("expressions", []string{})
 	if err != nil {
 		return nil, err
@@ -68,32 +73,33 @@ type Jq struct {
 	Path        string
 }
 
-// Do implements Filter.
-// It downloads a file from a repository and queries it via a jq expression.
+// Do implements [Filter].
+// It reads a file in a cloned repository and queries it via a jq expression.
 // It returns true if the query returns at least one node.
-func (f *Jq) Do(ctx context.Context) (bool, error) {
-	repo, ok := ctx.Value(sbcontext.RepositoryKey{}).(FilterRepository)
+func (jq *Jq) Do(ctx context.Context) (bool, error) {
+	checkoutPath, ok := ctx.Value(sbcontext.CheckoutPath{}).(string)
 	if !ok {
-		return false, errors.New("context does not contain a repository")
+		return false, errors.New("context does not contain the checkout path")
 	}
 
-	content, err := repo.GetFile(f.Path)
+	f, err := os.Open(filepath.Join(checkoutPath, jq.Path))
 	if err != nil {
-		if errors.Is(err, host.ErrFileNotFound) {
+		if errors.Is(err, os.ErrNotExist) {
 			return false, nil
 		}
 
-		return false, fmt.Errorf("download file from repository: %w", err)
+		return false, fmt.Errorf("open file in checkout: %w", err)
 	}
 
+	defer f.Close()
 	var data interface{}
-	dec := yaml.NewDecoder(strings.NewReader(content))
+	dec := yaml.NewDecoder(f)
 	err = dec.Decode(&data)
 	if err != nil {
 		return false, fmt.Errorf("decode file for jq filter: %w", err)
 	}
 
-	for _, expr := range f.Exprs {
+	for _, expr := range jq.Exprs {
 		iter := expr.Run(data)
 		for {
 			valueRaw, hasNext := iter.Next()

@@ -3,7 +3,6 @@ package host
 import (
 	"errors"
 	"net/http"
-	"regexp"
 	"slices"
 	"testing"
 	"time"
@@ -368,117 +367,6 @@ func TestGitLabRepository_FindPullRequest_NotFound(t *testing.T) {
 	require.True(t, gock.IsDone())
 }
 
-func TestGitLabRepository_GetFile(t *testing.T) {
-	defer gock.Off()
-	gock.New("http://gitlab.local").
-		Get("/api/v4/projects/123/repository/files/src/test.txt").
-		MatchParam("ref", "main").
-		Reply(200).
-		JSON(&gitlab.File{
-			Content: "Unit Test",
-		})
-	project := &gitlab.Project{DefaultBranch: "main", ID: 123}
-
-	underTest := &GitLabRepository{client: setupClient(), project: project}
-	result, err := underTest.GetFile("src/test.txt")
-
-	require.NoError(t, err)
-	require.Equal(t, "Unit Test", result)
-	require.True(t, gock.IsDone())
-}
-
-func TestGitLabRepository_GetFile_base64(t *testing.T) {
-	defer gock.Off()
-	gock.New("http://gitlab.local").
-		Get("/api/v4/projects/123/repository/files/src/test.txt").
-		MatchParam("ref", "main").
-		Reply(200).
-		JSON(&gitlab.File{
-			Content:  "VW5pdCBUZXN0",
-			Encoding: "base64",
-		})
-	project := &gitlab.Project{DefaultBranch: "main", ID: 123}
-
-	underTest := &GitLabRepository{client: setupClient(), project: project}
-	result, err := underTest.GetFile("src/test.txt")
-
-	require.NoError(t, err)
-	require.Equal(t, "Unit Test", result)
-	require.True(t, gock.IsDone())
-}
-
-func TestGitLabRepository_GetFile_NotFound(t *testing.T) {
-	defer gock.Off()
-	gock.New("http://gitlab.local").
-		Get("/api/v4/projects/123/repository/files/src/test.txt").
-		MatchParam("ref", "main").
-		Reply(404)
-	project := &gitlab.Project{DefaultBranch: "main", ID: 123}
-
-	underTest := &GitLabRepository{client: setupClient(), project: project}
-	_, err := underTest.GetFile("src/test.txt")
-
-	require.ErrorIs(t, err, ErrFileNotFound)
-	require.True(t, gock.IsDone())
-}
-
-func TestGitLabRepository_HasFile(t *testing.T) {
-	defer gock.Off()
-	gock.New("http://gitlab.local").
-		Get("/api/v4/projects/123/repository/tree").
-		MatchParam("path", "src").
-		Reply(200).
-		JSON([]*gitlab.TreeNode{
-			{Type: "other", Path: "src/other.txt"},
-			{Type: "blob", Path: "src/test.yaml"},
-			{Type: "blob", Path: "src/test.txt"},
-		})
-	project := &gitlab.Project{DefaultBranch: "main", ID: 123}
-
-	underTest := &GitLabRepository{client: setupClient(), project: project}
-	result, err := underTest.HasFile("src/*.txt")
-
-	require.NoError(t, err)
-	require.True(t, result)
-	require.True(t, gock.IsDone())
-}
-
-func TestGitLabRepository_HasFile_NoMatch(t *testing.T) {
-	defer gock.Off()
-	gock.New("http://gitlab.local").
-		Get("/api/v4/projects/123/repository/tree").
-		MatchParam("path", "src").
-		Reply(200).
-		JSON([]*gitlab.TreeNode{
-			{Type: "blob", Path: "src/test.yaml"},
-			{Type: "blob", Path: "src/test.txt"},
-		})
-	project := &gitlab.Project{DefaultBranch: "main", ID: 123}
-
-	underTest := &GitLabRepository{client: setupClient(), project: project}
-	result, err := underTest.HasFile("src/test.json")
-
-	require.NoError(t, err)
-	require.False(t, result)
-	require.True(t, gock.IsDone())
-}
-
-func TestGitLabRepository_HasFile_EmptyRepository(t *testing.T) {
-	defer gock.Off()
-	gock.New("http://gitlab.local").
-		Get("/api/v4/projects/123/repository/tree").
-		MatchParam("path", ".").
-		Reply(404)
-	project := &gitlab.Project{DefaultBranch: "main", ID: 123}
-
-	underTest := &GitLabRepository{client: setupClient(), project: project}
-	result, err := underTest.HasFile("test.txt")
-
-	require.NoError(t, err)
-	require.False(t, result)
-	require.True(t, gock.IsDone())
-}
-
 func TestGitLabRepository_HasSuccessfulPullRequestBuild(t *testing.T) {
 	defer gock.Off()
 	gock.New("http://gitlab.local").
@@ -831,7 +719,7 @@ func TestGitLabHost_CreateFromName(t *testing.T) {
 
 			require.NoError(t, err)
 			assert.Equal(t, tc.want, repo.FullName())
-			assert.IsType(t, &RepositoryProxy{}, repo)
+			assert.IsType(t, &GitLabRepository{}, repo)
 		})
 	}
 }
@@ -841,11 +729,10 @@ func TestGitLabHost_ListRepositories(t *testing.T) {
 	gock.New("http://gitlab.local").
 		Get("/api/v4/projects").
 		MatchParams(map[string]string{
-			"archived": "false",
-			// Use regexp.QuoteMeta() because gock parses matchers as regular expressions
-			"last_activity_after": regexp.QuoteMeta(time.Unix(0, 0).Format("2006-01-02T15:04:05Z07:00")),
-			"min_access_level":    "30",
-			"per_page":            "20",
+			"min_access_level": "30",
+			"order_by":         "updated_at",
+			"per_page":         "20",
+			"sort":             "desc",
 		}).
 		Reply(200).
 		JSON([]*gitlab.Project{
@@ -883,9 +770,9 @@ func TestGitLabHost_ListRepositories(t *testing.T) {
 	require.NoError(t, wantErr)
 	require.Len(t, result, 2)
 	require.Equal(t, "gitlab.local/unittest/first", result[0].FullName())
-	require.IsType(t, &RepositoryProxy{}, result[0])
+	require.IsType(t, &GitLabRepository{}, result[0])
 	require.Equal(t, "gitlab.local/unittest/second", result[1].FullName())
-	require.IsType(t, &RepositoryProxy{}, result[1])
+	require.IsType(t, &GitLabRepository{}, result[1])
 }
 
 func TestGitLabHost_ListRepositoriesWithOpenPullRequests(t *testing.T) {
@@ -947,9 +834,9 @@ func TestGitLabHost_ListRepositoriesWithOpenPullRequests(t *testing.T) {
 	require.NoError(t, wantErr)
 	require.Len(t, result, 2)
 	require.Equal(t, "gitlab.local/unittest/first", result[0].FullName())
-	require.IsType(t, &RepositoryProxy{}, result[0])
+	require.IsType(t, &GitLabRepository{}, result[0])
 	require.Equal(t, "gitlab.local/unittest/second", result[1].FullName())
-	require.IsType(t, &RepositoryProxy{}, result[1])
+	require.IsType(t, &GitLabRepository{}, result[1])
 	require.True(t, gock.IsDone())
 }
 

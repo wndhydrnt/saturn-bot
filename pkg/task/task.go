@@ -5,7 +5,6 @@ import (
 	"context"
 	"fmt"
 	htmlTemplate "html/template"
-	"slices"
 	"time"
 
 	"github.com/gosimple/slug"
@@ -49,52 +48,48 @@ func createActionsForTask(actionDefs []schema.Action, factories options.ActionFa
 	return result, nil
 }
 
-func createFiltersForTask(filterDefs []schema.Filter, factories options.FilterFactories, hosts []host.Host) ([]filter.Filter, error) {
-	var result []filter.Filter
+func createFiltersForTask(filterDefs []schema.Filter, factories options.FilterFactories, hosts []host.Host) ([]filter.Filter, []filter.Filter, error) {
+	var preClone []filter.Filter
+	var postClone []filter.Filter
 	if filterDefs == nil {
-		return result, nil
+		return preClone, postClone, nil
 	}
 
+	filterCreateOptions := filter.CreateOptions{Hosts: hosts}
 	for idx, def := range filterDefs {
 		factory := factories.Find(def.Filter)
 		if factory == nil {
-			return nil, fmt.Errorf("no filter registered for identifier %s", def.Filter)
+			return nil, nil, fmt.Errorf("no filter registered for identifier %s", def.Filter)
 		}
 
-		fl, err := factory.Create(filter.CreateOptions{Hosts: hosts}, params.Params(def.Params))
+		preF, err := factory.CreatePreClone(filterCreateOptions, params.Params(def.Params))
 		if err != nil {
-			return nil, fmt.Errorf("failed to initialize filter %s at %d: %w", def.Filter, idx, err)
+			return nil, nil, fmt.Errorf("failed to initialize pre-clone filter %s at %d: %w", def.Filter, idx, err)
 		}
 
-		if def.Reverse {
-			fl = filter.NewReverse(fl)
+		if preF != nil {
+			if def.Reverse {
+				preF = filter.NewReverse(preF)
+			}
+
+			preClone = append(preClone, preF)
 		}
 
-		result = append(result, fl)
+		postF, err := factory.CreatePostClone(filterCreateOptions, params.Params(def.Params))
+		if err != nil {
+			return nil, nil, fmt.Errorf("failed to initialize post-clone filter %s at %d: %w", def.Filter, idx, err)
+		}
+
+		if postF != nil {
+			if def.Reverse {
+				postF = filter.NewReverse(postF)
+			}
+
+			postClone = append(postClone, postF)
+		}
 	}
 
-	slices.SortStableFunc(result, func(a filter.Filter, b filter.Filter) int {
-		_, aOk := a.(*filter.Repository)
-		_, bOk := b.(*filter.Repository)
-		// Both of type Repository. Keep order.
-		if aOk && bOk {
-			return 0
-		}
-		// None of type Repository. Keep order.
-		if !aOk && !bOk {
-			return 0
-		}
-		// a is of type Repository.
-		// Put it before b.
-		if aOk && !bOk {
-			return -1
-		}
-		// b is of type Repository.
-		// Put it before a.
-		return 1
-	})
-
-	return result, nil
+	return preClone, postClone, nil
 }
 
 type Task struct {
@@ -103,7 +98,8 @@ type Task struct {
 	autoMergeAfterDuration *time.Duration
 	changeLimitCount       int
 	checksum               string
-	filters                []filter.Filter
+	filtersPreClone        []filter.Filter
+	filtersPostClone       []filter.Filter
 	openPRs                int
 	path                   string // Path to the file that contains the task.
 	plugins                []*plugin.Plugin
@@ -116,12 +112,20 @@ func (tw *Task) Actions() []action.Action {
 	return tw.actions
 }
 
-func (tw *Task) AddFilters(f ...filter.Filter) {
-	tw.filters = append(tw.filters, f...)
+func (tw *Task) AddPreCloneFilters(f ...filter.Filter) {
+	tw.filtersPreClone = append(tw.filtersPreClone, f...)
 }
 
-func (tw *Task) Filters() []filter.Filter {
-	return tw.filters
+func (tw *Task) FiltersPreClone() []filter.Filter {
+	return tw.filtersPreClone
+}
+
+func (tw *Task) FiltersPostClone() []filter.Filter {
+	return tw.filtersPostClone
+}
+
+func (tw *Task) HasFilters() bool {
+	return len(tw.filtersPreClone) > 0 || len(tw.filtersPostClone) > 0
 }
 
 func (tw *Task) RenderBranchName(data template.Data) (string, error) {
@@ -377,7 +381,7 @@ func (tr *Registry) ReadTasks(taskFile string) error {
 			return fmt.Errorf("parse actions of task: %w", err)
 		}
 
-		wrapper.filters, err = createFiltersForTask(wrapper.Task.Filters, tr.filterFactories, tr.hosts)
+		wrapper.filtersPreClone, wrapper.filtersPostClone, err = createFiltersForTask(wrapper.Task.Filters, tr.filterFactories, tr.hosts)
 		if err != nil {
 			return fmt.Errorf("parse filters of task file '%s': %w", entry.Path, err)
 		}
@@ -393,7 +397,7 @@ func (tr *Registry) ReadTasks(taskFile string) error {
 			}
 
 			wrapper.actions = append(wrapper.actions, p)
-			wrapper.filters = append(wrapper.filters, p)
+			wrapper.filtersPreClone = append(wrapper.filtersPreClone, p)
 			wrapper.plugins = append(wrapper.plugins, p)
 		}
 

@@ -4,9 +4,11 @@ import (
 	"context"
 	"errors"
 	"fmt"
+	"os"
+	"path/filepath"
 	"regexp"
 
-	gsContext "github.com/wndhydrnt/saturn-bot/pkg/context"
+	sbcontext "github.com/wndhydrnt/saturn-bot/pkg/context"
 	"github.com/wndhydrnt/saturn-bot/pkg/host"
 	"github.com/wndhydrnt/saturn-bot/pkg/params"
 	"github.com/wndhydrnt/saturn-bot/pkg/str"
@@ -24,8 +26,6 @@ var (
 )
 
 type FilterRepository interface {
-	GetFile(fileName string) (string, error)
-	HasFile(path string) (bool, error)
 	Host() host.HostDetail
 	ID() int64
 	Name() string
@@ -43,7 +43,8 @@ type CreateOptions struct {
 }
 
 type Factory interface {
-	Create(opts CreateOptions, params params.Params) (Filter, error)
+	CreatePreClone(opts CreateOptions, params params.Params) (Filter, error)
+	CreatePostClone(opts CreateOptions, params params.Params) (Filter, error)
 	Name() string
 }
 
@@ -53,7 +54,11 @@ func (f FileFactory) Name() string {
 	return "file"
 }
 
-func (f FileFactory) Create(_ CreateOptions, params params.Params) (Filter, error) {
+func (f FileFactory) CreatePreClone(opts CreateOptions, params params.Params) (Filter, error) {
+	return nil, nil
+}
+
+func (f FileFactory) CreatePostClone(_ CreateOptions, params params.Params) (Filter, error) {
 	if params["paths"] == nil {
 		return nil, fmt.Errorf("required parameter `paths` not set")
 	}
@@ -94,22 +99,28 @@ type File struct {
 }
 
 func (fe *File) Do(ctx context.Context) (bool, error) {
-	repo, ok := ctx.Value(gsContext.RepositoryKey{}).(FilterRepository)
+	checkoutPath, ok := ctx.Value(sbcontext.CheckoutPath{}).(string)
 	if !ok {
-		return false, errors.New("context passed to filter fileExists does not contain a repository")
+		return false, errors.New("context does not contain the checkout path")
 	}
 
 	for _, p := range fe.Paths {
-		result, err := repo.HasFile(p)
+		full := filepath.Join(checkoutPath, p)
+		exists := true
+		_, err := os.Stat(full)
 		if err != nil {
+			if errors.Is(err, os.ErrNotExist) {
+				exists = false
+			} else {
+				return false, err
+			}
+		}
+
+		if fe.Op == opAnd && !exists {
 			return false, nil
 		}
 
-		if fe.Op == opAnd && !result {
-			return false, nil
-		}
-
-		if fe.Op == opOr && result {
+		if fe.Op == opOr && exists {
 			return true, nil
 		}
 	}
@@ -131,7 +142,11 @@ func (f FileContentFactory) Name() string {
 	return "fileContent"
 }
 
-func (f FileContentFactory) Create(_ CreateOptions, params params.Params) (Filter, error) {
+func (f FileContentFactory) CreatePreClone(opts CreateOptions, params params.Params) (Filter, error) {
+	return nil, nil
+}
+
+func (f FileContentFactory) CreatePostClone(_ CreateOptions, params params.Params) (Filter, error) {
 	if params["path"] == nil {
 		return nil, fmt.Errorf("required parameter `path` not set")
 	}
@@ -162,21 +177,21 @@ type FileContent struct {
 }
 
 func (fcl *FileContent) Do(ctx context.Context) (bool, error) {
-	repo, ok := ctx.Value(gsContext.RepositoryKey{}).(FilterRepository)
+	checkoutPath, ok := ctx.Value(sbcontext.CheckoutPath{}).(string)
 	if !ok {
-		return false, errors.New("context does not contain a repository")
+		return false, errors.New("context does not contain the checkout path")
 	}
 
-	content, err := repo.GetFile(fcl.Path)
+	b, err := os.ReadFile(filepath.Join(checkoutPath, fcl.Path))
 	if err != nil {
-		if errors.Is(err, host.ErrFileNotFound) {
+		if errors.Is(err, os.ErrNotExist) {
 			return false, nil
 		}
 
-		return false, fmt.Errorf("download file from repository: %w", err)
+		return false, fmt.Errorf("read file in repository: %w", err)
 	}
 
-	return fcl.Regexp.MatchString(content), nil
+	return fcl.Regexp.Match(b), nil
 }
 
 func (fcl *FileContent) String() string {
@@ -195,7 +210,7 @@ func (f RepositoryFactory) Name() string {
 	return "repository"
 }
 
-func (f RepositoryFactory) Create(_ CreateOptions, params params.Params) (Filter, error) {
+func (f RepositoryFactory) CreatePreClone(_ CreateOptions, params params.Params) (Filter, error) {
 	if params["host"] == nil {
 		return nil, fmt.Errorf("required parameter `host` not set")
 	}
@@ -238,8 +253,12 @@ func (f RepositoryFactory) Create(_ CreateOptions, params params.Params) (Filter
 	return &Repository{Host: hostRe, Owner: ownerRe, Repo: nameRe}, nil
 }
 
+func (f RepositoryFactory) CreatePostClone(_ CreateOptions, params params.Params) (Filter, error) {
+	return nil, nil
+}
+
 func (r *Repository) Do(ctx context.Context) (bool, error) {
-	repo, ok := ctx.Value(gsContext.RepositoryKey{}).(FilterRepository)
+	repo, ok := ctx.Value(sbcontext.RepositoryKey{}).(FilterRepository)
 	if !ok {
 		return false, errors.New("context passed to filter repositoryName does not contain a repository")
 	}

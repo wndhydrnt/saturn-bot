@@ -35,6 +35,7 @@ func TestReadConfig(t *testing.T) {
 				JavaPath:                 "java",
 				PluginLogLevel:           "debug",
 				PythonPath:               "python",
+				RepositoryCacheTtl:       "6h",
 				ServerAddr:               ":3035",
 				ServerBaseUrl:            "http://localhost:3035",
 				ServerCompress:           true,

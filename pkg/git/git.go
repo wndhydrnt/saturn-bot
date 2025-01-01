@@ -50,6 +50,7 @@ func (e *GitCommandError) Unwrap() error {
 }
 
 type GitClient interface {
+	Cleanup(repo host.Repository) error
 	CommitChanges(msg string) error
 	Execute(arg ...string) (string, string, error)
 	HasLocalChanges() (bool, error)
@@ -95,6 +96,11 @@ func New(opts options.Opts) (*Git, error) {
 		userEmail:        opts.Config.GitUserEmail(),
 		userName:         opts.Config.GitUserName(),
 	}, nil
+}
+
+func (g *Git) Cleanup(repo host.Repository) error {
+	checkoutDir := path.Join(g.dataDir, "git", repo.FullName())
+	return os.RemoveAll(checkoutDir)
 }
 
 func (g *Git) CommitChanges(msg string) error {

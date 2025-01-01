@@ -11,6 +11,7 @@ import (
 
 	"github.com/wndhydrnt/saturn-bot/pkg/action"
 	sbcontext "github.com/wndhydrnt/saturn-bot/pkg/context"
+	"github.com/wndhydrnt/saturn-bot/pkg/filter"
 	"github.com/wndhydrnt/saturn-bot/pkg/git"
 	"github.com/wndhydrnt/saturn-bot/pkg/host"
 	"github.com/wndhydrnt/saturn-bot/pkg/task"
@@ -67,10 +68,17 @@ func (p *Processor) Process(
 		return ResultSkip, nil, nil
 	}
 
+	if !task.HasFilters() {
+		// A task without filters is considered not matching.
+		// Avoids accidentally applying a task to all repositories
+		// because no filters are set.
+		return ResultNoMatch, nil, nil
+	}
+
 	ctx = context.WithValue(ctx, sbcontext.RepositoryKey{}, repo)
 
 	if doFilter {
-		match, err := matchTaskToRepository(ctx, task, logger)
+		match, err := matchTaskToRepository(ctx, task.FiltersPreClone(), logger)
 		if err != nil {
 			return ResultUnknown, nil, err
 		}
@@ -80,7 +88,6 @@ func (p *Processor) Process(
 		}
 	}
 
-	logger.Info("Task matches repository")
 	lck := &locker{}
 	err := lck.lock(p.DataDir, repo)
 	if err != nil {
@@ -96,10 +103,31 @@ func (p *Processor) Process(
 
 	workDir, err := p.Git.Prepare(repo, false)
 	if err != nil {
-		return ResultUnknown, nil, fmt.Errorf("prepare of git repository failed: %w", err)
+		// A error during the preparation of the git repository is the best indicator that
+		// the repository has been deleted.
+		// Log a warning, clean up and consider the repository as "not matching".
+		logger.Warnf("Failed to clone or pull repository - cleaning up the repository")
+		err := p.Git.Cleanup(repo)
+		if err != nil {
+			return ResultUnknown, nil, fmt.Errorf("cleanup of git repository clone: %w", err)
+		}
+
+		return ResultNoMatch, nil, nil
 	}
 
 	ctx = context.WithValue(ctx, sbcontext.CheckoutPath{}, workDir)
+	if doFilter {
+		match, err := matchTaskToRepository(ctx, task.FiltersPostClone(), logger)
+		if err != nil {
+			return ResultUnknown, nil, err
+		}
+
+		if !match {
+			return ResultNoMatch, nil, nil
+		}
+	}
+
+	logger.Info("Task matches repository")
 	result, prDetail, err := applyTaskToRepository(ctx, dryRun, p.Git, logger, repo, task, workDir)
 	if err != nil {
 		return ResultUnknown, prDetail, fmt.Errorf("task failed: %w", err)
@@ -116,15 +144,8 @@ func (p *Processor) Process(
 	return result, prDetail, nil
 }
 
-func matchTaskToRepository(ctx context.Context, task *task.Task, logger *zap.SugaredLogger) (bool, error) {
-	if len(task.Filters()) == 0 {
-		// A task without filters is considered not matching.
-		// Avoids accidentally applying a task to all repositories
-		// because no filters are set.
-		return false, nil
-	}
-
-	for _, filter := range task.Filters() {
+func matchTaskToRepository(ctx context.Context, filters []filter.Filter, logger *zap.SugaredLogger) (bool, error) {
+	for _, filter := range filters {
 		match, err := filter.Do(ctx)
 		if err != nil {
 			return false, fmt.Errorf("filter %s failed: %w", filter.String(), err)

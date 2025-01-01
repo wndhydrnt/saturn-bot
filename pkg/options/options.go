@@ -64,11 +64,16 @@ type Opts struct {
 	PrometheusRegisterer prometheus.Registerer
 
 	dataDir            string
+	repositoryCacheTtl time.Duration
 	workerLoopInterval time.Duration
 }
 
 func (o Opts) DataDir() string {
 	return o.dataDir
+}
+
+func (o *Opts) RepositoryCacheTtl() time.Duration {
+	return o.repositoryCacheTtl
 }
 
 func (o *Opts) SetPrometheusRegistry(reg *prometheus.Registry) {
@@ -174,6 +179,12 @@ func Initialize(opts *Opts) error {
 		return fmt.Errorf("setting workerLoopInterval '%s' is not a Go duration: %w", opts.Config.WorkerLoopInterval, err)
 	}
 	opts.workerLoopInterval = loop
+
+	repositoryCacheTtl, err := time.ParseDuration(opts.Config.RepositoryCacheTtl)
+	if err != nil {
+		return fmt.Errorf("setting repositoryCacheTtl '%s' is not a Go duration: %w", opts.Config.RepositoryCacheTtl, err)
+	}
+	opts.repositoryCacheTtl = repositoryCacheTtl
 
 	if opts.Config.PrometheusPushgatewayUrl != nil && opts.PrometheusRegisterer != nil && opts.PrometheusGatherer != nil {
 		metrics.Register(opts.PrometheusRegisterer)
