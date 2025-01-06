@@ -151,32 +151,10 @@ func (g *Git) Prepare(repo host.Repository, retry bool) (string, error) {
 			return "", fmt.Errorf("clone repository %s: %w", repo.FullName(), err)
 		}
 	} else {
-		logger.Debug("Resetting repository")
-		err := g.reset(checkoutDir)
+		err := g.pullBaseBranch(checkoutDir, logger, repo)
 		if err != nil {
 			if retry {
 				return "", err
-			} else {
-				return g.Prepare(repo, true)
-			}
-		}
-
-		_, _, err = g.Execute("checkout", repo.BaseBranch())
-		if err != nil {
-			if retry {
-				log.GitLogger().Error("Base branch does not exist after retry", "baseBranch", repo.BaseBranch())
-				return "", fmt.Errorf("checkout base branch: %w", err)
-			} else {
-				log.GitLogger().Debug("Failure to check out base branch - deleting local repository and triggering another clone", "baseBranch", repo.BaseBranch())
-				return g.Prepare(repo, true)
-			}
-		}
-
-		log.GitLogger().Debug("Pulling changes into base branch", "repository", repo.FullName())
-		_, _, err = g.Execute("pull", "--prune", "origin", "--ff-only")
-		if err != nil {
-			if retry {
-				return "", fmt.Errorf("pull changes from remote into base branch: %w", err)
 			} else {
 				return g.Prepare(repo, true)
 			}
@@ -506,6 +484,31 @@ func (g *Git) reset(checkoutDir string) error {
 	_, _, err = g.Execute("clean", "-d", "--force")
 	if err != nil {
 		return fmt.Errorf("clean git checkout %s: %w", checkoutDir, err)
+	}
+
+	return nil
+}
+
+// pullBaseBranch updates the base branch of a repository clone.
+// 1. Reset any changes.
+// 2. Checkout the base branch.
+// 3. Pull in changes from the remote.
+func (g *Git) pullBaseBranch(checkoutDir string, logger *zap.SugaredLogger, repo host.Repository) error {
+	logger.Debug("Resetting repository")
+	err := g.reset(checkoutDir)
+	if err != nil {
+		return err
+	}
+
+	_, _, err = g.Execute("checkout", repo.BaseBranch())
+	if err != nil {
+		return fmt.Errorf("checkout base branch: %w", err)
+	}
+
+	logger.Debug("Pulling changes into base branch", "repository", repo.FullName())
+	_, _, err = g.Execute("pull", "--prune", "origin", "--ff-only")
+	if err != nil {
+		return fmt.Errorf("pull changes from remote into base branch: %w", err)
 	}
 
 	return nil
