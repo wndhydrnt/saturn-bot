@@ -14,6 +14,7 @@ import (
 	"github.com/wndhydrnt/saturn-bot/pkg/filter"
 	"github.com/wndhydrnt/saturn-bot/pkg/git"
 	"github.com/wndhydrnt/saturn-bot/pkg/host"
+	"github.com/wndhydrnt/saturn-bot/pkg/log"
 	"github.com/wndhydrnt/saturn-bot/pkg/task"
 	"github.com/wndhydrnt/saturn-bot/pkg/template"
 	"go.uber.org/zap"
@@ -39,6 +40,13 @@ const (
 	ResultSkip
 )
 
+type ProcessResult struct {
+	Error       error
+	PullRequest *host.PullRequest
+	Result      Result
+	Task        *task.Task
+}
+
 type Processor struct {
 	DataDir string
 	Git     git.GitClient
@@ -46,6 +54,169 @@ type Processor struct {
 
 type RepositoryTaskProcessor interface {
 	Process(ctx context.Context, dryRun bool, repo host.Repository, task *task.Task, doFilter bool) (Result, *host.PullRequest, error)
+}
+
+func (p *Processor) ProcessAll(repo host.Repository, tasks []*task.Task, doFilter bool, dryRun bool) []ProcessResult {
+	ctx := context.WithValue(context.Background(), sbcontext.RepositoryKey{}, repo)
+	logger := log.Log().
+		WithOptions(zap.Fields(
+			log.FieldDryRun(dryRun),
+			log.FieldRepo(repo.FullName()),
+		))
+	var results []ProcessResult
+	var tasksAfterPreCloneFilters []*task.Task
+	for _, t := range tasks {
+		if !doFilter {
+			tasksAfterPreCloneFilters = append(tasksAfterPreCloneFilters, t)
+			continue
+		}
+
+		taskLogger := logger.With(log.FieldTask(t.Name))
+		ctx = sbcontext.WithLog(ctx, taskLogger)
+		ctx = sbcontext.WithRunData(ctx, t.InputData())
+		match, preCloneResult, err := p.filterPreClone(ctx, t)
+		result := ProcessResult{
+			Task: t,
+		}
+		if err != nil {
+			result.Error = err
+			result.Result = preCloneResult
+			results = append(results, result)
+			continue
+		}
+
+		if !match {
+			result.Result = preCloneResult
+			results = append(results, result)
+		} else {
+			tasksAfterPreCloneFilters = append(tasksAfterPreCloneFilters, t)
+		}
+	}
+
+	if len(tasksAfterPreCloneFilters) == 0 {
+		return results
+	}
+
+	checkoutDir, err := p.Git.Prepare(repo, false)
+	if err != nil {
+		// A error during the preparation of the git repository is the best indicator that
+		// the repository has been deleted.
+		// Log a warning, clean up and consider the repository as "not matching".
+		log.Log().Warnf("Failed to clone or pull repository '%s' - cleaning up the repository", repo.FullName())
+		err := p.Git.Cleanup(repo)
+		if err != nil {
+			log.Log().Errorf("Failed to clean up repository '%s'", repo.FullName())
+		}
+
+		for _, t := range tasksAfterPreCloneFilters {
+			results = append(results, ProcessResult{
+				Result: ResultNoMatch,
+				Task:   t,
+			})
+		}
+
+		return results
+	}
+
+	ctx = context.WithValue(ctx, sbcontext.CheckoutPath{}, checkoutDir)
+	for _, t := range tasksAfterPreCloneFilters {
+		logger := log.Log().
+			WithOptions(zap.Fields(
+				log.FieldDryRun(dryRun),
+				log.FieldRepo(repo.FullName()),
+				log.FieldTask(t.Name),
+			))
+		ctx = sbcontext.WithLog(ctx, logger)
+		ctx = sbcontext.WithRunData(ctx, t.InputData())
+		resultId, pr, err := p.processPostClone(ctx, repo, t, doFilter, dryRun)
+		result := ProcessResult{
+			PullRequest: pr,
+			Result:      resultId,
+			Task:        t,
+		}
+		if err != nil {
+			result.Error = err
+		}
+
+		results = append(results, result)
+	}
+
+	return results
+}
+
+func (p *Processor) filterPreClone(ctx context.Context, task *task.Task) (bool, Result, error) {
+	logger := sbcontext.Log(ctx)
+	if task.HasReachMaxOpenPRs() {
+		logger.Debug("Skipping task because Max Open PRs have been reached")
+		return false, ResultSkip, nil
+	}
+
+	if task.HasReachedChangeLimit() {
+		logger.Debug("Skipping task because Change Limit have been reached")
+		return false, ResultSkip, nil
+	}
+
+	if !task.HasFilters() {
+		// A task without filters is considered not matching.
+		// Avoids accidentally applying a task to all repositories
+		// because no filters are set.
+		return false, ResultNoMatch, nil
+	}
+
+	match, err := matchTaskToRepository(ctx, task.FiltersPreClone(), logger)
+	if err != nil {
+		return false, ResultUnknown, err
+	}
+
+	if !match {
+		return false, ResultNoMatch, nil
+	}
+
+	return true, 0, nil
+}
+
+func (p *Processor) processPostClone(ctx context.Context, repo host.Repository, task *task.Task, doFilter, dryRun bool) (Result, *host.PullRequest, error) {
+	lck := &locker{}
+	err := lck.lock(p.DataDir, repo)
+	if err != nil {
+		return ResultUnknown, nil, fmt.Errorf("lock of repository '%s' failed: %w", repo.FullName(), err)
+	}
+
+	logger := sbcontext.Log(ctx)
+	defer func() {
+		err := lck.unlock()
+		if err != nil {
+			logger.Error("Failed to unlock repository")
+		}
+	}()
+
+	checkoutDir := ctx.Value(sbcontext.CheckoutPath{}).(string)
+	if doFilter {
+		match, err := matchTaskToRepository(ctx, task.FiltersPostClone(), logger)
+		if err != nil {
+			return ResultUnknown, nil, err
+		}
+
+		if !match {
+			return ResultNoMatch, nil, nil
+		}
+	}
+
+	logger.Info("Task matches repository")
+	result, prDetail, err := applyTaskToRepository(ctx, dryRun, p.Git, logger, repo, task, checkoutDir)
+	if err != nil {
+		return ResultUnknown, prDetail, fmt.Errorf("task failed: %w", err)
+	}
+
+	if result == ResultPrCreated || result == ResultPrOpen {
+		task.IncOpenPRsCount()
+	}
+
+	if result == ResultPrCreated || result == ResultPrMerged {
+		task.IncChangeLimitCount()
+	}
+
+	return result, prDetail, nil
 }
 
 func (p *Processor) Process(

@@ -85,11 +85,16 @@ func TestProcessor_Process_CreatePullRequestLocalChanges(t *testing.T) {
 	tw.AddPreCloneFilters(&trueFilter{})
 
 	p := &processor.Processor{Git: gitc}
-	result, pr, err := p.Process(context.Background(), false, repo, tw, true)
+	// result, pr, err := p.Process(context.Background(), false, repo, tw, true)
+	results := p.ProcessAll(repo, []*task.Task{tw}, true, false)
 
-	require.NoError(t, err)
-	assert.Equal(t, processor.ResultPrCreated, result)
-	assert.Equal(t, prCreate, pr)
+	// require.NoError(t, err)
+	// assert.Equal(t, processor.ResultPrCreated, result)
+	// assert.Equal(t, prCreate, pr)
+	assert.Len(t, results, 1)
+	assert.Equal(t, processor.ResultPrCreated, results[0].Result)
+	assert.Equal(t, prCreate, results[0].PullRequest)
+	assert.NoError(t, results[0].Error)
 }
 
 func TestProcessor_Process_CreatePullRequestRemoteChanges(t *testing.T) {
