@@ -124,6 +124,14 @@ func (g *Git) CommitChanges(msg string) error {
 func (g *Git) Prepare(repo host.Repository, retry bool) (string, error) {
 	checkoutDir := path.Join(g.dataDir, "git", repo.FullName())
 	g.checkoutDir = checkoutDir
+	if retry {
+		log.Log().Warnf("Retrying cloning the repository %s", repo.FullName())
+		err := os.RemoveAll(checkoutDir)
+		if err != nil {
+			return "", fmt.Errorf("remove checkout directory on retry %s: %w", checkoutDir, err)
+		}
+	}
+
 	logger := log.GitLogger().With("dir", checkoutDir, "repository", repo.FullName())
 	_, err := os.Stat(checkoutDir)
 	if err != nil {
@@ -146,7 +154,11 @@ func (g *Git) Prepare(repo host.Repository, retry bool) (string, error) {
 		logger.Debug("Resetting repository")
 		err := g.reset(checkoutDir)
 		if err != nil {
-			return "", err
+			if retry {
+				return "", err
+			} else {
+				return g.Prepare(repo, true)
+			}
 		}
 
 		_, _, err = g.Execute("checkout", repo.BaseBranch())
@@ -156,19 +168,18 @@ func (g *Git) Prepare(repo host.Repository, retry bool) (string, error) {
 				return "", fmt.Errorf("checkout base branch: %w", err)
 			} else {
 				log.GitLogger().Debug("Failure to check out base branch - deleting local repository and triggering another clone", "baseBranch", repo.BaseBranch())
-				err := os.RemoveAll(checkoutDir)
-				if err != nil {
-					return "", fmt.Errorf("failed to remove checkout directory %s: %w", checkoutDir, err)
-				}
-
 				return g.Prepare(repo, true)
 			}
 		}
 
 		log.GitLogger().Debug("Pulling changes into base branch", "repository", repo.FullName())
-		_, _, err = g.Execute("pull", "--prune", "origin")
+		_, _, err = g.Execute("pull", "--prune", "origin", "--ff-only")
 		if err != nil {
-			return "", fmt.Errorf("pull changes from remote into base branch: %w", err)
+			if retry {
+				return "", fmt.Errorf("pull changes from remote into base branch: %w", err)
+			} else {
+				return g.Prepare(repo, true)
+			}
 		}
 	}
 
