@@ -124,6 +124,14 @@ func (g *Git) CommitChanges(msg string) error {
 func (g *Git) Prepare(repo host.Repository, retry bool) (string, error) {
 	checkoutDir := path.Join(g.dataDir, "git", repo.FullName())
 	g.checkoutDir = checkoutDir
+	if retry {
+		log.Log().Warnf("Retrying cloning the repository %s", repo.FullName())
+		err := os.RemoveAll(checkoutDir)
+		if err != nil {
+			return "", fmt.Errorf("remove checkout directory on retry %s: %w", checkoutDir, err)
+		}
+	}
+
 	logger := log.GitLogger().With("dir", checkoutDir, "repository", repo.FullName())
 	_, err := os.Stat(checkoutDir)
 	if err != nil {
@@ -143,32 +151,13 @@ func (g *Git) Prepare(repo host.Repository, retry bool) (string, error) {
 			return "", fmt.Errorf("clone repository %s: %w", repo.FullName(), err)
 		}
 	} else {
-		logger.Debug("Resetting repository")
-		err := g.reset(checkoutDir)
-		if err != nil {
-			return "", err
-		}
-
-		_, _, err = g.Execute("checkout", repo.BaseBranch())
+		err := g.pullBaseBranch(checkoutDir, logger, repo)
 		if err != nil {
 			if retry {
-				log.GitLogger().Error("Base branch does not exist after retry", "baseBranch", repo.BaseBranch())
-				return "", fmt.Errorf("checkout base branch: %w", err)
+				return "", err
 			} else {
-				log.GitLogger().Debug("Failure to check out base branch - deleting local repository and triggering another clone", "baseBranch", repo.BaseBranch())
-				err := os.RemoveAll(checkoutDir)
-				if err != nil {
-					return "", fmt.Errorf("failed to remove checkout directory %s: %w", checkoutDir, err)
-				}
-
 				return g.Prepare(repo, true)
 			}
-		}
-
-		log.GitLogger().Debug("Pulling changes into base branch", "repository", repo.FullName())
-		_, _, err = g.Execute("pull", "--prune", "origin")
-		if err != nil {
-			return "", fmt.Errorf("pull changes from remote into base branch: %w", err)
 		}
 	}
 
@@ -495,6 +484,31 @@ func (g *Git) reset(checkoutDir string) error {
 	_, _, err = g.Execute("clean", "-d", "--force")
 	if err != nil {
 		return fmt.Errorf("clean git checkout %s: %w", checkoutDir, err)
+	}
+
+	return nil
+}
+
+// pullBaseBranch updates the base branch of a repository clone.
+// 1. Reset any changes.
+// 2. Checkout the base branch.
+// 3. Pull in changes from the remote.
+func (g *Git) pullBaseBranch(checkoutDir string, logger *zap.SugaredLogger, repo host.Repository) error {
+	logger.Debug("Resetting repository")
+	err := g.reset(checkoutDir)
+	if err != nil {
+		return err
+	}
+
+	_, _, err = g.Execute("checkout", repo.BaseBranch())
+	if err != nil {
+		return fmt.Errorf("checkout base branch: %w", err)
+	}
+
+	logger.Debug("Pulling changes into base branch", "repository", repo.FullName())
+	_, _, err = g.Execute("pull", "--prune", "origin", "--ff-only")
+	if err != nil {
+		return fmt.Errorf("pull changes from remote into base branch: %w", err)
 	}
 
 	return nil
