@@ -2,12 +2,10 @@ package command_test
 
 import (
 	"bytes"
-	"context"
 	"encoding/json"
 	"fmt"
 	"os"
 	"path/filepath"
-	"reflect"
 	"strings"
 	"testing"
 	"time"
@@ -154,21 +152,25 @@ func TestExecuteRunner_Run(t *testing.T) {
 	hostm := &mockHost{
 		repositories: []host.Repository{repoOne, repoTwo},
 	}
-	taskFile := createTestTaskFile(createTestTask("git.local/unittest/repo.*"))
+	testTask := createTestTask("git.local/unittest/repo.*")
+	taskFile := createTestTaskFile(testTask)
 	defer func() {
 		if err := os.Remove(taskFile); err != nil {
 			panic(err)
 		}
 	}()
 	procMock := processormock.NewMockRepositoryTaskProcessor(ctrl)
-	var ctx = reflect.TypeOf((*context.Context)(nil)).Elem()
-	var anyTask *task.Task = &task.Task{}
+	var anyTask []*task.Task = []*task.Task{}
 	procMock.EXPECT().
-		Process(gomock.AssignableToTypeOf(ctx), false, repoOne, gomock.AssignableToTypeOf(anyTask), true).
-		Return(processor.ResultNoChanges, nil, nil)
+		Process(false, repoOne, gomock.AssignableToTypeOf(anyTask), true).
+		Return([]processor.ProcessResult{
+			{Result: processor.ResultNoChanges, Task: &task.Task{Task: testTask}},
+		})
 	procMock.EXPECT().
-		Process(gomock.AssignableToTypeOf(ctx), false, repoTwo, gomock.AssignableToTypeOf(anyTask), true).
-		Return(processor.ResultNoChanges, nil, nil)
+		Process(false, repoTwo, gomock.AssignableToTypeOf(anyTask), true).
+		Return([]processor.ProcessResult{
+			{Result: processor.ResultNoChanges, Task: &task.Task{Task: testTask}},
+		})
 
 	defer gock.Off()
 	gock.New("http://pgw.local").
@@ -201,6 +203,7 @@ func TestExecuteRunner_Run_DryRun(t *testing.T) {
 	hostm := &mockHost{
 		repositories: []host.Repository{repo},
 	}
+	testTask := createTestTask("git.local/unittest/repo.*")
 	taskFile := createTestTaskFile(createTestTask("git.local/unittest/repo.*"))
 	defer func() {
 		if err := os.Remove(taskFile); err != nil {
@@ -208,11 +211,12 @@ func TestExecuteRunner_Run_DryRun(t *testing.T) {
 		}
 	}()
 	procMock := processormock.NewMockRepositoryTaskProcessor(ctrl)
-	var ctx = reflect.TypeOf((*context.Context)(nil)).Elem()
-	var anyTask *task.Task = &task.Task{}
+	var anyTask []*task.Task = []*task.Task{}
 	procMock.EXPECT().
-		Process(gomock.AssignableToTypeOf(ctx), true, repo, gomock.AssignableToTypeOf(anyTask), true).
-		Return(processor.ResultNoChanges, nil, nil)
+		Process(true, repo, gomock.AssignableToTypeOf(anyTask), true).
+		Return([]processor.ProcessResult{
+			{Result: processor.ResultNoChanges, Task: &task.Task{Task: testTask}},
+		})
 	taskRegistry := task.NewRegistry(runTestOpts)
 
 	runner := &command.Run{
@@ -236,18 +240,20 @@ func TestExecuteRunner_Run_RepositoriesCLI(t *testing.T) {
 	hostm := &mockHost{
 		repositories: []host.Repository{repo},
 	}
-	taskFile := createTestTaskFile(createTestTask("git.local/unittest/repo.*"))
+	testTask := createTestTask("git.local/unittest/repo.*")
+	taskFile := createTestTaskFile(testTask)
 	defer func() {
 		if err := os.Remove(taskFile); err != nil {
 			panic(err)
 		}
 	}()
 	procMock := processormock.NewMockRepositoryTaskProcessor(ctrl)
-	var ctx = reflect.TypeOf((*context.Context)(nil)).Elem()
-	var anyTask *task.Task = &task.Task{}
+	var anyTask []*task.Task = []*task.Task{}
 	procMock.EXPECT().
-		Process(gomock.AssignableToTypeOf(ctx), false, repo, gomock.AssignableToTypeOf(anyTask), false).
-		Return(processor.ResultNoChanges, nil, nil)
+		Process(false, repo, gomock.AssignableToTypeOf(anyTask), false).
+		Return([]processor.ProcessResult{
+			{Result: processor.ResultNoChanges, Task: &task.Task{Task: testTask}},
+		})
 	taskRegistry := task.NewRegistry(runTestOpts)
 
 	runner := &command.Run{
@@ -288,17 +294,18 @@ func TestExecuteRunner_Run_Inputs(t *testing.T) {
 		}
 	}()
 	procMock := processormock.NewMockRepositoryTaskProcessor(ctrl)
-	var ctx = reflect.TypeOf((*context.Context)(nil)).Elem()
 
 	// Verifies that procMock.Process() gets called with the expected value.
 	isTask := func(x any) bool {
-		t := x.(*task.Task)
-		return t.Name == "TaskOk"
+		t := x.([]*task.Task)
+		return t[0].Name == "TaskOk"
 	}
 
 	procMock.EXPECT().
-		Process(gomock.AssignableToTypeOf(ctx), false, repo, gomock.Cond(isTask), false).
-		Return(processor.ResultNoChanges, nil, nil)
+		Process(false, repo, gomock.Cond(isTask), false).
+		Return([]processor.ProcessResult{
+			{Result: processor.ResultNoChanges, Task: &task.Task{Task: taskOk}},
+		})
 
 	runner := &command.Run{
 		DryRun:       false,

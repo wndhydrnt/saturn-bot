@@ -10,7 +10,6 @@
 package processor
 
 import (
-	context "context"
 	reflect "reflect"
 
 	host "github.com/wndhydrnt/saturn-bot/pkg/host"
@@ -46,17 +45,15 @@ func (m *MockRepositoryTaskProcessor) EXPECT() *MockRepositoryTaskProcessorMockR
 }
 
 // Process mocks base method.
-func (m *MockRepositoryTaskProcessor) Process(ctx context.Context, dryRun bool, repo host.Repository, task *task.Task, doFilter bool) (processor.Result, *host.PullRequest, error) {
+func (m *MockRepositoryTaskProcessor) Process(dryRun bool, repo host.Repository, tasks []*task.Task, doFilter bool) []processor.ProcessResult {
 	m.ctrl.T.Helper()
-	ret := m.ctrl.Call(m, "Process", ctx, dryRun, repo, task, doFilter)
-	ret0, _ := ret[0].(processor.Result)
-	ret1, _ := ret[1].(*host.PullRequest)
-	ret2, _ := ret[2].(error)
-	return ret0, ret1, ret2
+	ret := m.ctrl.Call(m, "Process", dryRun, repo, tasks, doFilter)
+	ret0, _ := ret[0].([]processor.ProcessResult)
+	return ret0
 }
 
 // Process indicates an expected call of Process.
-func (mr *MockRepositoryTaskProcessorMockRecorder) Process(ctx, dryRun, repo, task, doFilter any) *gomock.Call {
+func (mr *MockRepositoryTaskProcessorMockRecorder) Process(dryRun, repo, tasks, doFilter any) *gomock.Call {
 	mr.mock.ctrl.T.Helper()
-	return mr.mock.ctrl.RecordCallWithMethodType(mr.mock, "Process", reflect.TypeOf((*MockRepositoryTaskProcessor)(nil).Process), ctx, dryRun, repo, task, doFilter)
+	return mr.mock.ctrl.RecordCallWithMethodType(mr.mock, "Process", reflect.TypeOf((*MockRepositoryTaskProcessor)(nil).Process), dryRun, repo, tasks, doFilter)
 }

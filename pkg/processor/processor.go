@@ -53,10 +53,11 @@ type Processor struct {
 }
 
 type RepositoryTaskProcessor interface {
-	Process(ctx context.Context, dryRun bool, repo host.Repository, task *task.Task, doFilter bool) (Result, *host.PullRequest, error)
+	Process(dryRun bool, repo host.Repository, tasks []*task.Task, doFilter bool) []ProcessResult
+	// ProcessAll(dryRun bool, repo host.Repository, tasks []*task.Task, doFilter bool) []ProcessResult
 }
 
-func (p *Processor) ProcessAll(repo host.Repository, tasks []*task.Task, doFilter bool, dryRun bool) []ProcessResult {
+func (p *Processor) Process(dryRun bool, repo host.Repository, tasks []*task.Task, doFilter bool) []ProcessResult {
 	ctx := context.WithValue(context.Background(), sbcontext.RepositoryKey{}, repo)
 	logger := log.Log().
 		WithOptions(zap.Fields(
@@ -82,6 +83,7 @@ func (p *Processor) ProcessAll(repo host.Repository, tasks []*task.Task, doFilte
 			result.Error = err
 			result.Result = preCloneResult
 			results = append(results, result)
+			taskLogger.Errorw("Task failed", "error", result.Error)
 			continue
 		}
 
@@ -120,13 +122,11 @@ func (p *Processor) ProcessAll(repo host.Repository, tasks []*task.Task, doFilte
 
 	ctx = context.WithValue(ctx, sbcontext.CheckoutPath{}, checkoutDir)
 	for _, t := range tasksAfterPreCloneFilters {
-		logger := log.Log().
+		taskLogger := logger.
 			WithOptions(zap.Fields(
-				log.FieldDryRun(dryRun),
-				log.FieldRepo(repo.FullName()),
 				log.FieldTask(t.Name),
 			))
-		ctx = sbcontext.WithLog(ctx, logger)
+		ctx = sbcontext.WithLog(ctx, taskLogger)
 		ctx = sbcontext.WithRunData(ctx, t.InputData())
 		resultId, pr, err := p.processPostClone(ctx, repo, t, doFilter, dryRun)
 		result := ProcessResult{
@@ -136,6 +136,7 @@ func (p *Processor) ProcessAll(repo host.Repository, tasks []*task.Task, doFilte
 		}
 		if err != nil {
 			result.Error = err
+			taskLogger.Errorw("Task failed", "error", result.Error)
 		}
 
 		results = append(results, result)
@@ -219,101 +220,101 @@ func (p *Processor) processPostClone(ctx context.Context, repo host.Repository, 
 	return result, prDetail, nil
 }
 
-func (p *Processor) Process(
-	ctx context.Context,
-	dryRun bool,
-	repo host.Repository,
-	task *task.Task,
-	doFilter bool,
-) (Result, *host.PullRequest, error) {
-	ctx = sbcontext.WithRunData(ctx, task.InputData())
-	logger := sbcontext.Log(ctx)
-	logger.Debug("Processing repository")
-	if task.HasReachMaxOpenPRs() {
-		logger.Debug("Skipping task because Max Open PRs have been reached")
-		return ResultSkip, nil, nil
-	}
+// func (p *Processor) Process(
+// 	ctx context.Context,
+// 	dryRun bool,
+// 	repo host.Repository,
+// 	task *task.Task,
+// 	doFilter bool,
+// ) (Result, *host.PullRequest, error) {
+// 	ctx = sbcontext.WithRunData(ctx, task.InputData())
+// 	logger := sbcontext.Log(ctx)
+// 	logger.Debug("Processing repository")
+// 	if task.HasReachMaxOpenPRs() {
+// 		logger.Debug("Skipping task because Max Open PRs have been reached")
+// 		return ResultSkip, nil, nil
+// 	}
 
-	if task.HasReachedChangeLimit() {
-		logger.Debug("Skipping task because Change Limit have been reached")
-		return ResultSkip, nil, nil
-	}
+// 	if task.HasReachedChangeLimit() {
+// 		logger.Debug("Skipping task because Change Limit have been reached")
+// 		return ResultSkip, nil, nil
+// 	}
 
-	if !task.HasFilters() {
-		// A task without filters is considered not matching.
-		// Avoids accidentally applying a task to all repositories
-		// because no filters are set.
-		return ResultNoMatch, nil, nil
-	}
+// 	if !task.HasFilters() {
+// 		// A task without filters is considered not matching.
+// 		// Avoids accidentally applying a task to all repositories
+// 		// because no filters are set.
+// 		return ResultNoMatch, nil, nil
+// 	}
 
-	ctx = context.WithValue(ctx, sbcontext.RepositoryKey{}, repo)
+// 	ctx = context.WithValue(ctx, sbcontext.RepositoryKey{}, repo)
 
-	if doFilter {
-		match, err := matchTaskToRepository(ctx, task.FiltersPreClone(), logger)
-		if err != nil {
-			return ResultUnknown, nil, err
-		}
+// 	if doFilter {
+// 		match, err := matchTaskToRepository(ctx, task.FiltersPreClone(), logger)
+// 		if err != nil {
+// 			return ResultUnknown, nil, err
+// 		}
 
-		if !match {
-			return ResultNoMatch, nil, nil
-		}
-	}
+// 		if !match {
+// 			return ResultNoMatch, nil, nil
+// 		}
+// 	}
 
-	lck := &locker{}
-	err := lck.lock(p.DataDir, repo)
-	if err != nil {
-		return ResultUnknown, nil, fmt.Errorf("lock of repository '%s' failed: %w", repo.FullName(), err)
-	}
+// 	lck := &locker{}
+// 	err := lck.lock(p.DataDir, repo)
+// 	if err != nil {
+// 		return ResultUnknown, nil, fmt.Errorf("lock of repository '%s' failed: %w", repo.FullName(), err)
+// 	}
 
-	defer func() {
-		err := lck.unlock()
-		if err != nil {
-			logger.Error("Failed to unlock repository")
-		}
-	}()
+// 	defer func() {
+// 		err := lck.unlock()
+// 		if err != nil {
+// 			logger.Error("Failed to unlock repository")
+// 		}
+// 	}()
 
-	workDir, err := p.Git.Prepare(repo, false)
-	if err != nil {
-		// A error during the preparation of the git repository is the best indicator that
-		// the repository has been deleted.
-		// Log a warning, clean up and consider the repository as "not matching".
-		logger.Warnf("Failed to clone or pull repository - cleaning up the repository")
-		err := p.Git.Cleanup(repo)
-		if err != nil {
-			return ResultUnknown, nil, fmt.Errorf("cleanup of git repository clone: %w", err)
-		}
+// 	workDir, err := p.Git.Prepare(repo, false)
+// 	if err != nil {
+// 		// A error during the preparation of the git repository is the best indicator that
+// 		// the repository has been deleted.
+// 		// Log a warning, clean up and consider the repository as "not matching".
+// 		logger.Warnf("Failed to clone or pull repository - cleaning up the repository")
+// 		err := p.Git.Cleanup(repo)
+// 		if err != nil {
+// 			return ResultUnknown, nil, fmt.Errorf("cleanup of git repository clone: %w", err)
+// 		}
 
-		return ResultNoMatch, nil, nil
-	}
+// 		return ResultNoMatch, nil, nil
+// 	}
 
-	ctx = context.WithValue(ctx, sbcontext.CheckoutPath{}, workDir)
-	if doFilter {
-		match, err := matchTaskToRepository(ctx, task.FiltersPostClone(), logger)
-		if err != nil {
-			return ResultUnknown, nil, err
-		}
+// 	ctx = context.WithValue(ctx, sbcontext.CheckoutPath{}, workDir)
+// 	if doFilter {
+// 		match, err := matchTaskToRepository(ctx, task.FiltersPostClone(), logger)
+// 		if err != nil {
+// 			return ResultUnknown, nil, err
+// 		}
 
-		if !match {
-			return ResultNoMatch, nil, nil
-		}
-	}
+// 		if !match {
+// 			return ResultNoMatch, nil, nil
+// 		}
+// 	}
 
-	logger.Info("Task matches repository")
-	result, prDetail, err := applyTaskToRepository(ctx, dryRun, p.Git, logger, repo, task, workDir)
-	if err != nil {
-		return ResultUnknown, prDetail, fmt.Errorf("task failed: %w", err)
-	}
+// 	logger.Info("Task matches repository")
+// 	result, prDetail, err := applyTaskToRepository(ctx, dryRun, p.Git, logger, repo, task, workDir)
+// 	if err != nil {
+// 		return ResultUnknown, prDetail, fmt.Errorf("task failed: %w", err)
+// 	}
 
-	if result == ResultPrCreated || result == ResultPrOpen {
-		task.IncOpenPRsCount()
-	}
+// 	if result == ResultPrCreated || result == ResultPrOpen {
+// 		task.IncOpenPRsCount()
+// 	}
 
-	if result == ResultPrCreated || result == ResultPrMerged {
-		task.IncChangeLimitCount()
-	}
+// 	if result == ResultPrCreated || result == ResultPrMerged {
+// 		task.IncChangeLimitCount()
+// 	}
 
-	return result, prDetail, nil
-}
+// 	return result, prDetail, nil
+// }
 
 func matchTaskToRepository(ctx context.Context, filters []filter.Filter, logger *zap.SugaredLogger) (bool, error) {
 	for _, filter := range filters {
