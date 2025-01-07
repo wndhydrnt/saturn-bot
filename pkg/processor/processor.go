@@ -190,7 +190,6 @@ func (p *Processor) processPostClone(ctx context.Context, repo host.Repository, 
 		}
 	}()
 
-	checkoutDir := ctx.Value(sbcontext.CheckoutPath{}).(string)
 	if doFilter {
 		match, err := matchTaskToRepository(ctx, task.FiltersPostClone(), logger)
 		if err != nil {
@@ -203,6 +202,7 @@ func (p *Processor) processPostClone(ctx context.Context, repo host.Repository, 
 	}
 
 	logger.Info("Task matches repository")
+	checkoutDir := ctx.Value(sbcontext.CheckoutPath{}).(string)
 	result, prDetail, err := applyTaskToRepository(ctx, dryRun, p.Git, logger, repo, task, checkoutDir)
 	if err != nil {
 		return ResultUnknown, prDetail, fmt.Errorf("task failed: %w", err)
