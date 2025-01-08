@@ -27,6 +27,7 @@ type testCase struct {
 }
 
 func runTestCase(t *testing.T, tc testCase) {
+	t.Helper()
 	ctrl := gomock.NewController(t)
 	repoMock := NewMockRepository(ctrl)
 	if tc.repoMockFunc != nil {

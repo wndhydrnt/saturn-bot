@@ -77,3 +77,13 @@ filters:
       expressions: [".dependencies.react == null"]
       path: package.json
 ```
+
+```yaml
+# Match if the file package.json contains
+# either the key "homepage" or the key "dependencies".
+filters:
+  - filter: jq
+    params:
+      expressions: [".homepage, .dependencies"]
+      path: package.json
+```

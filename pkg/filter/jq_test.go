@@ -74,6 +74,15 @@ func TestJq_Do(t *testing.T) {
 			wantMatch: false,
 		},
 		{
+			name:    "returns true when at least one node returned by jq expression is not null",
+			factory: filter.JqFactory{}.CreatePostClone,
+			params:  params.Params{"expressions": []any{`.homepage, .dependencies["@commitlint/cli"]`}, "path": "package.json"},
+			filesInRepository: map[string]string{
+				"package.json": packageJson,
+			},
+			wantMatch: true,
+		},
+		{
 			name:      "returns false when file doesn't exist in repository",
 			factory:   filter.JqFactory{}.CreatePostClone,
 			params:    params.Params{"expressions": []any{`.dependencies`}, "path": "other.json"},
