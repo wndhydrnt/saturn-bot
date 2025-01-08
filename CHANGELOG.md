@@ -1,5 +1,13 @@
 # Changelog
 
+## [0.18.1](https://github.com/wndhydrnt/saturn-bot/compare/v0.18.0...v0.18.1) (2025-01-08)
+
+
+### Bug Fixes
+
+* **filter:** jq filter checks subsequent nodes when first node is null ([#137](https://github.com/wndhydrnt/saturn-bot/issues/137)) ([466d98b](https://github.com/wndhydrnt/saturn-bot/commit/466d98bcdee5a3b1acc9b7e43ca9df430292d9aa))
+* **git:** Clone a repository again if update of current clone fails ([#134](https://github.com/wndhydrnt/saturn-bot/issues/134)) ([8564042](https://github.com/wndhydrnt/saturn-bot/commit/8564042da7be1ff1346a7454348325f91e12db8b))
+
 ## [0.18.0](https://github.com/wndhydrnt/saturn-bot/compare/v0.17.0...v0.18.0) (2025-01-01)
 
 
