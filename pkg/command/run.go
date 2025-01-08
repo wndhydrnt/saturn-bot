@@ -10,7 +10,6 @@ import (
 	"github.com/prometheus/client_golang/prometheus/push"
 	"github.com/wndhydrnt/saturn-bot/pkg/action"
 	"github.com/wndhydrnt/saturn-bot/pkg/clock"
-	sContext "github.com/wndhydrnt/saturn-bot/pkg/context"
 	"github.com/wndhydrnt/saturn-bot/pkg/git"
 	"github.com/wndhydrnt/saturn-bot/pkg/host"
 	"github.com/wndhydrnt/saturn-bot/pkg/log"
@@ -81,30 +80,23 @@ func (r *Run) Run(repositoryNames, taskFiles []string, inputs map[string]string)
 		select {
 		case repo := <-repos:
 			log.Log().Debugf("Discovered repository %s", repo.FullName())
-			ctx := context.Background()
 			doFilter := len(repositoryNames) == 0
-			for _, t := range tasks {
-				result := RunResult{
-					RepositoryName: repo.FullName(),
-					TaskName:       t.Name,
-				}
-				logger := log.Log().
-					WithOptions(zap.Fields(
-						log.FieldDryRun(r.DryRun),
-						log.FieldRepo(repo.FullName()),
-						log.FieldTask(t.Name),
-					))
-				ctx = sContext.WithLog(ctx, logger)
-				result.Result, result.PullRequest, result.Error = r.Processor.Process(ctx, r.DryRun, repo, t, doFilter)
-				if result.Error == nil {
-					metrics.RunTaskSuccess.WithLabelValues(t.Name).Set(1)
+			processResults := r.Processor.Process(r.DryRun, repo, tasks, doFilter)
+			for _, p := range processResults {
+				if p.Error == nil {
+					metrics.RunTaskSuccess.WithLabelValues(p.Task.Name).Set(1)
 				} else {
-					metrics.RunTaskSuccess.WithLabelValues(t.Name).Set(0)
+					metrics.RunTaskSuccess.WithLabelValues(p.Task.Name).Set(0)
 					success = false
-					logger.Errorw("Task failed", "error", result.Error)
 				}
 
-				results = append(results, result)
+				results = append(results, RunResult{
+					Error:          p.Error,
+					PullRequest:    p.PullRequest,
+					RepositoryName: repo.FullName(),
+					Result:         p.Result,
+					TaskName:       p.Task.Name,
+				})
 			}
 		case err := <-doneChan:
 			if err != nil {

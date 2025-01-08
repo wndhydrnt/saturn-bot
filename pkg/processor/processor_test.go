@@ -9,7 +9,6 @@ import (
 
 	"github.com/stretchr/testify/assert"
 	"github.com/stretchr/testify/require"
-	sbcontext "github.com/wndhydrnt/saturn-bot/pkg/context"
 	"github.com/wndhydrnt/saturn-bot/pkg/git"
 	"github.com/wndhydrnt/saturn-bot/pkg/host"
 	"github.com/wndhydrnt/saturn-bot/pkg/processor"
@@ -81,15 +80,17 @@ func TestProcessor_Process_CreatePullRequestLocalChanges(t *testing.T) {
 	gitc.EXPECT().HasRemoteChanges("main").Return(false, nil)
 	gitc.EXPECT().HasRemoteChanges("saturn-bot--unittest").Return(true, nil)
 	gitc.EXPECT().Push("saturn-bot--unittest").Return(nil)
-	tw := &task.Task{Task: schema.Task{CommitMessage: "commit test", Name: "unittest"}}
+	tw := &task.Task{Task: schema.Task{CommitMessage: "commit test", Name: "unittest", ChangeLimit: 1}}
 	tw.AddPreCloneFilters(&trueFilter{})
 
 	p := &processor.Processor{Git: gitc}
-	result, pr, err := p.Process(context.Background(), false, repo, tw, true)
+	results := p.Process(false, repo, []*task.Task{tw}, true)
 
-	require.NoError(t, err)
-	assert.Equal(t, processor.ResultPrCreated, result)
-	assert.Equal(t, prCreate, pr)
+	assert.Len(t, results, 1)
+	assert.Equal(t, processor.ResultPrCreated, results[0].Result)
+	assert.Equal(t, prCreate, results[0].PullRequest)
+	assert.True(t, tw.HasReachedChangeLimit(), "Updates the change limit")
+	assert.NoError(t, results[0].Error)
 }
 
 func TestProcessor_Process_CreatePullRequestRemoteChanges(t *testing.T) {
@@ -123,11 +124,12 @@ func TestProcessor_Process_CreatePullRequestRemoteChanges(t *testing.T) {
 	tw.AddPreCloneFilters(&trueFilter{})
 
 	p := &processor.Processor{Git: gitc}
-	result, pr, err := p.Process(context.Background(), false, repo, tw, true)
+	results := p.Process(false, repo, []*task.Task{tw}, true)
 
-	require.NoError(t, err)
-	assert.Equal(t, prCreate, pr)
-	assert.Equal(t, processor.ResultPrCreated, result)
+	assert.Len(t, results, 1)
+	assert.NoError(t, results[0].Error)
+	assert.Equal(t, processor.ResultPrCreated, results[0].Result)
+	assert.Equal(t, prCreate, results[0].PullRequest)
 }
 
 func TestProcessor_Process_CreatePullRequestPreviouslyClosed(t *testing.T) {
@@ -161,11 +163,12 @@ func TestProcessor_Process_CreatePullRequestPreviouslyClosed(t *testing.T) {
 	tw.AddPreCloneFilters(&trueFilter{})
 
 	p := &processor.Processor{Git: gitc}
-	result, pr, err := p.Process(context.Background(), false, repo, tw, true)
+	results := p.Process(false, repo, []*task.Task{tw}, true)
 
-	require.NoError(t, err)
-	assert.Equal(t, processor.ResultPrCreated, result)
-	assert.Equal(t, prCreate, pr)
+	assert.Len(t, results, 1)
+	assert.NoError(t, results[0].Error)
+	assert.Equal(t, processor.ResultPrCreated, results[0].Result)
+	assert.Equal(t, prCreate, results[0].PullRequest)
 }
 
 func TestProcessor_Process_PullRequestClosedAndMergeOnceActive(t *testing.T) {
@@ -181,10 +184,12 @@ func TestProcessor_Process_PullRequestClosedAndMergeOnceActive(t *testing.T) {
 	tw.AddPreCloneFilters(&trueFilter{})
 
 	p := &processor.Processor{Git: gitc}
-	result, _, err := p.Process(context.Background(), false, repo, tw, true)
+	results := p.Process(false, repo, []*task.Task{tw}, true)
 
-	require.NoError(t, err)
-	assert.Equal(t, processor.ResultPrClosedBefore, result)
+	assert.Len(t, results, 1)
+	assert.NoError(t, results[0].Error)
+	assert.Equal(t, processor.ResultPrClosedBefore, results[0].Result)
+	assert.Nil(t, results[0].PullRequest)
 }
 
 func TestProcessor_Process_PullRequestMergedAndMergeOnceActive(t *testing.T) {
@@ -201,10 +206,12 @@ func TestProcessor_Process_PullRequestMergedAndMergeOnceActive(t *testing.T) {
 	tw.AddPreCloneFilters(&trueFilter{})
 
 	p := &processor.Processor{Git: gitc}
-	result, _, err := p.Process(context.Background(), false, repo, tw, true)
+	results := p.Process(false, repo, []*task.Task{tw}, true)
 
-	require.NoError(t, err)
-	assert.Equal(t, processor.ResultPrMergedBefore, result)
+	assert.Len(t, results, 1)
+	assert.NoError(t, results[0].Error)
+	assert.Equal(t, processor.ResultPrMergedBefore, results[0].Result)
+	assert.Nil(t, results[0].PullRequest)
 }
 
 func TestProcessor_Process_CreateOnly(t *testing.T) {
@@ -221,10 +228,12 @@ func TestProcessor_Process_CreateOnly(t *testing.T) {
 	tw.AddPreCloneFilters(&trueFilter{})
 
 	p := &processor.Processor{Git: gitc}
-	result, _, err := p.Process(context.Background(), false, repo, tw, true)
+	results := p.Process(false, repo, []*task.Task{tw}, true)
 
-	require.NoError(t, err)
-	assert.Equal(t, processor.ResultPrOpen, result)
+	assert.Len(t, results, 1)
+	assert.NoError(t, results[0].Error)
+	assert.Equal(t, processor.ResultPrOpen, results[0].Result)
+	assert.Nil(t, results[0].PullRequest)
 }
 
 func TestProcessor_Process_ClosePullRequestIfChangesExistInBaseBranch(t *testing.T) {
@@ -257,10 +266,12 @@ func TestProcessor_Process_ClosePullRequestIfChangesExistInBaseBranch(t *testing
 	tw.AddPreCloneFilters(&trueFilter{})
 
 	p := &processor.Processor{Git: gitc}
-	result, _, err := p.Process(context.Background(), false, repo, tw, true)
+	results := p.Process(false, repo, []*task.Task{tw}, true)
 
-	require.NoError(t, err)
-	assert.Equal(t, processor.ResultPrClosed, result)
+	assert.Len(t, results, 1)
+	assert.NoError(t, results[0].Error)
+	assert.Equal(t, processor.ResultPrClosed, results[0].Result)
+	assert.Nil(t, results[0].PullRequest)
 }
 
 func TestProcessor_Process_MergePullRequest(t *testing.T) {
@@ -276,7 +287,8 @@ func TestProcessor_Process_MergePullRequest(t *testing.T) {
 	repo.EXPECT().FindPullRequest("saturn-bot--unittest").Return(prID, nil)
 	repo.EXPECT().IsPullRequestClosed(prID).Return(false)
 	repo.EXPECT().IsPullRequestMerged(prID).Return(false)
-	repo.EXPECT().PullRequest(prID).Return(&host.PullRequest{Number: 579, WebURL: "https://git.localhost/unit/test"})
+	pr := &host.PullRequest{Number: 579, WebURL: "https://git.localhost/unit/test"}
+	repo.EXPECT().PullRequest(prID).Return(pr)
 	repo.EXPECT().GetPullRequestBody(prID).Return("")
 	repo.EXPECT().BaseBranch().Return("main")
 	repo.EXPECT().IsPullRequestOpen(prID).Return(true).AnyTimes()
@@ -294,10 +306,12 @@ func TestProcessor_Process_MergePullRequest(t *testing.T) {
 	tw.AddPreCloneFilters(&trueFilter{})
 
 	p := &processor.Processor{Git: gitc}
-	result, _, err := p.Process(context.Background(), false, repo, tw, true)
+	results := p.Process(false, repo, []*task.Task{tw}, true)
 
-	require.NoError(t, err)
-	assert.Equal(t, processor.ResultPrMerged, result)
+	assert.Len(t, results, 1)
+	assert.NoError(t, results[0].Error)
+	assert.Equal(t, processor.ResultPrMerged, results[0].Result)
+	assert.Equal(t, pr, results[0].PullRequest)
 }
 
 func TestProcessor_Process_MergePullRequest_FailedMergeChecks(t *testing.T) {
@@ -328,10 +342,12 @@ func TestProcessor_Process_MergePullRequest_FailedMergeChecks(t *testing.T) {
 	tw.AddPreCloneFilters(&trueFilter{})
 
 	p := &processor.Processor{Git: gitc}
-	result, _, err := p.Process(context.Background(), false, repo, tw, true)
+	results := p.Process(false, repo, []*task.Task{tw}, true)
 
-	require.NoError(t, err)
-	assert.Equal(t, processor.ResultChecksFailed, result)
+	assert.Len(t, results, 1)
+	assert.NoError(t, results[0].Error)
+	assert.Equal(t, processor.ResultChecksFailed, results[0].Result)
+	assert.Nil(t, results[0].PullRequest)
 }
 
 func TestProcessor_Process_MergePullRequest_AutoMergeAfter(t *testing.T) {
@@ -367,10 +383,12 @@ func TestProcessor_Process_MergePullRequest_AutoMergeAfter(t *testing.T) {
 	tw.AddPreCloneFilters(&trueFilter{})
 
 	p := &processor.Processor{Git: gitc}
-	result, _, err := p.Process(context.Background(), false, repo, tw, true)
+	results := p.Process(false, repo, []*task.Task{tw}, true)
 
-	require.NoError(t, err)
-	assert.Equal(t, processor.ResultAutoMergeTooEarly, result)
+	assert.Len(t, results, 1)
+	assert.NoError(t, results[0].Error)
+	assert.Equal(t, processor.ResultAutoMergeTooEarly, results[0].Result)
+	assert.Nil(t, results[0].PullRequest)
 }
 
 func TestProcessor_Process_MergePullRequest_MergeConflict(t *testing.T) {
@@ -406,10 +424,12 @@ func TestProcessor_Process_MergePullRequest_MergeConflict(t *testing.T) {
 	tw.AddPreCloneFilters(&trueFilter{})
 
 	p := &processor.Processor{Git: gitc}
-	result, _, err := p.Process(context.Background(), false, repo, tw, true)
+	results := p.Process(false, repo, []*task.Task{tw}, true)
 
-	require.NoError(t, err)
-	assert.Equal(t, processor.ResultConflict, result)
+	assert.Len(t, results, 1)
+	assert.NoError(t, results[0].Error)
+	assert.Equal(t, processor.ResultConflict, results[0].Result)
+	assert.Nil(t, results[0].PullRequest)
 }
 
 func TestProcessor_Process_UpdatePullRequest(t *testing.T) {
@@ -429,16 +449,13 @@ func TestProcessor_Process_UpdatePullRequest(t *testing.T) {
 	repo.EXPECT().BaseBranch().Return("main")
 	repo.EXPECT().IsPullRequestOpen(prID).Return(true).AnyTimes()
 	prData := host.PullRequestData{
-		Assignees: []string{"dina", "ellie"},
-		Reviewers: []string{"joel", "tommy"},
+		Assignees: []string{"dina"},
+		Reviewers: []string{"joel"},
 		TaskName:  "unittest",
 		TemplateData: template.Data{
 			Run: map[string]string{
-				"Greeting":                    "Hello",
-				"inputOne":                    "iValueOne",
-				"inputTwo":                    "iValueTwo",
-				sbcontext.RunDataKeyAssignees: "ellie,dina",
-				sbcontext.RunDataKeyReviewers: "tommy,joel",
+				"inputOne": "iValueOne",
+				"inputTwo": "iValueTwo",
 			},
 			Repository: template.DataRepository{
 				FullName: "git.local/unit/test",
@@ -473,18 +490,14 @@ func TestProcessor_Process_UpdatePullRequest(t *testing.T) {
 	tw.AddPreCloneFilters(&trueFilter{})
 	err = tw.SetInputs(map[string]string{"inputOne": "iValueOne", "inputTwo": "iValueTwo"})
 	require.NoError(t, err)
-	ctx := context.Background()
-	ctx = sbcontext.WithRunData(ctx, map[string]string{
-		"Greeting":                    "Hello",
-		sbcontext.RunDataKeyAssignees: "ellie,dina",
-		sbcontext.RunDataKeyReviewers: "tommy,joel",
-	})
 
 	p := &processor.Processor{Git: gitc}
-	result, _, err := p.Process(ctx, false, repo, tw, true)
+	results := p.Process(false, repo, []*task.Task{tw}, true)
 
-	require.NoError(t, err)
-	assert.Equal(t, processor.ResultPrOpen, result)
+	assert.Len(t, results, 1)
+	assert.NoError(t, results[0].Error)
+	assert.Equal(t, processor.ResultPrOpen, results[0].Result)
+	assert.Nil(t, results[0].PullRequest)
 }
 
 func TestProcessor_Process_NoChanges(t *testing.T) {
@@ -514,10 +527,12 @@ func TestProcessor_Process_NoChanges(t *testing.T) {
 	tw.AddPreCloneFilters(&trueFilter{})
 
 	p := &processor.Processor{Git: gitc}
-	result, _, err := p.Process(context.Background(), false, repo, tw, true)
+	results := p.Process(false, repo, []*task.Task{tw}, true)
 
-	require.NoError(t, err)
-	assert.Equal(t, processor.ResultNoChanges, result)
+	assert.Len(t, results, 1)
+	assert.NoError(t, results[0].Error)
+	assert.Equal(t, processor.ResultNoChanges, results[0].Result)
+	assert.Nil(t, results[0].PullRequest)
 }
 
 func TestProcessor_Process_BranchModified(t *testing.T) {
@@ -566,10 +581,12 @@ The commit(s) that modified the pull request:
 	tw.AddPreCloneFilters(&trueFilter{})
 
 	p := &processor.Processor{Git: gitc}
-	result, _, err := p.Process(context.Background(), false, repo, tw, true)
+	results := p.Process(false, repo, []*task.Task{tw}, true)
 
-	require.NoError(t, err)
-	assert.Equal(t, processor.ResultBranchModified, result)
+	assert.Len(t, results, 1)
+	assert.NoError(t, results[0].Error)
+	assert.Equal(t, processor.ResultBranchModified, results[0].Result)
+	assert.Nil(t, results[0].PullRequest)
 }
 
 func TestProcessor_Process_ForceRebaseByUser(t *testing.T) {
@@ -606,10 +623,12 @@ func TestProcessor_Process_ForceRebaseByUser(t *testing.T) {
 	tw.AddPreCloneFilters(&trueFilter{})
 
 	p := &processor.Processor{Git: gitc}
-	result, _, err := p.Process(context.Background(), false, repo, tw, true)
+	results := p.Process(false, repo, []*task.Task{tw}, true)
 
-	require.NoError(t, err)
-	assert.Equal(t, processor.ResultPrOpen, result)
+	assert.Len(t, results, 1)
+	assert.NoError(t, results[0].Error)
+	assert.Equal(t, processor.ResultPrOpen, results[0].Result)
+	assert.Nil(t, results[0].PullRequest)
 }
 
 func TestProcessor_Process_ChangeLimit(t *testing.T) {
@@ -620,10 +639,12 @@ func TestProcessor_Process_ChangeLimit(t *testing.T) {
 	tw.IncChangeLimitCount()
 
 	p := &processor.Processor{Git: gitc}
-	result, _, err := p.Process(context.Background(), false, repo, tw, true)
+	results := p.Process(false, repo, []*task.Task{tw}, true)
 
-	require.NoError(t, err)
-	assert.Equal(t, processor.ResultSkip, result)
+	assert.Len(t, results, 1)
+	assert.NoError(t, results[0].Error)
+	assert.Equal(t, processor.ResultSkip, results[0].Result)
+	assert.Nil(t, results[0].PullRequest)
 }
 
 func TestProcessor_Process_MaxOpenPRs(t *testing.T) {
@@ -634,10 +655,12 @@ func TestProcessor_Process_MaxOpenPRs(t *testing.T) {
 	tw.IncOpenPRsCount()
 
 	p := &processor.Processor{Git: gitc}
-	result, _, err := p.Process(context.Background(), false, repo, tw, true)
+	results := p.Process(false, repo, []*task.Task{tw}, true)
 
-	require.NoError(t, err)
-	assert.Equal(t, processor.ResultSkip, result)
+	assert.Len(t, results, 1)
+	assert.NoError(t, results[0].Error)
+	assert.Equal(t, processor.ResultSkip, results[0].Result)
+	assert.Nil(t, results[0].PullRequest)
 }
 
 func TestProcessor_Process_FilterNotMatching(t *testing.T) {
@@ -648,10 +671,12 @@ func TestProcessor_Process_FilterNotMatching(t *testing.T) {
 	tw.AddPreCloneFilters(&falseFilter{})
 
 	p := &processor.Processor{Git: gitc}
-	result, _, err := p.Process(context.Background(), false, repo, tw, true)
+	results := p.Process(false, repo, []*task.Task{tw}, true)
 
-	require.NoError(t, err)
-	assert.Equal(t, processor.ResultNoMatch, result)
+	assert.Len(t, results, 1)
+	assert.NoError(t, results[0].Error)
+	assert.Equal(t, processor.ResultNoMatch, results[0].Result)
+	assert.Nil(t, results[0].PullRequest)
 }
 
 func TestProcessor_Process_NoFilters(t *testing.T) {
@@ -661,10 +686,12 @@ func TestProcessor_Process_NoFilters(t *testing.T) {
 	tw := &task.Task{Task: schema.Task{Name: "unittest"}}
 
 	p := &processor.Processor{Git: gitc}
-	result, _, err := p.Process(context.Background(), false, repo, tw, true)
+	results := p.Process(false, repo, []*task.Task{tw}, true)
 
-	require.NoError(t, err)
-	assert.Equal(t, processor.ResultNoMatch, result)
+	assert.Len(t, results, 1)
+	assert.NoError(t, results[0].Error)
+	assert.Equal(t, processor.ResultNoMatch, results[0].Result)
+	assert.Nil(t, results[0].PullRequest)
 }
 
 func TestProcessor_Process_AutoCloseAfter_Close(t *testing.T) {
@@ -676,7 +703,8 @@ func TestProcessor_Process_AutoCloseAfter_Close(t *testing.T) {
 	repo.EXPECT().IsPullRequestMerged(prID).Return(false)
 	repo.EXPECT().IsPullRequestOpen(prID).Return(true)
 	createdAt := time.Now().Add(-1 * time.Hour)
-	repo.EXPECT().PullRequest(prID).Return(&host.PullRequest{CreatedAt: &createdAt})
+	pr := &host.PullRequest{CreatedAt: &createdAt}
+	repo.EXPECT().PullRequest(prID).Return(pr)
 	msg := "Pull request has been open for longer than 30s. Closing automatically."
 	repo.EXPECT().ClosePullRequest(msg, prID).Return(nil)
 	gitc := gitmock.NewMockGitClient(ctrl)
@@ -685,10 +713,12 @@ func TestProcessor_Process_AutoCloseAfter_Close(t *testing.T) {
 	tw.AddPreCloneFilters(&trueFilter{})
 
 	p := &processor.Processor{Git: gitc}
-	result, _, err := p.Process(context.Background(), false, repo, tw, true)
+	results := p.Process(false, repo, []*task.Task{tw}, true)
 
-	require.NoError(t, err)
-	assert.Equal(t, processor.ResultPrClosed, result)
+	assert.Len(t, results, 1)
+	assert.NoError(t, results[0].Error)
+	assert.Equal(t, processor.ResultPrClosed, results[0].Result)
+	assert.Equal(t, pr, results[0].PullRequest)
 }
 
 func TestProcessor_Process_AutoCloseAfter_NotTimeYet(t *testing.T) {
@@ -700,7 +730,8 @@ func TestProcessor_Process_AutoCloseAfter_NotTimeYet(t *testing.T) {
 	repo.EXPECT().IsPullRequestMerged(prID).Return(false)
 	repo.EXPECT().IsPullRequestOpen(prID).Return(true).Times(2)
 	createdAt := time.Now().Add(-1 * time.Hour)
-	repo.EXPECT().PullRequest(prID).Return(&host.PullRequest{CreatedAt: &createdAt})
+	pr := &host.PullRequest{CreatedAt: &createdAt}
+	repo.EXPECT().PullRequest(prID).Return(pr)
 	repo.EXPECT().GetPullRequestBody(prID).Return("").AnyTimes()
 	repo.EXPECT().BaseBranch().Return("main").AnyTimes()
 	repo.EXPECT().UpdatePullRequest(gomock.Any(), prID).Return(nil)
@@ -714,10 +745,12 @@ func TestProcessor_Process_AutoCloseAfter_NotTimeYet(t *testing.T) {
 	tw.AddPreCloneFilters(&trueFilter{})
 
 	p := &processor.Processor{Git: gitc}
-	result, _, err := p.Process(context.Background(), false, repo, tw, true)
+	results := p.Process(false, repo, []*task.Task{tw}, true)
 
-	require.NoError(t, err)
-	assert.Equal(t, processor.ResultPrOpen, result)
+	assert.Len(t, results, 1)
+	assert.NoError(t, results[0].Error)
+	assert.Equal(t, processor.ResultPrOpen, results[0].Result)
+	assert.Equal(t, pr, results[0].PullRequest)
 }
 
 func TestProcessor_Process_EmptyRepository(t *testing.T) {
@@ -745,10 +778,12 @@ func TestProcessor_Process_EmptyRepository(t *testing.T) {
 	tw.AddPreCloneFilters(&trueFilter{})
 
 	p := &processor.Processor{Git: gitc}
-	result, _, err := p.Process(context.Background(), false, repo, tw, true)
+	results := p.Process(false, repo, []*task.Task{tw}, true)
 
-	require.NoError(t, err)
-	assert.Equal(t, processor.ResultNoMatch, result)
+	assert.Len(t, results, 1)
+	assert.NoError(t, results[0].Error)
+	assert.Equal(t, processor.ResultNoMatch, results[0].Result)
+	assert.Nil(t, results[0].PullRequest)
 }
 
 func TestProcessor_Process_CleanupOnPrepareError(t *testing.T) {
@@ -767,8 +802,10 @@ func TestProcessor_Process_CleanupOnPrepareError(t *testing.T) {
 	tw.AddPreCloneFilters(&trueFilter{})
 
 	p := &processor.Processor{Git: gitc}
-	result, _, err := p.Process(context.Background(), false, repo, tw, true)
+	results := p.Process(false, repo, []*task.Task{tw}, true)
 
-	require.NoError(t, err)
-	assert.Equal(t, processor.ResultNoMatch, result)
+	assert.Len(t, results, 1)
+	assert.NoError(t, results[0].Error)
+	assert.Equal(t, processor.ResultNoMatch, results[0].Result)
+	assert.Nil(t, results[0].PullRequest)
 }
