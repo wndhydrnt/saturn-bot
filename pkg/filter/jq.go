@@ -101,30 +101,9 @@ func (jq *Jq) Do(ctx context.Context) (bool, error) {
 
 	for _, expr := range jq.Exprs {
 		iter := expr.Run(data)
-		for {
-			valueRaw, hasNext := iter.Next()
-			if !hasNext {
-				// No more data.
-				break
-			}
-
-			if valueRaw == nil {
-				// Query hasn't matched anything.
-				return false, nil
-			}
-
-			if _, isErr := valueRaw.(error); isErr {
-				// gojq can return a "halt" error.
-				// Consider any error as not matching.
-				return false, nil
-			}
-
-			value, isBool := valueRaw.(bool)
-			if isBool && !value {
-				// A query can return a bool.
-				// Example: '.hello == "world"'
-				return false, nil
-			}
+		match := checkJqMatch(iter)
+		if !match {
+			return false, nil
 		}
 	}
 
@@ -134,4 +113,37 @@ func (jq *Jq) Do(ctx context.Context) (bool, error) {
 // String implements Filter.
 func (f *Jq) String() string {
 	return fmt.Sprintf("jq(expressions=[%s], path=%s)", f.ExprsString, f.Path)
+}
+
+func checkJqMatch(iter gojq.Iter) bool {
+	for {
+		valueRaw, hasNext := iter.Next()
+		if !hasNext {
+			// No more data.
+			break
+		}
+
+		if valueRaw == nil {
+			// Query hasn't matched anything.
+			// Continue in case the query returns more than one node.
+			continue
+		}
+
+		if _, isErr := valueRaw.(error); isErr {
+			// gojq can return a "halt" error.
+			// Consider any error as not matching.
+			return false
+		}
+
+		value, isBool := valueRaw.(bool)
+		if isBool && !value {
+			// A query can return a bool.
+			// Example: '.hello == "world"'
+			return false
+		}
+
+		return true
+	}
+
+	return false
 }
