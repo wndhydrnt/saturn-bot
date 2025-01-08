@@ -80,7 +80,7 @@ func TestProcessor_Process_CreatePullRequestLocalChanges(t *testing.T) {
 	gitc.EXPECT().HasRemoteChanges("main").Return(false, nil)
 	gitc.EXPECT().HasRemoteChanges("saturn-bot--unittest").Return(true, nil)
 	gitc.EXPECT().Push("saturn-bot--unittest").Return(nil)
-	tw := &task.Task{Task: schema.Task{CommitMessage: "commit test", Name: "unittest"}}
+	tw := &task.Task{Task: schema.Task{CommitMessage: "commit test", Name: "unittest", ChangeLimit: 1}}
 	tw.AddPreCloneFilters(&trueFilter{})
 
 	p := &processor.Processor{Git: gitc}
@@ -89,6 +89,7 @@ func TestProcessor_Process_CreatePullRequestLocalChanges(t *testing.T) {
 	assert.Len(t, results, 1)
 	assert.Equal(t, processor.ResultPrCreated, results[0].Result)
 	assert.Equal(t, prCreate, results[0].PullRequest)
+	assert.True(t, tw.HasReachedChangeLimit(), "Updates the change limit")
 	assert.NoError(t, results[0].Error)
 }
 

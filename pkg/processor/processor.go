@@ -72,9 +72,9 @@ func (p *Processor) Process(dryRun bool, repo host.Repository, tasks []*task.Tas
 		}
 
 		taskLogger := logger.With(log.FieldTask(t.Name))
-		ctx = sbcontext.WithLog(ctx, taskLogger)
-		ctx = sbcontext.WithRunData(ctx, t.InputData())
-		match, preCloneResult, err := p.filterPreClone(ctx, t)
+		taskCtx := sbcontext.WithLog(ctx, taskLogger)
+		taskCtx = sbcontext.WithRunData(taskCtx, t.InputData())
+		match, preCloneResult, err := p.filterPreClone(taskCtx, t)
 		result := ProcessResult{
 			Task: t,
 		}
@@ -125,9 +125,9 @@ func (p *Processor) Process(dryRun bool, repo host.Repository, tasks []*task.Tas
 			WithOptions(zap.Fields(
 				log.FieldTask(t.Name),
 			))
-		ctx = sbcontext.WithLog(ctx, taskLogger)
-		ctx = sbcontext.WithRunData(ctx, t.InputData())
-		resultId, pr, err := p.processPostClone(ctx, repo, t, doFilter, dryRun)
+		taskCtx := sbcontext.WithLog(ctx, taskLogger)
+		taskCtx = sbcontext.WithRunData(taskCtx, t.InputData())
+		resultId, pr, err := p.processPostClone(taskCtx, repo, t, doFilter, dryRun)
 		result := ProcessResult{
 			PullRequest: pr,
 			Result:      resultId,
