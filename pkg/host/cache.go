@@ -235,6 +235,7 @@ func (rc *RepositoryFileCache) updateCache(hosts []Host) error {
 
 		if since == nil {
 			log.Log().Infof("Full update of repository cache for host %s", h.Name())
+			_ = os.RemoveAll(rc.Dir)
 		} else {
 			log.Log().Infof("Partial update of repository cache for host %s since %s", h.Name(), since)
 		}
