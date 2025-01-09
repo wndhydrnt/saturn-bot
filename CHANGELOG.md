@@ -1,5 +1,12 @@
 # Changelog
 
+## [0.18.2](https://github.com/wndhydrnt/saturn-bot/compare/v0.18.1...v0.18.2) (2025-01-09)
+
+
+### Bug Fixes
+
+* **filter:** Let jq filter continue on parse errors ([3ba0184](https://github.com/wndhydrnt/saturn-bot/commit/3ba01843c347a4635330270c6d9485048ecc8452))
+
 ## [0.18.1](https://github.com/wndhydrnt/saturn-bot/compare/v0.18.0...v0.18.1) (2025-01-08)
 
 
