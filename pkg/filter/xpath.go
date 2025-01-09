@@ -10,7 +10,6 @@ import (
 	"github.com/antchfx/xmlquery"
 	"github.com/antchfx/xpath"
 	sbcontext "github.com/wndhydrnt/saturn-bot/pkg/context"
-	"github.com/wndhydrnt/saturn-bot/pkg/log"
 	"github.com/wndhydrnt/saturn-bot/pkg/params"
 )
 
@@ -86,7 +85,7 @@ func (x *Xpath) Do(ctx context.Context) (bool, error) {
 	defer f.Close()
 	doc, err := xmlquery.Parse(f)
 	if err != nil {
-		log.Log().Warnf("Failed to parse XML file %s: %s", x.Path, err)
+		sbcontext.Log(ctx).Warnf("Failed to parse XML file %s: %s", x.Path, err)
 		return false, nil
 	}
 
