@@ -11,6 +11,7 @@ import (
 	"github.com/itchyny/gojq"
 	sbcontext "github.com/wndhydrnt/saturn-bot/pkg/context"
 	"github.com/wndhydrnt/saturn-bot/pkg/params"
+	"go.uber.org/zap"
 	"gopkg.in/yaml.v3"
 )
 
@@ -96,7 +97,8 @@ func (jq *Jq) Do(ctx context.Context) (bool, error) {
 	dec := yaml.NewDecoder(f)
 	err = dec.Decode(&data)
 	if err != nil {
-		return false, fmt.Errorf("decode file for jq filter: %w", err)
+		sbcontext.Log(ctx).Warnw("Failed to decode file for jq filter", zap.Error(err))
+		return false, nil
 	}
 
 	for _, expr := range jq.Exprs {

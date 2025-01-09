@@ -89,13 +89,22 @@ func TestJq_Do(t *testing.T) {
 			wantMatch: false,
 		},
 		{
-			name:    "errors when file contains invalid content",
+			name:    "returns false when file contains invalid content",
 			factory: filter.JqFactory{}.CreatePostClone,
 			params:  params.Params{"expressions": []any{`.dependencies`}, "path": "package.json"},
 			filesInRepository: map[string]string{
 				"package.json": "{{}",
 			},
-			wantFilterError: "decode file for jq filter: yaml: line 1: did not find expected ',' or '}'",
+			wantMatch: false,
+		},
+		{
+			name:    "returns false when the file is empty",
+			factory: filter.JqFactory{}.CreatePostClone,
+			params:  params.Params{"expressions": []any{`.dependencies["@commitlint/cli"]`}, "path": "package.json"},
+			filesInRepository: map[string]string{
+				"package.json": "",
+			},
+			wantMatch: false,
 		},
 		{
 			name:             "factory errors when param expressions is not set",
