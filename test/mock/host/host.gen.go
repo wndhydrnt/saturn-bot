@@ -427,6 +427,20 @@ func (mr *MockRepositoryMockRecorder) UpdatePullRequest(data, pr any) *gomock.Ca
 	return mr.mock.ctrl.RecordCallWithMethodType(mr.mock, "UpdatePullRequest", reflect.TypeOf((*MockRepository)(nil).UpdatePullRequest), data, pr)
 }
 
+// UpdatedAt mocks base method.
+func (m *MockRepository) UpdatedAt() time.Time {
+	m.ctrl.T.Helper()
+	ret := m.ctrl.Call(m, "UpdatedAt")
+	ret0, _ := ret[0].(time.Time)
+	return ret0
+}
+
+// UpdatedAt indicates an expected call of UpdatedAt.
+func (mr *MockRepositoryMockRecorder) UpdatedAt() *gomock.Call {
+	mr.mock.ctrl.T.Helper()
+	return mr.mock.ctrl.RecordCallWithMethodType(mr.mock, "UpdatedAt", reflect.TypeOf((*MockRepository)(nil).UpdatedAt))
+}
+
 // WebUrl mocks base method.
 func (m *MockRepository) WebUrl() string {
 	m.ctrl.T.Helper()

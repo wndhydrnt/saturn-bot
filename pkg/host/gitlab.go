@@ -479,6 +479,11 @@ func (g *GitLabRepository) Raw() any {
 	return g.project
 }
 
+// UpdatedAt implements [Repository].
+func (g *GitLabRepository) UpdatedAt() time.Time {
+	return ptr.From(g.project.UpdatedAt)
+}
+
 type GitLabHost struct {
 	authenticatedUser *UserInfo
 	client            *gitlab.Client
