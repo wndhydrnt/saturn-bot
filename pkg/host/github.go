@@ -22,9 +22,10 @@ var (
 )
 
 type GitHubRepository struct {
-	client *github.Client
-	host   *GitHubHost
-	repo   *github.Repository
+	client  *github.Client
+	host    *GitHubHost
+	repo    *github.Repository
+	updated bool
 }
 
 func (g *GitHubRepository) BaseBranch() string {
@@ -423,9 +424,19 @@ func (g *GitHubRepository) IsArchived() bool {
 	return g.repo.GetArchived()
 }
 
+// MarkUpdated implements [Repository].
+func (g *GitHubRepository) MarkUpdated() {
+	g.updated = true
+}
+
+// Updated implements [Repository].
+func (g *GitHubRepository) Updated() bool {
+	return g.updated
+}
+
 // UpdatedAt implements [Repository].
 func (g *GitHubRepository) UpdatedAt() time.Time {
-	return g.repo.UpdatedAt.Time
+	return g.repo.GetUpdatedAt().Time
 }
 
 // listAllReviews lists all reviews done for a pull request.

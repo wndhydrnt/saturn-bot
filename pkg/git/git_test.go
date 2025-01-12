@@ -196,6 +196,7 @@ func TestGit_Prepare_UpdateExistingRepository(t *testing.T) {
 	repo := hostmock.NewMockRepository(ctrl)
 	repo.EXPECT().FullName().Return("git.local/unit/test").AnyTimes()
 	repo.EXPECT().BaseBranch().Return("main").AnyTimes()
+	repo.EXPECT().Updated().Return(true)
 	em := &execMock{t: t}
 	em.withCall("git", "reset", "--hard").withDir(dir)
 	em.withCall("git", "clean", "-d", "--force").withDir(dir)
@@ -312,6 +313,7 @@ func TestGit_Prepare_RetryOnPullError(t *testing.T) {
 	repo.EXPECT().FullName().Return("git.local/unit/test").AnyTimes()
 	repo.EXPECT().BaseBranch().Return("main").AnyTimes()
 	repo.EXPECT().CloneUrlHttp().Return("https://git.local/unit/test.git")
+	repo.EXPECT().Updated().Return(true)
 	em := &execMock{t: t}
 	em.withCall("git", "reset", "--hard").withDir(dir)
 	em.withCall("git", "clean", "-d", "--force").withDir(dir)
