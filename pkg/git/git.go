@@ -204,8 +204,7 @@ func (g *Git) Execute(arg ...string) (string, string, error) {
 	cmd.Stderr = stderr
 	stdout := &bytes.Buffer{}
 	cmd.Stdout = stdout
-	cmdLog := strings.Join(arg, " ")
-	log.GitLogger().Debug("Executing git", "cmd", cmdLog, "cwd", g.checkoutDir)
+	log.GitLogger().Debugf("Executing git - cmd: %v - cwd: %s", arg, g.checkoutDir)
 	err := g.CmdExec(cmd)
 	if err != nil {
 		return stdout.String(), stderr.String(), &GitCommandError{err: err, exitCode: cmd.ProcessState.ExitCode(), stderr: stderr.String(), stdout: stdout.String()}
