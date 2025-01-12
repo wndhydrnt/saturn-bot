@@ -16,7 +16,7 @@
       <div class="field is-grouped is-horizontal">
         <p class="control">
           <div class="select">
-            <select name="task">
+            <select name="task" onchange="this.form.submit()">
               <option value="">All</option>
               {{range $name := .Filters.TaskNames}}
               <option value="{{$name}}"{{if eq $name $.Filters.TaskNameCurrent}} selected{{end}}>
@@ -29,7 +29,7 @@
         </p>
         <p class="control">
           <div class="select">
-            <select name="status">
+            <select name="status" onchange="this.form.submit()">
               <option value="">All</option>
               {{range $status := .Filters.RunStatusList}}
               <option value="{{$status}}"{{if eq $status $.Filters.RunStatusCurrent}} selected{{end}}>
