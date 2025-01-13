@@ -4,9 +4,11 @@ import (
 	"errors"
 	"os"
 	"os/exec"
+	"path/filepath"
 	"reflect"
 	"strings"
 	"testing"
+	"time"
 
 	"github.com/stretchr/testify/assert"
 	"github.com/stretchr/testify/require"
@@ -181,26 +183,64 @@ func TestGit_Prepare_CloneRepositorySsh(t *testing.T) {
 }
 
 func TestGit_Prepare_UpdateExistingRepository(t *testing.T) {
-	dataDir, err := os.MkdirTemp("", "*")
-	require.NoError(t, err)
-	defer func() {
-		err := os.RemoveAll(dataDir)
-		if err != nil {
-			panic(err)
-		}
-	}()
+	dataDir := t.TempDir()
 	dir := dataDir + "/git/git.local/unit/test"
-	err = os.MkdirAll(dir, 0755)
+	err := os.MkdirAll(dir, 0755)
 	require.NoError(t, err)
+	err = os.MkdirAll(filepath.Join(dir, ".git"), 0755)
+	require.NoError(t, err)
+	f, err := os.Create(filepath.Join(dir, ".git", "FETCH_HEAD"))
+	require.NoError(t, err)
+	defer f.Close()
+
 	ctrl := gomock.NewController(t)
 	repo := hostmock.NewMockRepository(ctrl)
 	repo.EXPECT().FullName().Return("git.local/unit/test").AnyTimes()
 	repo.EXPECT().BaseBranch().Return("main").AnyTimes()
+	repo.EXPECT().UpdatedAt().Return(time.Now().Add(5 * time.Minute))
 	em := &execMock{t: t}
 	em.withCall("git", "reset", "--hard").withDir(dir)
 	em.withCall("git", "clean", "-d", "--force").withDir(dir)
 	em.withCall("git", "checkout", "main").withDir(dir)
 	em.withCall("git", "pull", "--prune", "origin", "--ff-only").withDir(dir)
+	em.withCall("git", "config", "user.email", "unit@test.local").withDir(dir)
+	em.withCall("git", "config", "user.name", "unittest").withDir(dir)
+
+	cfg := config.Configuration{
+		DataDir:   &dataDir,
+		GitPath:   "git",
+		GitAuthor: "unittest <unit@test.local>",
+	}
+	g, err := git.New(setupOpts(cfg))
+	require.NoError(t, err)
+	g.CmdExec = em.exec
+	out, err := g.Prepare(repo, false)
+
+	require.NoError(t, err)
+	assert.Equal(t, dir, out)
+	assert.True(t, em.finished())
+}
+
+func TestGit_Prepare_NoPullWhenNoRepoUpdate(t *testing.T) {
+	dataDir := t.TempDir()
+	dir := dataDir + "/git/git.local/unit/test"
+	err := os.MkdirAll(dir, 0755)
+	require.NoError(t, err)
+	err = os.MkdirAll(filepath.Join(dir, ".git"), 0755)
+	require.NoError(t, err)
+	f, err := os.Create(filepath.Join(dir, ".git", "FETCH_HEAD"))
+	require.NoError(t, err)
+	defer f.Close()
+
+	ctrl := gomock.NewController(t)
+	repo := hostmock.NewMockRepository(ctrl)
+	repo.EXPECT().FullName().Return("git.local/unit/test").AnyTimes()
+	repo.EXPECT().BaseBranch().Return("main").AnyTimes()
+	repo.EXPECT().UpdatedAt().Return(time.Now().Add(-5 * time.Minute))
+	em := &execMock{t: t}
+	em.withCall("git", "reset", "--hard").withDir(dir)
+	em.withCall("git", "clean", "-d", "--force").withDir(dir)
+	em.withCall("git", "checkout", "main").withDir(dir)
 	em.withCall("git", "config", "user.email", "unit@test.local").withDir(dir)
 	em.withCall("git", "config", "user.name", "unittest").withDir(dir)
 
@@ -296,22 +336,21 @@ func TestGit_Prepare_RetryOnResetError(t *testing.T) {
 }
 
 func TestGit_Prepare_RetryOnPullError(t *testing.T) {
-	dataDir, err := os.MkdirTemp("", "*")
-	require.NoError(t, err)
-	defer func() {
-		err := os.RemoveAll(dataDir)
-		if err != nil {
-			panic(err)
-		}
-	}()
+	dataDir := t.TempDir()
 	dir := dataDir + "/git/git.local/unit/test"
-	err = os.MkdirAll(dir, 0755)
+	err := os.MkdirAll(dir, 0755)
 	require.NoError(t, err)
+	err = os.MkdirAll(filepath.Join(dir, ".git"), 0755)
+	require.NoError(t, err)
+	f, err := os.Create(filepath.Join(dir, ".git", "FETCH_HEAD"))
+	require.NoError(t, err)
+	defer f.Close()
 	ctrl := gomock.NewController(t)
 	repo := hostmock.NewMockRepository(ctrl)
 	repo.EXPECT().FullName().Return("git.local/unit/test").AnyTimes()
 	repo.EXPECT().BaseBranch().Return("main").AnyTimes()
 	repo.EXPECT().CloneUrlHttp().Return("https://git.local/unit/test.git")
+	repo.EXPECT().UpdatedAt().Return(time.Now().Add(5 * time.Minute))
 	em := &execMock{t: t}
 	em.withCall("git", "reset", "--hard").withDir(dir)
 	em.withCall("git", "clean", "-d", "--force").withDir(dir)

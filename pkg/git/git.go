@@ -8,6 +8,7 @@ import (
 	"os"
 	"os/exec"
 	"path"
+	"path/filepath"
 	"strings"
 	"time"
 
@@ -505,10 +506,18 @@ func (g *Git) pullBaseBranch(checkoutDir string, logger *zap.SugaredLogger, repo
 		return fmt.Errorf("checkout base branch: %w", err)
 	}
 
-	logger.Debug("Pulling changes into base branch", "repository", repo.FullName())
-	_, _, err = g.Execute("pull", "--prune", "origin", "--ff-only")
+	fetchHeadName := filepath.Join(checkoutDir, ".git", "FETCH_HEAD")
+	fetchHeadFileInfo, err := os.Stat(fetchHeadName)
 	if err != nil {
-		return fmt.Errorf("pull changes from remote into base branch: %w", err)
+		return fmt.Errorf("stat .git/FETCH_HEAD file: %w", err)
+	}
+
+	if fetchHeadFileInfo.ModTime().Before(repo.UpdatedAt()) {
+		logger.Debug("Pulling changes into base branch", "repository", repo.FullName())
+		_, _, err = g.Execute("pull", "--prune", "origin", "--ff-only")
+		if err != nil {
+			return fmt.Errorf("pull changes from remote into base branch: %w", err)
+		}
 	}
 
 	return nil
