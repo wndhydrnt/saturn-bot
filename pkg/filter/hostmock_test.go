@@ -343,18 +343,6 @@ func (mr *MockRepositoryMockRecorder) ListPullRequestComments(pr any) *gomock.Ca
 	return mr.mock.ctrl.RecordCallWithMethodType(mr.mock, "ListPullRequestComments", reflect.TypeOf((*MockRepository)(nil).ListPullRequestComments), pr)
 }
 
-// MarkUpdated mocks base method.
-func (m *MockRepository) MarkUpdated() {
-	m.ctrl.T.Helper()
-	m.ctrl.Call(m, "MarkUpdated")
-}
-
-// MarkUpdated indicates an expected call of MarkUpdated.
-func (mr *MockRepositoryMockRecorder) MarkUpdated() *gomock.Call {
-	mr.mock.ctrl.T.Helper()
-	return mr.mock.ctrl.RecordCallWithMethodType(mr.mock, "MarkUpdated", reflect.TypeOf((*MockRepository)(nil).MarkUpdated))
-}
-
 // MergePullRequest mocks base method.
 func (m *MockRepository) MergePullRequest(deleteBranch bool, pr any) error {
 	m.ctrl.T.Helper()
@@ -437,20 +425,6 @@ func (m *MockRepository) UpdatePullRequest(data host.PullRequestData, pr any) er
 func (mr *MockRepositoryMockRecorder) UpdatePullRequest(data, pr any) *gomock.Call {
 	mr.mock.ctrl.T.Helper()
 	return mr.mock.ctrl.RecordCallWithMethodType(mr.mock, "UpdatePullRequest", reflect.TypeOf((*MockRepository)(nil).UpdatePullRequest), data, pr)
-}
-
-// Updated mocks base method.
-func (m *MockRepository) Updated() bool {
-	m.ctrl.T.Helper()
-	ret := m.ctrl.Call(m, "Updated")
-	ret0, _ := ret[0].(bool)
-	return ret0
-}
-
-// Updated indicates an expected call of Updated.
-func (mr *MockRepositoryMockRecorder) Updated() *gomock.Call {
-	mr.mock.ctrl.T.Helper()
-	return mr.mock.ctrl.RecordCallWithMethodType(mr.mock, "Updated", reflect.TypeOf((*MockRepository)(nil).Updated))
 }
 
 // UpdatedAt mocks base method.

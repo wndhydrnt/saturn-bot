@@ -505,12 +505,10 @@ func (g *Git) pullBaseBranch(checkoutDir string, logger *zap.SugaredLogger, repo
 		return fmt.Errorf("checkout base branch: %w", err)
 	}
 
-	if repo.Updated() {
-		logger.Debug("Pulling changes into base branch", "repository", repo.FullName())
-		_, _, err = g.Execute("pull", "--prune", "origin", "--ff-only")
-		if err != nil {
-			return fmt.Errorf("pull changes from remote into base branch: %w", err)
-		}
+	logger.Debug("Pulling changes into base branch", "repository", repo.FullName())
+	_, _, err = g.Execute("pull", "--prune", "origin", "--ff-only")
+	if err != nil {
+		return fmt.Errorf("pull changes from remote into base branch: %w", err)
 	}
 
 	return nil

@@ -37,14 +37,14 @@ type RepositoryFileCache struct {
 
 // List implements [RepositoryLister].
 func (rc *RepositoryFileCache) List(hosts []Host, result chan Repository, errChan chan error) {
-	for _, h := range hosts {
-		lastUpdatedAt, err := rc.updateCache(h, rc.Clock.Now())
-		if err != nil {
-			errChan <- err
-			return
-		}
+	err := rc.updateCache(hosts)
+	if err != nil {
+		errChan <- err
+		return
+	}
 
-		rc.readRepositoriesForHost(h, result, errChan, lastUpdatedAt)
+	for _, h := range hosts {
+		rc.readRepositoriesForHost(h, result, errChan)
 	}
 
 	errChan <- nil
@@ -129,7 +129,7 @@ func (rc *RepositoryFileCache) writeMetadata(h Host, meta fileCacheMetadata) err
 	return nil
 }
 
-func (rc *RepositoryFileCache) readRepositoriesForHost(h Host, result chan Repository, errChan chan error, lastUpdateAt *time.Time) {
+func (rc *RepositoryFileCache) readRepositoriesForHost(h Host, result chan Repository, errChan chan error) {
 	err := filepath.WalkDir(filepath.Join(rc.Dir, h.Name()), func(path string, d fs.DirEntry, err error) error {
 		if err != nil {
 			return err
@@ -142,10 +142,6 @@ func (rc *RepositoryFileCache) readRepositoriesForHost(h Host, result chan Repos
 		repo, err := rc.readRepository(h, path)
 		if err != nil {
 			return err
-		}
-
-		if lastUpdateAt == nil || repo.UpdatedAt().After(ptr.From(lastUpdateAt)) {
-			repo.MarkUpdated()
 		}
 
 		result <- repo
@@ -194,7 +190,8 @@ func (rc *RepositoryFileCache) writeRepository(repo Repository) error {
 	return nil
 }
 
-func (rc *RepositoryFileCache) receiveRepositories(results chan []Repository, errChan chan error) error {
+func (rc *RepositoryFileCache) receiveRepositories(expectedFinishes int, results chan []Repository, errChan chan error) error {
+	finishes := 0
 	for {
 		select {
 		case repoList := <-results:
@@ -212,39 +209,51 @@ func (rc *RepositoryFileCache) receiveRepositories(results chan []Repository, er
 			}
 
 		case err := <-errChan:
-			return err
+			finishes += 1
+			if err != nil {
+				return err
+			}
+		}
+
+		if expectedFinishes == finishes {
+			return nil
 		}
 	}
 }
 
-func (rc *RepositoryFileCache) updateCache(host Host, start time.Time) (*time.Time, error) {
+func (rc *RepositoryFileCache) updateCache(hosts []Host) error {
 	rc.mu.Lock()
 	defer rc.mu.Unlock()
 	listRepos := make(chan []Repository)
 	listReposErrs := make(chan error)
-	since, err := rc.readLastUpdateTimestamp(host)
+	start := rc.Clock.Now()
+	for _, h := range hosts {
+		since, err := rc.readLastUpdateTimestamp(h)
+		if err != nil {
+			return err
+		}
+
+		if since == nil {
+			log.Log().Infof("Full update of repository cache for host %s", h.Name())
+			_ = os.RemoveAll(rc.Dir)
+		} else {
+			log.Log().Infof("Partial update of repository cache for host %s since %s", h.Name(), since)
+		}
+
+		go h.ListRepositories(since, listRepos, listReposErrs)
+	}
+
+	err := rc.receiveRepositories(len(hosts), listRepos, listReposErrs)
 	if err != nil {
-		return since, err
+		return err
 	}
 
-	if since == nil {
-		log.Log().Infof("Full update of repository cache for host %s", host.Name())
-		_ = os.RemoveAll(rc.Dir)
-	} else {
-		log.Log().Infof("Partial update of repository cache for host %s since %s", host.Name(), since)
+	for _, h := range hosts {
+		err := rc.writeLastUpdateTimestamp(h, start)
+		if err != nil {
+			return err
+		}
 	}
 
-	go host.ListRepositories(since, listRepos, listReposErrs)
-
-	err = rc.receiveRepositories(listRepos, listReposErrs)
-	if err != nil {
-		return since, err
-	}
-
-	err = rc.writeLastUpdateTimestamp(host, start)
-	if err != nil {
-		return since, err
-	}
-
-	return since, nil
+	return nil
 }

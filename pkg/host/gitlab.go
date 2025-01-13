@@ -61,7 +61,6 @@ type GitLabRepository struct {
 	host      *GitLabHost
 	project   *gitlab.Project
 	userCache *userCache
-	updated   bool
 }
 
 func (g *GitLabRepository) BaseBranch() string {
@@ -480,19 +479,9 @@ func (g *GitLabRepository) Raw() any {
 	return g.project
 }
 
-// Updated implements [Repository].
-func (g *GitLabRepository) Updated() bool {
-	return g.updated
-}
-
 // UpdatedAt implements [Repository].
 func (g *GitLabRepository) UpdatedAt() time.Time {
 	return ptr.From(g.project.UpdatedAt)
-}
-
-// MarkUpdated implements [Repository].
-func (g *GitLabRepository) MarkUpdated() {
-	g.updated = true
 }
 
 type GitLabHost struct {
