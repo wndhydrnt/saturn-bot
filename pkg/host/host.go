@@ -129,6 +129,10 @@ type Repository interface {
 	// Raw returns the underlying data structure of the Repository struct.
 	// The raw struct is marshalled to JSON.
 	Raw() any
+	// UpdatedAt returns the last time the repository has been updated,
+	// according to the host.
+	// The time is used to decide if new commits need to be pulled from the host.
+	UpdatedAt() time.Time
 }
 
 type Host interface {

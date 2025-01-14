@@ -8,15 +8,18 @@ import (
 	"os"
 	"os/exec"
 	"path"
+	"strconv"
 	"strings"
 	"time"
 
 	"github.com/prometheus/client_golang/prometheus"
+	"github.com/wndhydrnt/saturn-bot/pkg/clock"
 	"github.com/wndhydrnt/saturn-bot/pkg/config"
 	"github.com/wndhydrnt/saturn-bot/pkg/host"
 	"github.com/wndhydrnt/saturn-bot/pkg/log"
 	"github.com/wndhydrnt/saturn-bot/pkg/metrics"
 	"github.com/wndhydrnt/saturn-bot/pkg/options"
+	"github.com/wndhydrnt/saturn-bot/pkg/ptr"
 	"go.uber.org/zap"
 )
 
@@ -66,6 +69,7 @@ type Git struct {
 	MetricCommandsCount *prometheus.CounterVec
 	MetricCommandsSum   *prometheus.CounterVec
 
+	clock            clock.Clock
 	cloneOpts        []string
 	checkoutDir      string
 	dataDir          string
@@ -86,6 +90,7 @@ func New(opts options.Opts) (*Git, error) {
 		MetricCommandsCount: metrics.GitCommandsDurationSecondsCount,
 		MetricCommandsSum:   metrics.GitCommandsDurationSecondsSum,
 
+		clock:            opts.Clock,
 		cloneOpts:        opts.Config.GitCloneOptions,
 		dataDir:          opts.DataDir(),
 		defaultCommitMsg: opts.Config.GitCommitMessage,
@@ -504,13 +509,53 @@ func (g *Git) pullBaseBranch(checkoutDir string, logger *zap.SugaredLogger, repo
 		return fmt.Errorf("checkout base branch: %w", err)
 	}
 
-	logger.Debug("Pulling changes into base branch", "repository", repo.FullName())
-	_, _, err = g.Execute("pull", "--prune", "origin", "--ff-only")
-	if err != nil {
-		return fmt.Errorf("pull changes from remote into base branch: %w", err)
+	lastDefaultBranchPull := g.getLastDefaultBranchPull()
+	if lastDefaultBranchPull == nil || lastDefaultBranchPull.Before(repo.UpdatedAt()) {
+		logger.Debug("Pulling changes into base branch")
+		_, _, err = g.Execute("pull", "--prune", "origin", "--ff-only")
+		if err != nil {
+			return fmt.Errorf("pull changes from remote into base branch: %w", err)
+		}
+
+		g.setLastDefaultBranchPull(g.clock.Now())
 	}
 
 	return nil
+}
+
+const lastDefaultBranchPullConfigKey = "saturn-bot.lastDefaultBranchPull"
+
+func (g *Git) getLastDefaultBranchPull() *time.Time {
+	tsRaw, err := g.getConfig(lastDefaultBranchPullConfigKey)
+	if err != nil {
+		return nil
+	}
+
+	tsInt, err := strconv.ParseInt(tsRaw, 10, 64)
+	if err != nil {
+		return nil
+	}
+
+	return ptr.To(time.Unix(tsInt, 0))
+}
+
+func (g *Git) setLastDefaultBranchPull(ts time.Time) {
+	tsRaw := strconv.FormatInt(ts.Unix(), 10)
+	_ = g.setConfig(lastDefaultBranchPullConfigKey, tsRaw)
+}
+
+func (g *Git) getConfig(section string) (string, error) {
+	stdout, _, err := g.Execute("config", section)
+	if err != nil {
+		return "", err
+	}
+
+	return strings.TrimSpace(stdout), nil
+}
+
+func (g *Git) setConfig(section, value string) error {
+	_, _, err := g.Execute("config", section, value)
+	return err
 }
 
 // Set up authentication for git via environment variables

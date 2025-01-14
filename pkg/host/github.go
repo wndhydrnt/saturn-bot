@@ -423,6 +423,11 @@ func (g *GitHubRepository) IsArchived() bool {
 	return g.repo.GetArchived()
 }
 
+// UpdatedAt implements [Repository].
+func (g *GitHubRepository) UpdatedAt() time.Time {
+	return g.repo.UpdatedAt.Time
+}
+
 // listAllReviews lists all reviews done for a pull request.
 // The function is necessary because the GitHub API removes a user from the list of "requested reviewers"
 // and adds the user to the list of reviews.
