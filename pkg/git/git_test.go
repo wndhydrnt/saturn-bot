@@ -2,9 +2,9 @@ package git_test
 
 import (
 	"errors"
+	"fmt"
 	"os"
 	"os/exec"
-	"path/filepath"
 	"reflect"
 	"strings"
 	"testing"
@@ -12,6 +12,7 @@ import (
 
 	"github.com/stretchr/testify/assert"
 	"github.com/stretchr/testify/require"
+	"github.com/wndhydrnt/saturn-bot/pkg/clock"
 	"github.com/wndhydrnt/saturn-bot/pkg/config"
 	"github.com/wndhydrnt/saturn-bot/pkg/git"
 	"github.com/wndhydrnt/saturn-bot/pkg/host"
@@ -183,26 +184,26 @@ func TestGit_Prepare_CloneRepositorySsh(t *testing.T) {
 }
 
 func TestGit_Prepare_UpdateExistingRepository(t *testing.T) {
+	fakeClock := &clock.Fake{Base: time.Date(2000, 1, 1, 0, 0, 0, 0, time.UTC)}
 	dataDir := t.TempDir()
 	dir := dataDir + "/git/git.local/unit/test"
 	err := os.MkdirAll(dir, 0755)
 	require.NoError(t, err)
-	err = os.MkdirAll(filepath.Join(dir, ".git"), 0755)
-	require.NoError(t, err)
-	f, err := os.Create(filepath.Join(dir, ".git", "FETCH_HEAD"))
-	require.NoError(t, err)
-	defer f.Close()
 
 	ctrl := gomock.NewController(t)
 	repo := hostmock.NewMockRepository(ctrl)
 	repo.EXPECT().FullName().Return("git.local/unit/test").AnyTimes()
 	repo.EXPECT().BaseBranch().Return("main").AnyTimes()
-	repo.EXPECT().UpdatedAt().Return(time.Now().Add(5 * time.Minute))
+	repo.EXPECT().UpdatedAt().Return(fakeClock.Now().Add(5 * time.Minute))
 	em := &execMock{t: t}
 	em.withCall("git", "reset", "--hard").withDir(dir)
 	em.withCall("git", "clean", "-d", "--force").withDir(dir)
 	em.withCall("git", "checkout", "main").withDir(dir)
+	em.withCall("git", "config", "saturn-bot.lastDefaultBranchPull").
+		withDir(dir).
+		withStdout(fmt.Sprintf("%d", fakeClock.Now().Unix()))
 	em.withCall("git", "pull", "--prune", "origin", "--ff-only").withDir(dir)
+	em.withCall("git", "config", "saturn-bot.lastDefaultBranchPull", "946684802").withDir(dir)
 	em.withCall("git", "config", "user.email", "unit@test.local").withDir(dir)
 	em.withCall("git", "config", "user.name", "unittest").withDir(dir)
 
@@ -211,7 +212,9 @@ func TestGit_Prepare_UpdateExistingRepository(t *testing.T) {
 		GitPath:   "git",
 		GitAuthor: "unittest <unit@test.local>",
 	}
-	g, err := git.New(setupOpts(cfg))
+	opts := setupOpts(cfg)
+	opts.Clock = fakeClock
+	g, err := git.New(opts)
 	require.NoError(t, err)
 	g.CmdExec = em.exec
 	out, err := g.Prepare(repo, false)
@@ -222,25 +225,24 @@ func TestGit_Prepare_UpdateExistingRepository(t *testing.T) {
 }
 
 func TestGit_Prepare_NoPullWhenNoRepoUpdate(t *testing.T) {
+	fakeClock := &clock.Fake{Base: time.Date(2000, 1, 1, 0, 0, 0, 0, time.UTC)}
 	dataDir := t.TempDir()
 	dir := dataDir + "/git/git.local/unit/test"
 	err := os.MkdirAll(dir, 0755)
 	require.NoError(t, err)
-	err = os.MkdirAll(filepath.Join(dir, ".git"), 0755)
-	require.NoError(t, err)
-	f, err := os.Create(filepath.Join(dir, ".git", "FETCH_HEAD"))
-	require.NoError(t, err)
-	defer f.Close()
 
 	ctrl := gomock.NewController(t)
 	repo := hostmock.NewMockRepository(ctrl)
 	repo.EXPECT().FullName().Return("git.local/unit/test").AnyTimes()
 	repo.EXPECT().BaseBranch().Return("main").AnyTimes()
-	repo.EXPECT().UpdatedAt().Return(time.Now().Add(-5 * time.Minute))
+	repo.EXPECT().UpdatedAt().Return(fakeClock.Now().Add(-5 * time.Minute))
 	em := &execMock{t: t}
 	em.withCall("git", "reset", "--hard").withDir(dir)
 	em.withCall("git", "clean", "-d", "--force").withDir(dir)
 	em.withCall("git", "checkout", "main").withDir(dir)
+	em.withCall("git", "config", "saturn-bot.lastDefaultBranchPull").
+		withDir(dir).
+		withStdout(fmt.Sprintf("%d", fakeClock.Now().Unix()))
 	em.withCall("git", "config", "user.email", "unit@test.local").withDir(dir)
 	em.withCall("git", "config", "user.name", "unittest").withDir(dir)
 
@@ -249,7 +251,9 @@ func TestGit_Prepare_NoPullWhenNoRepoUpdate(t *testing.T) {
 		GitPath:   "git",
 		GitAuthor: "unittest <unit@test.local>",
 	}
-	g, err := git.New(setupOpts(cfg))
+	opts := setupOpts(cfg)
+	opts.Clock = fakeClock
+	g, err := git.New(opts)
 	require.NoError(t, err)
 	g.CmdExec = em.exec
 	out, err := g.Prepare(repo, false)
@@ -260,16 +264,9 @@ func TestGit_Prepare_NoPullWhenNoRepoUpdate(t *testing.T) {
 }
 
 func TestGit_Prepare_RetryOnCheckoutError(t *testing.T) {
-	dataDir, err := os.MkdirTemp("", "*")
-	require.NoError(t, err)
-	defer func() {
-		err := os.RemoveAll(dataDir)
-		if err != nil {
-			panic(err)
-		}
-	}()
+	dataDir := t.TempDir()
 	dir := dataDir + "/git/git.local/unit/test"
-	err = os.MkdirAll(dir, 0755)
+	err := os.MkdirAll(dir, 0755)
 	require.NoError(t, err)
 	ctrl := gomock.NewController(t)
 	repo := hostmock.NewMockRepository(ctrl)
@@ -336,25 +333,24 @@ func TestGit_Prepare_RetryOnResetError(t *testing.T) {
 }
 
 func TestGit_Prepare_RetryOnPullError(t *testing.T) {
+	fakeClock := &clock.Fake{Base: time.Date(2000, 1, 1, 0, 0, 0, 0, time.UTC)}
 	dataDir := t.TempDir()
 	dir := dataDir + "/git/git.local/unit/test"
 	err := os.MkdirAll(dir, 0755)
 	require.NoError(t, err)
-	err = os.MkdirAll(filepath.Join(dir, ".git"), 0755)
-	require.NoError(t, err)
-	f, err := os.Create(filepath.Join(dir, ".git", "FETCH_HEAD"))
-	require.NoError(t, err)
-	defer f.Close()
 	ctrl := gomock.NewController(t)
 	repo := hostmock.NewMockRepository(ctrl)
 	repo.EXPECT().FullName().Return("git.local/unit/test").AnyTimes()
 	repo.EXPECT().BaseBranch().Return("main").AnyTimes()
 	repo.EXPECT().CloneUrlHttp().Return("https://git.local/unit/test.git")
-	repo.EXPECT().UpdatedAt().Return(time.Now().Add(5 * time.Minute))
+	repo.EXPECT().UpdatedAt().Return(fakeClock.Now().Add(5 * time.Minute))
 	em := &execMock{t: t}
 	em.withCall("git", "reset", "--hard").withDir(dir)
 	em.withCall("git", "clean", "-d", "--force").withDir(dir)
 	em.withCall("git", "checkout", "main").withDir(dir)
+	em.withCall("git", "config", "saturn-bot.lastDefaultBranchPull").
+		withDir(dir).
+		withStdout(fmt.Sprintf("%d", fakeClock.Now().Unix()))
 	em.withCall("git", "pull", "--prune", "origin", "--ff-only").withDir(dir).withErrorMsg("pull failed")
 	em.withCall("git", "clone", "https://git.local/unit/test.git", ".").withDir(dir)
 	em.withCall("git", "config", "user.email", "unit@test.local").withDir(dir)

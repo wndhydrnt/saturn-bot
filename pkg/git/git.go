@@ -13,6 +13,7 @@ import (
 	"time"
 
 	"github.com/prometheus/client_golang/prometheus"
+	"github.com/wndhydrnt/saturn-bot/pkg/clock"
 	"github.com/wndhydrnt/saturn-bot/pkg/config"
 	"github.com/wndhydrnt/saturn-bot/pkg/host"
 	"github.com/wndhydrnt/saturn-bot/pkg/log"
@@ -68,6 +69,7 @@ type Git struct {
 	MetricCommandsCount *prometheus.CounterVec
 	MetricCommandsSum   *prometheus.CounterVec
 
+	clock            clock.Clock
 	cloneOpts        []string
 	checkoutDir      string
 	dataDir          string
@@ -88,6 +90,7 @@ func New(opts options.Opts) (*Git, error) {
 		MetricCommandsCount: metrics.GitCommandsDurationSecondsCount,
 		MetricCommandsSum:   metrics.GitCommandsDurationSecondsSum,
 
+		clock:            opts.Clock,
 		cloneOpts:        opts.Config.GitCloneOptions,
 		dataDir:          opts.DataDir(),
 		defaultCommitMsg: opts.Config.GitCommitMessage,
@@ -514,7 +517,7 @@ func (g *Git) pullBaseBranch(checkoutDir string, logger *zap.SugaredLogger, repo
 			return fmt.Errorf("pull changes from remote into base branch: %w", err)
 		}
 
-		g.setLastDefaultBranchPull(time.Now())
+		g.setLastDefaultBranchPull(g.clock.Now())
 	}
 
 	return nil
@@ -533,7 +536,7 @@ func (g *Git) getLastDefaultBranchPull() *time.Time {
 		return nil
 	}
 
-	return ptr.To(time.UnixMicro(tsInt).UTC())
+	return ptr.To(time.Unix(tsInt, 0))
 }
 
 func (g *Git) setLastDefaultBranchPull(ts time.Time) {
