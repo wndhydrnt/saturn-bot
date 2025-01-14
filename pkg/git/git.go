@@ -8,7 +8,7 @@ import (
 	"os"
 	"os/exec"
 	"path"
-	"path/filepath"
+	"strconv"
 	"strings"
 	"time"
 
@@ -18,6 +18,7 @@ import (
 	"github.com/wndhydrnt/saturn-bot/pkg/log"
 	"github.com/wndhydrnt/saturn-bot/pkg/metrics"
 	"github.com/wndhydrnt/saturn-bot/pkg/options"
+	"github.com/wndhydrnt/saturn-bot/pkg/ptr"
 	"go.uber.org/zap"
 )
 
@@ -505,21 +506,55 @@ func (g *Git) pullBaseBranch(checkoutDir string, logger *zap.SugaredLogger, repo
 		return fmt.Errorf("checkout base branch: %w", err)
 	}
 
-	fetchHeadName := filepath.Join(checkoutDir, ".git", "FETCH_HEAD")
-	fetchHeadFileInfo, err := os.Stat(fetchHeadName)
-	if err != nil {
-		return fmt.Errorf("stat .git/FETCH_HEAD file: %w", err)
-	}
-
-	if fetchHeadFileInfo.ModTime().Before(repo.UpdatedAt()) {
-		logger.Debug("Pulling changes into base branch", "repository", repo.FullName())
+	lastDefaultBranchPull := g.getLastDefaultBranchPull()
+	fmt.Println(lastDefaultBranchPull)
+	fmt.Println(repo.UpdatedAt())
+	if lastDefaultBranchPull == nil || lastDefaultBranchPull.Before(repo.UpdatedAt()) {
+		logger.Debug("Pulling changes into base branch")
 		_, _, err = g.Execute("pull", "--prune", "origin", "--ff-only")
 		if err != nil {
 			return fmt.Errorf("pull changes from remote into base branch: %w", err)
 		}
+
+		g.setLastDefaultBranchPull(time.Now())
 	}
 
 	return nil
+}
+
+const lastDefaultBranchPullConfigKey = "saturn-bot.lastDefaultBranchPull"
+
+func (g *Git) getLastDefaultBranchPull() *time.Time {
+	tsRaw, err := g.getConfig(lastDefaultBranchPullConfigKey)
+	if err != nil {
+		return nil
+	}
+
+	tsInt, err := strconv.ParseInt(tsRaw, 10, 64)
+	if err != nil {
+		return nil
+	}
+
+	return ptr.To(time.UnixMicro(tsInt).UTC())
+}
+
+func (g *Git) setLastDefaultBranchPull(ts time.Time) {
+	tsRaw := strconv.FormatInt(ts.Unix(), 10)
+	_ = g.setConfig(lastDefaultBranchPullConfigKey, tsRaw)
+}
+
+func (g *Git) getConfig(section string) (string, error) {
+	stdout, _, err := g.Execute("config", section)
+	if err != nil {
+		return "", err
+	}
+
+	return strings.TrimSpace(stdout), nil
+}
+
+func (g *Git) setConfig(section, value string) error {
+	_, _, err := g.Execute("config", section, value)
+	return err
 }
 
 // Set up authentication for git via environment variables

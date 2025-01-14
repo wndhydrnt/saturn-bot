@@ -481,6 +481,13 @@ func (g *GitLabRepository) Raw() any {
 
 // UpdatedAt implements [Repository].
 func (g *GitLabRepository) UpdatedAt() time.Time {
+	// GitLab provides fields "updated_at" and "last_activity_at".
+	// Manual tests with the GitLab API showed that "updated_at"
+	// gets updated more often than "last_activity_at".
+	if g.project.UpdatedAt == nil {
+		return time.Time{}
+	}
+
 	return ptr.From(g.project.UpdatedAt)
 }
 
