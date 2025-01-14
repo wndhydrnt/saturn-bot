@@ -507,8 +507,6 @@ func (g *Git) pullBaseBranch(checkoutDir string, logger *zap.SugaredLogger, repo
 	}
 
 	lastDefaultBranchPull := g.getLastDefaultBranchPull()
-	fmt.Println(lastDefaultBranchPull)
-	fmt.Println(repo.UpdatedAt())
 	if lastDefaultBranchPull == nil || lastDefaultBranchPull.Before(repo.UpdatedAt()) {
 		logger.Debug("Pulling changes into base branch")
 		_, _, err = g.Execute("pull", "--prune", "origin", "--ff-only")
