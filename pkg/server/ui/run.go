@@ -86,10 +86,11 @@ func (u *Ui) ListRuns(w http.ResponseWriter, r *http.Request) {
 }
 
 type dataListTaskResultsOfRun struct {
-	Filters     dataTaskResultsFilters
-	Pagination  pagination
-	Run         openapi.RunV1
-	TaskResults []openapi.TaskResultV1
+	DisplayRunLink bool
+	Filters        dataTaskResultsFilters
+	Pagination     pagination
+	Run            openapi.RunV1
+	TaskResults    []openapi.TaskResultV1
 }
 
 // GetRun renders the details and results of a run.
@@ -111,6 +112,7 @@ func (u *Ui) GetRun(w http.ResponseWriter, r *http.Request) {
 
 	statusParam := r.URL.Query().Get("status")
 	data := dataListTaskResultsOfRun{
+		DisplayRunLink: false,
 		Filters: dataTaskResultsFilters{
 			TaskResultStatusCurrent: statusParam,
 			TaskResultStatusList:    taskResultStatusOptions,

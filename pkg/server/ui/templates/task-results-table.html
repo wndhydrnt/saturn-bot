@@ -33,7 +33,9 @@
           <th>Repository</th>
           <th>Pull request</th>
           <th>Status</th>
+          {{if .DisplayRunLink}}
           <th>Run</th>
+          {{end}}
         </tr>
       </thead>
       <tbody>
@@ -51,9 +53,11 @@
           <td>
             <span class="tag {{.Status | taskResultStatusToCssClass}}">{{.Status}}</span>
           </td>
+          {{if $.DisplayRunLink}}
           <td>
             <a href="/ui/runs/{{.RunId}}">#{{.RunId}}</a>
           </td>
+          {{end}}
         </tr>
         {{end}}
         {{else if eq .Run.Status "pending"}}

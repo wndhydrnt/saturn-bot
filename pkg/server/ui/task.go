@@ -62,11 +62,12 @@ type dataTaskResultsFilters struct {
 }
 
 type dataGetTaskResults struct {
-	Filters     dataTaskResultsFilters
-	Pagination  pagination
-	Run         openapi.RunV1
-	TaskName    string
-	TaskResults []openapi.TaskResultV1
+	DisplayRunLink bool
+	Filters        dataTaskResultsFilters
+	Pagination     pagination
+	Run            openapi.RunV1
+	TaskName       string
+	TaskResults    []openapi.TaskResultV1
 }
 
 // GetTaskFile renders the list of results of the latest run of a task.
@@ -101,6 +102,7 @@ func (u *Ui) GetTaskResults(w http.ResponseWriter, r *http.Request) {
 
 	statusParam := r.URL.Query().Get("status")
 	data := dataGetTaskResults{
+		DisplayRunLink: true,
 		Filters: dataTaskResultsFilters{
 			TaskResultStatusCurrent: statusParam,
 			TaskResultStatusList:    taskResultStatusOptions,
