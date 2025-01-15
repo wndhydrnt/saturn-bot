@@ -1,5 +1,18 @@
 # Changelog
 
+## [0.19.0](https://github.com/wndhydrnt/saturn-bot/compare/v0.18.2...v0.19.0) (2025-01-15)
+
+
+### Features
+
+* **server/ui:** Automatically reload pages on change of filter ([d46e531](https://github.com/wndhydrnt/saturn-bot/commit/d46e531d58f110d6f5b7facda4d10a7f385f3150))
+* **server/ui:** Render details and results of a run on one page ([#141](https://github.com/wndhydrnt/saturn-bot/issues/141)) ([5cc570e](https://github.com/wndhydrnt/saturn-bot/commit/5cc570e4b982274102a110e2d8df28071d917166))
+
+
+### Bug Fixes
+
+* **git:** Rework format of exec log ([f1c64de](https://github.com/wndhydrnt/saturn-bot/commit/f1c64de9c02b68b553431b3ea0d03304327828b6))
+
 ## [0.18.2](https://github.com/wndhydrnt/saturn-bot/compare/v0.18.1...v0.18.2) (2025-01-09)
 
 
