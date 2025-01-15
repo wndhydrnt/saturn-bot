@@ -1,7 +1,7 @@
 {{define "task-results-table"}}
 <div class="columns">
   <div class="column is-full">
-    <form method="get" action="/ui/runs/{{.Run.Id}}/results">
+    <form method="get">
       <div class="field is-grouped is-horizontal">
         <p class="control">
           <div class="select">
@@ -33,7 +33,9 @@
           <th>Repository</th>
           <th>Pull request</th>
           <th>Status</th>
+          {{if .DisplayRunLink}}
           <th>Run</th>
+          {{end}}
         </tr>
       </thead>
       <tbody>
@@ -51,9 +53,11 @@
           <td>
             <span class="tag {{.Status | taskResultStatusToCssClass}}">{{.Status}}</span>
           </td>
+          {{if $.DisplayRunLink}}
           <td>
             <a href="/ui/runs/{{.RunId}}">#{{.RunId}}</a>
           </td>
+          {{end}}
         </tr>
         {{end}}
         {{else if eq .Run.Status "pending"}}

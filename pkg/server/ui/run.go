@@ -85,44 +85,16 @@ func (u *Ui) ListRuns(w http.ResponseWriter, r *http.Request) {
 	renderTemplate(tplData, w, "run-list.html")
 }
 
-// GetRun renders the detail page of a run.
-func (u *Ui) GetRun(w http.ResponseWriter, r *http.Request) {
-	runId, err := strconv.Atoi(chi.URLParam(r, "runId"))
-	if err != nil {
-		renderError(fmt.Errorf("convert parameter runId to int: %w", err), w)
-		return
-	}
-
-	req := openapi.GetRunV1RequestObject{
-		RunId: runId,
-	}
-	resp, err := u.API.GetRunV1(context.Background(), req)
-	if err != nil {
-		renderError(err, w)
-		return
-	}
-
-	var tplData openapi.GetRunV1200JSONResponse
-	switch payload := resp.(type) {
-	case openapi.GetRunV1200JSONResponse:
-		tplData = payload
-	case openapi.GetRunV1404JSONResponse:
-		renderApiError(openapi.Error(payload), w, http.StatusNotFound)
-		return
-	}
-
-	renderTemplate(tplData, w, "run-get.html")
-}
-
 type dataListTaskResultsOfRun struct {
-	Filters     dataTaskResultsFilters
-	Pagination  pagination
-	Run         openapi.RunV1
-	TaskResults []openapi.TaskResultV1
+	DisplayRunLink bool
+	Filters        dataTaskResultsFilters
+	Pagination     pagination
+	Run            openapi.RunV1
+	TaskResults    []openapi.TaskResultV1
 }
 
-// ListTaskResultsOfRun renders the results of a run.
-func (u *Ui) ListTaskResultsOfRun(w http.ResponseWriter, r *http.Request) {
+// GetRun renders the details and results of a run.
+func (u *Ui) GetRun(w http.ResponseWriter, r *http.Request) {
 	runId, err := strconv.Atoi(chi.URLParam(r, "runId"))
 	if err != nil {
 		renderError(fmt.Errorf("convert parameter runId to int: %w", err), w)
@@ -140,6 +112,7 @@ func (u *Ui) ListTaskResultsOfRun(w http.ResponseWriter, r *http.Request) {
 
 	statusParam := r.URL.Query().Get("status")
 	data := dataListTaskResultsOfRun{
+		DisplayRunLink: false,
 		Filters: dataTaskResultsFilters{
 			TaskResultStatusCurrent: statusParam,
 			TaskResultStatusList:    taskResultStatusOptions,
@@ -179,5 +152,5 @@ func (u *Ui) ListTaskResultsOfRun(w http.ResponseWriter, r *http.Request) {
 		URL:  r.URL,
 	}
 	data.TaskResults = listTaskResultsObj.TaskResults
-	renderTemplate(data, w, "task-results-table.html", "run-task-results-list.html")
+	renderTemplate(data, w, "task-results-table.html", "run-get.html")
 }

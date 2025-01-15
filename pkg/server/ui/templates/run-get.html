@@ -12,141 +12,138 @@
 
 {{define "body"}}
 <div class="columns">
+  <div class="column is-three-quarters ">
+    {{ template "task-results-table" . }}
+  </div>
   <div class="column">
-    <div class="tabs">
-      <ul>
-        <li class="is-active"><a>Details</a></li>
-        <li><a href="/ui/runs/{{.Run.Id}}/results">Pull requests</a></li>
-      </ul>
+    <div class="columns">
+      <div class="column">
+        <p>
+          <strong>ID:</strong>
+        </p>
+      </div>
+      <div class="column">
+        <p> {{.Run.Id}}</p>
+      </div>
     </div>
-  </div>
-</div>
-<div class="columns">
-  <div class="column">
-    <p>
-      <strong>ID:</strong>
-    </p>
-  </div>
-  <div class="column">
-    <p> {{.Run.Id}}</p>
-  </div>
-</div>
-<div class="columns">
-  <div class="column">
-    <p>
-      <strong>Task:</strong>
-    </p>
-  </div>
-  <div class="column">
-    <p>
-      <a href="/ui/tasks/{{.Run.Task | pathEscape}}/results">{{.Run.Task}}</a>
-    </p>
-  </div>
-</div>
-<div class="columns">
-  <div class="column">
-    <p>
-      <strong>Repositories:</strong>
-    </p>
-  </div>
-  <div class="column">
-    <p>
-    {{if .Run.Repositories}}
-      {{.Run.Repositories | join ", "}}
-    {{else}}
-      *
+    <div class="columns">
+      <div class="column">
+        <p>
+          <strong>Task:</strong>
+        </p>
+      </div>
+      <div class="column">
+        <p>
+          <a href="/ui/tasks/{{.Run.Task | pathEscape}}/results">{{.Run.Task}}</a>
+        </p>
+      </div>
+    </div>
+    <div class="columns">
+      <div class="column">
+        <p>
+          <strong>Repositories:</strong>
+        </p>
+      </div>
+      <div class="column">
+        <p>
+        {{if .Run.Repositories}}
+          {{.Run.Repositories | join ", "}}
+        {{else}}
+          *
+        {{end}}
+        </p>
+      </div>
+    </div>
+    {{if .Run.RunData}}
+    <div class="columns">
+      <div class="column">
+        <p>
+          <strong>Run Data:</strong>
+        </p>
+      </div>
+      <div class="column">
+        <code>
+          {{range $key, $value := .Run.RunData}}
+          {{$key}}={{$value}}
+          {{end}}
+        </code>
+      </div>
+    </div>
     {{end}}
-    </p>
-  </div>
-</div>
-{{if .Run.RunData}}
-<div class="columns">
-  <div class="column">
-    <p>
-      <strong>Run Data:</strong>
-    </p>
-  </div>
-  <div class="column">
-    <code>
-      {{range $key, $value := .Run.RunData}}
-      {{$key}}={{$value}}
-      {{end}}
-    </code>
-  </div>
-</div>
-{{end}}
-<div class="columns">
-  <div class="column">
-    <p>
-      <strong>Status:</strong>
-    </p>
-  </div>
-  <div class="column">
-    <p>
-      <span class="tag {{.Run.Status | runStatusToCssClass}}">{{.Run.Status}}</span>
-    </p>
-  </div>
-</div>
-{{if .Run.Error}}
-<div class="columns">
-  <div class="column">
-    <p>
-      <strong>Error:</strong>
-    </p>
-  </div>
-  <div class="column">
-    <p>
-      <code>{{.Run.Error}}</code>
-    </p>
-  </div>
-</div>
-{{end}}
-<div class="columns">
-  <div class="column">
-    <p>
-      <strong>Trigger:</strong>
-    </p>
-  </div>
-  <div class="column">
-    <p>{{.Run.Reason}}</p>
-  </div>
-</div>
-<div class="columns">
-  <div class="column">
-    <p>
-      <strong>Scheduled At:</strong>
-    </p>
-  </div>
-  <div class="column">
-    <p class="datetime">{{.Run.ScheduleAfter | unixEpoch}}</p>
-  </div>
-</div>
-<div class="columns">
-  <div class="column">
-    <p>
-      <strong>Started At:</strong>
-    </p>
-  </div>
-  <div class="column">
-    {{if .Run.StartedAt}}
-    <p class="datetime">{{.Run.StartedAt | unixEpoch}}</p>
-    {{else}}
-    <p>Not started yet</p>
+    <div class="columns">
+      <div class="column">
+        <p>
+          <strong>Status:</strong>
+        </p>
+      </div>
+      <div class="column">
+        <p>
+          <span class="tag {{.Run.Status | runStatusToCssClass}}">{{.Run.Status}}</span>
+        </p>
+      </div>
+    </div>
+    {{if .Run.Error}}
+    <div class="columns">
+      <div class="column">
+        <p>
+          <strong>Error:</strong>
+        </p>
+      </div>
+      <div class="column">
+        <p>
+          <code>{{.Run.Error}}</code>
+        </p>
+      </div>
+    </div>
     {{end}}
-  </div>
-</div>
-<div class="columns">
-  <div class="column">
-    <p>
-      <strong>Finished At:</strong>
-    </p>
-  </div>
-  <div class="column">
-    {{if .Run.FinishedAt}}
-    <p class="datetime">{{.Run.FinishedAt | unixEpoch}}</p>
-    {{else}}
-    <p>Not finished yet</p>
-    {{end}}
+    <div class="columns">
+      <div class="column">
+        <p>
+          <strong>Trigger:</strong>
+        </p>
+      </div>
+      <div class="column">
+        <p>{{.Run.Reason}}</p>
+      </div>
+    </div>
+    <div class="columns">
+      <div class="column">
+        <p>
+          <strong>Scheduled At:</strong>
+        </p>
+      </div>
+      <div class="column">
+        <p class="datetime">{{.Run.ScheduleAfter | unixEpoch}}</p>
+      </div>
+    </div>
+    <div class="columns">
+      <div class="column">
+        <p>
+          <strong>Started At:</strong>
+        </p>
+      </div>
+      <div class="column">
+        {{if .Run.StartedAt}}
+        <p class="datetime">{{.Run.StartedAt | unixEpoch}}</p>
+        {{else}}
+        <p>Not started yet</p>
+        {{end}}
+      </div>
+    </div>
+    <div class="columns">
+      <div class="column">
+        <p>
+          <strong>Finished At:</strong>
+        </p>
+      </div>
+      <div class="column">
+        {{if .Run.FinishedAt}}
+        <p class="datetime">{{.Run.FinishedAt | unixEpoch}}</p>
+        {{else}}
+        <p>Not finished yet</p>
+        {{end}}
+      </div>
+    </div>
   </div>
 </div>
 {{end}}
