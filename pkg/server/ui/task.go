@@ -117,6 +117,10 @@ func (u *Ui) GetTaskResults(w http.ResponseWriter, r *http.Request) {
 		},
 	}
 
+	if statusParam != "" {
+		listTaskResultsReq.Params.Status = ptr.To([]openapi.TaskResultStatusV1{openapi.TaskResultStatusV1(statusParam)})
+	}
+
 	listTaskResultsResp, err := u.API.ListTaskResultsV1(r.Context(), listTaskResultsReq)
 	if err != nil {
 		renderError(err, w)
