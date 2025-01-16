@@ -9,26 +9,36 @@ ARCH=$(shell uname -m)
 build:
 	go build $(BUILD_FLAGS) -o saturn-bot
 
-build_darwin_amd64:
-	GOARCH=amd64 GOOS=darwin go build $(BUILD_FLAGS) -o saturn-bot-$(VERSION).darwin-amd64
+build_darwin_x86_64:
+	GOARCH=amd64 GOOS=darwin go build $(BUILD_FLAGS) -o saturn-bot
+
+package_darwin_x86_64: build_darwin_x86_64
+	tar -a -cf saturn-bot-$(VERSION).Darwin-x86_64.tar.gz saturn-bot LICENSE
 
 build_darwin_arm64:
-	GOARCH=arm64 GOOS=darwin go build $(BUILD_FLAGS) -o saturn-bot-$(VERSION).darwin-arm64
+	GOARCH=arm64 GOOS=darwin go build $(BUILD_FLAGS) -o saturn-bot
 
-build_linux_arm64:
-	GOARCH=arm64 GOOS=linux go build $(BUILD_FLAGS) -o saturn-bot-$(VERSION).linux-arm64
-	cp saturn-bot-$(VERSION).linux-arm64 saturn-bot-$(VERSION).linux-aarch64
+package_darwin_arm64: build_darwin_arm64
+	tar -a -cf saturn-bot-$(VERSION).Darwin-arm64.tar.gz saturn-bot LICENSE
 
-build_linux_armv7:
-	GOARCH=arm GOOS=linux go build $(BUILD_FLAGS) -o saturn-bot-$(VERSION).linux-armv7
+build_linux_aarch64:
+	GOARCH=arm64 GOOS=linux go build $(BUILD_FLAGS) -o saturn-bot
 
-build_linux_amd64:
-	GOARCH=amd64 GOOS=linux go build $(BUILD_FLAGS) -o saturn-bot-$(VERSION).linux-amd64
+package_linux_aarch64: build_linux_aarch64
+	tar -a -cf saturn-bot-$(VERSION).Linux-aarch64.tar.gz saturn-bot LICENSE
 
-build_all: build_darwin_amd64 build_darwin_arm64 build_linux_arm64 build_linux_armv7 build_linux_amd64 checksums
+build_linux_x86_64:
+	GOARCH=amd64 GOOS=linux go build $(BUILD_FLAGS) -o saturn-bot
+
+package_linux_x86_64: build_linux_x86_64
+	tar -a -cf saturn-bot-$(VERSION).Linux-x86_64.tar.gz saturn-bot LICENSE
+
+build_all: build_darwin_x86_64 build_darwin_arm64 build_linux_aarch64 build_linux_x86_64
+
+package_all: package_darwin_x86_64 package_darwin_arm64 package_linux_aarch64 package_linux_x86_64 checksums
 
 checksums:
-	sha256sum saturn-bot-$(VERSION).* > sha256sums.txt
+	sha256sum saturn-bot-$(VERSION).*.tar.gz > sha256sums.txt
 
 generate_go:
 ifeq (, $(shell which mockgen))
