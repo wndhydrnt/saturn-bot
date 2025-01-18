@@ -103,6 +103,50 @@ paths:
             application/json:
               schema:
                 $ref: "#/components/schemas/Error"
+  /api/v1/tasks/{task}/results:
+    get:
+      operationId: listTaskRecentTaskResultsV1
+      summary: List recent run results of a task by repository.
+      description: |
+        Returns the most recent run result for each repository that has been modified by the task.
+      tags:
+        - task
+      parameters:
+        - in: path
+          name: task
+          schema:
+            type: string
+          required: true
+          description: Name of the task.
+        - in: query
+          name: status
+          schema:
+            type: array
+            items:
+              $ref: "#/components/schemas/TaskResultStatusV1"
+        - in: query
+          name: listOptions
+          schema:
+            $ref: "#/components/schemas/ListOptions"
+      responses:
+        "200":
+          description: OK
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/ListTaskRecentTaskResultsV1Response"
+        "404":
+          description: Not Found
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/Error"
+        "500":
+          description: Internal Server Error
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/Error"
   /api/v1/taskResults:
     get:
       operationId: listTaskResultsV1
@@ -467,6 +511,16 @@ components:
         - merged
         - open
     ListTaskResultsV1Response:
+      type: object
+      properties:
+        page:
+          $ref: "#/components/schemas/Page"
+        taskResults:
+          type: array
+          items:
+            $ref: "#/components/schemas/TaskResultV1"
+      required: ["page", "taskResults"]
+    ListTaskRecentTaskResultsV1Response:
       type: object
       properties:
         page:
