@@ -82,6 +82,13 @@
         </tr>
         {{end}}
       </tbody>
+      <tfoot>
+        <tr>
+        <td colspan="6">
+          <b>Total:</b> {{.Pagination.Page.TotalItems}}
+        </td>
+      </tr>
+      </tfoot>
     </table>
     {{ template "pagination" .Pagination }}
   </div>
