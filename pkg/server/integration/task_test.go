@@ -1,9 +1,11 @@
 package integration_test
 
 import (
+	"fmt"
 	"net/http"
 	"testing"
 
+	"github.com/wndhydrnt/saturn-bot/pkg/ptr"
 	"github.com/wndhydrnt/saturn-bot/pkg/server/api/openapi"
 	sberror "github.com/wndhydrnt/saturn-bot/pkg/server/error"
 	"github.com/wndhydrnt/saturn-bot/pkg/task/schema"
@@ -21,6 +23,121 @@ func TestServer_API_ListTasksV1(t *testing.T) {
 					statusCode: http.StatusOK,
 					responseBody: openapi.ListTasksV1Response{
 						Tasks: []string{"unittest"},
+					},
+				},
+			},
+		},
+	}
+
+	for _, tc := range testCases {
+		t.Run(tc.name, func(t *testing.T) {
+			executeTestCase(t, tc)
+		})
+	}
+}
+
+func TestServer_API_ListTaskRecentTaskResultsV1(t *testing.T) {
+	testCases := []testCase{
+		{
+			name:  `Returns the latest results per repository for a task`,
+			tasks: []schema.Task{defaultTask},
+			apiCalls: []apiCall{
+				// Read the run that gets scheduled at the start of the server.
+				{
+					method:     "GET",
+					path:       "/api/v1/worker/work",
+					statusCode: http.StatusOK,
+					responseBody: openapi.GetWorkV1Response{
+						RunID: 1,
+						Task:  openapi.WorkTaskV1{Hash: defaultTaskHash, Name: defaultTask.Name},
+					},
+				},
+				// And report the result of the run.
+				{
+					method: "POST",
+					path:   "/api/v1/worker/work",
+					requestBody: openapi.ReportWorkV1Request{
+						RunID: 1,
+						Task: openapi.WorkTaskV1{
+							Name: defaultTask.Name,
+						},
+						TaskResults: []openapi.ReportWorkV1TaskResult{
+							{
+								PullRequestUrl: ptr.To("http://git.local/unit/test/pr/1"),
+								RepositoryName: "git.local/unit/test",
+								Result:         11, // processor.ResultPrOpen
+							},
+						},
+					},
+					statusCode: http.StatusCreated,
+					responseBody: openapi.ReportWorkV1Response{
+						Result: "ok",
+					},
+				},
+				// Schedule a second run.
+				{
+					method: "POST",
+					path:   "/api/v1/runs",
+					requestBody: openapi.ScheduleRunV1Request{
+						TaskName: defaultTask.Name,
+					},
+					statusCode: http.StatusOK,
+					responseBody: openapi.ScheduleRunV1Response{
+						RunID: 2,
+					},
+				},
+				// Read the second run.
+				{
+					method:     "GET",
+					path:       "/api/v1/worker/work",
+					statusCode: http.StatusOK,
+					responseBody: openapi.GetWorkV1Response{
+						RunID: 2,
+						Task:  openapi.WorkTaskV1{Hash: defaultTaskHash, Name: defaultTask.Name},
+					},
+				},
+				// Report the result of the second run.
+				{
+					method: "POST",
+					path:   "/api/v1/worker/work",
+					requestBody: openapi.ReportWorkV1Request{
+						RunID: 2,
+						Task: openapi.WorkTaskV1{
+							Name: defaultTask.Name,
+						},
+						TaskResults: []openapi.ReportWorkV1TaskResult{
+							{
+								PullRequestUrl: ptr.To("http://git.local/unit/test/pr/1"),
+								RepositoryName: "git.local/unit/test",
+								Result:         10, // processor.ResultPrMerged
+							},
+						},
+					},
+					statusCode: http.StatusCreated,
+					responseBody: openapi.ReportWorkV1Response{
+						Result: "ok",
+					},
+				},
+				// List the latest results.
+				{
+					method:     "GET",
+					path:       fmt.Sprintf("/api/v1/tasks/%s/results", defaultTask.Name),
+					statusCode: http.StatusOK,
+					responseBody: openapi.ListTaskRecentTaskResultsV1Response{
+						Page: openapi.Page{
+							CurrentPage:  1,
+							ItemsPerPage: 20,
+							TotalItems:   1,
+							TotalPages:   1,
+						},
+						TaskResults: []openapi.TaskResultV1{
+							{
+								PullRequestUrl: ptr.To("http://git.local/unit/test/pr/1"),
+								RepositoryName: "git.local/unit/test",
+								RunId:          2,
+								Status:         "merged",
+							},
+						},
 					},
 				},
 			},

@@ -83,6 +83,41 @@ func (a *APIServer) ListTaskResultsV1(ctx context.Context, request openapi.ListT
 	return resp, nil
 }
 
+// ListTaskRecentTaskResultsV1 lists recent run results of a task by repository.
+func (a *APIServer) ListTaskRecentTaskResultsV1(ctx context.Context, request openapi.ListTaskRecentTaskResultsV1RequestObject) (openapi.ListTaskRecentTaskResultsV1ResponseObject, error) {
+	opts := service.ListRecentTaskResultsByTaskOptions{
+		TaskName: request.Task,
+	}
+	if request.Params.Status != nil {
+		for _, apiStatus := range ptr.From(request.Params.Status) {
+			opts.Status = append(opts.Status, db.TaskResultStatus(apiStatus))
+		}
+	}
+
+	listOpts := toListOptions(request.Params.ListOptions)
+	taskResults, err := a.TaskService.ListRecentTaskResultsByTask(opts, &listOpts)
+	if err != nil {
+		return nil, err
+	}
+
+	resp := openapi.ListTaskRecentTaskResultsV1200JSONResponse{
+		Page: openapi.Page{
+			PreviousPage: listOpts.Previous(),
+			CurrentPage:  listOpts.Page,
+			NextPage:     listOpts.Next(),
+			ItemsPerPage: listOpts.Limit,
+			TotalItems:   listOpts.TotalItems(),
+			TotalPages:   listOpts.TotalPages(),
+		},
+		TaskResults: []openapi.TaskResultV1{},
+	}
+	for _, tr := range taskResults {
+		resp.TaskResults = append(resp.TaskResults, mapTaskResultFromDbToApi(tr))
+	}
+
+	return resp, nil
+}
+
 func mapTaskResultFromDbToApi(db db.TaskResult) openapi.TaskResultV1 {
 	api := openapi.TaskResultV1{
 		RepositoryName: db.RepositoryName,

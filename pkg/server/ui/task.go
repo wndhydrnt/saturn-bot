@@ -65,41 +65,12 @@ type dataGetTaskResults struct {
 	DisplayRunLink bool
 	Filters        dataTaskResultsFilters
 	Pagination     pagination
-	Run            openapi.RunV1
 	TaskName       string
 	TaskResults    []openapi.TaskResultV1
 }
 
 // GetTaskFile renders the list of results of the latest run of a task.
 func (u *Ui) GetTaskResults(w http.ResponseWriter, r *http.Request) {
-	name := chi.URLParam(r, "name")
-
-	listRunsReq := openapi.ListRunsV1RequestObject{
-		Params: openapi.ListRunsV1Params{
-			Task:   ptr.To(name),
-			Status: ptr.To([]openapi.RunStatusV1{openapi.Failed, openapi.Finished}),
-			ListOptions: &openapi.ListOptions{
-				Limit: 1,
-				Page:  1,
-			},
-		},
-	}
-	listRunsResp, err := u.API.ListRunsV1(r.Context(), listRunsReq)
-	if err != nil {
-		renderError(err, w)
-		return
-	}
-
-	listRunsObj := listRunsResp.(openapi.ListRunsV1200JSONResponse)
-	if len(listRunsObj.Result) == 0 {
-		// No results (yet)
-		data := dataGetTaskResults{
-			TaskName: name,
-		}
-		renderTemplate(data, w, "task-results-table.html", "task-get-results.html")
-		return
-	}
-
 	statusParam := r.URL.Query().Get("status")
 	data := dataGetTaskResults{
 		DisplayRunLink: true,
@@ -109,9 +80,10 @@ func (u *Ui) GetTaskResults(w http.ResponseWriter, r *http.Request) {
 		},
 	}
 
-	listTaskResultsReq := openapi.ListTaskResultsV1RequestObject{
-		Params: openapi.ListTaskResultsV1Params{
-			RunId: ptr.To(int(listRunsObj.Result[0].Id)), // #nosec G115 -- no info by gosec on how to fix this
+	name := chi.URLParam(r, "name")
+	listTaskResultsReq := openapi.ListTaskRecentTaskResultsV1RequestObject{
+		Task: name,
+		Params: openapi.ListTaskRecentTaskResultsV1Params{
 			ListOptions: &openapi.ListOptions{
 				Limit: parseIntParam(r, "limit", 10),
 				Page:  parseIntParam(r, "page", 1),
@@ -123,18 +95,17 @@ func (u *Ui) GetTaskResults(w http.ResponseWriter, r *http.Request) {
 		listTaskResultsReq.Params.Status = ptr.To([]openapi.TaskResultStatusV1{openapi.TaskResultStatusV1(statusParam)})
 	}
 
-	listTaskResultsResp, err := u.API.ListTaskResultsV1(r.Context(), listTaskResultsReq)
+	listTaskResultsResp, err := u.API.ListTaskRecentTaskResultsV1(r.Context(), listTaskResultsReq)
 	if err != nil {
 		renderError(err, w)
 		return
 	}
 
-	listTaskResultsObj := listTaskResultsResp.(openapi.ListTaskResultsV1200JSONResponse)
+	listTaskResultsObj := listTaskResultsResp.(openapi.ListTaskRecentTaskResultsV1200JSONResponse)
 	data.Pagination = pagination{
 		Page: listTaskResultsObj.Page,
 		URL:  r.URL,
 	}
-	data.Run = listRunsObj.Result[0]
 	data.TaskName = name
 	data.TaskResults = listTaskResultsObj.TaskResults
 	renderTemplate(data, w, "task-results-table.html", "task-get-results.html")

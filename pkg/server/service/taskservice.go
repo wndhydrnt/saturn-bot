@@ -6,6 +6,7 @@ import (
 	"os"
 
 	"github.com/wndhydrnt/saturn-bot/pkg/clock"
+	"github.com/wndhydrnt/saturn-bot/pkg/server/db"
 	sberror "github.com/wndhydrnt/saturn-bot/pkg/server/error"
 	"github.com/wndhydrnt/saturn-bot/pkg/task"
 	"gorm.io/gorm"
@@ -52,6 +53,48 @@ func (ts *TaskService) EncodeTaskBase64(taskName string) (string, error) {
 
 func (ts *TaskService) ListTasks() []*task.Task {
 	return ts.taskRegistry.GetTasks()
+}
+
+// ListRecentTaskResultsByTaskOptions
+type ListRecentTaskResultsByTaskOptions struct {
+	TaskName string
+	Status   []db.TaskResultStatus
+}
+
+// ListRecentTaskResultsByTask returns a list of the recent result for each repository filtered by task and, optionally, status.
+// It supports pagination through listOpts.
+func (ts *TaskService) ListRecentTaskResultsByTask(opts ListRecentTaskResultsByTaskOptions, listOpts *ListOptions) ([]db.TaskResult, error) {
+	// This sub-query returns the latest entry for each repository
+	subQ := ts.db.
+		Table("task_results").
+		Select("MAX(task_results.created_at), task_results.error, task_results.id, task_results.repository_name, task_results.result, task_results.run_id, task_results.status, task_results.pull_request_url").
+		Joins("INNER JOIN runs ON task_results.run_id = runs.id").
+		Where("runs.task_name = ?", opts.TaskName).
+		Group("task_results.repository_name").
+		Order("task_results.created_at DESC")
+	// Prepare query. Used by both other queries that return data and count rows.
+	baseQ := ts.db.Table("(?)", subQ)
+	q := baseQ.
+		Offset(listOpts.Offset()).
+		Limit(listOpts.Limit)
+	if len(opts.Status) > 0 {
+		q = q.Where("status IN ?", opts.Status)
+	}
+
+	var taskResults []db.TaskResult
+	listResult := q.Find(&taskResults)
+	if listResult.Error != nil {
+		return nil, listResult.Error
+	}
+
+	var count int64
+	countResult := baseQ.Count(&count)
+	if countResult.Error != nil {
+		return nil, countResult.Error
+	}
+
+	listOpts.SetTotalItems(int(count))
+	return taskResults, nil
 }
 
 func encodeBase64(path string) (string, error) {
