@@ -20,6 +20,7 @@ var (
 	tplPrBodyDefault = htmlTemplate.Must(htmlTemplate.New("bodyDefault").Parse("Apply changes from task {{.TaskName}}."))
 )
 
+// PullRequestState denotes the current state of the pull request.
 type PullRequestState int
 
 const (
