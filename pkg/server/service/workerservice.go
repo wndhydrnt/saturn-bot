@@ -139,6 +139,8 @@ func (ws *WorkerService) ScheduleRun(
 		return 0, fmt.Errorf("read next scheduled run: %w", tx.Error)
 	}
 
+	// Check for equality to prevent runs based on a cron schedule
+	// to be scheduled twice.
 	if !runDB.ScheduleAfter.Equal(scheduleAfter) {
 		runDB.Reason = reason
 		runDB.ScheduleAfter = scheduleAfter
