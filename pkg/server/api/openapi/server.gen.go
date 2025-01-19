@@ -178,9 +178,12 @@ type RunStatusV1 string
 
 // RunV1 defines model for RunV1.
 type RunV1 struct {
-	Error         *string            `json:"error,omitempty"`
-	FinishedAt    *time.Time         `json:"finishedAt,omitempty"`
-	Id            uint               `json:"id"`
+	Error      *string    `json:"error,omitempty"`
+	FinishedAt *time.Time `json:"finishedAt,omitempty"`
+	Id         uint       `json:"id"`
+
+	// Reason The reason why a run has been scheduled.
+	// The following reasons are deprecated: changed, new, next
 	Reason        RunV1Reason        `json:"reason"`
 	Repositories  *[]string          `json:"repositories,omitempty"`
 	RunData       *map[string]string `json:"runData,omitempty"`
@@ -190,7 +193,8 @@ type RunV1 struct {
 	Task          string             `json:"task"`
 }
 
-// RunV1Reason defines model for RunV1.Reason.
+// RunV1Reason The reason why a run has been scheduled.
+// The following reasons are deprecated: changed, new, next
 type RunV1Reason string
 
 // ScheduleRunV1Request defines model for ScheduleRunV1Request.
