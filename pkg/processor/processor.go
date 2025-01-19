@@ -255,7 +255,6 @@ func applyTaskToRepository(ctx context.Context, dryRun bool, gitc git.GitClient,
 			return ResultPrClosedBefore, prDetail, nil
 		} else {
 			logger.Debug("Previous pull request closed - resetting to create a new pull request")
-			prDetail = nil
 			prID = nil
 		}
 	}

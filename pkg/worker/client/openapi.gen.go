@@ -42,10 +42,11 @@ const (
 
 // Defines values for TaskResultStatusV1.
 const (
-	TaskResultStatusV1Closed TaskResultStatusV1 = "closed"
-	TaskResultStatusV1Error  TaskResultStatusV1 = "error"
-	TaskResultStatusV1Merged TaskResultStatusV1 = "merged"
-	TaskResultStatusV1Open   TaskResultStatusV1 = "open"
+	TaskResultStatusV1Closed  TaskResultStatusV1 = "closed"
+	TaskResultStatusV1Error   TaskResultStatusV1 = "error"
+	TaskResultStatusV1Merged  TaskResultStatusV1 = "merged"
+	TaskResultStatusV1Open    TaskResultStatusV1 = "open"
+	TaskResultStatusV1Unknown TaskResultStatusV1 = "unknown"
 )
 
 // Error defines model for Error.
@@ -164,6 +165,9 @@ type ReportWorkV1ResponseResult string
 type ReportWorkV1TaskResult struct {
 	// Error Error encountered during the run, if any.
 	Error *string `json:"error,omitempty"`
+
+	// PullRequestState Status of the pull request.
+	PullRequestState *TaskResultStatusV1 `json:"pullRequestState,omitempty"`
 
 	// PullRequestUrl URL of the pull request for humans to view.
 	PullRequestUrl *string `json:"pullRequestUrl,omitempty"`

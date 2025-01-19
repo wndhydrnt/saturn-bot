@@ -322,6 +322,7 @@ func (g *GitHubRepository) PullRequest(pr any) *PullRequest {
 		CreatedAt: &gpr.CreatedAt.Time,
 		Number:    int64(gpr.GetNumber()),
 		WebURL:    gpr.GetHTMLURL(),
+		State:     g.mapToPullRequestState(gpr),
 	}
 }
 
@@ -576,6 +577,22 @@ func (g *GitHubHost) AuthenticatedUser() (*UserInfo, error) {
 		Name:  user.GetLogin(),
 	}
 	return g.authenticatedUser, nil
+}
+
+func (g *GitHubRepository) mapToPullRequestState(pr *github.PullRequest) PullRequestState {
+	if g.IsPullRequestClosed(pr) {
+		return PullRequestStateClosed
+	}
+
+	if g.IsPullRequestMerged(pr) {
+		return PullRequestStateMerged
+	}
+
+	if g.IsPullRequestOpen(pr) {
+		return PullRequestStateOpen
+	}
+
+	return PullRequestStateUnknown
 }
 
 // CreateFromJson implements [Host].

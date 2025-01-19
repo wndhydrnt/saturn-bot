@@ -20,6 +20,15 @@ var (
 	tplPrBodyDefault = htmlTemplate.Must(htmlTemplate.New("bodyDefault").Parse("Apply changes from task {{.TaskName}}."))
 )
 
+type PullRequestState int
+
+const (
+	PullRequestStateUnknown PullRequestState = iota
+	PullRequestStateOpen
+	PullRequestStateClosed
+	PullRequestStateMerged
+)
+
 // PullRequest holds data on an existing pull request.
 type PullRequest struct {
 	// CreatedAt is the time and date at which the pull request has been created.
@@ -28,6 +37,8 @@ type PullRequest struct {
 	Number int64
 	// WebURL is the URL humans visit to view the pull request.
 	WebURL string
+	// State denotes the current state of the pull request.
+	State PullRequestState
 }
 
 type PullRequestComment struct {

@@ -389,6 +389,7 @@ func (g *GitLabRepository) PullRequest(pr any) *PullRequest {
 		CreatedAt: mr.CreatedAt,
 		Number:    int64(mr.IID),
 		WebURL:    mr.WebURL,
+		State:     mapToPullRequestStateGitLab(mr.State),
 	}
 }
 
@@ -720,4 +721,19 @@ func (g *GitLabHost) SearchCode(gitlabGroupID any, query string) ([]int64, error
 	slices.Sort(result)
 	log.Log().Debug("GitLab code search finished")
 	return slices.Compact(result), nil
+}
+
+func mapToPullRequestStateGitLab(mrState string) PullRequestState {
+	switch mrState {
+	case "closed":
+		return PullRequestStateClosed
+	case "locked":
+		return PullRequestStateClosed
+	case "merged":
+		return PullRequestStateMerged
+	case "opened":
+		return PullRequestStateOpen
+	default:
+		return PullRequestStateUnknown
+	}
 }

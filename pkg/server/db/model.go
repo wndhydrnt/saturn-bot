@@ -47,10 +47,11 @@ type Task struct {
 type TaskResultStatus string
 
 const (
-	TaskResultStatusClosed = "closed"
-	TaskResultStatusError  = "error"
-	TaskResultStatusMerged = "merged"
-	TaskResultStatusOpen   = "open"
+	TaskResultStatusClosed  = "closed"
+	TaskResultStatusError   = "error"
+	TaskResultStatusMerged  = "merged"
+	TaskResultStatusOpen    = "open"
+	TaskResultStatusUnknown = "unknown"
 )
 
 type TaskResult struct {
