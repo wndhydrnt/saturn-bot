@@ -448,6 +448,7 @@ components:
           type: string
           enum:
             - changed
+            - cron
             - manual
             - new
             - next

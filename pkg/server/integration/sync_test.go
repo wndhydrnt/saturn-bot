@@ -20,7 +20,10 @@ func Test_Sync(t *testing.T) {
 		Name:    "cron-trigger",
 		Trigger: &schema.TaskTrigger{Cron: ptr.To("3 6 * * *")},
 	}
-	taskToDelete := schema.Task{Name: "to-delete"}
+	taskToDelete := schema.Task{
+		Name:    "to-delete",
+		Trigger: &schema.TaskTrigger{Cron: ptr.To("0 4 * * *")},
+	}
 	taskFilesFirst := bootstrapTaskFiles(t, []schema.Task{taskNoTrigger, taskCronTrigger, taskToDelete})
 
 	serverFirst := &server.Server{}
@@ -60,20 +63,13 @@ func Test_Sync(t *testing.T) {
 		path:       "/api/v1/worker/runs",
 		statusCode: 200,
 		responseBody: openapi.ListRunsV1Response{
-			Page: openapi.Page{CurrentPage: 1, ItemsPerPage: 20, TotalItems: 2, TotalPages: 1},
+			Page: openapi.Page{CurrentPage: 1, ItemsPerPage: 20, TotalItems: 1, TotalPages: 1},
 			Result: []openapi.RunV1{
 				{
 					Task:          "cron-trigger",
-					Id:            2,
-					Reason:        openapi.New,
-					ScheduleAfter: testDate(1, 6, 3, 0),
-					Status:        openapi.Pending,
-				},
-				{
-					Task:          "no-trigger",
 					Id:            1,
-					Reason:        openapi.New,
-					ScheduleAfter: testDate(1, 0, 0, 0),
+					Reason:        openapi.Cron,
+					ScheduleAfter: testDate(1, 6, 3, 0),
 					Status:        openapi.Pending,
 				},
 			},

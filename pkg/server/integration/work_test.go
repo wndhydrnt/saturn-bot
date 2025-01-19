@@ -21,14 +21,29 @@ func TestServer_API_ListRunsV1(t *testing.T) {
 								And it returns the previous run`,
 			tasks: []schema.Task{defaultTask},
 			apiCalls: []apiCall{
-				// Read the run that gets scheduled at the start of the server.
+				// Schedule a new run.
+				{
+					method: "POST",
+					path:   "/api/v1/runs",
+					requestBody: openapi.ScheduleRunV1Request{
+						TaskName: defaultTask.Name,
+					},
+					statusCode: http.StatusOK,
+					responseBody: openapi.ScheduleRunV1Response{
+						RunID: 2,
+					},
+				},
+				// Process the run.
 				{
 					method:     "GET",
 					path:       "/api/v1/worker/work",
 					statusCode: http.StatusOK,
 					responseBody: openapi.GetWorkV1Response{
-						RunID: 1,
-						Task:  openapi.WorkTaskV1{Hash: defaultTaskHash, Name: defaultTask.Name},
+						RunID: 2,
+						Task: openapi.WorkTaskV1{
+							Hash: defaultTaskHash,
+							Name: defaultTask.Name,
+						},
 					},
 				},
 				// And report the result of the run.
@@ -36,7 +51,7 @@ func TestServer_API_ListRunsV1(t *testing.T) {
 					method: "POST",
 					path:   "/api/v1/worker/work",
 					requestBody: openapi.ReportWorkV1Request{
-						RunID: 1,
+						RunID: 2,
 						Task: openapi.WorkTaskV1{
 							Name: defaultTask.Name,
 						},
@@ -57,9 +72,9 @@ func TestServer_API_ListRunsV1(t *testing.T) {
 						Page: openapi.Page{CurrentPage: 1, NextPage: 2, ItemsPerPage: 1, TotalItems: 2, TotalPages: 2},
 						Result: []openapi.RunV1{
 							{
-								Id:            2,
-								Reason:        openapi.Next,
-								ScheduleAfter: testDate(2, 0, 0, 0),
+								Id:            1,
+								Reason:        openapi.Cron,
+								ScheduleAfter: testDate(1, 6, 3, 0),
 								Status:        openapi.Pending,
 								Task:          defaultTask.Name,
 							},
@@ -76,11 +91,11 @@ func TestServer_API_ListRunsV1(t *testing.T) {
 						Page: openapi.Page{PreviousPage: 1, CurrentPage: 2, NextPage: 0, ItemsPerPage: 1, TotalItems: 2, TotalPages: 2},
 						Result: []openapi.RunV1{
 							{
-								FinishedAt:    ptr.To(testDate(1, 0, 0, 3)),
-								Id:            1,
-								Reason:        openapi.New,
-								ScheduleAfter: testDate(1, 0, 0, 0),
-								StartedAt:     ptr.To(testDate(1, 0, 0, 2)),
+								FinishedAt:    ptr.To(testDate(1, 0, 0, 4)),
+								Id:            2,
+								Reason:        openapi.Manual,
+								ScheduleAfter: testDate(1, 0, 0, 1),
+								StartedAt:     ptr.To(testDate(1, 0, 0, 3)),
 								Status:        openapi.Finished,
 								Task:          defaultTask.Name,
 							},
@@ -109,13 +124,40 @@ func TestServer_API_GetWorkV1(t *testing.T) {
 				{Name: "unittest 2"},
 			},
 			apiCalls: []apiCall{
+				// Schedule a new run for the first task.
+				{
+					method: "POST",
+					path:   "/api/v1/runs",
+					requestBody: openapi.ScheduleRunV1Request{
+						TaskName: "unittest 1",
+					},
+					statusCode: http.StatusOK,
+					responseBody: openapi.ScheduleRunV1Response{
+						RunID: 1,
+					},
+				},
+				// Schedule a new run for the second task.
+				{
+					method: "POST",
+					path:   "/api/v1/runs",
+					requestBody: openapi.ScheduleRunV1Request{
+						TaskName: "unittest 2",
+					},
+					statusCode: http.StatusOK,
+					responseBody: openapi.ScheduleRunV1Response{
+						RunID: 2,
+					},
+				},
 				{
 					method:     "GET",
 					path:       "/api/v1/worker/work",
 					statusCode: http.StatusOK,
 					responseBody: openapi.GetWorkV1Response{
 						RunID: 1,
-						Task:  openapi.WorkTaskV1{Hash: "5ac498db72aa17c5f0c213781e3b18a9330db1bdf934010e4489621c7d9ec422", Name: "unittest 1"},
+						Task: openapi.WorkTaskV1{
+							Hash: "5ac498db72aa17c5f0c213781e3b18a9330db1bdf934010e4489621c7d9ec422",
+							Name: "unittest 1",
+						},
 					},
 				},
 			},
@@ -335,7 +377,7 @@ func TestServer_API_ReportWorkV1(t *testing.T) {
 						Result: []openapi.RunV1{
 							{
 								Id:            2,
-								Reason:        openapi.Next,
+								Reason:        openapi.Cron,
 								ScheduleAfter: testDate(2, 0, 0, 0),
 								Status:        openapi.Pending,
 								Task:          defaultTask.Name,
@@ -343,7 +385,7 @@ func TestServer_API_ReportWorkV1(t *testing.T) {
 							{
 								FinishedAt:    ptr.To(testDate(1, 0, 0, 3)),
 								Id:            1,
-								Reason:        openapi.New,
+								Reason:        openapi.Cron,
 								ScheduleAfter: testDate(1, 0, 0, 0),
 								StartedAt:     ptr.To(testDate(1, 0, 0, 2)),
 								Status:        openapi.Finished,
@@ -356,12 +398,24 @@ func TestServer_API_ReportWorkV1(t *testing.T) {
 		},
 
 		{
-			name: `When a result reports an open pr and the task enables auto-merging then it schedules the next run sooner`,
+			name: `When a result reports an open pr and the task enables auto-merging then it schedules a next run`,
 			tasks: []schema.Task{
 				{Name: "unittest", AutoMerge: true},
 			},
 			apiCalls: []apiCall{
-				// Read the run that gets scheduled at the start of the server.
+				// Schedule a new run for the first task.
+				{
+					method: "POST",
+					path:   "/api/v1/runs",
+					requestBody: openapi.ScheduleRunV1Request{
+						TaskName: "unittest",
+					},
+					statusCode: http.StatusOK,
+					responseBody: openapi.ScheduleRunV1Response{
+						RunID: 1,
+					},
+				},
+				// Process the run.
 				{
 					method:     "GET",
 					path:       "/api/v1/worker/work",
@@ -403,17 +457,17 @@ func TestServer_API_ReportWorkV1(t *testing.T) {
 						Result: []openapi.RunV1{
 							{
 								Id:            2,
-								Reason:        openapi.Next,
-								ScheduleAfter: testDate(1, 1, 0, 0),
+								Reason:        openapi.Manual,
+								ScheduleAfter: testDate(1, 0, 30, 1),
 								Status:        openapi.Pending,
 								Task:          defaultTask.Name,
 							},
 							{
-								FinishedAt:    ptr.To(testDate(1, 0, 0, 3)),
+								FinishedAt:    ptr.To(testDate(1, 0, 0, 4)),
 								Id:            1,
-								Reason:        openapi.New,
-								ScheduleAfter: testDate(1, 0, 0, 0),
-								StartedAt:     ptr.To(testDate(1, 0, 0, 2)),
+								Reason:        openapi.Manual,
+								ScheduleAfter: testDate(1, 0, 0, 1),
+								StartedAt:     ptr.To(testDate(1, 0, 0, 3)),
 								Status:        openapi.Finished,
 								Task:          defaultTask.Name,
 							},

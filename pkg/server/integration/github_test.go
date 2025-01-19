@@ -32,33 +32,6 @@ func TestServer_WebhookGithub(t *testing.T) {
 				},
 			},
 			apiCalls: []apiCall{
-				// Drain the run queue.
-				{
-					method:     "GET",
-					path:       "/api/v1/worker/work",
-					statusCode: http.StatusOK,
-					responseBody: openapi.GetWorkV1Response{
-						RunID: 1,
-						Task: openapi.WorkTaskV1{
-							Hash: "9215d69a1ab043bb5a1e2150fc0dbb73888aea1340d8327d6f1467f6ac0211ee",
-							Name: "unittest",
-						},
-					},
-				},
-				// And report the result of the run.
-				{
-					method: "POST",
-					path:   "/api/v1/worker/work",
-					requestBody: openapi.ReportWorkV1Request{
-						RunID:       1,
-						Task:        openapi.WorkTaskV1{Name: "unittest"},
-						TaskResults: []openapi.ReportWorkV1TaskResult{},
-					},
-					statusCode: http.StatusCreated,
-					responseBody: openapi.ReportWorkV1Response{
-						Result: "ok",
-					},
-				},
 				// Send the webhook request
 				{
 					method: "POST",
@@ -77,7 +50,7 @@ func TestServer_WebhookGithub(t *testing.T) {
 					path:       "/api/v1/worker/work",
 					statusCode: http.StatusOK,
 					responseBody: openapi.GetWorkV1Response{
-						RunID: 2,
+						RunID: 1,
 						Task: openapi.WorkTaskV1{
 							Hash: "9215d69a1ab043bb5a1e2150fc0dbb73888aea1340d8327d6f1467f6ac0211ee",
 							Name: "unittest",
@@ -95,33 +68,6 @@ func TestServer_WebhookGithub(t *testing.T) {
 				},
 			},
 			apiCalls: []apiCall{
-				// Drain the run queue.
-				{
-					method:     "GET",
-					path:       "/api/v1/worker/work",
-					statusCode: http.StatusOK,
-					responseBody: openapi.GetWorkV1Response{
-						RunID: 1,
-						Task: openapi.WorkTaskV1{
-							Hash: "7d4262799e93d4fb6abc2f299a1846921256fc7aa64d80f87d2ad579e5c31306",
-							Name: "unittest",
-						},
-					},
-				},
-				// And report the result of the run.
-				{
-					method: "POST",
-					path:   "/api/v1/worker/work",
-					requestBody: openapi.ReportWorkV1Request{
-						RunID:       1,
-						Task:        openapi.WorkTaskV1{Name: "unittest"},
-						TaskResults: []openapi.ReportWorkV1TaskResult{},
-					},
-					statusCode: http.StatusCreated,
-					responseBody: openapi.ReportWorkV1Response{
-						Result: "ok",
-					},
-				},
 				// Send the webhook request
 				{
 					method: "POST",
@@ -160,33 +106,6 @@ func TestServer_WebhookGithub(t *testing.T) {
 				},
 			},
 			apiCalls: []apiCall{
-				// Drain the run queue.
-				{
-					method:     "GET",
-					path:       "/api/v1/worker/work",
-					statusCode: http.StatusOK,
-					responseBody: openapi.GetWorkV1Response{
-						RunID: 1,
-						Task: openapi.WorkTaskV1{
-							Hash: "bfd1a13eb4a7c5220318e80ee34fa089163a8e338bb980c3cedc11f0c259df9d",
-							Name: "unittest",
-						},
-					},
-				},
-				// And report the result of the run.
-				{
-					method: "POST",
-					path:   "/api/v1/worker/work",
-					requestBody: openapi.ReportWorkV1Request{
-						RunID:       1,
-						Task:        openapi.WorkTaskV1{Name: "unittest"},
-						TaskResults: []openapi.ReportWorkV1TaskResult{},
-					},
-					statusCode: http.StatusCreated,
-					responseBody: openapi.ReportWorkV1Response{
-						Result: "ok",
-					},
-				},
 				// Send the webhook request
 				{
 					method: "POST",
@@ -205,22 +124,13 @@ func TestServer_WebhookGithub(t *testing.T) {
 					path:       "/api/v1/worker/runs",
 					statusCode: http.StatusOK,
 					responseBody: openapi.ListRunsV1Response{
-						Page: openapi.Page{CurrentPage: 1, ItemsPerPage: 20, TotalItems: 2, TotalPages: 1},
+						Page: openapi.Page{CurrentPage: 1, ItemsPerPage: 20, TotalItems: 1, TotalPages: 1},
 						Result: []openapi.RunV1{
 							{
-								Id:            2,
-								Reason:        openapi.Webhook,
-								ScheduleAfter: testDate(1, 0, 5, 5),
-								Status:        openapi.Pending,
-								Task:          "unittest",
-							},
-							{
-								FinishedAt:    ptr.To(testDate(1, 0, 0, 3)),
 								Id:            1,
-								Reason:        openapi.New,
-								ScheduleAfter: testDate(1, 0, 0, 0),
-								StartedAt:     ptr.To(testDate(1, 0, 0, 2)),
-								Status:        openapi.Finished,
+								Reason:        openapi.Webhook,
+								ScheduleAfter: testDate(1, 0, 5, 1),
+								Status:        openapi.Pending,
 								Task:          "unittest",
 							},
 						},

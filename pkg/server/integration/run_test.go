@@ -21,8 +21,8 @@ func Test_API_GetRunV1(t *testing.T) {
 					responseBody: openapi.GetRunV1Response{
 						Run: openapi.RunV1{
 							Id:            1,
-							Reason:        openapi.New,
-							ScheduleAfter: testDate(1, 0, 0, 0),
+							Reason:        openapi.Cron,
+							ScheduleAfter: testDate(1, 6, 3, 0),
 							Status:        openapi.Pending,
 							Task:          defaultTask.Name,
 						},

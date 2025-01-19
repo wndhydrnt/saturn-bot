@@ -16,14 +16,16 @@ func Test_API_ListTaskResultsV1(t *testing.T) {
 			name:  `When task results exist then it lists them`,
 			tasks: []schema.Task{defaultTask},
 			apiCalls: []apiCall{
-				// Read the run that gets scheduled at the start of the server.
+				// Schedule a new run.
 				{
-					method:     "GET",
-					path:       "/api/v1/worker/work",
+					method: "POST",
+					path:   "/api/v1/runs",
+					requestBody: openapi.ScheduleRunV1Request{
+						TaskName: defaultTask.Name,
+					},
 					statusCode: http.StatusOK,
-					responseBody: openapi.GetWorkV1Response{
-						RunID: 1,
-						Task:  openapi.WorkTaskV1{Hash: defaultTaskHash, Name: defaultTask.Name},
+					responseBody: openapi.ScheduleRunV1Response{
+						RunID: 2,
 					},
 				},
 				// And report the result of the run.
@@ -31,7 +33,7 @@ func Test_API_ListTaskResultsV1(t *testing.T) {
 					method: "POST",
 					path:   "/api/v1/worker/work",
 					requestBody: openapi.ReportWorkV1Request{
-						RunID: 1,
+						RunID: 2,
 						Task: openapi.WorkTaskV1{
 							Name: defaultTask.Name,
 						},
@@ -72,26 +74,26 @@ func Test_API_ListTaskResultsV1(t *testing.T) {
 						TaskResults: []openapi.TaskResultV1{
 							{
 								RepositoryName: "git.local/unittest/four",
-								RunId:          1,
+								RunId:          2,
 								Error:          ptr.To("error"),
 								Status:         openapi.TaskResultStatusV1Error,
 							},
 							{
 								PullRequestUrl: ptr.To("https://git.local/unittest/three/pr/1"),
 								RepositoryName: "git.local/unittest/three",
-								RunId:          1,
+								RunId:          2,
 								Status:         openapi.TaskResultStatusV1Merged,
 							},
 							{
 								PullRequestUrl: ptr.To("https://git.local/unittest/two/pr/1"),
 								RepositoryName: "git.local/unittest/two",
-								RunId:          1,
+								RunId:          2,
 								Status:         openapi.TaskResultStatusV1Closed,
 							},
 							{
 								PullRequestUrl: ptr.To("https://git.local/unittest/one/pr/1"),
 								RepositoryName: "git.local/unittest/one",
-								RunId:          1,
+								RunId:          2,
 								Status:         openapi.TaskResultStatusV1Open,
 							},
 						},
@@ -109,7 +111,7 @@ func Test_API_ListTaskResultsV1(t *testing.T) {
 							{
 								PullRequestUrl: ptr.To("https://git.local/unittest/three/pr/1"),
 								RepositoryName: "git.local/unittest/three",
-								RunId:          1,
+								RunId:          2,
 								Status:         openapi.TaskResultStatusV1Merged,
 							},
 						},

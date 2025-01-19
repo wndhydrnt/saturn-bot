@@ -21,6 +21,7 @@ const (
 	RunReasonNew
 	RunReasonNext
 	RunReasonWebhook
+	RunReasonCron
 )
 
 type Run struct {

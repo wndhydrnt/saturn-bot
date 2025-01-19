@@ -33,6 +33,7 @@ const (
 // Defines values for RunV1Reason.
 const (
 	Changed RunV1Reason = "changed"
+	Cron    RunV1Reason = "cron"
 	Manual  RunV1Reason = "manual"
 	New     RunV1Reason = "new"
 	Next    RunV1Reason = "next"

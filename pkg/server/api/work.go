@@ -169,6 +169,8 @@ func mapRunReason(r db.RunReason) openapi.RunV1Reason {
 		return openapi.New
 	case db.RunReasonWebhook:
 		return openapi.Webhook
+	case db.RunReasonCron:
+		return openapi.Cron
 	default:
 		return openapi.Next
 	}

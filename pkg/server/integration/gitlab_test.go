@@ -29,33 +29,6 @@ func TestServer_WebhookGitlab(t *testing.T) {
 				},
 			},
 			apiCalls: []apiCall{
-				// Drain the run queue.
-				{
-					method:     "GET",
-					path:       "/api/v1/worker/work",
-					statusCode: http.StatusOK,
-					responseBody: openapi.GetWorkV1Response{
-						RunID: 1,
-						Task: openapi.WorkTaskV1{
-							Hash: "41f8becac4691a4b990e6a92fd58810a17c20866abb07726eee0d588e703bfa5",
-							Name: "unittest",
-						},
-					},
-				},
-				// And report the result of the run.
-				{
-					method: "POST",
-					path:   "/api/v1/worker/work",
-					requestBody: openapi.ReportWorkV1Request{
-						RunID:       1,
-						Task:        openapi.WorkTaskV1{Name: "unittest"},
-						TaskResults: []openapi.ReportWorkV1TaskResult{},
-					},
-					statusCode: http.StatusCreated,
-					responseBody: openapi.ReportWorkV1Response{
-						Result: "ok",
-					},
-				},
 				// Send the webhook request
 				{
 					method: "POST",
@@ -76,7 +49,7 @@ func TestServer_WebhookGitlab(t *testing.T) {
 					path:       "/api/v1/worker/work",
 					statusCode: http.StatusOK,
 					responseBody: openapi.GetWorkV1Response{
-						RunID: 2,
+						RunID: 1,
 						Task: openapi.WorkTaskV1{
 							Hash: "41f8becac4691a4b990e6a92fd58810a17c20866abb07726eee0d588e703bfa5",
 							Name: "unittest",
@@ -101,33 +74,6 @@ func TestServer_WebhookGitlab(t *testing.T) {
 				},
 			},
 			apiCalls: []apiCall{
-				// Drain the run queue.
-				{
-					method:     "GET",
-					path:       "/api/v1/worker/work",
-					statusCode: http.StatusOK,
-					responseBody: openapi.GetWorkV1Response{
-						RunID: 1,
-						Task: openapi.WorkTaskV1{
-							Hash: "41f8becac4691a4b990e6a92fd58810a17c20866abb07726eee0d588e703bfa5",
-							Name: "unittest",
-						},
-					},
-				},
-				// And report the result of the run.
-				{
-					method: "POST",
-					path:   "/api/v1/worker/work",
-					requestBody: openapi.ReportWorkV1Request{
-						RunID:       1,
-						Task:        openapi.WorkTaskV1{Name: "unittest"},
-						TaskResults: []openapi.ReportWorkV1TaskResult{},
-					},
-					statusCode: http.StatusCreated,
-					responseBody: openapi.ReportWorkV1Response{
-						Result: "ok",
-					},
-				},
 				// Send the webhook request
 				{
 					method: "POST",
@@ -160,33 +106,6 @@ func TestServer_WebhookGitlab(t *testing.T) {
 				},
 			},
 			apiCalls: []apiCall{
-				// Drain the run queue.
-				{
-					method:     "GET",
-					path:       "/api/v1/worker/work",
-					statusCode: http.StatusOK,
-					responseBody: openapi.GetWorkV1Response{
-						RunID: 1,
-						Task: openapi.WorkTaskV1{
-							Hash: "7d4262799e93d4fb6abc2f299a1846921256fc7aa64d80f87d2ad579e5c31306",
-							Name: "unittest",
-						},
-					},
-				},
-				// And report the result of the run.
-				{
-					method: "POST",
-					path:   "/api/v1/worker/work",
-					requestBody: openapi.ReportWorkV1Request{
-						RunID:       1,
-						Task:        openapi.WorkTaskV1{Name: "unittest"},
-						TaskResults: []openapi.ReportWorkV1TaskResult{},
-					},
-					statusCode: http.StatusCreated,
-					responseBody: openapi.ReportWorkV1Response{
-						Result: "ok",
-					},
-				},
 				// Send the webhook request
 				{
 					method: "POST",
@@ -225,33 +144,6 @@ func TestServer_WebhookGitlab(t *testing.T) {
 				},
 			},
 			apiCalls: []apiCall{
-				// Drain the run queue.
-				{
-					method:     "GET",
-					path:       "/api/v1/worker/work",
-					statusCode: http.StatusOK,
-					responseBody: openapi.GetWorkV1Response{
-						RunID: 1,
-						Task: openapi.WorkTaskV1{
-							Hash: "f860d1d4d9df4181f2fed1feef78bb2cd9991ae5009e4f037ed1d18e620eeac0",
-							Name: "unittest",
-						},
-					},
-				},
-				// And report the result of the run.
-				{
-					method: "POST",
-					path:   "/api/v1/worker/work",
-					requestBody: openapi.ReportWorkV1Request{
-						RunID:       1,
-						Task:        openapi.WorkTaskV1{Name: "unittest"},
-						TaskResults: []openapi.ReportWorkV1TaskResult{},
-					},
-					statusCode: http.StatusCreated,
-					responseBody: openapi.ReportWorkV1Response{
-						Result: "ok",
-					},
-				},
 				// Send the webhook request
 				{
 					method: "POST",
@@ -272,22 +164,13 @@ func TestServer_WebhookGitlab(t *testing.T) {
 					path:       "/api/v1/worker/runs",
 					statusCode: http.StatusOK,
 					responseBody: openapi.ListRunsV1Response{
-						Page: openapi.Page{CurrentPage: 1, ItemsPerPage: 20, TotalItems: 2, TotalPages: 1},
+						Page: openapi.Page{CurrentPage: 1, ItemsPerPage: 20, TotalItems: 1, TotalPages: 1},
 						Result: []openapi.RunV1{
 							{
-								Id:            2,
-								Reason:        openapi.Webhook,
-								ScheduleAfter: testDate(1, 0, 5, 5),
-								Status:        openapi.Pending,
-								Task:          "unittest",
-							},
-							{
-								FinishedAt:    ptr.To(testDate(1, 0, 0, 3)),
 								Id:            1,
-								Reason:        openapi.New,
-								ScheduleAfter: testDate(1, 0, 0, 0),
-								StartedAt:     ptr.To(testDate(1, 0, 0, 2)),
-								Status:        openapi.Finished,
+								Reason:        openapi.Webhook,
+								ScheduleAfter: testDate(1, 0, 5, 1),
+								Status:        openapi.Pending,
 								Task:          "unittest",
 							},
 						},
