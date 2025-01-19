@@ -27,9 +27,14 @@ var (
 		ServerGithubWebhookSecret: "secret",
 		ServerGitlabWebhookSecret: "secret",
 	}
-	defaultTask              = schema.Task{Name: "unittest"}
-	defaultTaskContentBase64 = "bmFtZTogdW5pdHRlc3QK"
-	defaultTaskHash          = "7d4262799e93d4fb6abc2f299a1846921256fc7aa64d80f87d2ad579e5c31306"
+	defaultTask = schema.Task{
+		Name: "unittest",
+		Trigger: &schema.TaskTrigger{
+			Cron: ptr.To("3 6 * * *"),
+		},
+	}
+	defaultTaskContentBase64 = "bmFtZTogdW5pdHRlc3QKdHJpZ2dlcjoKICBjcm9uOiAzIDYgKiAqICoK"
+	defaultTaskHash          = "72f8abbe4624a3f874094eb35a654ef901a3b44b1ad6db8daccc9c52d3e07990"
 )
 
 type apiCall struct {

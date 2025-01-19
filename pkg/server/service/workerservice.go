@@ -21,7 +21,7 @@ import (
 var (
 	ErrNoRun = errors.New("no next run")
 
-	nextDefault = 24 * time.Hour
+	nextDefault = 30 * time.Minute
 )
 
 type ErrorMissingInput struct {
@@ -94,7 +94,8 @@ func (ws *WorkerService) ScheduleRun(
 	}
 	query := tx.
 		Where("task_name = ?", taskName).
-		Where("status = ?", db.RunStatusPending)
+		Where("status = ?", db.RunStatusPending).
+		Where("reason = ?", reason)
 
 	repositoryNameList := db.StringList(repositoryNames)
 	if len(repositoryNameList) == 0 {
@@ -138,7 +139,9 @@ func (ws *WorkerService) ScheduleRun(
 		return 0, fmt.Errorf("read next scheduled run: %w", tx.Error)
 	}
 
-	if runDB.ScheduleAfter.After(scheduleAfter) {
+	// Check for equality to prevent runs based on a cron schedule
+	// to be scheduled twice.
+	if !runDB.ScheduleAfter.Equal(scheduleAfter) {
 		runDB.Reason = reason
 		runDB.ScheduleAfter = scheduleAfter
 		if err := tx.Save(&runDB).Error; err != nil {
@@ -239,12 +242,14 @@ func (ws *WorkerService) ReportRun(req openapi.ReportWorkV1Request) error {
 				return err
 			}
 
-			prIsOpen = isPrOpen(taskResult.Result)
+			if !prIsOpen && isPrOpen(taskResult.Result) {
+				prIsOpen = true
+			}
 		}
 
 		next := calcNextScheduleTime(runCurrent, ws.clock.Now(), task, prIsOpen)
 		if next != nil {
-			_, err := ws.ScheduleRun(db.RunReasonNext, runCurrent.RepositoryNames, ptr.From(next), runCurrent.TaskName, runCurrent.RunData, tx)
+			_, err := ws.ScheduleRun(runCurrent.Reason, runCurrent.RepositoryNames, ptr.From(next), runCurrent.TaskName, runCurrent.RunData, tx)
 			if err != nil {
 				return err
 			}
@@ -368,25 +373,17 @@ func (ws *WorkerService) ListTaskResults(opts ListTaskResultsOptions, listOpts *
 
 func calcNextScheduleTime(run db.Run, now time.Time, t *task.Task, isOpen bool) *time.Time {
 	// If task defines a cron trigger, always adhere to the cron schedule.
-	cronTime := calcNextCronTime(now, t)
-	if cronTime != nil {
-		return cronTime
+	if run.Reason == db.RunReasonCron {
+		return calcNextCronTime(now, t)
 	}
 
 	// If task enables auto-merging and at least one PR is open,
-	// schedule a new run sooner to auto-merge earlier.
+	// schedule a new run to auto-merge.
 	if t.AutoMerge && isOpen {
-		return ptr.To(run.ScheduleAfter.Add(1 * time.Hour))
+		return ptr.To(run.ScheduleAfter.Add(nextDefault))
 	}
 
-	// If the run was triggered by a webhook or manually,
-	// return nil to not schedule a new run.
-	// Avoids infinite re-scheduling loops.
-	if run.Reason == db.RunReasonWebhook || run.Reason == db.RunReasonManual {
-		return nil
-	}
-
-	return ptr.To(run.ScheduleAfter.Add(nextDefault))
+	return nil
 }
 
 func calcNextCronTime(now time.Time, t *task.Task) *time.Time {

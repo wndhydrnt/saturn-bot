@@ -445,9 +445,13 @@ components:
           x-go-type: uint
           type: integer
         reason:
+          description: |
+            The reason why a run has been scheduled.
+            The following reasons are deprecated: changed, new, next
           type: string
           enum:
             - changed
+            - cron
             - manual
             - new
             - next

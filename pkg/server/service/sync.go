@@ -90,16 +90,12 @@ func (s *Sync) createTask(t *task.Task) error {
 			return fmt.Errorf("create task '%s' in db: %w", t.Name, err)
 		}
 
-		now := s.clock.Now()
-		scheduleAfter := now
-		cronTime := calcNextCronTime(now, t)
+		cronTime := calcNextCronTime(s.clock.Now(), t)
 		if cronTime != nil {
-			scheduleAfter = ptr.From(cronTime)
-		}
-
-		_, err := s.workerService.ScheduleRun(db.RunReasonNew, nil, scheduleAfter, t.Name, map[string]string{}, tx)
-		if handleScheduleRunError(err) != nil {
-			return fmt.Errorf("schedule run for new task '%s' in db: %w", t.Name, err)
+			_, err := s.workerService.ScheduleRun(db.RunReasonCron, nil, ptr.From(cronTime), t.Name, map[string]string{}, tx)
+			if handleScheduleRunError(err) != nil {
+				return fmt.Errorf("schedule run for new task '%s' in db: %w", t.Name, err)
+			}
 		}
 
 		return nil
@@ -127,18 +123,17 @@ func (s *Sync) updateTask(t *task.Task, taskDB db.Task) error {
 
 	log.Log().Debugf("Updating task in DB - %s", taskDB.Name)
 	return s.db.Transaction(func(tx *gorm.DB) error {
-		now := s.clock.Now()
-		scheduleAfter := now
-		cronTime := calcNextCronTime(now, t)
-		if cronTime != nil {
-			scheduleAfter = ptr.From(cronTime)
+		if t.Active && !taskDB.Active {
+			cronTime := calcNextCronTime(s.clock.Now(), t)
+			if cronTime != nil {
+				_, err := s.workerService.ScheduleRun(db.RunReasonCron, nil, ptr.From(cronTime), t.Name, map[string]string{}, tx)
+				if handleScheduleRunError(err) != nil {
+					return fmt.Errorf("schedule run for updated task '%s' in db: %w", t.Name, err)
+				}
+			}
 		}
 
-		_, err := s.workerService.ScheduleRun(db.RunReasonChanged, nil, scheduleAfter, t.Name, map[string]string{}, tx)
-		if handleScheduleRunError(err) != nil {
-			return fmt.Errorf("schedule run for updated task '%s' in db: %w", t.Name, err)
-		}
-
+		taskDB.Active = true
 		taskDB.Hash = t.Checksum()
 		if err := tx.Save(&taskDB).Error; err != nil {
 			return fmt.Errorf("update task '%s' in db: %w", t.Name, err)
