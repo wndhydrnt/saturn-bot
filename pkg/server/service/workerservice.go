@@ -21,7 +21,7 @@ import (
 var (
 	ErrNoRun = errors.New("no next run")
 
-	nextDefault = 24 * time.Hour
+	nextDefault = 30 * time.Minute
 )
 
 type ErrorMissingInput struct {
@@ -378,7 +378,7 @@ func calcNextScheduleTime(run db.Run, now time.Time, t *task.Task, isOpen bool) 
 	// If task enables auto-merging and at least one PR is open,
 	// schedule a new run to auto-merge.
 	if t.AutoMerge && isOpen {
-		return ptr.To(run.ScheduleAfter.Add(30 * time.Minute))
+		return ptr.To(run.ScheduleAfter.Add(nextDefault))
 	}
 
 	return nil
