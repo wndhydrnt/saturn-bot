@@ -20,8 +20,6 @@ import (
 
 var (
 	ErrNoRun = errors.New("no next run")
-
-	nextDefault = 1 * time.Hour
 )
 
 type ErrorMissingInput struct {
@@ -395,7 +393,12 @@ func calcNextScheduleTime(run db.Run, now time.Time, t *task.Task, isOpen bool) 
 
 	// If at least one PR is open, schedule a new run to keep getting status updates.
 	if isOpen {
-		return ptr.To(run.ScheduleAfter.Add(nextDefault))
+		log.Log().Info("Scheduling new run because pull requests are open")
+		if t.AutoMerge {
+			return ptr.To(run.ScheduleAfter.Add(1 * time.Hour))
+		} else {
+			return ptr.To(run.ScheduleAfter.Add(24 * time.Hour))
+		}
 	}
 
 	return nil
