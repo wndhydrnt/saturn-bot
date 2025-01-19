@@ -20,8 +20,6 @@ import (
 
 var (
 	ErrNoRun = errors.New("no next run")
-
-	nextDefault = 30 * time.Minute
 )
 
 type ErrorMissingInput struct {
@@ -224,11 +222,31 @@ func (ws *WorkerService) ReportRun(req openapi.ReportWorkV1Request) error {
 
 		prIsOpen := false
 		for _, taskResult := range req.TaskResults {
+			if !prIsOpen && isPrOpen(taskResult.Result) {
+				prIsOpen = true
+			}
+
+			var resultDb db.TaskResult
+			resultDbStmt := tx.Select("task_results.*").
+				Joins("INNER JOIN runs ON task_results.run_id = runs.id").
+				Where("task_results.repository_name = ?", taskResult.RepositoryName).
+				Where("runs.task_name = ?", runCurrent.TaskName).
+				First(&resultDb)
+			if resultDbStmt.Error != nil && !errors.Is(resultDbStmt.Error, gorm.ErrRecordNotFound) {
+				return fmt.Errorf("read most recent task result: %w", resultDbStmt.Error)
+			}
+
+			status := mapTaskResultStatusFromApiToDb(taskResult.PullRequestState)
+			if resultDb.Status == status {
+				// No change in status. Skip this result.
+				continue
+			}
+
 			result := db.TaskResult{
 				RepositoryName: taskResult.RepositoryName,
 				Result:         taskResult.Result,
 				RunID:          runCurrent.ID,
-				Status:         mapTaskResultIdentifierToStatus(taskResult.Result),
+				Status:         status,
 			}
 			if taskResult.Error != nil {
 				result.Error = taskResult.Error
@@ -240,10 +258,6 @@ func (ws *WorkerService) ReportRun(req openapi.ReportWorkV1Request) error {
 
 			if err := tx.Save(&result).Error; err != nil {
 				return err
-			}
-
-			if !prIsOpen && isPrOpen(taskResult.Result) {
-				prIsOpen = true
 			}
 		}
 
@@ -377,10 +391,14 @@ func calcNextScheduleTime(run db.Run, now time.Time, t *task.Task, isOpen bool) 
 		return calcNextCronTime(now, t)
 	}
 
-	// If task enables auto-merging and at least one PR is open,
-	// schedule a new run to auto-merge.
-	if t.AutoMerge && isOpen {
-		return ptr.To(run.ScheduleAfter.Add(nextDefault))
+	// If at least one PR is open, schedule a new run to keep getting status updates.
+	if isOpen {
+		log.Log().Info("Scheduling new run because pull requests are open")
+		if t.AutoMerge {
+			return ptr.To(run.ScheduleAfter.Add(1 * time.Hour))
+		} else {
+			return ptr.To(run.ScheduleAfter.Add(24 * time.Hour))
+		}
 	}
 
 	return nil
@@ -420,7 +438,7 @@ func checkRequiredInputs(t *task.Task, runData map[string]string) error {
 }
 
 func isPrOpen(result int) bool {
-	// A bit verbose bu better than a single, long case.
+	// A bit verbose but better than a single, long case.
 	switch processor.Result(result) {
 	case processor.ResultPrCreated:
 		return true
@@ -439,15 +457,10 @@ func isPrOpen(result int) bool {
 	return false
 }
 
-func mapTaskResultIdentifierToStatus(result int) db.TaskResultStatus {
-	switch processor.Result(result) {
-	case processor.ResultUnknown:
-		return db.TaskResultStatusError
-	case processor.ResultPrClosedBefore, processor.ResultPrClosed:
-		return db.TaskResultStatusClosed
-	case processor.ResultPrMergedBefore, processor.ResultPrMerged:
-		return db.TaskResultStatusMerged
-	default:
-		return db.TaskResultStatusOpen
+func mapTaskResultStatusFromApiToDb(state *openapi.TaskResultStatusV1) db.TaskResultStatus {
+	if state == nil {
+		return db.TaskResultStatusUnknown
 	}
+
+	return db.TaskResultStatus(*state)
 }

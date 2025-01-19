@@ -13,6 +13,7 @@ import (
 	"github.com/prometheus/client_golang/prometheus/promhttp"
 	"github.com/wndhydrnt/saturn-bot/pkg/command"
 	"github.com/wndhydrnt/saturn-bot/pkg/config"
+	"github.com/wndhydrnt/saturn-bot/pkg/host"
 	"github.com/wndhydrnt/saturn-bot/pkg/log"
 	"github.com/wndhydrnt/saturn-bot/pkg/options"
 	"github.com/wndhydrnt/saturn-bot/pkg/processor"
@@ -248,7 +249,9 @@ func (w *Worker) findTaskByName(name string, hash string) (schema.ReadResult, er
 func mapRunResultsToTaskResults(runResults []command.RunResult) []client.ReportWorkV1TaskResult {
 	var results []client.ReportWorkV1TaskResult
 	for _, rr := range runResults {
-		if !canReport(rr.Result) {
+		// Always report if a pull request is available.
+		// Do this to update state in the database of the server.
+		if rr.PullRequest == nil && !canReport(rr.Result) {
 			continue
 		}
 
@@ -262,6 +265,11 @@ func mapRunResultsToTaskResults(runResults []command.RunResult) []client.ReportW
 
 		if rr.PullRequest != nil {
 			result.PullRequestUrl = ptr.To(rr.PullRequest.WebURL)
+			if rr.Error == nil {
+				result.PullRequestState = ptr.To(mapPullRequestStateToTaskResultStatus(rr.PullRequest.State))
+			} else {
+				result.PullRequestState = ptr.To(client.TaskResultStatusV1Error)
+			}
 		}
 
 		results = append(results, result)
@@ -305,5 +313,18 @@ func canReport(result processor.Result) bool {
 		return false
 	default:
 		return true
+	}
+}
+
+func mapPullRequestStateToTaskResultStatus(state host.PullRequestState) client.TaskResultStatusV1 {
+	switch state {
+	case host.PullRequestStateClosed:
+		return client.TaskResultStatusV1Closed
+	case host.PullRequestStateMerged:
+		return client.TaskResultStatusV1Merged
+	case host.PullRequestStateOpen:
+		return client.TaskResultStatusV1Open
+	default:
+		return client.TaskResultStatusV1Unknown
 	}
 }

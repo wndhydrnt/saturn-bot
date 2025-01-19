@@ -364,6 +364,8 @@ components:
         result:
           description: Identifier of the result.
           type: integer
+        pullRequestState:
+          $ref: "#/components/schemas/TaskResultStatusV1"
       required: ["repositoryName", "result"]
     ListTasksV1Response:
       type: object
@@ -514,6 +516,7 @@ components:
         - error
         - merged
         - open
+        - unknown
     ListTaskResultsV1Response:
       type: object
       properties:
