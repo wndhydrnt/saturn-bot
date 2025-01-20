@@ -123,13 +123,11 @@ func (s *Sync) updateTask(t *task.Task, taskDB db.Task) error {
 
 	log.Log().Debugf("Updating task in DB - %s", taskDB.Name)
 	return s.db.Transaction(func(tx *gorm.DB) error {
-		if t.Active && !taskDB.Active {
-			cronTime := calcNextCronTime(s.clock.Now(), t)
-			if cronTime != nil {
-				_, err := s.workerService.ScheduleRun(db.RunReasonCron, nil, ptr.From(cronTime), t.Name, map[string]string{}, tx)
-				if handleScheduleRunError(err) != nil {
-					return fmt.Errorf("schedule run for updated task '%s' in db: %w", t.Name, err)
-				}
+		cronTime := calcNextCronTime(s.clock.Now(), t)
+		if t.Active && cronTime != nil {
+			_, err := s.workerService.ScheduleRun(db.RunReasonCron, nil, ptr.From(cronTime), t.Name, map[string]string{}, tx)
+			if handleScheduleRunError(err) != nil {
+				return fmt.Errorf("schedule run for updated task '%s' in db: %w", t.Name, err)
 			}
 		}
 
