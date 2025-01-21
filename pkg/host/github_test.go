@@ -461,8 +461,8 @@ func TestGitHubRepository_HasSuccessfulPullRequestBuild_Failed(t *testing.T) {
 
 func TestGitHubRepository_IsPullRequestClosed(t *testing.T) {
 	pr := &github.PullRequest{
-		Merged: github.Bool(false),
-		State:  github.String("closed"),
+		MergedAt: nil,
+		State:    github.String("closed"),
 	}
 	repo := &GitHubRepository{repo: setupGitHubRepository()}
 	result := repo.IsPullRequestClosed(pr)
@@ -470,8 +470,8 @@ func TestGitHubRepository_IsPullRequestClosed(t *testing.T) {
 	assert.True(t, result)
 
 	pr = &github.PullRequest{
-		Merged: github.Bool(false),
-		State:  github.String("open"),
+		MergedAt: nil,
+		State:    github.String("open"),
 	}
 	repo = &GitHubRepository{repo: setupGitHubRepository()}
 	result = repo.IsPullRequestClosed(pr)
@@ -481,8 +481,8 @@ func TestGitHubRepository_IsPullRequestClosed(t *testing.T) {
 
 func TestGitHubRepository_IsPullRequestMerged(t *testing.T) {
 	pr := &github.PullRequest{
-		Merged: github.Bool(true),
-		State:  github.String("closed"),
+		MergedAt: &github.Timestamp{Time: time.Now()},
+		State:    github.String("closed"),
 	}
 	repo := &GitHubRepository{repo: setupGitHubRepository()}
 	result := repo.IsPullRequestMerged(pr)
@@ -490,8 +490,8 @@ func TestGitHubRepository_IsPullRequestMerged(t *testing.T) {
 	assert.True(t, result)
 
 	pr = &github.PullRequest{
-		Merged: github.Bool(false),
-		State:  github.String("open"),
+		MergedAt: nil,
+		State:    github.String("open"),
 	}
 	repo = &GitHubRepository{repo: setupGitHubRepository()}
 	result = repo.IsPullRequestMerged(pr)
@@ -501,8 +501,8 @@ func TestGitHubRepository_IsPullRequestMerged(t *testing.T) {
 
 func TestGitHubRepository_IsPullRequestOpen(t *testing.T) {
 	pr := &github.PullRequest{
-		Merged: github.Bool(false),
-		State:  github.String("open"),
+		MergedAt: nil,
+		State:    github.String("open"),
 	}
 	repo := &GitHubRepository{repo: setupGitHubRepository()}
 	result := repo.IsPullRequestOpen(pr)
@@ -510,8 +510,8 @@ func TestGitHubRepository_IsPullRequestOpen(t *testing.T) {
 	assert.True(t, result)
 
 	pr = &github.PullRequest{
-		Merged: github.Bool(true),
-		State:  github.String("closed"),
+		MergedAt: &github.Timestamp{Time: time.Now()},
+		State:    github.String("closed"),
 	}
 	repo = &GitHubRepository{repo: setupGitHubRepository()}
 	result = repo.IsPullRequestOpen(pr)

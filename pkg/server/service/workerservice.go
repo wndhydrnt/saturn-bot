@@ -231,13 +231,14 @@ func (ws *WorkerService) ReportRun(req openapi.ReportWorkV1Request) error {
 				Joins("INNER JOIN runs ON task_results.run_id = runs.id").
 				Where("task_results.repository_name = ?", taskResult.RepositoryName).
 				Where("runs.task_name = ?", runCurrent.TaskName).
+				Order("created_at DESC").
 				First(&resultDb)
 			if resultDbStmt.Error != nil && !errors.Is(resultDbStmt.Error, gorm.ErrRecordNotFound) {
 				return fmt.Errorf("read most recent task result: %w", resultDbStmt.Error)
 			}
 
 			status := mapTaskResultStatusFromApiToDb(taskResult.PullRequestState)
-			if resultDb.Status == status {
+			if resultDb.Status == status && isSamePullRequestUrl(taskResult.PullRequestUrl, resultDb.PullRequestUrl) {
 				// No change in status. Skip this result.
 				continue
 			}
@@ -463,4 +464,20 @@ func mapTaskResultStatusFromApiToDb(state *openapi.TaskResultStatusV1) db.TaskRe
 	}
 
 	return db.TaskResultStatus(*state)
+}
+
+func isSamePullRequestUrl(a, b *string) bool {
+	if a == nil && b == nil {
+		return true
+	}
+
+	if a == nil && b != nil {
+		return false
+	}
+
+	if a != nil && b == nil {
+		return false
+	}
+
+	return ptr.From(a) == ptr.From(b)
 }

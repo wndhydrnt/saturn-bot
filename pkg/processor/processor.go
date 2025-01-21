@@ -479,6 +479,7 @@ func applyTaskToRepository(ctx context.Context, dryRun bool, gitc git.GitClient,
 			return ResultUnknown, prDetail, fmt.Errorf("pr merged event failed: %w", err)
 		}
 
+		prDetail.State = host.PullRequestStateMerged
 		return ResultPrMerged, prDetail, nil
 	}
 

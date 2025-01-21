@@ -217,21 +217,28 @@ func (g *GitHubRepository) Host() HostDetail {
 	return g.host
 }
 
-// ID implements [Host].
+// ID implements [Repository].
 func (g *GitHubRepository) ID() int64 {
 	return g.repo.GetID()
 }
 
+// IsPullRequestClosed implements [Repository].
+// Note: uses MergedAt attribute instead of Merged
+// because Merge attribute isn't set when listing pull requests via the GitHub API.
 func (g *GitHubRepository) IsPullRequestClosed(pr interface{}) bool {
 	gpr := pr.(*github.PullRequest)
-	return gpr.GetState() == "closed" && !gpr.GetMerged()
+	return gpr.GetState() == "closed" && gpr.MergedAt == nil
 }
 
+// IsPullRequestMerged implements [Repository].
+// Note: uses MergedAt attribute instead of Merged
+// because Merge attribute isn't set when listing pull requests via the GitHub API.
 func (g *GitHubRepository) IsPullRequestMerged(pr interface{}) bool {
 	gpr := pr.(*github.PullRequest)
-	return gpr.GetState() == "closed" && gpr.GetMerged()
+	return gpr.GetState() == "closed" && gpr.MergedAt != nil
 }
 
+// IsPullRequestOpen implements [Repository].
 func (g *GitHubRepository) IsPullRequestOpen(pr interface{}) bool {
 	gpr := pr.(*github.PullRequest)
 	return gpr.GetState() == "open"
@@ -274,10 +281,12 @@ func (g *GitHubRepository) MergePullRequest(deleteBranch bool, pr interface{}) e
 	opts := &github.PullRequestOptions{
 		MergeMethod: g.determineMergeMethod(),
 	}
-	_, _, err := g.client.PullRequests.Merge(ctx, g.repo.GetOwner().GetLogin(), g.repo.GetName(), gpr.GetNumber(), "Auto-merge by saturn-bot", opts)
+	mergeResult, _, err := g.client.PullRequests.Merge(ctx, g.repo.GetOwner().GetLogin(), g.repo.GetName(), gpr.GetNumber(), "Auto-merge by saturn-bot", opts)
 	if err != nil {
 		return fmt.Errorf("merge github pull request %d: %w", gpr.GetNumber(), err)
 	}
+
+	gpr.Merged = mergeResult.Merged
 
 	// Don't delete if DeleteBranchOnMerge == true.
 	// GitHub deletes the branch on its own.
@@ -461,6 +470,22 @@ func (g *GitHubRepository) listAllReviews(prNumber int) ([]*github.PullRequestRe
 	}
 }
 
+func (g *GitHubRepository) mapToPullRequestState(pr *github.PullRequest) PullRequestState {
+	if g.IsPullRequestClosed(pr) {
+		return PullRequestStateClosed
+	}
+
+	if g.IsPullRequestMerged(pr) {
+		return PullRequestStateMerged
+	}
+
+	if g.IsPullRequestOpen(pr) {
+		return PullRequestStateOpen
+	}
+
+	return PullRequestStateUnknown
+}
+
 func diffAssignees(current []*github.User, want []string) (toAdd, toRemove []string) {
 	var currentLogins []string
 	for _, user := range current {
@@ -577,22 +602,6 @@ func (g *GitHubHost) AuthenticatedUser() (*UserInfo, error) {
 		Name:  user.GetLogin(),
 	}
 	return g.authenticatedUser, nil
-}
-
-func (g *GitHubRepository) mapToPullRequestState(pr *github.PullRequest) PullRequestState {
-	if g.IsPullRequestClosed(pr) {
-		return PullRequestStateClosed
-	}
-
-	if g.IsPullRequestMerged(pr) {
-		return PullRequestStateMerged
-	}
-
-	if g.IsPullRequestOpen(pr) {
-		return PullRequestStateOpen
-	}
-
-	return PullRequestStateUnknown
 }
 
 // CreateFromJson implements [Host].
