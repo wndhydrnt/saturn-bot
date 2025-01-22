@@ -11,7 +11,7 @@ import (
 	"strings"
 	"time"
 
-	"github.com/google/go-github/v59/github"
+	"github.com/google/go-github/v68/github"
 	"github.com/gregjones/httpcache"
 	"github.com/wndhydrnt/saturn-bot/pkg/log"
 	"github.com/wndhydrnt/saturn-bot/pkg/metrics"
@@ -676,9 +676,16 @@ func (g *GitHubHost) ListRepositories(since *time.Time, result chan []Repository
 				return
 			}
 
+			// Get the repository again because ListByAuthenticatedUser doesn't return a full repository object.
+			repoFull, _, err := g.client.Repositories.Get(ctx, repo.GetOwner().GetLogin(), repo.GetName())
+			if err != nil {
+				errChan <- fmt.Errorf("get github repository %s/%s: %w", repo.GetOwner().GetLogin(), repo.GetName(), err)
+				return
+			}
+
 			batch = append(
 				batch,
-				&GitHubRepository{client: g.client, host: g, repo: repo},
+				&GitHubRepository{client: g.client, host: g, repo: repoFull},
 			)
 		}
 

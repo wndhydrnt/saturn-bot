@@ -6,7 +6,7 @@ import (
 	"testing"
 	"time"
 
-	"github.com/google/go-github/v59/github"
+	"github.com/google/go-github/v68/github"
 	"github.com/h2non/gock"
 	"github.com/stretchr/testify/assert"
 	"github.com/stretchr/testify/require"
@@ -960,6 +960,18 @@ func TestGitHubHost_ListRepositories(t *testing.T) {
 			{Owner: &github.User{Login: github.String("unittest")}, Name: github.String("first"), UpdatedAt: &github.Timestamp{Time: time.Now()}},
 			{Owner: &github.User{Login: github.String("unittest")}, Name: github.String("second"), UpdatedAt: &github.Timestamp{Time: time.Now()}},
 		})
+	gock.New("https://api.github.com").
+		Get("/repos/unittest/first").
+		Reply(200).
+		JSON(&github.Repository{
+			Owner: &github.User{Login: github.Ptr("unittest")}, Name: github.Ptr("first"), UpdatedAt: &github.Timestamp{Time: time.Now()},
+		})
+	gock.New("https://api.github.com").
+		Get("/repos/unittest/second").
+		Reply(200).
+		JSON(&github.Repository{
+			Owner: &github.User{Login: github.Ptr("unittest")}, Name: github.Ptr("second"), UpdatedAt: &github.Timestamp{Time: time.Now()},
+		})
 
 	gh := &GitHubHost{
 		client: setupGitHubTestClient(),
@@ -1015,6 +1027,18 @@ func TestGitHubHost_ListRepositories_Since(t *testing.T) {
 			{Owner: &github.User{Login: github.String("unittest")}, Name: github.String("first"), UpdatedAt: &github.Timestamp{Time: time.Now()}},
 			{Owner: &github.User{Login: github.String("unittest")}, Name: github.String("second"), UpdatedAt: &github.Timestamp{Time: time.Now()}},
 			{Owner: &github.User{Login: github.String("unittest")}, Name: github.String("old"), UpdatedAt: &github.Timestamp{Time: time.Now().AddDate(0, 0, -2)}},
+		})
+	gock.New("https://api.github.com").
+		Get("/repos/unittest/first").
+		Reply(200).
+		JSON(&github.Repository{
+			Owner: &github.User{Login: github.Ptr("unittest")}, Name: github.Ptr("first"), UpdatedAt: &github.Timestamp{Time: time.Now()},
+		})
+	gock.New("https://api.github.com").
+		Get("/repos/unittest/second").
+		Reply(200).
+		JSON(&github.Repository{
+			Owner: &github.User{Login: github.Ptr("unittest")}, Name: github.Ptr("second"), UpdatedAt: &github.Timestamp{Time: time.Now()},
 		})
 
 	gh := &GitHubHost{
