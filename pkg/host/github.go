@@ -11,6 +11,7 @@ import (
 	"strings"
 	"time"
 
+	"github.com/gofri/go-github-ratelimit/github_ratelimit"
 	"github.com/google/go-github/v68/github"
 	"github.com/gregjones/httpcache"
 	"github.com/wndhydrnt/saturn-bot/pkg/log"
@@ -526,9 +527,17 @@ type GitHubHost struct {
 }
 
 func NewGitHubHost(address, token string, cacheDisabled bool) (*GitHubHost, error) {
+	rateLimitTransport, err := github_ratelimit.NewRateLimitWaiter(
+		http.DefaultTransport,
+		github_ratelimit.WithLimitDetectedCallback(logOnRateLimit),
+	)
+	if err != nil {
+		return nil, fmt.Errorf("create github rate limit waiter: %w", err)
+	}
+
 	httpClient := &http.Client{
 		Timeout:   2 * time.Second,
-		Transport: http.DefaultTransport,
+		Transport: rateLimitTransport,
 	}
 	// Set up metrics first, then add the caching layer.
 	// Makes the caching layer execute before the metrics.
@@ -762,4 +771,12 @@ func (g *GitHubHost) Name() string {
 	}
 
 	return g.client.BaseURL.Host
+}
+
+func logOnRateLimit(ctx *github_ratelimit.CallbackContext) {
+	if ctx.SleepUntil == nil {
+		log.Log().Infof("GitHub rate limit active")
+	} else {
+		log.Log().Infof("GitHub rate limit active - sleeping until %s", ctx.SleepUntil)
+	}
 }
