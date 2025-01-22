@@ -527,7 +527,7 @@ func TestGitHubRepository_ListPullRequestComments(t *testing.T) {
 		MatchParam("per_page", "20").
 		Reply(200).
 		JSON([]*github.IssueComment{
-			{Body: github.Ptr("comment body"), ID: github.Int64(357)},
+			{Body: github.Ptr("comment body"), ID: github.Ptr(int64(357))},
 		})
 	pr := &github.PullRequest{
 		Number: github.Ptr(987),
