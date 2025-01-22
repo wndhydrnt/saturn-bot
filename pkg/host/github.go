@@ -50,13 +50,13 @@ func (g *GitHubRepository) CloneUrlSsh() string {
 
 func (g *GitHubRepository) ClosePullRequest(msg string, pr interface{}) error {
 	gpr := pr.(*github.PullRequest)
-	comment := &github.IssueComment{Body: github.String(msg)}
+	comment := &github.IssueComment{Body: github.Ptr(msg)}
 	_, _, err := g.client.Issues.CreateComment(ctx, g.repo.GetOwner().GetLogin(), g.repo.GetName(), gpr.GetNumber(), comment)
 	if err != nil {
 		return fmt.Errorf("create comment before closing pull request: %w", err)
 	}
 
-	gpr.State = github.String("closed")
+	gpr.State = github.Ptr("closed")
 	_, _, err = g.client.PullRequests.Edit(ctx, g.repo.GetOwner().GetLogin(), g.repo.GetName(), gpr.GetNumber(), gpr)
 	if err != nil {
 		return fmt.Errorf("close pull request: %w", err)
@@ -67,7 +67,7 @@ func (g *GitHubRepository) ClosePullRequest(msg string, pr interface{}) error {
 
 func (g *GitHubRepository) CreatePullRequestComment(body string, pr interface{}) error {
 	gpr := pr.(*github.PullRequest)
-	comment := &github.IssueComment{Body: github.String(body)}
+	comment := &github.IssueComment{Body: github.Ptr(body)}
 	_, _, err := g.client.Issues.CreateComment(ctx, g.repo.GetOwner().GetLogin(), g.repo.GetName(), gpr.GetNumber(), comment)
 	if err != nil {
 		return fmt.Errorf("create comment on pull request '%d': %w", gpr.GetNumber(), err)
@@ -84,10 +84,10 @@ func (g *GitHubRepository) CreatePullRequest(branch string, data PullRequestData
 
 	gpr := &github.NewPullRequest{
 		Base:                g.repo.DefaultBranch,
-		Body:                github.String(body),
-		Head:                github.String(branch),
-		MaintainerCanModify: github.Bool(true),
-		Title:               github.String(data.Title),
+		Body:                github.Ptr(body),
+		Head:                github.Ptr(branch),
+		MaintainerCanModify: github.Ptr(true),
+		Title:               github.Ptr(data.Title),
 	}
 	pr, _, err := g.client.PullRequests.Create(ctx, g.repo.GetOwner().GetLogin(), g.repo.GetName(), gpr)
 	if err != nil {
@@ -340,7 +340,7 @@ func (g *GitHubRepository) UpdatePullRequest(data PullRequestData, pr interface{
 	needsUpdate := false
 	if gpr.GetTitle() != data.Title {
 		needsUpdate = true
-		gpr.Title = github.String(data.Title)
+		gpr.Title = github.Ptr(data.Title)
 	}
 
 	body, err := data.GetBody()
@@ -350,7 +350,7 @@ func (g *GitHubRepository) UpdatePullRequest(data PullRequestData, pr interface{
 
 	if gpr.GetBody() != body {
 		needsUpdate = true
-		gpr.Body = github.String(body)
+		gpr.Body = github.Ptr(body)
 	}
 
 	if needsUpdate {

@@ -34,7 +34,7 @@ _This pull request has been created by [saturn-bot](https://github.com/wndhydrnt
 func TestGitHubRepository_BaseBranch(t *testing.T) {
 	repo := &GitHubRepository{
 		repo: &github.Repository{
-			DefaultBranch: github.String("main"),
+			DefaultBranch: github.Ptr("main"),
 		},
 	}
 
@@ -43,7 +43,7 @@ func TestGitHubRepository_BaseBranch(t *testing.T) {
 
 func TestGitHubRepository_CanMergePullRequest(t *testing.T) {
 	pr := &github.PullRequest{
-		Mergeable: github.Bool(true),
+		Mergeable: github.Ptr(true),
 	}
 
 	repo := &GitHubRepository{}
@@ -66,7 +66,7 @@ func TestGitHubRepository_CanMergePullRequest_MergeableNil(t *testing.T) {
 func TestGitHubRepository_CloneUrlHttp(t *testing.T) {
 	repo := &GitHubRepository{
 		repo: &github.Repository{
-			CloneURL: github.String("https://github.com/unit/test.git"),
+			CloneURL: github.Ptr("https://github.com/unit/test.git"),
 		},
 	}
 
@@ -76,7 +76,7 @@ func TestGitHubRepository_CloneUrlHttp(t *testing.T) {
 func TestGitHubRepository_CloneUrlSsh(t *testing.T) {
 	repo := &GitHubRepository{
 		repo: &github.Repository{
-			SSHURL: github.String("git@github.com:unit/test.git"),
+			SSHURL: github.Ptr("git@github.com:unit/test.git"),
 		},
 	}
 
@@ -86,7 +86,7 @@ func TestGitHubRepository_CloneUrlSsh(t *testing.T) {
 func TestGitHubRepository_ClosePullRequest(t *testing.T) {
 	defer gock.Off()
 	pr := &github.PullRequest{
-		Number: github.Int(987),
+		Number: github.Ptr(987),
 	}
 	gock.New("https://api.github.com").
 		Post("/repos/unit/test/issues/987/comments").
@@ -118,7 +118,7 @@ func TestGitHubRepository_ClosePullRequest(t *testing.T) {
 func TestGitHubRepository_CreatePullRequestComment(t *testing.T) {
 	defer gock.Off()
 	pr := &github.PullRequest{
-		Number: github.Int(987),
+		Number: github.Ptr(987),
 	}
 	gock.New("https://api.github.com").
 		Post("/repos/unit/test/issues/987/comments").
@@ -141,8 +141,8 @@ func TestGitHubRepository_CreatePullRequestComment(t *testing.T) {
 
 var createPullRequestRespBody = github.PullRequest{
 	CreatedAt: &github.Timestamp{Time: time.Date(2000, 1, 1, 0, 0, 0, 0, time.UTC)},
-	Number:    github.Int(1),
-	HTMLURL:   github.String("https://api.github.com/pr/1"),
+	Number:    github.Ptr(1),
+	HTMLURL:   github.Ptr("https://api.github.com/pr/1"),
 }
 
 func TestGitHubRepository_CreatePullRequest(t *testing.T) {
@@ -151,11 +151,11 @@ func TestGitHubRepository_CreatePullRequest(t *testing.T) {
 		Post("/repos/unit/test/pulls").
 		MatchType("json").
 		JSON(&github.NewPullRequest{
-			Base:                github.String("main"),
-			Body:                github.String(githubPullRequestBody),
-			Head:                github.String("unittest"),
-			MaintainerCanModify: github.Bool(true),
-			Title:               github.String("pull request title"),
+			Base:                github.Ptr("main"),
+			Body:                github.Ptr(githubPullRequestBody),
+			Head:                github.Ptr("unittest"),
+			MaintainerCanModify: github.Ptr(true),
+			Title:               github.Ptr("pull request title"),
 		}).
 		Reply(200).
 		JSON(createPullRequestRespBody)
@@ -184,11 +184,11 @@ func TestGitHubRepository_CreatePullRequest_WithAssignees(t *testing.T) {
 		Post("/repos/unit/test/pulls").
 		MatchType("json").
 		JSON(&github.NewPullRequest{
-			Base:                github.String("main"),
-			Body:                github.String(githubPullRequestBody),
-			Head:                github.String("unittest"),
-			MaintainerCanModify: github.Bool(true),
-			Title:               github.String("pull request title"),
+			Base:                github.Ptr("main"),
+			Body:                github.Ptr(githubPullRequestBody),
+			Head:                github.Ptr("unittest"),
+			MaintainerCanModify: github.Ptr(true),
+			Title:               github.Ptr("pull request title"),
 		}).
 		Reply(200).
 		JSON(createPullRequestRespBody)
@@ -222,11 +222,11 @@ func TestGitHubRepository_CreatePullRequest_WithReviewers(t *testing.T) {
 		Post("/repos/unit/test/pulls").
 		MatchType("json").
 		JSON(&github.NewPullRequest{
-			Base:                github.String("main"),
-			Body:                github.String(githubPullRequestBody),
-			Head:                github.String("unittest"),
-			MaintainerCanModify: github.Bool(true),
-			Title:               github.String("pull request title"),
+			Base:                github.Ptr("main"),
+			Body:                github.Ptr(githubPullRequestBody),
+			Head:                github.Ptr("unittest"),
+			MaintainerCanModify: github.Ptr(true),
+			Title:               github.Ptr("pull request title"),
 		}).
 		Reply(200).
 		JSON(createPullRequestRespBody)
@@ -236,7 +236,7 @@ func TestGitHubRepository_CreatePullRequest_WithReviewers(t *testing.T) {
 		JSON(github.ReviewersRequest{Reviewers: []string{"abby", "owen"}}).
 		Reply(200).
 		JSON(&github.PullRequest{
-			Number: github.Int(1),
+			Number: github.Ptr(1),
 		})
 	prData := PullRequestData{
 		Body:      "pull request body",
@@ -266,8 +266,8 @@ func TestGitHubRepository_FindPullRequest(t *testing.T) {
 		}).
 		Reply(200).
 		JSON([]*github.PullRequest{
-			{Head: &github.PullRequestBranch{Ref: github.String("other")}},
-			{Head: &github.PullRequestBranch{Ref: github.String("unittest")}},
+			{Head: &github.PullRequestBranch{Ref: github.Ptr("other")}},
+			{Head: &github.PullRequestBranch{Ref: github.Ptr("unittest")}},
 		})
 
 	repo := &GitHubRepository{
@@ -292,8 +292,8 @@ func TestGitHubRepository_FindPullRequest_PullRequestNotFound(t *testing.T) {
 		}).
 		Reply(200).
 		JSON([]*github.PullRequest{
-			{Head: &github.PullRequestBranch{Ref: github.String("other")}},
-			{Head: &github.PullRequestBranch{Ref: github.String("some")}},
+			{Head: &github.PullRequestBranch{Ref: github.Ptr("other")}},
+			{Head: &github.PullRequestBranch{Ref: github.Ptr("some")}},
 		})
 
 	repo := &GitHubRepository{
@@ -316,7 +316,7 @@ func TestGitHubRepository_FullName(t *testing.T) {
 
 func TestGitHubRepository_GetPullRequestBody(t *testing.T) {
 	pr := &github.PullRequest{
-		Body: github.String("pull request body"),
+		Body: github.Ptr("pull request body"),
 	}
 	repo := &GitHubRepository{repo: setupGitHubRepository()}
 	body := repo.GetPullRequestBody(pr)
@@ -346,9 +346,9 @@ func TestGitHubRepository_DeleteBranch(t *testing.T) {
 		repo:   setupGitHubRepository(),
 	}
 	pr := &github.PullRequest{
-		Number: github.Int(987),
+		Number: github.Ptr(987),
 		Head: &github.PullRequestBranch{
-			Ref: github.String("unittest"),
+			Ref: github.Ptr("unittest"),
 		},
 	}
 	err := repo.DeleteBranch(pr)
@@ -360,15 +360,15 @@ func TestGitHubRepository_DeleteBranch(t *testing.T) {
 func TestGitHubRepository_DeleteBranch_RepoAutoDelete(t *testing.T) {
 	defer gock.Off()
 	githubRepo := setupGitHubRepository()
-	githubRepo.DeleteBranchOnMerge = github.Bool(true)
+	githubRepo.DeleteBranchOnMerge = github.Ptr(true)
 	repo := &GitHubRepository{
 		client: setupGitHubTestClient(),
 		repo:   githubRepo,
 	}
 	pr := &github.PullRequest{
-		Number: github.Int(987),
+		Number: github.Ptr(987),
 		Head: &github.PullRequestBranch{
-			Ref: github.String("unittest"),
+			Ref: github.Ptr("unittest"),
 		},
 	}
 	err := repo.DeleteBranch(pr)
@@ -383,7 +383,7 @@ func TestGitHubRepository_DeletePullRequestComment(t *testing.T) {
 		Delete("/repos/unit/test/issues/comments/765").
 		Reply(200)
 	pr := &github.PullRequest{
-		Number: github.Int(987),
+		Number: github.Ptr(987),
 	}
 	comment := PullRequestComment{ID: 765}
 
@@ -406,14 +406,14 @@ func TestGitHubRepository_HasSuccessfulPullRequestBuild_Success(t *testing.T) {
 		Reply(200).
 		JSON(&github.ListCheckRunsResults{
 			CheckRuns: []*github.CheckRun{
-				{Conclusion: github.String("success")},
-				{Conclusion: github.String("success")},
+				{Conclusion: github.Ptr("success")},
+				{Conclusion: github.Ptr("success")},
 			},
 		})
 	pr := &github.PullRequest{
-		Number: github.Int(987),
+		Number: github.Ptr(987),
 		Head: &github.PullRequestBranch{
-			SHA: github.String("a1b2c3d4"),
+			SHA: github.Ptr("a1b2c3d4"),
 		},
 	}
 
@@ -437,14 +437,14 @@ func TestGitHubRepository_HasSuccessfulPullRequestBuild_Failed(t *testing.T) {
 		Reply(200).
 		JSON(&github.ListCheckRunsResults{
 			CheckRuns: []*github.CheckRun{
-				{Conclusion: github.String("success")},
-				{Conclusion: github.String("failed")},
+				{Conclusion: github.Ptr("success")},
+				{Conclusion: github.Ptr("failed")},
 			},
 		})
 	pr := &github.PullRequest{
-		Number: github.Int(987),
+		Number: github.Ptr(987),
 		Head: &github.PullRequestBranch{
-			SHA: github.String("a1b2c3d4"),
+			SHA: github.Ptr("a1b2c3d4"),
 		},
 	}
 
@@ -462,7 +462,7 @@ func TestGitHubRepository_HasSuccessfulPullRequestBuild_Failed(t *testing.T) {
 func TestGitHubRepository_IsPullRequestClosed(t *testing.T) {
 	pr := &github.PullRequest{
 		MergedAt: nil,
-		State:    github.String("closed"),
+		State:    github.Ptr("closed"),
 	}
 	repo := &GitHubRepository{repo: setupGitHubRepository()}
 	result := repo.IsPullRequestClosed(pr)
@@ -471,7 +471,7 @@ func TestGitHubRepository_IsPullRequestClosed(t *testing.T) {
 
 	pr = &github.PullRequest{
 		MergedAt: nil,
-		State:    github.String("open"),
+		State:    github.Ptr("open"),
 	}
 	repo = &GitHubRepository{repo: setupGitHubRepository()}
 	result = repo.IsPullRequestClosed(pr)
@@ -482,7 +482,7 @@ func TestGitHubRepository_IsPullRequestClosed(t *testing.T) {
 func TestGitHubRepository_IsPullRequestMerged(t *testing.T) {
 	pr := &github.PullRequest{
 		MergedAt: &github.Timestamp{Time: time.Now()},
-		State:    github.String("closed"),
+		State:    github.Ptr("closed"),
 	}
 	repo := &GitHubRepository{repo: setupGitHubRepository()}
 	result := repo.IsPullRequestMerged(pr)
@@ -491,7 +491,7 @@ func TestGitHubRepository_IsPullRequestMerged(t *testing.T) {
 
 	pr = &github.PullRequest{
 		MergedAt: nil,
-		State:    github.String("open"),
+		State:    github.Ptr("open"),
 	}
 	repo = &GitHubRepository{repo: setupGitHubRepository()}
 	result = repo.IsPullRequestMerged(pr)
@@ -502,7 +502,7 @@ func TestGitHubRepository_IsPullRequestMerged(t *testing.T) {
 func TestGitHubRepository_IsPullRequestOpen(t *testing.T) {
 	pr := &github.PullRequest{
 		MergedAt: nil,
-		State:    github.String("open"),
+		State:    github.Ptr("open"),
 	}
 	repo := &GitHubRepository{repo: setupGitHubRepository()}
 	result := repo.IsPullRequestOpen(pr)
@@ -511,7 +511,7 @@ func TestGitHubRepository_IsPullRequestOpen(t *testing.T) {
 
 	pr = &github.PullRequest{
 		MergedAt: &github.Timestamp{Time: time.Now()},
-		State:    github.String("closed"),
+		State:    github.Ptr("closed"),
 	}
 	repo = &GitHubRepository{repo: setupGitHubRepository()}
 	result = repo.IsPullRequestOpen(pr)
@@ -527,10 +527,10 @@ func TestGitHubRepository_ListPullRequestComments(t *testing.T) {
 		MatchParam("per_page", "20").
 		Reply(200).
 		JSON([]*github.IssueComment{
-			{Body: github.String("comment body"), ID: github.Int64(357)},
+			{Body: github.Ptr("comment body"), ID: github.Int64(357)},
 		})
 	pr := &github.PullRequest{
-		Number: github.Int(987),
+		Number: github.Ptr(987),
 	}
 
 	repo := &GitHubRepository{
@@ -554,7 +554,7 @@ func TestGitHubRepository_MergePullRequest_NoDeleteBranch(t *testing.T) {
 		}).
 		Reply(200)
 	pr := &github.PullRequest{
-		Number: github.Int(987),
+		Number: github.Ptr(987),
 	}
 
 	repo := &GitHubRepository{
@@ -579,9 +579,9 @@ func TestGitHubRepository_MergePullRequest_DeleteBranch(t *testing.T) {
 		Delete("/repos/unit/test/git/refs/heads/unittest").
 		Reply(200)
 	pr := &github.PullRequest{
-		Number: github.Int(987),
+		Number: github.Ptr(987),
 		Head: &github.PullRequestBranch{
-			Ref: github.String("unittest"),
+			Ref: github.Ptr("unittest"),
 		},
 	}
 
@@ -604,14 +604,14 @@ func TestGitHubRepository_MergePullRequest_DeleteBranchByGitHub(t *testing.T) {
 		}).
 		Reply(200)
 	pr := &github.PullRequest{
-		Number: github.Int(987),
+		Number: github.Ptr(987),
 		Head: &github.PullRequestBranch{
-			Ref: github.String("unittest"),
+			Ref: github.Ptr("unittest"),
 		},
 	}
 
 	ghRepo := setupGitHubRepository()
-	ghRepo.DeleteBranchOnMerge = github.Bool(true)
+	ghRepo.DeleteBranchOnMerge = github.Ptr(true)
 	repo := &GitHubRepository{
 		client: setupGitHubTestClient(),
 		repo:   ghRepo,
@@ -631,7 +631,7 @@ func TestGitHubRepository_MergePullRequest_MergeMethods(t *testing.T) {
 			method: "merge",
 			repo: func() *github.Repository {
 				ghRepo := setupGitHubRepository()
-				ghRepo.AllowMergeCommit = github.Bool(true)
+				ghRepo.AllowMergeCommit = github.Ptr(true)
 				return ghRepo
 			}(),
 		},
@@ -640,7 +640,7 @@ func TestGitHubRepository_MergePullRequest_MergeMethods(t *testing.T) {
 			method: "rebase",
 			repo: func() *github.Repository {
 				ghRepo := setupGitHubRepository()
-				ghRepo.AllowRebaseMerge = github.Bool(true)
+				ghRepo.AllowRebaseMerge = github.Ptr(true)
 				return ghRepo
 			}(),
 		},
@@ -649,7 +649,7 @@ func TestGitHubRepository_MergePullRequest_MergeMethods(t *testing.T) {
 			method: "squash",
 			repo: func() *github.Repository {
 				ghRepo := setupGitHubRepository()
-				ghRepo.AllowSquashMerge = github.Bool(true)
+				ghRepo.AllowSquashMerge = github.Ptr(true)
 				return ghRepo
 			}(),
 		},
@@ -666,7 +666,7 @@ func TestGitHubRepository_MergePullRequest_MergeMethods(t *testing.T) {
 				}).
 				Reply(200)
 			pr := &github.PullRequest{
-				Number: github.Int(987),
+				Number: github.Ptr(987),
 			}
 
 			repo := &GitHubRepository{
@@ -707,9 +707,9 @@ _This pull request has been created by [saturn-bot](https://github.com/wndhydrnt
 		}).
 		Reply(200)
 	pr := &github.PullRequest{
-		Body:   github.String("old body"),
-		Number: github.Int(987),
-		Title:  github.String("old title"),
+		Body:   github.Ptr("old body"),
+		Number: github.Ptr(987),
+		Title:  github.Ptr("old title"),
 	}
 	prData := PullRequestData{
 		Body:     "new body",
@@ -746,9 +746,9 @@ _This pull request has been created by [saturn-bot](https://github.com/wndhydrnt
 `
 	defer gock.Off()
 	pr := &github.PullRequest{
-		Body:   github.String(body),
-		Number: github.Int(987),
-		Title:  github.String("old title"),
+		Body:   github.Ptr(body),
+		Number: github.Ptr(987),
+		Title:  github.Ptr("old title"),
 	}
 	prData := PullRequestData{
 		Body:     "old body",
@@ -798,13 +798,13 @@ _This pull request has been created by [saturn-bot](https://github.com/wndhydrnt
 		Reply(200)
 	pr := &github.PullRequest{
 		Assignees: []*github.User{
-			{Login: github.String("a")},
-			{Login: github.String("b")},
-			{Login: github.String("c")},
+			{Login: github.Ptr("a")},
+			{Login: github.Ptr("b")},
+			{Login: github.Ptr("c")},
 		},
-		Body:   github.String(body),
-		Number: github.Int(987),
-		Title:  github.String("PR title"),
+		Body:   github.Ptr(body),
+		Number: github.Ptr(987),
+		Title:  github.Ptr("PR title"),
 	}
 	prData := PullRequestData{
 		Assignees: []string{"y", "z", "a"},
@@ -849,9 +849,9 @@ _This pull request has been created by [saturn-bot](https://github.com/wndhydrnt
 		}).
 		Reply(200).
 		JSON([]*github.PullRequestReview{
-			{User: &github.User{Login: github.String("ellie")}},
-			{User: &github.User{Login: github.String("jesse")}},
-			{User: &github.User{Login: github.String("ellie")}}, // user ellie approved twice for some reason
+			{User: &github.User{Login: github.Ptr("ellie")}},
+			{User: &github.User{Login: github.Ptr("jesse")}},
+			{User: &github.User{Login: github.Ptr("ellie")}}, // user ellie approved twice for some reason
 		})
 	gock.New("https://api.github.com").
 		Post("/repos/unit/test/pulls/987/requested_reviewers").
@@ -862,13 +862,13 @@ _This pull request has been created by [saturn-bot](https://github.com/wndhydrnt
 		JSON(github.ReviewersRequest{Reviewers: []string{"tommy"}}).
 		Reply(200)
 	pr := &github.PullRequest{
-		Body:   github.String(body),
-		Number: github.Int(987),
+		Body:   github.Ptr(body),
+		Number: github.Ptr(987),
 		RequestedReviewers: []*github.User{
-			{Login: github.String("tommy")},
-			{Login: github.String("joel")},
+			{Login: github.Ptr("tommy")},
+			{Login: github.Ptr("joel")},
 		},
-		Title: github.String("PR title"),
+		Title: github.Ptr("PR title"),
 	}
 	prData := PullRequestData{
 		Body:      "PR body",
@@ -889,7 +889,7 @@ _This pull request has been created by [saturn-bot](https://github.com/wndhydrnt
 
 func TestGitHubRepository_WebUrl(t *testing.T) {
 	githubRepo := setupGitHubRepository()
-	githubRepo.HTMLURL = github.String("https://github.com/unit/test")
+	githubRepo.HTMLURL = github.Ptr("https://github.com/unit/test")
 	repo := &GitHubRepository{repo: githubRepo}
 	url := repo.WebUrl()
 
@@ -926,8 +926,8 @@ func TestGitHubHost_CreateFromName(t *testing.T) {
 				Get("/repos/unit/test").
 				Reply(200).
 				JSON(&github.Repository{
-					Owner: &github.User{Login: github.String("unit")},
-					Name:  github.String("test"),
+					Owner: &github.User{Login: github.Ptr("unit")},
+					Name:  github.Ptr("test"),
 				})
 
 			gh := &GitHubHost{
@@ -957,8 +957,8 @@ func TestGitHubHost_ListRepositories(t *testing.T) {
 		}).
 		Reply(200).
 		JSON([]*github.Repository{
-			{Owner: &github.User{Login: github.String("unittest")}, Name: github.String("first"), UpdatedAt: &github.Timestamp{Time: time.Now()}},
-			{Owner: &github.User{Login: github.String("unittest")}, Name: github.String("second"), UpdatedAt: &github.Timestamp{Time: time.Now()}},
+			{Owner: &github.User{Login: github.Ptr("unittest")}, Name: github.Ptr("first"), UpdatedAt: &github.Timestamp{Time: time.Now()}},
+			{Owner: &github.User{Login: github.Ptr("unittest")}, Name: github.Ptr("second"), UpdatedAt: &github.Timestamp{Time: time.Now()}},
 		})
 	gock.New("https://api.github.com").
 		Get("/repos/unittest/first").
@@ -1024,9 +1024,9 @@ func TestGitHubHost_ListRepositories_Since(t *testing.T) {
 		}).
 		Reply(200).
 		JSON([]*github.Repository{
-			{Owner: &github.User{Login: github.String("unittest")}, Name: github.String("first"), UpdatedAt: &github.Timestamp{Time: time.Now()}},
-			{Owner: &github.User{Login: github.String("unittest")}, Name: github.String("second"), UpdatedAt: &github.Timestamp{Time: time.Now()}},
-			{Owner: &github.User{Login: github.String("unittest")}, Name: github.String("old"), UpdatedAt: &github.Timestamp{Time: time.Now().AddDate(0, 0, -2)}},
+			{Owner: &github.User{Login: github.Ptr("unittest")}, Name: github.Ptr("first"), UpdatedAt: &github.Timestamp{Time: time.Now()}},
+			{Owner: &github.User{Login: github.Ptr("unittest")}, Name: github.Ptr("second"), UpdatedAt: &github.Timestamp{Time: time.Now()}},
+			{Owner: &github.User{Login: github.Ptr("unittest")}, Name: github.Ptr("old"), UpdatedAt: &github.Timestamp{Time: time.Now().AddDate(0, 0, -2)}},
 		})
 	gock.New("https://api.github.com").
 		Get("/repos/unittest/first").
@@ -1084,7 +1084,7 @@ func TestGitHubHost_ListRepositoriesWithOpenPullRequests(t *testing.T) {
 		Get("/user").
 		Reply(200).
 		JSON(&github.User{
-			Login: github.String("unittest"),
+			Login: github.Ptr("unittest"),
 		})
 	gock.New("https://api.github.com").
 		Get("/search/issues").
@@ -1097,23 +1097,23 @@ func TestGitHubHost_ListRepositoriesWithOpenPullRequests(t *testing.T) {
 		JSON(&github.IssuesSearchResult{
 			Issues: []*github.Issue{
 				{
-					PullRequestLinks: &github.PullRequestLinks{URL: github.String("https://api.github.com/repos/unittest/first/5")},
-					RepositoryURL:    github.String("https://api.github.com/repos/unittest/first"),
+					PullRequestLinks: &github.PullRequestLinks{URL: github.Ptr("https://api.github.com/repos/unittest/first/5")},
+					RepositoryURL:    github.Ptr("https://api.github.com/repos/unittest/first"),
 				},
 				{
-					PullRequestLinks: &github.PullRequestLinks{URL: github.String("https://api.github.com/repos/unittest/second/10")},
-					RepositoryURL:    github.String("https://api.github.com/repos/unittest/second"),
+					PullRequestLinks: &github.PullRequestLinks{URL: github.Ptr("https://api.github.com/repos/unittest/second/10")},
+					RepositoryURL:    github.Ptr("https://api.github.com/repos/unittest/second"),
 				},
 			},
 		})
 	gock.New("https://api.github.com").
 		Get("/repos/unittest/first").
 		Reply(200).
-		JSON(&github.Repository{Owner: &github.User{Login: github.String("unittest")}, Name: github.String("first")})
+		JSON(&github.Repository{Owner: &github.User{Login: github.Ptr("unittest")}, Name: github.Ptr("first")})
 	gock.New("https://api.github.com").
 		Get("/repos/unittest/second").
 		Reply(200).
-		JSON(&github.Repository{Owner: &github.User{Login: github.String("unittest")}, Name: github.String("second")})
+		JSON(&github.Repository{Owner: &github.User{Login: github.Ptr("unittest")}, Name: github.Ptr("second")})
 
 	gh := &GitHubHost{
 		client: setupGitHubTestClient(),
@@ -1158,10 +1158,10 @@ func setupGitHubTestClient() *github.Client {
 
 func setupGitHubRepository() *github.Repository {
 	return &github.Repository{
-		DefaultBranch: github.String("main"),
-		Name:          github.String("test"),
+		DefaultBranch: github.Ptr("main"),
+		Name:          github.Ptr("test"),
 		Owner: &github.User{
-			Login: github.String("unit"),
+			Login: github.Ptr("unit"),
 		},
 	}
 }
