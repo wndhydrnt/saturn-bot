@@ -20,15 +20,13 @@ Home
         <thead>
           <tr>
             <th>Task</th>
-            <th></th>
           </tr>
         </thead>
         <tbody>
           {{range .Tasks}}
           <tr>
-            <td>{{.}}</td>
             <td>
-              <a href="/ui/tasks/{{. | pathEscape}}/results">Details</a>
+              <a href="/ui/tasks/{{. | pathEscape}}/results">{{.}}</a>
             </td>
           </tr>
           {{end}}
