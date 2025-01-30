@@ -10,6 +10,8 @@ import (
 	"syscall"
 	"time"
 
+	"github.com/go-chi/chi/v5"
+	"github.com/go-chi/chi/v5/middleware"
 	"github.com/prometheus/client_golang/prometheus/promhttp"
 	"github.com/wndhydrnt/saturn-bot/pkg/command"
 	"github.com/wndhydrnt/saturn-bot/pkg/config"
@@ -85,6 +87,7 @@ type Worker struct {
 	Exec               ExecutionSource
 	ParallelExecutions int
 
+	httpServer *http.Server
 	opts       options.Opts
 	resultChan chan Result
 	tasks      []schema.ReadResult
@@ -118,14 +121,23 @@ func NewWorker(configPath string, taskPaths []string) (*Worker, error) {
 		return nil, fmt.Errorf("create openapi client: %w", err)
 	}
 
+	router := chi.NewRouter()
+	router.Get("/healthz", http.HandlerFunc(healthHandler))
+	router.Handle("GET /metrics", promhttp.Handler())
+	if opts.Config.GoProfiling {
+		router.Mount("/debug", middleware.Profiler())
+	}
+
 	return &Worker{
-		Exec:  &APIExecutionSource{client: apiClient},
-		opts:  opts,
-		tasks: tasks,
+		Exec:       &APIExecutionSource{client: apiClient},
+		httpServer: newHttpServer("", router),
+		opts:       opts,
+		tasks:      tasks,
 	}, nil
 }
 
 func (w *Worker) Start() {
+	w.startHttpServer()
 	w.resultChan = make(chan Result, 1)
 	w.stopChan = make(chan chan struct{})
 	t := time.NewTicker(w.opts.WorkerLoopInterval())
@@ -183,6 +195,7 @@ func (w *Worker) Start() {
 			go func() {
 				for {
 					if executionCounter == 0 {
+						w.stopHttpServer()
 						close(wait)
 						return
 					}
@@ -246,6 +259,33 @@ func (w *Worker) findTaskByName(name string, hash string) (schema.ReadResult, er
 	return schema.ReadResult{}, fmt.Errorf("task '%s' not found", name)
 }
 
+func (w *Worker) startHttpServer() {
+	if w.httpServer == nil {
+		return
+	}
+
+	go func(s *http.Server) {
+		log.Log().Infof("HTTP server listening on %s", s.Addr)
+		if err := s.ListenAndServe(); err != nil {
+			if !errors.Is(err, http.ErrServerClosed) {
+				log.Log().Errorw("HTTP server failed", zap.Error(err))
+			}
+		}
+	}(w.httpServer)
+}
+
+func (w *Worker) stopHttpServer() {
+	if w.httpServer == nil {
+		return
+	}
+
+	log.Log().Info("Stopping HTTP server")
+	err := w.httpServer.Shutdown(context.Background())
+	if err != nil {
+		log.Log().Errorw("Shutdown of HTTP server failed", zap.Error(err))
+	}
+}
+
 func mapRunResultsToTaskResults(runResults []command.RunResult) []client.ReportWorkV1TaskResult {
 	var results []client.ReportWorkV1TaskResult
 	for _, rr := range runResults {
@@ -289,15 +329,9 @@ func Run(configPath string, taskPaths []string) error {
 	initMetrics()
 	go s.Start()
 
-	hs := &httpServer{}
-	hs.handle("/healthz", http.HandlerFunc(healthHandler))
-	hs.handle("/metrics", promhttp.Handler())
-	go hs.start()
-
 	log.Log().Infof("Worker started %s", version.String())
 	sig := <-sigs
 	log.Log().Infof("Caught signal %s - shutting down", sig.String())
-	hs.stop()
 	<-s.Stop()
 	log.Log().Info("Worker stopped")
 	return nil

@@ -78,6 +78,10 @@ func (s *Server) Start(opts options.Opts, taskPaths []string) error {
 		Router:               router,
 	})
 
+	if opts.Config.GoProfiling {
+		router.Mount("/debug", middleware.Profiler())
+	}
+
 	handler, apiServer := api.RegisterAPIServer(&api.NewAPIServerOptions{
 		Clock:         opts.Clock,
 		Router:        router,
