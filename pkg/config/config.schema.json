@@ -83,6 +83,11 @@
       "description": "Token to use for authentication at the GitLab API.",
       "type": "string"
     },
+    "goProfiling": {
+      "default": false,
+      "description": "Activate Go profiling endpoints for server or worker. The endpoints are available at /debug/pprof/. See https://go.dev/blog/pprof.",
+      "type": "boolean"
+    },
     "javaPath": {
       "default": "java",
       "description": "Path to the Java binary to execute plugins. If not set explicitly, then saturn-bot searches for the binary in $PATH.",
