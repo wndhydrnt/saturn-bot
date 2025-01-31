@@ -50,8 +50,8 @@ type Configuration struct {
 	// Token to use for authentication at the GitLab API.
 	GitlabToken *string `json:"gitlabToken,omitempty" yaml:"gitlabToken,omitempty" mapstructure:"gitlabToken,omitempty"`
 
-	// Activate Go profiling endpoints. The endpoints are available at /debug/pprof/.
-	// See https://go.dev/blog/pprof.
+	// Activate Go profiling endpoints for server or worker. The endpoints are
+	// available at /debug/pprof/. See https://go.dev/blog/pprof.
 	GoProfiling bool `json:"goProfiling,omitempty" yaml:"goProfiling,omitempty" mapstructure:"goProfiling,omitempty"`
 
 	// Path to the Java binary to execute plugins. If not set explicitly, then

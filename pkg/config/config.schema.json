@@ -85,7 +85,7 @@
     },
     "goProfiling": {
       "default": false,
-      "description": "Activate Go profiling endpoints. The endpoints are available at /debug/pprof/. See https://go.dev/blog/pprof.",
+      "description": "Activate Go profiling endpoints for server or worker. The endpoints are available at /debug/pprof/. See https://go.dev/blog/pprof.",
       "type": "boolean"
     },
     "javaPath": {
