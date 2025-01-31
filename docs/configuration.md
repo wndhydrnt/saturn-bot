@@ -179,6 +179,16 @@ Set to `ssh` to clone repositories via SSH.
 | Env Var | `SATURN_BOT_GITLABTOKEN` |
 | Type    | `string`                 |
 
+## goProfiling
+
+[json-path:../pkg/config/config.schema.json:$.properties.goProfiling.description]
+
+| Name    | Value                    |
+| ------- | ------------------------ |
+| Default | `false`                  |
+| Env Var | `SATURN_BOT_GOPROFILING` |
+| Type    | `bool`                   |
+
 ## javaPath
 
 [json-path:../pkg/config/config.schema.json:$.properties.javaPath.description]
