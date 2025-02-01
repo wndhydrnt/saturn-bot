@@ -23,7 +23,14 @@
   </nav>
   <section class="section">
     <div class="container">
-      {{block "breadcrumb" .}}{{end}}
+      <div class="columns">
+        <div class="column">
+          {{block "breadcrumb" .}}{{end}}
+        </div>
+        <div class="column has-text-right">
+          {{block "actions" .}}{{end}}
+        </div>
+      </div>
       {{block "body" .}}Empty{{end}}
     </div>
   </section>
