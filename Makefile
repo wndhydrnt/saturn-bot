@@ -40,10 +40,6 @@ package_all: package_darwin_x86_64 package_darwin_arm64 package_linux_aarch64 pa
 checksums:
 	sha256sum saturn-bot-$(VERSION).*.tar.gz > sha256sums.txt
 
-generate_completion: build
-	./saturn-bot completion bash > ./completion/saturn-bot.bash
-	./saturn-bot completion zsh > ./completion/saturn-bot.zsh
-
 test_cover:
 	go test -coverpkg=./... -coverprofile cover.out.tmp ./...
 	grep -v -E ".*\/pkg\/server\/api\/openapi\/.*|.*\/pkg\/worker\/.*|.*\/test\/.*" cover.out.tmp > cover.out
