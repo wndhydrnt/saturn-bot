@@ -3,22 +3,10 @@
 repos:
 - repo: local
   hooks:
-    - id: mdox
-      name: Check command documentation
-      entry: make mdox
-      language: system
-      files: ^cmd/.*\.go$
-      pass_filenames: false
     - id: go-generate
       name: go generate
-      files: ^.*\.schema\.json|pkg/server/api/openapi/openapi\.yaml$
+      files: ^.*\.schema\.json|pkg/server/api/openapi/openapi\.yaml|cmd/.*\.go$
       entry: go generate ./...
       language: system
       always_run: false
-      pass_filenames: false
-    - id: completion
-      name: Generate completion scripts
-      entry: make generate_completion
-      language: system
-      files: ^cmd/.*\.go$
       pass_filenames: false

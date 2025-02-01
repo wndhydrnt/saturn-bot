@@ -1,2 +1,4 @@
+pkg/config/schema.gen.go linguist-generated=true
 pkg/server/api/openapi/server.gen.go linguist-generated=true
+pkg/task/schema/schema.gen.go linguist-generated=true
 pkg/worker/client/openapi.gen.go linguist-generated=true
