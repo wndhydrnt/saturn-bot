@@ -40,27 +40,9 @@ package_all: package_darwin_x86_64 package_darwin_arm64 package_linux_aarch64 pa
 checksums:
 	sha256sum saturn-bot-$(VERSION).*.tar.gz > sha256sums.txt
 
-generate_go:
-ifeq (, $(shell which mockgen))
-	go install go.uber.org/mock/mockgen@latest
-endif
-ifeq (, $(shell which stringer))
-	go install golang.org/x/tools/cmd/stringer@latest
-endif
-ifeq (, $(shell which go-jsonschema))
-	go install github.com/atombender/go-jsonschema@v0.17.0
-endif
-	go generate ./...
-
 generate_completion: build
 	./saturn-bot completion bash > ./completion/saturn-bot.bash
 	./saturn-bot completion zsh > ./completion/saturn-bot.zsh
-
-mdox: build
-ifeq (, $(shell which mdox))
-	go install github.com/bwplotka/mdox@latest
-endif
-	mdox fmt --soft-wraps ./docs/commands/*.md
 
 test_cover:
 	go test -coverpkg=./... -coverprofile cover.out.tmp ./...

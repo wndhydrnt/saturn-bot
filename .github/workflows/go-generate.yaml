@@ -20,11 +20,11 @@ jobs:
         with:
           go-version: ${{ matrix.go-version }}
       - name: Generate code
-        run: make generate_go
+        run: go generate ./...
       - name: Check diff
         id: diff
         run: git diff --exit-code .
         continue-on-error: true
       - name: Help message
         if: steps.diff.outcome != 'success'
-        run: echo "Generated code not up-to-date - run make generate_go" && exit 1
+        run: echo "Generated code not up-to-date - run go generate ./..." && exit 1
