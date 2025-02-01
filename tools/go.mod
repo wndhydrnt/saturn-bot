@@ -7,6 +7,7 @@ require (
 	github.com/bwplotka/mdox v0.9.0
 	github.com/oapi-codegen/oapi-codegen/v2 v2.4.1
 	go.uber.org/mock v0.5.0
+	golang.org/x/tools v0.26.0
 )
 
 require (
@@ -92,7 +93,6 @@ require (
 	golang.org/x/sync v0.8.0 // indirect
 	golang.org/x/sys v0.26.0 // indirect
 	golang.org/x/text v0.19.0 // indirect
-	golang.org/x/tools v0.26.0 // indirect
 	golang.org/x/xerrors v0.0.0-20240903120638-7835f813f4da // indirect
 	google.golang.org/appengine v1.6.6 // indirect
 	google.golang.org/protobuf v1.26.0 // indirect
