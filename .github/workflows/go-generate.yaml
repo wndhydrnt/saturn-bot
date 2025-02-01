@@ -19,6 +19,8 @@ jobs:
         uses: actions/setup-go@v4
         with:
           go-version: ${{ matrix.go-version }}
+      - name: Build binary
+        run: make build
       - name: Generate code
         run: go generate ./...
       - name: Check diff
