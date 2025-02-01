@@ -11,6 +11,7 @@ import (
 	sbcontext "github.com/wndhydrnt/saturn-bot/pkg/context"
 	"github.com/wndhydrnt/saturn-bot/pkg/filter"
 	"github.com/wndhydrnt/saturn-bot/pkg/params"
+	hostmock "github.com/wndhydrnt/saturn-bot/test/mock/host"
 	"go.uber.org/mock/gomock"
 )
 
@@ -19,7 +20,7 @@ type testCase struct {
 	factory           func(filter.CreateOptions, params.Params) (filter.Filter, error)
 	createOpts        func(*gomock.Controller) filter.CreateOptions
 	params            params.Params
-	repoMockFunc      func(*MockRepository)
+	repoMockFunc      func(*hostmock.MockRepository)
 	filesInRepository map[string]string
 	wantMatch         bool
 	wantFactoryError  string
@@ -29,7 +30,7 @@ type testCase struct {
 func runTestCase(t *testing.T, tc testCase) {
 	t.Helper()
 	ctrl := gomock.NewController(t)
-	repoMock := NewMockRepository(ctrl)
+	repoMock := hostmock.NewMockRepository(ctrl)
 	if tc.repoMockFunc != nil {
 		tc.repoMockFunc(repoMock)
 	}
@@ -284,9 +285,9 @@ func TestRepository_Do(t *testing.T) {
 		testName := fmt.Sprintf("%s/%s/%s", tc.host, tc.owner, tc.name)
 		t.Run(testName, func(t *testing.T) {
 			ctrl := gomock.NewController(t)
-			hostMock := NewMockHostDetail(ctrl)
+			hostMock := hostmock.NewMockHostDetail(ctrl)
 			hostMock.EXPECT().Name().Return(tc.host)
-			repoMock := NewMockRepository(ctrl)
+			repoMock := hostmock.NewMockRepository(ctrl)
 			repoMock.EXPECT().Host().Return(hostMock).AnyTimes()
 			repoMock.EXPECT().Name().Return(tc.name).AnyTimes()
 			repoMock.EXPECT().Owner().Return(tc.owner).AnyTimes()

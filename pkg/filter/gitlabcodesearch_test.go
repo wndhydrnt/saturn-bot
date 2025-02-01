@@ -7,6 +7,7 @@ import (
 	"github.com/wndhydrnt/saturn-bot/pkg/filter"
 	"github.com/wndhydrnt/saturn-bot/pkg/host"
 	"github.com/wndhydrnt/saturn-bot/pkg/params"
+	hostmock "github.com/wndhydrnt/saturn-bot/test/mock/host"
 	"go.uber.org/mock/gomock"
 )
 
@@ -37,7 +38,7 @@ func TestGitlabCodeSearch_Do(t *testing.T) {
 				return filter.CreateOptions{Hosts: []host.Host{m}}
 			},
 			params: params.Params{"query": "func"},
-			repoMockFunc: func(repoMock *MockRepository) {
+			repoMockFunc: func(repoMock *hostmock.MockRepository) {
 				repoMock.EXPECT().
 					ID().
 					Return(int64(10)).
@@ -53,7 +54,7 @@ func TestGitlabCodeSearch_Do(t *testing.T) {
 				return filter.CreateOptions{Hosts: []host.Host{m}}
 			},
 			params: params.Params{"query": "func"},
-			repoMockFunc: func(repoMock *MockRepository) {
+			repoMockFunc: func(repoMock *hostmock.MockRepository) {
 				repoMock.EXPECT().
 					ID().
 					Return(int64(10)).
@@ -73,7 +74,7 @@ func TestGitlabCodeSearch_Do(t *testing.T) {
 				return filter.CreateOptions{Hosts: []host.Host{m}}
 			},
 			params: params.Params{"groupID": 23, "query": "func"},
-			repoMockFunc: func(repoMock *MockRepository) {
+			repoMockFunc: func(repoMock *hostmock.MockRepository) {
 				repoMock.EXPECT().
 					ID().
 					Return(int64(10)).
@@ -93,7 +94,7 @@ func TestGitlabCodeSearch_Do(t *testing.T) {
 				return filter.CreateOptions{Hosts: []host.Host{m}}
 			},
 			params: params.Params{"groupID": "unit/test", "query": "func"},
-			repoMockFunc: func(repoMock *MockRepository) {
+			repoMockFunc: func(repoMock *hostmock.MockRepository) {
 				repoMock.EXPECT().
 					ID().
 					Return(int64(10)).
