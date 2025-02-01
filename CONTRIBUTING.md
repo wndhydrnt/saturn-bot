@@ -1,5 +1,18 @@
 # Contributing
 
+## Code generation
+
+This repository uses code generation via `go generate`.
+
+To update all code and documentation, execute
+
+```shell
+go generate ./...
+```
+
+Tools that generate code are installed via [./tools/tools.go](./tools/tools.go).
+[This blog post](https://www.jvt.me/posts/2024/09/30/go-tools-module/) explains the pattern.
+
 ## Database migrations
 
 Requirements:

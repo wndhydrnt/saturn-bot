@@ -16,8 +16,6 @@ import (
 	"github.com/santhosh-tekuri/jsonschema/v5"
 )
 
-//go:generate go-jsonschema --extra-imports -p config -t ./config.schema.json --output ./schema.go
-
 const (
 	envPrefix = "SATURN_BOT_"
 )

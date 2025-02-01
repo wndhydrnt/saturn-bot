@@ -7,23 +7,6 @@ on:
       - main
 
 jobs:
-  mdox:
-    name: Check command documentation
-    runs-on: ubuntu-latest
-    strategy:
-      matrix:
-        go-version: ["1.23.x"]
-    steps:
-      - uses: actions/checkout@v4
-      - name: Setup Go ${{ matrix.go-version }}
-        uses: actions/setup-go@v4
-        with:
-          go-version: ${{ matrix.go-version }}
-      - name: Run mdox
-        run: make mdox
-      - name: Check diff
-        id: diff
-        run: git diff --color=always --exit-code . || (echo "Command documentation not up-to-date - run make mdox" && exit 1)
   mkdocs:
     name: Check mkdocs
     runs-on: ubuntu-latest

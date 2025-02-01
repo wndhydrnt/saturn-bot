@@ -23,8 +23,6 @@ import (
 	"go.uber.org/zap/zapcore"
 )
 
-//go:generate go-jsonschema --extra-imports -p schema -t ./schema/task.schema.json --output ./schema/schema.go
-
 func createActionsForTask(actionDefs []schema.Action, factories options.ActionFactories, taskPath string) ([]action.Action, error) {
 	var result []action.Action
 	if actionDefs == nil {
