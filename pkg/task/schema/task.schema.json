@@ -214,7 +214,8 @@
         },
         "validation": {
           "description": "If not empty, a regular expression that validates the value of the input.",
-          "type": "string"
+          "type": "string",
+          "format": "regex"
         },
         "options": {
           "description": "If not empty, a list of possible values for the input.",

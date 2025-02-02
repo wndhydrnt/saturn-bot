@@ -49,10 +49,10 @@ func (u *Ui) GetTaskFile(w http.ResponseWriter, r *http.Request) {
 		renderTemplate(data, w, "task-get-file.html")
 
 	case openapi.GetTaskV1404JSONResponse:
-		renderApiError(openapi.Error(v), w, http.StatusNotFound)
+		renderApiError(openapi.Error(v), w, http.StatusNotFound, "")
 
 	case openapi.GetTaskV1500JSONResponse:
-		renderApiError(openapi.Error(v), w, http.StatusInternalServerError)
+		renderApiError(openapi.Error(v), w, http.StatusInternalServerError, "")
 	}
 }
 
@@ -101,12 +101,99 @@ func (u *Ui) GetTaskResults(w http.ResponseWriter, r *http.Request) {
 		return
 	}
 
-	listTaskResultsObj := listTaskResultsResp.(openapi.ListTaskRecentTaskResultsV1200JSONResponse)
-	data.Pagination = pagination{
-		Page: listTaskResultsObj.Page,
-		URL:  r.URL,
+	switch resp := listTaskResultsResp.(type) {
+	case openapi.ListTaskRecentTaskResultsV1200JSONResponse:
+		data.Pagination = pagination{
+			Page: resp.Page,
+			URL:  r.URL,
+		}
+		data.TaskName = name
+		data.TaskResults = resp.TaskResults
+		renderTemplate(data, w, "task-results-table.html", "task-get-results.html")
+	case openapi.ListTaskRecentTaskResultsV1404JSONResponse:
+		renderApiError(openapi.Error(resp), w, http.StatusNotFound, "")
+	case openapi.ListTaskRecentTaskResultsV1500JSONResponse:
+		renderApiError(openapi.Error(resp), w, http.StatusInternalServerError, "")
 	}
-	data.TaskName = name
-	data.TaskResults = listTaskResultsObj.TaskResults
-	renderTemplate(data, w, "task-results-table.html", "task-get-results.html")
+}
+
+type dataNewRun struct {
+	Inputs   []openapi.TaskV1Input
+	TaskName string
+}
+
+func (u *Ui) NewRun(w http.ResponseWriter, r *http.Request) {
+	reqOpts := openapi.GetTaskV1RequestObject{
+		Task: chi.URLParam(r, "name"),
+	}
+	resp, err := u.API.GetTaskV1(r.Context(), reqOpts)
+	if err != nil {
+		renderError(fmt.Errorf("get task: %w", err), w)
+		return
+	}
+
+	switch v := resp.(type) {
+	case openapi.GetTaskV1200JSONResponse:
+		data := dataNewRun{TaskName: v.Name}
+		if v.Inputs != nil {
+			data.Inputs = ptr.From(v.Inputs)
+		}
+
+		renderTemplate(data, w, "task-run-new.html")
+
+	case openapi.GetTaskV1404JSONResponse:
+		renderApiError(openapi.Error(v), w, http.StatusNotFound, "")
+
+	case openapi.GetTaskV1500JSONResponse:
+		renderApiError(openapi.Error(v), w, http.StatusInternalServerError, "")
+	}
+}
+
+func (u *Ui) CreateRun(w http.ResponseWriter, r *http.Request) {
+	reqOpts := openapi.GetTaskV1RequestObject{
+		Task: chi.URLParam(r, "name"),
+	}
+	resp, err := u.API.GetTaskV1(r.Context(), reqOpts)
+	if err != nil {
+		renderError(fmt.Errorf("get task: %w", err), w)
+		return
+	}
+
+	switch v := resp.(type) {
+	case openapi.GetTaskV1200JSONResponse:
+		runData := map[string]string{}
+		if v.Inputs != nil {
+			for _, input := range *v.Inputs {
+				value := r.PostFormValue(input.Name)
+				runData[input.Name] = value
+			}
+		}
+
+		scheduleRunV1Request := openapi.ScheduleRunV1Request{
+			TaskName: v.Name,
+			RunData:  ptr.To(runData),
+		}
+		scheduleRunResp, err := u.API.ScheduleRunV1(r.Context(), openapi.ScheduleRunV1RequestObject{
+			Body: ptr.To(scheduleRunV1Request),
+		})
+		if err != nil {
+			renderError(err, w)
+			return
+		}
+
+		switch resp := scheduleRunResp.(type) {
+		case openapi.ScheduleRunV1200JSONResponse:
+			http.Redirect(w, r, fmt.Sprintf("/ui/runs/%d", resp.RunID), http.StatusFound)
+			return
+		case openapi.ScheduleRunV1400JSONResponse:
+			renderApiError(openapi.Error(resp), w, http.StatusBadRequest, "")
+			return
+		}
+
+	case openapi.GetTaskV1404JSONResponse:
+		renderApiError(openapi.Error(v), w, http.StatusNotFound, "")
+
+	case openapi.GetTaskV1500JSONResponse:
+		renderApiError(openapi.Error(v), w, http.StatusInternalServerError, "")
+	}
 }

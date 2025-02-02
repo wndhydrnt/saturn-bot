@@ -9,6 +9,7 @@ import (
 	"github.com/wndhydrnt/saturn-bot/pkg/server/db"
 	sberror "github.com/wndhydrnt/saturn-bot/pkg/server/error"
 	"github.com/wndhydrnt/saturn-bot/pkg/server/service"
+	"github.com/wndhydrnt/saturn-bot/pkg/task/schema"
 )
 
 // GetTaskV1 implements [openapi.ServerInterface].
@@ -17,8 +18,9 @@ func (a *APIServer) GetTaskV1(_ context.Context, request openapi.GetTaskV1Reques
 	var clientErr sberror.Client
 	if errors.As(err, &clientErr) {
 		return openapi.GetTaskV1404JSONResponse{
-			Error:   clientErr.ErrorID(),
-			Message: clientErr.Error(),
+			Errors: []openapi.ErrorDetail{
+				{Error: clientErr.ErrorID(), Message: clientErr.Error()},
+			},
 		}, nil
 	}
 
@@ -27,11 +29,22 @@ func (a *APIServer) GetTaskV1(_ context.Context, request openapi.GetTaskV1Reques
 		return nil, err
 	}
 
-	return openapi.GetTaskV1200JSONResponse{
+	resp := openapi.GetTaskV1200JSONResponse{
 		Name:    t.Name,
 		Hash:    t.Checksum(),
 		Content: content,
-	}, nil
+	}
+
+	if len(t.Inputs) > 0 {
+		var inputs []openapi.TaskV1Input
+		for _, tinput := range t.Inputs {
+			inputs = append(inputs, mapTaskInputToApi(tinput))
+		}
+
+		resp.Inputs = ptr.To(inputs)
+	}
+
+	return resp, nil
 }
 
 // ListTasksV1 implements [openapi.ServerInterface].
@@ -97,6 +110,11 @@ func (a *APIServer) ListTaskRecentTaskResultsV1(ctx context.Context, request ope
 	listOpts := toListOptions(request.Params.ListOptions)
 	taskResults, err := a.TaskService.ListRecentTaskResultsByTask(opts, &listOpts)
 	if err != nil {
+		var clientErr sberror.Client
+		if errors.As(err, &clientErr) {
+			return openapi.ListTaskRecentTaskResultsV1404JSONResponse(clientErr.ToApiError()), nil
+		}
+
 		return nil, err
 	}
 
@@ -133,4 +151,19 @@ func mapTaskResultFromDbToApi(db db.TaskResult) openapi.TaskResultV1 {
 	}
 
 	return api
+}
+
+func mapTaskInputToApi(i schema.Input) openapi.TaskV1Input {
+	a := openapi.TaskV1Input{
+		Default:     i.Default,
+		Description: i.Description,
+		Name:        i.Name,
+		Validation:  i.Validation,
+	}
+
+	if len(i.Options) > 0 {
+		a.Options = ptr.To(i.Options)
+	}
+
+	return a
 }
