@@ -49,7 +49,19 @@ const (
 
 // Error defines model for Error.
 type Error struct {
-	Error   int    `json:"error"`
+	// Errors A list of errors.
+	Errors []ErrorDetail `json:"errors"`
+}
+
+// ErrorDetail defines model for ErrorDetail.
+type ErrorDetail struct {
+	// Detail A human-readable message that provides more details about the error.
+	Detail *string `json:"detail,omitempty"`
+
+	// Error Internal identifier of the error.
+	Error int `json:"error"`
+
+	// Message A short, human-readable error message.
 	Message string `json:"message"`
 }
 
@@ -60,9 +72,10 @@ type GetRunV1Response struct {
 
 // GetTaskV1Response defines model for GetTaskV1Response.
 type GetTaskV1Response struct {
-	Content string `json:"content"`
-	Hash    string `json:"hash"`
-	Name    string `json:"name"`
+	Content string         `json:"content"`
+	Hash    string         `json:"hash"`
+	Inputs  *[]TaskV1Input `json:"inputs,omitempty"`
+	Name    string         `json:"name"`
 }
 
 // GetWorkV1Response defines model for GetWorkV1Response.
@@ -247,6 +260,24 @@ type TaskResultV1 struct {
 
 	// Status Status of the pull request.
 	Status TaskResultStatusV1 `json:"status"`
+}
+
+// TaskV1Input defines model for TaskV1Input.
+type TaskV1Input struct {
+	// Default Default value to use if no input has been set via the command-line.
+	Default *string `json:"default,omitempty"`
+
+	// Description Text that describes the input value.
+	Description *string `json:"description,omitempty"`
+
+	// Name Key that identifies the input. Set via the command-line to set the input value.
+	Name string `json:"name"`
+
+	// Options If not empty, a list of possible values for the input.
+	Options *[]string `json:"options,omitempty"`
+
+	// Validation If not empty, a regular expression that validates the value of the input.
+	Validation *string `json:"validation,omitempty"`
 }
 
 // WorkTaskV1 The task to execute.

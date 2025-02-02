@@ -3,11 +3,17 @@
 {{define "body"}}
 <div class="columns">
   <div class="column">
-    <h1>Error</h1>
-    {{if ne 0 .ID}}
-    <p>ID: {{.ID}}</p>
+    <h1 class="is-size-1 has-text-danger">Error</h1>
+    {{if .Message}}
+    <h2 class="is-size-2">{{.Message}}</h2>
     {{end}}
+    {{range .Error.Errors}}
+    <p>ID: {{.Error}}</p>
     <p>{{.Message}}</p>
+    {{if .Detail}}
+    <p>{{.Detail}}</p>
+    {{end}}
+    {{end}}
   </div>
 </div>
 {{end}}

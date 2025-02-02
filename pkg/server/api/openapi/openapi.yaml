@@ -318,9 +318,23 @@ components:
     Error:
       type: object
       properties:
+        errors:
+          description: A list of errors.
+          type: array
+          items:
+            $ref: "#/components/schemas/ErrorDetail"
+      required: ["errors"]
+    ErrorDetail:
+      type: object
+      properties:
         error:
+          description: Internal identifier of the error.
           type: integer
         message:
+          description: A short, human-readable error message.
+          type: string
+        detail:
+          description: A human-readable message that provides more details about the error.
           type: string
       required: ["error", "message"]
     ReportWorkV1Response:
@@ -385,6 +399,10 @@ components:
           type: string
         content:
           type: string
+        inputs:
+          type: array
+          items:
+            $ref: "#/components/schemas/TaskV1Input"
       required: ["name", "hash", "content"]
     ListOptions:
       type: object
@@ -537,3 +555,24 @@ components:
           items:
             $ref: "#/components/schemas/TaskResultV1"
       required: ["page", "taskResults"]
+    TaskV1Input:
+      type: object
+      properties:
+        default:
+          description: "Default value to use if no input has been set via the command-line."
+          type: "string"
+        description:
+          description: "Text that describes the input value."
+          type: "string"
+        name:
+          description: "Key that identifies the input. Set via the command-line to set the input value."
+          type: "string"
+        validation:
+          description: "If not empty, a regular expression that validates the value of the input."
+          type: "string"
+        options:
+          description: "If not empty, a list of possible values for the input."
+          type: "array"
+          items:
+            type: "string"
+      required: ["name"]

@@ -225,8 +225,9 @@ func TestServer_API_ScheduleRunV1(t *testing.T) {
 					},
 					statusCode: http.StatusBadRequest,
 					responseBody: openapi.Error{
-						Error:   1000,
-						Message: "unknown task: other",
+						Errors: []openapi.ErrorDetail{
+							{Error: 1000, Message: "unknown task"},
+						},
 					},
 				},
 			},
@@ -253,8 +254,9 @@ func TestServer_API_ScheduleRunV1(t *testing.T) {
 					},
 					statusCode: http.StatusBadRequest,
 					responseBody: openapi.Error{
-						Error:   1001,
-						Message: "required input greeting not set for task unittest",
+						Errors: []openapi.ErrorDetail{
+							{Error: 1001, Message: "missing required input", Detail: ptr.To("missing value for input 'greeting'")},
+						},
 					},
 				},
 			},

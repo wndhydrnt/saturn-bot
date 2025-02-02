@@ -12,6 +12,10 @@
 </nav>
 {{end}}
 
+{{define "actions"}}
+<a class="button" href="/ui/tasks/{{.TaskName | pathEscape}}/run">New run</a>
+{{end}}
+
 {{define "body"}}
 <div class="tabs">
   <ul>

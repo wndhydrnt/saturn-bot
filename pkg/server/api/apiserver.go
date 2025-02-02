@@ -60,8 +60,9 @@ func handleHttpError(w http.ResponseWriter, _ *http.Request, err error) {
 	w.Header().Set("X-Content-Type-Options", "nosniff")
 	w.WriteHeader(http.StatusInternalServerError)
 	apiError := openapi.Error{
-		Error:   sberror.ServerIDDefault,
-		Message: err.Error(),
+		Errors: []openapi.ErrorDetail{
+			{Error: sberror.ServerIDDefault, Message: err.Error()},
+		},
 	}
 	enc := json.NewEncoder(w)
 	encErr := enc.Encode(apiError)

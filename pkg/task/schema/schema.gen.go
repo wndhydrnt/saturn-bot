@@ -144,6 +144,12 @@ type Input struct {
 
 	// Key that identifies the input. Set via the command-line to set the input value.
 	Name string `json:"name" yaml:"name" mapstructure:"name"`
+
+	// If not empty, a list of possible values for the input.
+	Options []string `json:"options,omitempty" yaml:"options,omitempty" mapstructure:"options,omitempty"`
+
+	// If not empty, a regular expression that validates the value of the input.
+	Validation *string `json:"validation,omitempty" yaml:"validation,omitempty" mapstructure:"validation,omitempty"`
 }
 
 // UnmarshalYAML implements yaml.Unmarshaler.

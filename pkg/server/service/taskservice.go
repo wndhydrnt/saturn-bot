@@ -64,6 +64,11 @@ type ListRecentTaskResultsByTaskOptions struct {
 // ListRecentTaskResultsByTask returns a list of the recent result for each repository filtered by task and, optionally, status.
 // It supports pagination through listOpts.
 func (ts *TaskService) ListRecentTaskResultsByTask(opts ListRecentTaskResultsByTaskOptions, listOpts *ListOptions) ([]db.TaskResult, error) {
+	_, err := ts.GetTask(opts.TaskName)
+	if err != nil {
+		return nil, err
+	}
+
 	// This sub-query returns the latest entry for each repository
 	subQ := ts.db.
 		Table("task_results").

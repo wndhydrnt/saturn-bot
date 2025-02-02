@@ -156,9 +156,22 @@ func TestServer_API_ListTaskRecentTaskResultsV1(t *testing.T) {
 }
 
 func TestServer_API_GetTaskV1(t *testing.T) {
+	taskWithInputs := schema.Task{
+		Name: "unittest-inputs",
+		Inputs: []schema.Input{
+			{
+				Default:     ptr.To("Hello"),
+				Description: ptr.To("How to greet."),
+				Name:        "greeting",
+				Options:     []string{"Hello", "Hallo"},
+				Validation:  ptr.To("^Hello|Hallo$"),
+			},
+		},
+	}
+
 	testCases := []testCase{
 		{
-			name:  `When it receives a request to get one task and the task does exist then it returns the tasks`,
+			name:  `When it receives a request to get one task and the task does exist then it returns the task`,
 			tasks: []schema.Task{defaultTask},
 			apiCalls: []apiCall{
 				{
@@ -179,10 +192,40 @@ func TestServer_API_GetTaskV1(t *testing.T) {
 			tasks: []schema.Task{defaultTask},
 			apiCalls: []apiCall{
 				{
-					method:       "GET",
-					path:         "/api/v1/tasks/unknown",
-					statusCode:   http.StatusNotFound,
-					responseBody: openapi.Error{Error: sberror.ClientIDTaskNotFound, Message: "unknown task: unknown"},
+					method:     "GET",
+					path:       "/api/v1/tasks/unknown",
+					statusCode: http.StatusNotFound,
+					responseBody: openapi.Error{
+						Errors: []openapi.ErrorDetail{
+							{Error: sberror.ClientIDTaskNotFound, Message: "unknown task"},
+						},
+					},
+				},
+			},
+		},
+
+		{
+			name:  `task with inputs`,
+			tasks: []schema.Task{taskWithInputs},
+			apiCalls: []apiCall{
+				{
+					method:     "GET",
+					path:       fmt.Sprintf("/api/v1/tasks/%s", taskWithInputs.Name),
+					statusCode: http.StatusOK,
+					responseBody: openapi.GetTaskV1Response{
+						Name:    "unittest-inputs",
+						Hash:    "a3dc7adc92a9139d193c0b4b622e9587038bfc9449763c3328979f934dc9fcd8",
+						Content: "aW5wdXRzOgogIC0gZGVmYXVsdDogSGVsbG8KICAgIGRlc2NyaXB0aW9uOiBIb3cgdG8gZ3JlZXQuCiAgICBuYW1lOiBncmVldGluZwogICAgb3B0aW9uczoKICAgICAgLSBIZWxsbwogICAgICAtIEhhbGxvCiAgICB2YWxpZGF0aW9uOiBeSGVsbG98SGFsbG8kCm5hbWU6IHVuaXR0ZXN0LWlucHV0cwo=",
+						Inputs: ptr.To([]openapi.TaskV1Input{
+							{
+								Default:     ptr.To("Hello"),
+								Description: ptr.To("How to greet."),
+								Name:        "greeting",
+								Options:     ptr.To([]string{"Hello", "Hallo"}),
+								Validation:  ptr.To("^Hello|Hallo$"),
+							},
+						}),
+					},
 				},
 			},
 		},

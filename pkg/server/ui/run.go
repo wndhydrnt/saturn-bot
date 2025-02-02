@@ -122,7 +122,7 @@ func (u *Ui) GetRun(w http.ResponseWriter, r *http.Request) {
 	case openapi.GetRunV1200JSONResponse:
 		data.Run = getRunObj.Run
 	case openapi.GetRunV1404JSONResponse:
-		renderApiError(openapi.Error(getRunObj), w, http.StatusNotFound)
+		renderApiError(openapi.Error(getRunObj), w, http.StatusNotFound, "")
 		return
 	}
 

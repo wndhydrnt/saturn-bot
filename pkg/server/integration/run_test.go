@@ -40,8 +40,9 @@ func Test_API_GetRunV1(t *testing.T) {
 					path:       "/api/v1/runs/100",
 					statusCode: http.StatusNotFound,
 					responseBody: openapi.Error{
-						Error:   1002,
-						Message: "unknown run with ID 100",
+						Errors: []openapi.ErrorDetail{
+							{Error: 1002, Message: "unknown run"},
+						},
 					},
 				},
 			},

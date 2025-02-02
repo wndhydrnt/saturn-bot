@@ -148,7 +148,7 @@ func handleScheduleRunError(err error) error {
 
 	var clientErr sberror.Client
 	if errors.As(err, &clientErr) {
-		if clientErr.ErrorID() == sberror.ClientIDInputMissing {
+		if clientErr.ErrorID() == sberror.ClientIDInput {
 			log.Log().Infof("Not scheduling new run of task: %s", clientErr.Error())
 			return nil
 		}

@@ -5,6 +5,9 @@ import (
 	"context"
 	"fmt"
 	htmlTemplate "html/template"
+	"regexp"
+	"slices"
+	"strings"
 	"time"
 
 	"github.com/gosimple/slug"
@@ -104,6 +107,7 @@ type Task struct {
 	templateBranchName     *htmlTemplate.Template
 	templatePrTitle        *htmlTemplate.Template
 	inputData              map[string]string
+	inputValidators        map[string]*regexp.Regexp
 }
 
 func (tw *Task) Actions() []action.Action {
@@ -307,6 +311,32 @@ func (tw *Task) Stop() {
 	}
 }
 
+// ValidateInputs validates the values in data.
+// It returns a list of errors where each error details a failed validation.
+func ValidateInputs(data map[string]string, t *Task) []error {
+	var errors []error
+	for _, input := range t.Inputs {
+		value := data[input.Name]
+		if value == "" && input.Default == nil {
+			errors = append(errors, fmt.Errorf("missing value for input '%s'", input.Name))
+			continue
+		}
+
+		validator := t.inputValidators[input.Name]
+		if validator != nil && !validator.MatchString(value) {
+			errors = append(errors, fmt.Errorf("value of input '%s' does not match regular expression '%s'", input.Name, validator.String()))
+			continue
+		}
+
+		if len(input.Options) > 0 && slices.Contains(input.Options, value) {
+			errors = append(errors, fmt.Errorf("value of input '%s' must be one of '%s'", input.Name, strings.Join(input.Options, ",")))
+			continue
+		}
+	}
+
+	return errors
+}
+
 // Registry contains all tasks.
 type Registry struct {
 	actionFactories options.ActionFactories
@@ -397,6 +427,17 @@ func (tr *Registry) ReadTasks(taskFile string) error {
 			wrapper.actions = append(wrapper.actions, p)
 			wrapper.filtersPreClone = append(wrapper.filtersPreClone, p)
 			wrapper.plugins = append(wrapper.plugins, p)
+		}
+
+		if len(entry.Task.Inputs) > 0 {
+			wrapper.inputValidators = map[string]*regexp.Regexp{}
+			for _, input := range entry.Task.Inputs {
+				if input.Validation != nil {
+					// No need to check for error. Has been validated during parsing.
+					r, _ := regexp.Compile(ptr.From(input.Validation))
+					wrapper.inputValidators[input.Name] = r
+				}
+			}
 		}
 
 		tr.tasks = append(tr.tasks, wrapper)

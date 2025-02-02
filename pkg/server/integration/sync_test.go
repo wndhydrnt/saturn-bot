@@ -27,7 +27,13 @@ func Test_Sync(t *testing.T) {
 	taskCronTriggerLater := schema.Task{
 		Name: "cron-trigger-later",
 	}
-	taskFilesFirst := bootstrapTaskFiles(t, []schema.Task{taskNoTrigger, taskCronTrigger, taskToDelete, taskCronTriggerLater})
+	taskWithInput := schema.Task{
+		Name: "with-input",
+		Inputs: []schema.Input{
+			{Name: "input-name"},
+		},
+	}
+	taskFilesFirst := bootstrapTaskFiles(t, []schema.Task{taskNoTrigger, taskCronTrigger, taskToDelete, taskCronTriggerLater, taskWithInput})
 
 	serverFirst := &server.Server{}
 	err := serverFirst.Start(opts, taskFilesFirst)
@@ -41,7 +47,7 @@ func Test_Sync(t *testing.T) {
 	taskCronTrigger.BranchName = "test/cron-trigger"
 	taskCronTriggerLater.Trigger = &schema.TaskTrigger{Cron: ptr.To("16 15 * * *")}
 
-	taskFilesSecond := bootstrapTaskFiles(t, []schema.Task{taskNoTrigger, taskCronTrigger, taskCronTriggerLater})
+	taskFilesSecond := bootstrapTaskFiles(t, []schema.Task{taskNoTrigger, taskCronTrigger, taskCronTriggerLater, taskWithInput})
 	serverSecond := &server.Server{}
 	promReg := prometheus.NewRegistry()
 	opts.SetPrometheusRegistry(promReg)
@@ -59,7 +65,7 @@ func Test_Sync(t *testing.T) {
 		path:       "/api/v1/tasks",
 		statusCode: 200,
 		responseBody: openapi.ListTasksV1Response{
-			Tasks: []string{"no-trigger", "cron-trigger", "cron-trigger-later"},
+			Tasks: []string{"no-trigger", "cron-trigger", "cron-trigger-later", "with-input"},
 		},
 	})
 	assertApiCall(e, apiCall{
