@@ -52,19 +52,23 @@ Documentation is written in [Markdown](https://www.markdownguide.org/) and rende
 
 ### Serve the documentation locally
 
+1. (Optional) Install Python version via [pyenv](https://github.com/pyenv/pyenv):
+    ```shell
+    pyenv install
+    ```
 1. Create a Python virtualenv (needs to be done only once):
     ```shell
     python -m venv --prompt saturn-bot-docs ./venv
     ```
-2. Activate the virtualenv:
+1. Activate the virtualenv:
     ```shell
     source venv/bin/activate
     ```
-3. Install dependencies:
+1. Install dependencies:
     ```shell
     pip install -r docs/requirements.txt
     ```
-4. Start the server:
+1. Start the server:
     ```shell
     mkdocs serve
     ```
