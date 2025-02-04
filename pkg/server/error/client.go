@@ -13,9 +13,14 @@ const (
 
 // Client defines an interface for errors caused by invalid inputs sent by a client.
 type Client interface {
+	// Client indicates that this is a client error.
 	Client()
+	// Error implements [error].
+	// It returns the human-readable message of the error.
 	Error() string
+	// ErrorID returns the internal identifier of the error.
 	ErrorID() int
+	// ToApiError is a helper method that maps the error to an [github.com/wndhydrnt/saturn-bot/pkg/server/api/openapi.Error].
 	ToApiError() openapi.Error
 }
 
@@ -37,6 +42,7 @@ func (e client) ErrorID() int {
 	return e.ID
 }
 
+// ToApiError implements [ToApiError].
 func (e client) ToApiError() openapi.Error {
 	return openapi.Error{Errors: []openapi.ErrorDetail{
 		{Error: e.ID, Message: e.Message},
@@ -48,16 +54,15 @@ func NewTaskNotFoundError(taskName string) Client {
 	return client{ID: ClientIDTaskNotFound, Message: "unknown task"}
 }
 
+// InputError is a specific implementation of [Client].
+// It wraps all errors that occurred during validation of inputs.
 type InputError struct {
 	client
 
 	errors []error
 }
 
-func (e InputError) Errors() []error {
-	return e.errors
-}
-
+// ToApiError implements [Client].
 func (e InputError) ToApiError() openapi.Error {
 	const msg = "missing required input"
 	var details []openapi.ErrorDetail
