@@ -122,6 +122,8 @@ type dataNewRun struct {
 	TaskName string
 }
 
+// NewRun returns a form to schedule a new run for a task.
+// The task is identifier by the path parameter name.
 func (u *Ui) NewRun(w http.ResponseWriter, r *http.Request) {
 	reqOpts := openapi.GetTaskV1RequestObject{
 		Task: chi.URLParam(r, "name"),
@@ -149,6 +151,9 @@ func (u *Ui) NewRun(w http.ResponseWriter, r *http.Request) {
 	}
 }
 
+// CreateRun schedules a new run for a task.
+// The task is identifier by the path parameter name.
+// It redirects to the detail page of the run on success.
 func (u *Ui) CreateRun(w http.ResponseWriter, r *http.Request) {
 	reqOpts := openapi.GetTaskV1RequestObject{
 		Task: chi.URLParam(r, "name"),
