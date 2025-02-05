@@ -123,10 +123,7 @@ func (a *APIServer) ScheduleRunV1(_ context.Context, req openapi.ScheduleRunV1Re
 	if err != nil {
 		var clientErr sberror.Client
 		if errors.As(err, &clientErr) {
-			return openapi.ScheduleRunV1400JSONResponse{
-				Error:   clientErr.ErrorID(),
-				Message: clientErr.Error(),
-			}, nil
+			return openapi.ScheduleRunV1400JSONResponse(clientErr.ToApiError()), nil
 		}
 
 		return nil, ErrInternal

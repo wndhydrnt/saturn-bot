@@ -77,13 +77,14 @@ func (ws *WorkerService) ScheduleRun(
 	runData map[string]string,
 	tx *gorm.DB,
 ) (uint, error) {
-	task, err := ws.taskService.GetTask(taskName)
+	t, err := ws.taskService.GetTask(taskName)
 	if err != nil {
 		return 0, err
 	}
 
-	if err := checkRequiredInputs(task, runData); err != nil {
-		return 0, err
+	errs := task.ValidateInputs(runData, t)
+	if len(errs) > 0 {
+		return 0, sberror.NewInputError(errs, taskName)
 	}
 
 	var runDB db.Run
@@ -420,22 +421,6 @@ func calcNextCronTime(now time.Time, t *task.Task) *time.Time {
 
 	nextTick, _ := gronx.NextTickAfter(ptr.From(t.Trigger.Cron), now, true)
 	return ptr.To(nextTick)
-}
-
-func checkRequiredInputs(t *task.Task, runData map[string]string) error {
-	for _, input := range t.Inputs {
-		if input.Default != nil {
-			// No need to check if a default value is available.
-			continue
-		}
-
-		_, exists := runData[input.Name]
-		if !exists {
-			return sberror.NewInputMissingError(input.Name, t.Name)
-		}
-	}
-
-	return nil
 }
 
 func isPrOpen(result int) bool {

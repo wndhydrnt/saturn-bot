@@ -13,10 +13,7 @@ func (a *APIServer) GetRunV1(_ context.Context, req openapi.GetRunV1RequestObjec
 	run, err := a.WorkerService.GetRun(req.RunId)
 	var clientErr sberror.Client
 	if errors.As(err, &clientErr) {
-		return openapi.GetRunV1404JSONResponse{
-			Error:   clientErr.ErrorID(),
-			Message: clientErr.Error(),
-		}, nil
+		return openapi.GetRunV1404JSONResponse(clientErr.ToApiError()), nil
 	}
 
 	if err != nil {

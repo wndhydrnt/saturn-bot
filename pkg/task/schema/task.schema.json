@@ -211,6 +211,18 @@
         "name": {
           "description": "Key that identifies the input. Set via the command-line to set the input value.",
           "type": "string"
+        },
+        "validation": {
+          "description": "If not empty, a regular expression that validates the value of the input.",
+          "type": "string",
+          "format": "regex"
+        },
+        "options": {
+          "description": "If not empty, a list of possible values for the input.",
+          "type": "array",
+          "items": {
+            "type": "string"
+          }
         }
       },
       "required": ["name"]
