@@ -1,5 +1,26 @@
 # Changelog
 
+## [0.20.0](https://github.com/wndhydrnt/saturn-bot/compare/v0.19.0...v0.20.0) (2025-02-05)
+
+
+### Features
+
+* Add pprof endpoints for server and worker ([#146](https://github.com/wndhydrnt/saturn-bot/issues/146)) ([9538db9](https://github.com/wndhydrnt/saturn-bot/commit/9538db95998cb5dcf5e956d3dfcaea9f62f2c700))
+* **host:** Handle secondary rate limit of GitHub API ([0fb7311](https://github.com/wndhydrnt/saturn-bot/commit/0fb7311ab70c5e7485af052a4c1e12729251b894))
+* **server/ui:** Display the recent results of a task on detail page ([#142](https://github.com/wndhydrnt/saturn-bot/issues/142)) ([1e4c43d](https://github.com/wndhydrnt/saturn-bot/commit/1e4c43d3d417a9ff0b45f1ee7e7e8996b95c3322))
+* **server/ui:** Display total number of items below tables ([c2d5cb0](https://github.com/wndhydrnt/saturn-bot/commit/c2d5cb0002be2819f374f66e864bbfa99faa05d0))
+* **server/ui:** Make name of task a link ([cab0098](https://github.com/wndhydrnt/saturn-bot/commit/cab00988a4639365faf29ee679d76d7d5664be4a))
+* **server/ui:** Schedule run via the UI ([#148](https://github.com/wndhydrnt/saturn-bot/issues/148)) ([9c194b9](https://github.com/wndhydrnt/saturn-bot/commit/9c194b99a05e5b623d96098df3ac7d10f801a228))
+* **server:** Auto-schedule task only if it defines a cron trigger ([#144](https://github.com/wndhydrnt/saturn-bot/issues/144)) ([0dd535b](https://github.com/wndhydrnt/saturn-bot/commit/0dd535b0a18a9c1913e4baecd9a7e010bc41828b))
+* **sever:** Send state of pull request to server ([#145](https://github.com/wndhydrnt/saturn-bot/issues/145)) ([8c5bf94](https://github.com/wndhydrnt/saturn-bot/commit/8c5bf94745e540fefd4bf2e1f17633fab750ab3b))
+
+
+### Bug Fixes
+
+* **host:** Detect merge method of a GitHub repository ([1929520](https://github.com/wndhydrnt/saturn-bot/commit/1929520df05703b28414749306f9a0c4b7958f0b))
+* **host:** Use merged_at attribute to check if a GitHub PR has been merged ([cdf7bba](https://github.com/wndhydrnt/saturn-bot/commit/cdf7bba0f071dc464cf31600dd0bf94e80c2cec2))
+* **server:** Schedule new run when task defines a cron trigger ([d80e889](https://github.com/wndhydrnt/saturn-bot/commit/d80e889a9e4066cc84e7fb7949231e0c3381a255))
+
 ## [0.19.0](https://github.com/wndhydrnt/saturn-bot/compare/v0.18.2...v0.19.0) (2025-01-15)
 
 
