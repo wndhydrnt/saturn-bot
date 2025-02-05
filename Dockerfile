@@ -1,5 +1,6 @@
 # golang:1.23.6-bookworm
 FROM golang@sha256:441f59f8a2104b99320e1f5aaf59a81baabbc36c81f4e792d5715ef09dd29355 AS base
+ENV CGO_ENABLED=0
 WORKDIR /src
 COPY go.mod go.sum ./
 RUN --mount=type=cache,target=/go/pkg/mod/ \
@@ -12,8 +13,8 @@ ARG VERSION_HASH
 RUN --mount=type=cache,target=/go/pkg/mod/ \
     make build
 
-# debian:bookworm-20241111-slim
-FROM debian@sha256:ca3372ce30b03a591ec573ea975ad8b0ecaf0eb17a354416741f8001bbcae33d
+# debian:bookworm-20250203-slim
+FROM debian@sha256:40b107342c492725bc7aacbe93a49945445191ae364184a6d24fedb28172f6f7
 ENV SATURN_BOT_DATADIR=/home/saturn-bot/data
 RUN useradd --create-home --shell /usr/sbin/nologin --uid 1001 saturn-bot && \
     mkdir /home/saturn-bot/data && \
