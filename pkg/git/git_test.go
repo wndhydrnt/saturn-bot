@@ -531,7 +531,7 @@ func TestGit_HasRemoteChanges_ErrorDiff(t *testing.T) {
 
 func TestGit_Push_Success(t *testing.T) {
 	em := &execMock{t: t}
-	em.withCall("git", "push", "origin", "unittest", "--force", "--set-upstream")
+	em.withCall("git", "push", "origin", "unittest", "--set-upstream", "--force")
 
 	g, err := git.New(setupOpts(config.Configuration{
 		DataDir: toPtr("/tmp"),
@@ -539,7 +539,7 @@ func TestGit_Push_Success(t *testing.T) {
 	}))
 	require.NoError(t, err)
 	g.CmdExec = em.exec
-	err = g.Push("unittest")
+	err = g.Push("unittest", true)
 
 	assert.NoError(t, err)
 	assert.True(t, em.finished())
@@ -547,7 +547,7 @@ func TestGit_Push_Success(t *testing.T) {
 
 func TestGit_Push_Failure(t *testing.T) {
 	em := &execMock{t: t}
-	em.withCall("git", "push", "origin", "unittest", "--force", "--set-upstream").withErrorMsg("push failed")
+	em.withCall("git", "push", "origin", "unittest", "--set-upstream", "--force").withErrorMsg("push failed")
 
 	g, err := git.New(setupOpts(config.Configuration{
 		DataDir: toPtr("/tmp"),
@@ -555,7 +555,7 @@ func TestGit_Push_Failure(t *testing.T) {
 	}))
 	require.NoError(t, err)
 	g.CmdExec = em.exec
-	err = g.Push("unittest")
+	err = g.Push("unittest", true)
 
 	assert.Error(t, err)
 	assert.True(t, em.finished())

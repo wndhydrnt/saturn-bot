@@ -134,17 +134,17 @@ func (mr *MockGitClientMockRecorder) Prepare(repo, retry any) *gomock.Call {
 }
 
 // Push mocks base method.
-func (m *MockGitClient) Push(branchName string) error {
+func (m *MockGitClient) Push(branchName string, force bool) error {
 	m.ctrl.T.Helper()
-	ret := m.ctrl.Call(m, "Push", branchName)
+	ret := m.ctrl.Call(m, "Push", branchName, force)
 	ret0, _ := ret[0].(error)
 	return ret0
 }
 
 // Push indicates an expected call of Push.
-func (mr *MockGitClientMockRecorder) Push(branchName any) *gomock.Call {
+func (mr *MockGitClientMockRecorder) Push(branchName, force any) *gomock.Call {
 	mr.mock.ctrl.T.Helper()
-	return mr.mock.ctrl.RecordCallWithMethodType(mr.mock, "Push", reflect.TypeOf((*MockGitClient)(nil).Push), branchName)
+	return mr.mock.ctrl.RecordCallWithMethodType(mr.mock, "Push", reflect.TypeOf((*MockGitClient)(nil).Push), branchName, force)
 }
 
 // UpdateTaskBranch mocks base method.

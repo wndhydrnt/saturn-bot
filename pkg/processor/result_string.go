@@ -22,11 +22,12 @@ func _() {
 	_ = x[ResultPrOpen-11]
 	_ = x[ResultNoMatch-12]
 	_ = x[ResultSkip-13]
+	_ = x[ResultPushedDefaultBranch-14]
 }
 
-const _Result_name = "ResultUnknownResultAutoMergeTooEarlyResultBranchModifiedResultChecksFailedResultConflictResultNoChangesResultPrCreatedResultPrClosedBeforeResultPrClosedResultPrMergedBeforeResultPrMergedResultPrOpenResultNoMatchResultSkip"
+const _Result_name = "ResultUnknownResultAutoMergeTooEarlyResultBranchModifiedResultChecksFailedResultConflictResultNoChangesResultPrCreatedResultPrClosedBeforeResultPrClosedResultPrMergedBeforeResultPrMergedResultPrOpenResultNoMatchResultSkipResultPushedDefaultBranch"
 
-var _Result_index = [...]uint8{0, 13, 36, 56, 74, 88, 103, 118, 138, 152, 172, 186, 198, 211, 221}
+var _Result_index = [...]uint8{0, 13, 36, 56, 74, 88, 103, 118, 138, 152, 172, 186, 198, 211, 221, 246}
 
 func (i Result) String() string {
 	if i < 0 || i >= Result(len(_Result_index)-1) {
