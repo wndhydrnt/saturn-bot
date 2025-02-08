@@ -236,7 +236,7 @@ func matchTaskToRepository(ctx context.Context, filters []filter.Filter, logger 
 	return true, nil
 }
 
-func applyTaskToBaseBranch(ctx context.Context, dryRun bool, gitc git.GitClient, logger *zap.SugaredLogger, repo host.Repository, task *task.Task, workDir string) (Result, error) {
+func applyTaskToDefaultBranch(ctx context.Context, dryRun bool, gitc git.GitClient, logger *zap.SugaredLogger, repo host.Repository, task *task.Task, workDir string) (Result, error) {
 	_, _, err := gitc.Execute("checkout", repo.BaseBranch())
 	if err != nil {
 		var gitErr *git.GitCommandError
@@ -247,7 +247,7 @@ func applyTaskToBaseBranch(ctx context.Context, dryRun bool, gitc git.GitClient,
 			}
 		}
 
-		return ResultUnknown, fmt.Errorf("checkout base branch %s: %w", repo.BaseBranch(), err)
+		return ResultUnknown, fmt.Errorf("checkout default branch %s: %w", repo.BaseBranch(), err)
 	}
 
 	err = applyActionsInDirectory(task.Actions(), ctx, workDir)
@@ -257,7 +257,7 @@ func applyTaskToBaseBranch(ctx context.Context, dryRun bool, gitc git.GitClient,
 
 	hasLocalChanges, err := gitc.HasLocalChanges()
 	if err != nil {
-		return ResultUnknown, fmt.Errorf("check for local changes in base branch failed: %w", err)
+		return ResultUnknown, fmt.Errorf("check for local changes in default branch failed: %w", err)
 	}
 
 	if !hasLocalChanges {
@@ -267,13 +267,13 @@ func applyTaskToBaseBranch(ctx context.Context, dryRun bool, gitc git.GitClient,
 	if !dryRun {
 		err = gitc.CommitChanges(task.CommitMessage)
 		if err != nil {
-			return ResultUnknown, fmt.Errorf("committing changes to base branch failed: %w", err)
+			return ResultUnknown, fmt.Errorf("committing changes to default branch failed: %w", err)
 		}
 
-		logger.Debug("Pushing changes")
+		logger.Debug("Pushing changes to default branch")
 		err = gitc.Push(repo.BaseBranch(), false)
 		if err != nil {
-			return ResultUnknown, fmt.Errorf("push failed to base branch: %w", err)
+			return ResultUnknown, fmt.Errorf("push to default branch failed: %w", err)
 		}
 	}
 
@@ -282,7 +282,7 @@ func applyTaskToBaseBranch(ctx context.Context, dryRun bool, gitc git.GitClient,
 
 func applyTaskToRepository(ctx context.Context, dryRun bool, gitc git.GitClient, logger *zap.SugaredLogger, repo host.Repository, task *task.Task, workDir string) (Result, *host.PullRequest, error) {
 	if task.PushToDefaultBranch {
-		result, err := applyTaskToBaseBranch(ctx, dryRun, gitc, logger, repo, task, workDir)
+		result, err := applyTaskToDefaultBranch(ctx, dryRun, gitc, logger, repo, task, workDir)
 		return result, nil, err
 	}
 
