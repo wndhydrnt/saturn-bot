@@ -38,6 +38,7 @@ const (
 	ResultPrOpen
 	ResultNoMatch
 	ResultSkip
+	ResultPushedDefaultBranch
 )
 
 type ProcessResult struct {
@@ -212,7 +213,7 @@ func (p *Processor) processPostClone(ctx context.Context, repo host.Repository, 
 		task.IncOpenPRsCount()
 	}
 
-	if result == ResultPrCreated || result == ResultPrMerged {
+	if result == ResultPrCreated || result == ResultPrMerged || result == ResultPushedDefaultBranch {
 		task.IncChangeLimitCount()
 	}
 
@@ -235,7 +236,56 @@ func matchTaskToRepository(ctx context.Context, filters []filter.Filter, logger 
 	return true, nil
 }
 
+func applyTaskToBaseBranch(ctx context.Context, dryRun bool, gitc git.GitClient, logger *zap.SugaredLogger, repo host.Repository, task *task.Task, workDir string) (Result, error) {
+	_, _, err := gitc.Execute("checkout", repo.BaseBranch())
+	if err != nil {
+		var gitErr *git.GitCommandError
+		if errors.As(err, &gitErr) {
+			if strings.Contains(gitErr.Error(), "did not match any file(s) known to git") {
+				logger.Debug("Repository is empty")
+				return ResultNoMatch, nil
+			}
+		}
+
+		return ResultUnknown, fmt.Errorf("checkout base branch %s: %w", repo.BaseBranch(), err)
+	}
+
+	err = applyActionsInDirectory(task.Actions(), ctx, workDir)
+	if err != nil {
+		return ResultUnknown, err
+	}
+
+	hasLocalChanges, err := gitc.HasLocalChanges()
+	if err != nil {
+		return ResultUnknown, fmt.Errorf("check for local changes in base branch failed: %w", err)
+	}
+
+	if !hasLocalChanges {
+		return ResultNoChanges, nil
+	}
+
+	if !dryRun {
+		err = gitc.CommitChanges(task.CommitMessage)
+		if err != nil {
+			return ResultUnknown, fmt.Errorf("committing changes to base branch failed: %w", err)
+		}
+
+		logger.Debug("Pushing changes")
+		err = gitc.Push(repo.BaseBranch(), false)
+		if err != nil {
+			return ResultUnknown, fmt.Errorf("push failed to base branch: %w", err)
+		}
+	}
+
+	return ResultPushedDefaultBranch, nil
+}
+
 func applyTaskToRepository(ctx context.Context, dryRun bool, gitc git.GitClient, logger *zap.SugaredLogger, repo host.Repository, task *task.Task, workDir string) (Result, *host.PullRequest, error) {
+	if task.PushToDefaultBranch {
+		result, err := applyTaskToBaseBranch(ctx, dryRun, gitc, logger, repo, task, workDir)
+		return result, nil, err
+	}
+
 	logger.Debug("Applying actions of task to repository")
 	ctx = updateTemplateVars(ctx, repo, task)
 	branchName, err := task.RenderBranchName(template.FromContext(ctx))
@@ -393,7 +443,7 @@ func applyTaskToRepository(ctx context.Context, dryRun bool, gitc git.GitClient,
 	if hasChanges {
 		logger.Debug("Pushing changes")
 		if !dryRun {
-			err := gitc.Push(branchName)
+			err := gitc.Push(branchName, true)
 			if err != nil {
 				return ResultUnknown, prDetail, fmt.Errorf("push failed: %w", err)
 			}

@@ -59,7 +59,7 @@ type GitClient interface {
 	HasLocalChanges() (bool, error)
 	HasRemoteChanges(branchName string) (bool, error)
 	Prepare(repo host.Repository, retry bool) (string, error)
-	Push(branchName string) error
+	Push(branchName string, force bool) error
 	UpdateTaskBranch(branchName string, forceRebase bool, repo host.Repository) (bool, error)
 }
 
@@ -250,8 +250,13 @@ func (g *Git) HasRemoteChanges(branchName string) (bool, error) {
 	return strings.TrimSpace(stdout) != "", nil
 }
 
-func (g *Git) Push(branchName string) error {
-	_, _, err := g.Execute("push", "origin", branchName, "--force", "--set-upstream")
+func (g *Git) Push(branchName string, force bool) error {
+	args := []string{"push", "origin", branchName, "--set-upstream"}
+	if force {
+		args = append(args, "--force")
+	}
+
+	_, _, err := g.Execute(args...)
 	if err != nil {
 		return fmt.Errorf("git push to branch %s failed: %w", branchName, err)
 	}

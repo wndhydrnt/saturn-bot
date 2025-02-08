@@ -79,7 +79,7 @@ func TestProcessor_Process_CreatePullRequestLocalChanges(t *testing.T) {
 	gitc.EXPECT().CommitChanges("commit test").Return(nil)
 	gitc.EXPECT().HasRemoteChanges("main").Return(false, nil)
 	gitc.EXPECT().HasRemoteChanges("saturn-bot--unittest").Return(true, nil)
-	gitc.EXPECT().Push("saturn-bot--unittest").Return(nil)
+	gitc.EXPECT().Push("saturn-bot--unittest", true).Return(nil)
 	tw := &task.Task{Task: schema.Task{CommitMessage: "commit test", Name: "unittest", ChangeLimit: 1}}
 	tw.AddPreCloneFilters(&trueFilter{})
 
@@ -475,7 +475,7 @@ func TestProcessor_Process_UpdatePullRequest(t *testing.T) {
 	gitc.EXPECT().UpdateTaskBranch("saturn-bot--unittest", false, repo)
 	gitc.EXPECT().HasLocalChanges().Return(true, nil)
 	gitc.EXPECT().CommitChanges("").Return(nil)
-	gitc.EXPECT().Push("saturn-bot--unittest").Return(nil)
+	gitc.EXPECT().Push("saturn-bot--unittest", true).Return(nil)
 	gitc.EXPECT().HasRemoteChanges("main").Return(true, nil)
 	gitc.EXPECT().HasRemoteChanges("saturn-bot--unittest").Return(true, nil)
 	tw := &task.Task{Task: schema.Task{
@@ -808,4 +808,49 @@ func TestProcessor_Process_CleanupOnPrepareError(t *testing.T) {
 	assert.NoError(t, results[0].Error)
 	assert.Equal(t, processor.ResultNoMatch, results[0].Result)
 	assert.Nil(t, results[0].PullRequest)
+}
+
+func TestProcessor_Process_PushToDefaultBranch_Changes(t *testing.T) {
+	tempDir := t.TempDir()
+	ctrl := gomock.NewController(t)
+	repo := setupRepoMock(ctrl)
+	repo.EXPECT().BaseBranch().Return("main").AnyTimes()
+	gitc := gitmock.NewMockGitClient(ctrl)
+	gitc.EXPECT().Prepare(repo, false).Return(tempDir, nil)
+	gitc.EXPECT().Execute("checkout", "main").Return("", "", nil)
+	gitc.EXPECT().HasLocalChanges().Return(true, nil)
+	gitc.EXPECT().CommitChanges("commit test").Return(nil)
+	gitc.EXPECT().Push("main", false).Return(nil)
+	tw := &task.Task{Task: schema.Task{CommitMessage: "commit test", Name: "unittest", PushToDefaultBranch: true, ChangeLimit: 1}}
+	tw.AddPreCloneFilters(&trueFilter{})
+
+	p := &processor.Processor{Git: gitc}
+	results := p.Process(false, repo, []*task.Task{tw}, true)
+
+	assert.Len(t, results, 1)
+	assert.Equal(t, processor.ResultPushedDefaultBranch, results[0].Result)
+	assert.Nil(t, results[0].PullRequest)
+	assert.NoError(t, results[0].Error)
+	assert.True(t, tw.HasReachedChangeLimit())
+}
+
+func TestProcessor_Process_PushToDefaultBranch_NoChanges(t *testing.T) {
+	tempDir := t.TempDir()
+	ctrl := gomock.NewController(t)
+	repo := setupRepoMock(ctrl)
+	repo.EXPECT().BaseBranch().Return("main").AnyTimes()
+	gitc := gitmock.NewMockGitClient(ctrl)
+	gitc.EXPECT().Prepare(repo, false).Return(tempDir, nil)
+	gitc.EXPECT().Execute("checkout", "main").Return("", "", nil)
+	gitc.EXPECT().HasLocalChanges().Return(false, nil)
+	tw := &task.Task{Task: schema.Task{CommitMessage: "commit test", Name: "unittest", PushToDefaultBranch: true}}
+	tw.AddPreCloneFilters(&trueFilter{})
+
+	p := &processor.Processor{Git: gitc}
+	results := p.Process(false, repo, []*task.Task{tw}, true)
+
+	assert.Len(t, results, 1)
+	assert.Equal(t, processor.ResultNoChanges, results[0].Result)
+	assert.Nil(t, results[0].PullRequest)
+	assert.NoError(t, results[0].Error)
 }

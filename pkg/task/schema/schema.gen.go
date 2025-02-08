@@ -312,6 +312,10 @@ type Task struct {
 	// If set, used as the title of the pull request.
 	PrTitle string `json:"prTitle,omitempty" yaml:"prTitle,omitempty" mapstructure:"prTitle,omitempty"`
 
+	// If `true`, push changes directly to the default branch, like "main". If
+	// `false`, create a pull request to submit changes.
+	PushToDefaultBranch bool `json:"pushToDefaultBranch,omitempty" yaml:"pushToDefaultBranch,omitempty" mapstructure:"pushToDefaultBranch,omitempty"`
+
 	// A list of usernames to set as reviewers of the pull request.
 	Reviewers []string `json:"reviewers,omitempty" yaml:"reviewers,omitempty" mapstructure:"reviewers,omitempty"`
 
@@ -429,6 +433,9 @@ func (j *Task) UnmarshalJSON(b []byte) error {
 	if v, ok := raw["prTitle"]; !ok || v == nil {
 		plain.PrTitle = ""
 	}
+	if v, ok := raw["pushToDefaultBranch"]; !ok || v == nil {
+		plain.PushToDefaultBranch = false
+	}
 	*j = Task(plain)
 	return nil
 }
@@ -485,6 +492,9 @@ func (j *Task) UnmarshalYAML(value *yaml.Node) error {
 	}
 	if v, ok := raw["prTitle"]; !ok || v == nil {
 		plain.PrTitle = ""
+	}
+	if v, ok := raw["pushToDefaultBranch"]; !ok || v == nil {
+		plain.PushToDefaultBranch = false
 	}
 	*j = Task(plain)
 	return nil

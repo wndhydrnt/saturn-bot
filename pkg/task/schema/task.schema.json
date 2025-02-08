@@ -116,6 +116,11 @@
       "description": "If set, used as the title of the pull request.",
       "type": "string"
     },
+    "pushToDefaultBranch": {
+      "default": false,
+      "description": "If `true`, push changes directly to the default branch, like \"main\". If `false`, create a pull request to submit changes.",
+      "type": "boolean"
+    },
     "reviewers": {
       "description": "A list of usernames to set as reviewers of the pull request.",
       "type": "array",

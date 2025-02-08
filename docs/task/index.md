@@ -239,6 +239,22 @@ prTitle: "feat: Custom title"
 prTitle: "Apply task {{.TaskName}}"
 ```
 
+## pushToDefaultBranch
+
+[json-path:../../pkg/task/schema/task.schema.json:$.properties.pushToDefaultBranch.description]
+
+Defaults to `false`.
+
+Examples
+
+```yaml title="Create a pull request if task changes content"
+pushToDefaultBranch: false
+```
+
+```yaml title="Push changes to the default branch"
+pushToDefaultBranch: true
+```
+
 ## reviewers
 
 [json-path:../../pkg/task/schema/task.schema.json:$.properties.reviewers.description]
