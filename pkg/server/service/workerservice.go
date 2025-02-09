@@ -238,7 +238,7 @@ func (ws *WorkerService) ReportRun(req openapi.ReportWorkV1Request) error {
 				return fmt.Errorf("read most recent task result: %w", resultDbStmt.Error)
 			}
 
-			status := mapTaskResultStatusFromApiToDb(taskResult.PullRequestState)
+			status := mapTaskResultStateFromApiToDb(taskResult.State)
 			if resultDb.Status == status && isSamePullRequestUrl(taskResult.PullRequestUrl, resultDb.PullRequestUrl) {
 				// No change in status. Skip this result.
 				continue
@@ -443,12 +443,8 @@ func isPrOpen(result int) bool {
 	return false
 }
 
-func mapTaskResultStatusFromApiToDb(state *openapi.TaskResultStatusV1) db.TaskResultStatus {
-	if state == nil {
-		return db.TaskResultStatusUnknown
-	}
-
-	return db.TaskResultStatus(*state)
+func mapTaskResultStateFromApiToDb(state openapi.TaskResultStateV1) db.TaskResultStatus {
+	return db.TaskResultStatus(state)
 }
 
 func isSamePullRequestUrl(a, b *string) bool {

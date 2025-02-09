@@ -123,7 +123,7 @@ paths:
           schema:
             type: array
             items:
-              $ref: "#/components/schemas/TaskResultStatusV1"
+              $ref: "#/components/schemas/TaskResultStateV1"
         - in: query
           name: listOptions
           schema:
@@ -165,7 +165,7 @@ paths:
           schema:
             type: array
             items:
-              $ref: "#/components/schemas/TaskResultStatusV1"
+              $ref: "#/components/schemas/TaskResultStateV1"
         - in: query
           name: listOptions
           schema:
@@ -378,9 +378,9 @@ components:
         result:
           description: Identifier of the result.
           type: integer
-        pullRequestState:
-          $ref: "#/components/schemas/TaskResultStatusV1"
-      required: ["repositoryName", "result"]
+        state:
+          $ref: "#/components/schemas/TaskResultStateV1"
+      required: ["repositoryName", "result", "state"]
     ListTasksV1Response:
       type: object
       properties:
@@ -521,19 +521,27 @@ components:
           description: URL of the pull request opened by saturn-bot.
           type: string
         status:
-          $ref: "#/components/schemas/TaskResultStatusV1"
+          $ref: "#/components/schemas/TaskResultStateV1"
         runId:
           description: Numeric identifier of the run this result is a part of.
           type: integer
       required: ["repositoryName", "status", "runId"]
-    TaskResultStatusV1:
-      description: Status of the pull request.
+    TaskResultStateV1:
+      description: |
+        State of the result.
+        `closed` indicates that a pull request existed and has been closed.
+        `error` indicates that an error occurred while applying the task to the repository.
+        `merged` indicates that a pull request has been merged.
+        `open` indicates that a pull request is open and has not been merged yet.
+        `pushed` indicates that changes were pushed to the default branch.
+        `unknown` is a fallback value for any unexpected status.
       type: string
       enum:
         - closed
         - error
         - merged
         - open
+        - pushed
         - unknown
     ListTaskResultsV1Response:
       type: object

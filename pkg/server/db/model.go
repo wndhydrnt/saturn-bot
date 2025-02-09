@@ -51,6 +51,7 @@ const (
 	TaskResultStatusError   = "error"
 	TaskResultStatusMerged  = "merged"
 	TaskResultStatusOpen    = "open"
+	TaskResultStatusPushed  = "pushed"
 	TaskResultStatusUnknown = "unknown"
 )
 

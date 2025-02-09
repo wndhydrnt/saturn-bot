@@ -140,7 +140,7 @@ func mapTaskResultFromDbToApi(db db.TaskResult) openapi.TaskResultV1 {
 	api := openapi.TaskResultV1{
 		RepositoryName: db.RepositoryName,
 		RunId:          int(db.RunID), // #nosec G115 -- no info by gosec on how to fix this
-		Status:         openapi.TaskResultStatusV1(db.Status),
+		Status:         openapi.TaskResultStateV1(db.Status),
 	}
 	if db.Error != nil {
 		api.Error = db.Error

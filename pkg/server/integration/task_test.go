@@ -65,10 +65,10 @@ func TestServer_API_ListTaskRecentTaskResultsV1(t *testing.T) {
 						},
 						TaskResults: []openapi.ReportWorkV1TaskResult{
 							{
-								PullRequestState: ptr.To(openapi.TaskResultStatusV1Open),
-								PullRequestUrl:   ptr.To("http://git.local/unit/test/pr/1"),
-								RepositoryName:   "git.local/unit/test",
-								Result:           11, // processor.ResultPrOpen
+								State:          openapi.TaskResultStateV1Open,
+								PullRequestUrl: ptr.To("http://git.local/unit/test/pr/1"),
+								RepositoryName: "git.local/unit/test",
+								Result:         11, // processor.ResultPrOpen
 							},
 						},
 					},
@@ -110,10 +110,10 @@ func TestServer_API_ListTaskRecentTaskResultsV1(t *testing.T) {
 						},
 						TaskResults: []openapi.ReportWorkV1TaskResult{
 							{
-								PullRequestState: ptr.To(openapi.TaskResultStatusV1Merged),
-								PullRequestUrl:   ptr.To("http://git.local/unit/test/pr/1"),
-								RepositoryName:   "git.local/unit/test",
-								Result:           10, // processor.ResultPrMerged
+								State:          openapi.TaskResultStateV1Merged,
+								PullRequestUrl: ptr.To("http://git.local/unit/test/pr/1"),
+								RepositoryName: "git.local/unit/test",
+								Result:         10, // processor.ResultPrMerged
 							},
 						},
 					},
