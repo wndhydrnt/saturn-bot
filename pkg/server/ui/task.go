@@ -58,7 +58,7 @@ func (u *Ui) GetTaskFile(w http.ResponseWriter, r *http.Request) {
 
 type dataTaskResultsFilters struct {
 	TaskResultStatusCurrent string
-	TaskResultStatusList    []openapi.TaskResultStatusV1
+	TaskResultStatusList    []openapi.TaskResultStateV1
 }
 
 type dataGetTaskResults struct {
@@ -92,7 +92,7 @@ func (u *Ui) GetTaskResults(w http.ResponseWriter, r *http.Request) {
 	}
 
 	if statusParam != "" {
-		listTaskResultsReq.Params.Status = ptr.To([]openapi.TaskResultStatusV1{openapi.TaskResultStatusV1(statusParam)})
+		listTaskResultsReq.Params.Status = ptr.To([]openapi.TaskResultStateV1{openapi.TaskResultStateV1(statusParam)})
 	}
 
 	listTaskResultsResp, err := u.API.ListTaskRecentTaskResultsV1(r.Context(), listTaskResultsReq)

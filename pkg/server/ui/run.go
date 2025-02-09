@@ -26,7 +26,7 @@ type dataListRunsFilters struct {
 
 var (
 	runStatusOptions        = []string{string(openapi.Failed), string(openapi.Finished), string(openapi.Pending), string(openapi.Running)}
-	taskResultStatusOptions = []openapi.TaskResultStatusV1{openapi.TaskResultStatusV1Closed, openapi.TaskResultStatusV1Error, openapi.TaskResultStatusV1Merged, openapi.TaskResultStatusV1Open}
+	taskResultStatusOptions = []openapi.TaskResultStateV1{openapi.TaskResultStateV1Closed, openapi.TaskResultStateV1Error, openapi.TaskResultStateV1Merged, openapi.TaskResultStateV1Open}
 )
 
 // ListRun renders the list of known runs.
@@ -137,7 +137,7 @@ func (u *Ui) GetRun(w http.ResponseWriter, r *http.Request) {
 	}
 
 	if statusParam != "" {
-		listTaskResultsReq.Params.Status = ptr.To([]openapi.TaskResultStatusV1{openapi.TaskResultStatusV1(statusParam)})
+		listTaskResultsReq.Params.Status = ptr.To([]openapi.TaskResultStateV1{openapi.TaskResultStateV1(statusParam)})
 	}
 
 	listTaskResultsResp, err := u.API.ListTaskResultsV1(r.Context(), listTaskResultsReq)

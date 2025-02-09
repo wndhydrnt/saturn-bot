@@ -40,13 +40,14 @@ const (
 	Webhook RunV1Reason = "webhook"
 )
 
-// Defines values for TaskResultStatusV1.
+// Defines values for TaskResultStateV1.
 const (
-	TaskResultStatusV1Closed  TaskResultStatusV1 = "closed"
-	TaskResultStatusV1Error   TaskResultStatusV1 = "error"
-	TaskResultStatusV1Merged  TaskResultStatusV1 = "merged"
-	TaskResultStatusV1Open    TaskResultStatusV1 = "open"
-	TaskResultStatusV1Unknown TaskResultStatusV1 = "unknown"
+	TaskResultStateV1Closed  TaskResultStateV1 = "closed"
+	TaskResultStateV1Error   TaskResultStateV1 = "error"
+	TaskResultStateV1Merged  TaskResultStateV1 = "merged"
+	TaskResultStateV1Open    TaskResultStateV1 = "open"
+	TaskResultStateV1Pushed  TaskResultStateV1 = "pushed"
+	TaskResultStateV1Unknown TaskResultStateV1 = "unknown"
 )
 
 // Error defines model for Error.
@@ -179,9 +180,6 @@ type ReportWorkV1TaskResult struct {
 	// Error Error encountered during the run, if any.
 	Error *string `json:"error,omitempty"`
 
-	// PullRequestState Status of the pull request.
-	PullRequestState *TaskResultStatusV1 `json:"pullRequestState,omitempty"`
-
 	// PullRequestUrl URL of the pull request for humans to view.
 	PullRequestUrl *string `json:"pullRequestUrl,omitempty"`
 
@@ -190,6 +188,15 @@ type ReportWorkV1TaskResult struct {
 
 	// Result Identifier of the result.
 	Result int `json:"result"`
+
+	// State State of the result.
+	// `closed` indicates that a pull request existed and has been closed.
+	// `error` indicates that an error occurred while applying the task to the repository.
+	// `merged` indicates that a pull request has been merged.
+	// `open` indicates that a pull request is open and has not been merged yet.
+	// `pushed` indicates that changes were pushed to the default branch.
+	// `unknown` is a fallback value for any unexpected status.
+	State TaskResultStateV1 `json:"state"`
 }
 
 // RunStatusV1 defines model for RunStatusV1.
@@ -243,8 +250,14 @@ type ScheduleRunV1Response struct {
 	RunID int `json:"runID"`
 }
 
-// TaskResultStatusV1 Status of the pull request.
-type TaskResultStatusV1 string
+// TaskResultStateV1 State of the result.
+// `closed` indicates that a pull request existed and has been closed.
+// `error` indicates that an error occurred while applying the task to the repository.
+// `merged` indicates that a pull request has been merged.
+// `open` indicates that a pull request is open and has not been merged yet.
+// `pushed` indicates that changes were pushed to the default branch.
+// `unknown` is a fallback value for any unexpected status.
+type TaskResultStateV1 string
 
 // TaskResultV1 defines model for TaskResultV1.
 type TaskResultV1 struct {
@@ -260,8 +273,14 @@ type TaskResultV1 struct {
 	// RunId Numeric identifier of the run this result is a part of.
 	RunId int `json:"runId"`
 
-	// Status Status of the pull request.
-	Status TaskResultStatusV1 `json:"status"`
+	// Status State of the result.
+	// `closed` indicates that a pull request existed and has been closed.
+	// `error` indicates that an error occurred while applying the task to the repository.
+	// `merged` indicates that a pull request has been merged.
+	// `open` indicates that a pull request is open and has not been merged yet.
+	// `pushed` indicates that changes were pushed to the default branch.
+	// `unknown` is a fallback value for any unexpected status.
+	Status TaskResultStateV1 `json:"status"`
 }
 
 // TaskV1Input defines model for TaskV1Input.
@@ -294,15 +313,15 @@ type WorkTaskV1 struct {
 // ListTaskResultsV1Params defines parameters for ListTaskResultsV1.
 type ListTaskResultsV1Params struct {
 	// RunId ID of a run to filter by.
-	RunId       *int                  `form:"runId,omitempty" json:"runId,omitempty"`
-	Status      *[]TaskResultStatusV1 `form:"status,omitempty" json:"status,omitempty"`
-	ListOptions *ListOptions          `form:"listOptions,omitempty" json:"listOptions,omitempty"`
+	RunId       *int                 `form:"runId,omitempty" json:"runId,omitempty"`
+	Status      *[]TaskResultStateV1 `form:"status,omitempty" json:"status,omitempty"`
+	ListOptions *ListOptions         `form:"listOptions,omitempty" json:"listOptions,omitempty"`
 }
 
 // ListTaskRecentTaskResultsV1Params defines parameters for ListTaskRecentTaskResultsV1.
 type ListTaskRecentTaskResultsV1Params struct {
-	Status      *[]TaskResultStatusV1 `form:"status,omitempty" json:"status,omitempty"`
-	ListOptions *ListOptions          `form:"listOptions,omitempty" json:"listOptions,omitempty"`
+	Status      *[]TaskResultStateV1 `form:"status,omitempty" json:"status,omitempty"`
+	ListOptions *ListOptions         `form:"listOptions,omitempty" json:"listOptions,omitempty"`
 }
 
 // ListRunsV1Params defines parameters for ListRunsV1.

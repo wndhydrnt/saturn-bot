@@ -48,13 +48,13 @@ func mapRunStatusToCssClass(status openapi.RunStatusV1) string {
 	return "is-warning"
 }
 
-func mapTaskResultStatusToCssClass(status openapi.TaskResultStatusV1) string {
+func mapTaskResultStatusToCssClass(status openapi.TaskResultStateV1) string {
 	switch status {
-	case openapi.TaskResultStatusV1Closed:
+	case openapi.TaskResultStateV1Closed:
 		return "is-warning"
-	case openapi.TaskResultStatusV1Error:
+	case openapi.TaskResultStateV1Error:
 		return "is-danger"
-	case openapi.TaskResultStatusV1Merged:
+	case openapi.TaskResultStateV1Merged, openapi.TaskResultStateV1Pushed:
 		return "is-success"
 	default:
 		return "is-info"

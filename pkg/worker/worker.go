@@ -298,20 +298,9 @@ func mapRunResultsToTaskResults(runResults []command.RunResult) []client.ReportW
 		result := client.ReportWorkV1TaskResult{
 			RepositoryName: rr.RepositoryName,
 			Result:         int(rr.Result),
+			State:          client.TaskResultStateV1Unknown,
 		}
-		if rr.Error != nil {
-			result.Error = ptr.To(rr.Error.Error())
-		}
-
-		if rr.PullRequest != nil {
-			result.PullRequestUrl = ptr.To(rr.PullRequest.WebURL)
-			if rr.Error == nil {
-				result.PullRequestState = ptr.To(mapPullRequestStateToTaskResultStatus(rr.PullRequest.State))
-			} else {
-				result.PullRequestState = ptr.To(client.TaskResultStatusV1Error)
-			}
-		}
-
+		updateTaskResultFromRunResult(&result, rr)
 		results = append(results, result)
 	}
 
@@ -350,15 +339,34 @@ func canReport(result processor.Result) bool {
 	}
 }
 
-func mapPullRequestStateToTaskResultStatus(state host.PullRequestState) client.TaskResultStatusV1 {
+func mapPullRequestStateToTaskResultStatus(state host.PullRequestState) client.TaskResultStateV1 {
 	switch state {
 	case host.PullRequestStateClosed:
-		return client.TaskResultStatusV1Closed
+		return client.TaskResultStateV1Closed
 	case host.PullRequestStateMerged:
-		return client.TaskResultStatusV1Merged
+		return client.TaskResultStateV1Merged
 	case host.PullRequestStateOpen:
-		return client.TaskResultStatusV1Open
+		return client.TaskResultStateV1Open
 	default:
-		return client.TaskResultStatusV1Unknown
+		return client.TaskResultStateV1Unknown
+	}
+}
+
+func updateTaskResultFromRunResult(taskResult *client.ReportWorkV1TaskResult, runResult command.RunResult) {
+	if runResult.Error != nil {
+		taskResult.Error = ptr.To(runResult.Error.Error())
+		taskResult.State = client.TaskResultStateV1Error
+		return
+	}
+
+	if runResult.Result == processor.ResultPushedDefaultBranch {
+		taskResult.State = client.TaskResultStateV1Pushed
+		return
+	}
+
+	if runResult.PullRequest != nil {
+		taskResult.PullRequestUrl = ptr.To(runResult.PullRequest.WebURL)
+		taskResult.State = mapPullRequestStateToTaskResultStatus(runResult.PullRequest.State)
+		return
 	}
 }
