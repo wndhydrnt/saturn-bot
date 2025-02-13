@@ -8,6 +8,7 @@ import (
 	"net/url"
 	"path"
 	"slices"
+	"strconv"
 	"strings"
 	"time"
 
@@ -528,6 +529,8 @@ type GitHubHost struct {
 
 func NewGitHubHost(address, token string, cacheDisabled bool) (*GitHubHost, error) {
 	retryingClient := retryablehttp.NewClient()
+	retryingClient.Backoff = githubBackoff
+	retryingClient.CheckRetry = githubRetryPolicy
 	retryingClient.RequestLogHook = func(_ retryablehttp.Logger, r *http.Request, i int) {
 		// 0 is the initial request
 		if i > 0 {
@@ -769,4 +772,49 @@ func (g *GitHubHost) Name() string {
 	}
 
 	return g.client.BaseURL.Host
+}
+
+// githubBackoff is a [github.com/hashicorp/go-retryablehttp.RetryPolicy].
+func githubRetryPolicy(ctx context.Context, resp *http.Response, err error) (bool, error) {
+	ts := readGitHubRateLimitResetTime(resp)
+	if ts != "" {
+		return true, nil
+	}
+
+	return retryablehttp.DefaultRetryPolicy(ctx, resp, err)
+}
+
+// githubBackoff is a [github.com/hashicorp/go-retryablehttp.Backoff].
+func githubBackoff(min, max time.Duration, attemptNum int, resp *http.Response) time.Duration {
+	tsRaw := readGitHubRateLimitResetTime(resp)
+	if tsRaw != "" {
+		i, err := strconv.ParseInt(tsRaw, 10, 64)
+		if err != nil {
+			return retryablehttp.DefaultBackoff(min, max, attemptNum, resp)
+		}
+
+		return time.Unix(i, 0).Sub(time.Now().UTC())
+	}
+
+	return retryablehttp.DefaultBackoff(min, max, attemptNum, resp)
+}
+
+// readGitHubRateLimitResetTime reads the timestamp returned by the GitHub API if a rate-limit is active.
+// See https://docs.github.com/en/rest/using-the-rest-api/rate-limits-for-the-rest-api?apiVersion=2022-11-28#exceeding-the-rate-limit
+func readGitHubRateLimitResetTime(resp *http.Response) string {
+	if resp == nil {
+		return ""
+	}
+
+	if resp.StatusCode == http.StatusForbidden || resp.StatusCode == http.StatusTooManyRequests {
+		// Not checking header Retry-After because go-retryablehttp handles that.
+		remaining := resp.Header.Get("x-ratelimit-remaining")
+		if remaining != "0" {
+			return ""
+		}
+
+		return resp.Header.Get("x-ratelimit-reset")
+	}
+
+	return ""
 }
