@@ -9,7 +9,6 @@ require (
 	github.com/antchfx/xpath v1.3.2
 	github.com/gavv/httpexpect/v2 v2.16.0
 	github.com/go-chi/chi/v5 v5.0.13
-	github.com/gofri/go-github-ratelimit v1.1.0
 	github.com/gofrs/flock v0.12.1
 	github.com/golang-migrate/migrate/v4 v4.18.1
 	github.com/google/go-github/v68 v68.0.0
@@ -20,6 +19,7 @@ require (
 	github.com/hashicorp/go-hclog v1.6.3
 	github.com/hashicorp/go-multierror v1.1.1
 	github.com/hashicorp/go-plugin v1.6.0
+	github.com/hashicorp/go-retryablehttp v0.7.7
 	github.com/itchyny/gojq v0.12.16
 	github.com/knadh/koanf/parsers/yaml v0.1.0
 	github.com/knadh/koanf/providers/confmap v0.1.0
@@ -69,7 +69,6 @@ require (
 	github.com/gosimple/unidecode v1.0.1 // indirect
 	github.com/h2non/parth v0.0.0-20190131123155-b4df798d6542 // indirect
 	github.com/hashicorp/errwrap v1.1.0 // indirect
-	github.com/hashicorp/go-retryablehttp v0.7.7 // indirect
 	github.com/hashicorp/yamux v0.1.1 // indirect
 	github.com/huandu/xstrings v1.5.0 // indirect
 	github.com/imkira/go-interpol v1.1.0 // indirect

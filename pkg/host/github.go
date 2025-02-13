@@ -11,9 +11,9 @@ import (
 	"strings"
 	"time"
 
-	"github.com/gofri/go-github-ratelimit/github_ratelimit"
 	"github.com/google/go-github/v68/github"
 	"github.com/gregjones/httpcache"
+	"github.com/hashicorp/go-retryablehttp"
 	"github.com/wndhydrnt/saturn-bot/pkg/log"
 	"github.com/wndhydrnt/saturn-bot/pkg/metrics"
 )
@@ -527,18 +527,16 @@ type GitHubHost struct {
 }
 
 func NewGitHubHost(address, token string, cacheDisabled bool) (*GitHubHost, error) {
-	rateLimitTransport, err := github_ratelimit.NewRateLimitWaiter(
-		http.DefaultTransport,
-		github_ratelimit.WithLimitDetectedCallback(logOnRateLimit),
-	)
-	if err != nil {
-		return nil, fmt.Errorf("create github rate limit waiter: %w", err)
+	retryingClient := retryablehttp.NewClient()
+	retryingClient.RequestLogHook = func(_ retryablehttp.Logger, r *http.Request, i int) {
+		// 0 is the initial request
+		if i > 0 {
+			log.Log().Infof("GitHub retry request attempt %d to %s", i, r.URL.String())
+		}
 	}
 
-	httpClient := &http.Client{
-		Timeout:   2 * time.Second,
-		Transport: rateLimitTransport,
-	}
+	httpClient := retryingClient.StandardClient()
+	httpClient.Timeout = 2 * time.Second
 	// Set up metrics first, then add the caching layer.
 	// Makes the caching layer execute before the metrics.
 	// If it reads from cache then those calls aren't counted
@@ -771,12 +769,4 @@ func (g *GitHubHost) Name() string {
 	}
 
 	return g.client.BaseURL.Host
-}
-
-func logOnRateLimit(ctx *github_ratelimit.CallbackContext) {
-	if ctx.SleepUntil == nil {
-		log.Log().Infof("GitHub rate limit active")
-	} else {
-		log.Log().Infof("GitHub rate limit active - sleeping until %s", ctx.SleepUntil)
-	}
 }
