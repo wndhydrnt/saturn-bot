@@ -251,7 +251,7 @@ func (w *Worker) findTaskByName(name string, hash string) (schema.ReadResult, er
 			if t.Sha256 == hash {
 				return t, nil
 			} else {
-				return schema.ReadResult{}, fmt.Errorf("hash of task '%s' does not match - got '%s' want '%s'", name, hash, t.Hash)
+				return schema.ReadResult{}, fmt.Errorf("hash of task '%s' does not match - got '%s' want '%s'", name, hash, t.Sha256)
 			}
 		}
 	}
