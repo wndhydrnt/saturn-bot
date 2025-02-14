@@ -54,19 +54,19 @@
     <table class="table is-striped is-fullwidth">
       <thead>
         <tr>
-          <th>Task</th>
+          <th>Run</th>
           <th>Repositories</th>
           <th>Trigger</th>
           <th>Status</th>
           <th>Scheduled At</th>
-          <th></th>
+          <th>Task</th>
         </tr>
       </thead>
       <tbody>
         {{range .Runs}}
         <tr>
           <td>
-            <a href="/ui/tasks/{{.Task | pathEscape}}/results">{{.Task}}</a>
+            <a href="/ui/runs/{{.Id}}">#{{.Id}}</a>
           </td>
           <td>*</td>
           <td>{{.Reason}}</td>
@@ -77,7 +77,7 @@
             {{.ScheduleAfter | unixEpoch}}
           </td>
           <td>
-            <a href="/ui/runs/{{.Id}}">Details</a>
+            <a href="/ui/tasks/{{.Task | pathEscape}}/results">{{.Task}}</a>
           </td>
         </tr>
         {{end}}
