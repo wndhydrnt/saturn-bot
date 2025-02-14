@@ -11,6 +11,20 @@
 {{end}}
 
 {{define "body"}}
+{{if .Run.Error}}
+<div class="columns">
+  <div class="column">
+    <div class="notification is-danger">
+      <p>
+        <strong>Error:</strong>
+      </p>
+      <p>
+        <code>{{.Run.Error}}</code>
+      </p>
+    </div>
+  </div>
+</div>
+{{end}}
 <div class="columns">
   <div class="column is-three-quarters ">
     {{ template "task-results-table" . }}
@@ -82,20 +96,6 @@
         </p>
       </div>
     </div>
-    {{if .Run.Error}}
-    <div class="columns">
-      <div class="column">
-        <p>
-          <strong>Error:</strong>
-        </p>
-      </div>
-      <div class="column">
-        <p>
-          <code>{{.Run.Error}}</code>
-        </p>
-      </div>
-    </div>
-    {{end}}
     <div class="columns">
       <div class="column">
         <p>
