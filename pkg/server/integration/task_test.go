@@ -111,6 +111,12 @@ func TestServer_API_ListTaskRecentTaskResultsV1(t *testing.T) {
 						TaskResults: []openapi.ReportWorkV1TaskResult{
 							{
 								State:          openapi.TaskResultStateV1Merged,
+								PullRequestUrl: ptr.To("http://git.local/unit/other/pr/1"),
+								RepositoryName: "git.local/unit/other",
+								Result:         10, // processor.ResultPrMerged
+							},
+							{
+								State:          openapi.TaskResultStateV1Merged,
 								PullRequestUrl: ptr.To("http://git.local/unit/test/pr/1"),
 								RepositoryName: "git.local/unit/test",
 								Result:         10, // processor.ResultPrMerged
@@ -122,22 +128,48 @@ func TestServer_API_ListTaskRecentTaskResultsV1(t *testing.T) {
 						Result: "ok",
 					},
 				},
-				// List the latest results.
+				// List the latest results first page.
 				{
 					method:     "GET",
 					path:       fmt.Sprintf("/api/v1/tasks/%s/results", defaultTask.Name),
+					query:      "page=1&limit=1",
 					statusCode: http.StatusOK,
 					responseBody: openapi.ListTaskRecentTaskResultsV1Response{
 						Page: openapi.Page{
 							CurrentPage:  1,
-							ItemsPerPage: 20,
-							TotalItems:   1,
-							TotalPages:   1,
+							ItemsPerPage: 1,
+							TotalItems:   2,
+							TotalPages:   2,
+							NextPage:     2,
 						},
 						TaskResults: []openapi.TaskResultV1{
 							{
 								PullRequestUrl: ptr.To("http://git.local/unit/test/pr/1"),
 								RepositoryName: "git.local/unit/test",
+								RunId:          3,
+								Status:         "merged",
+							},
+						},
+					},
+				},
+				// List the latest results second page.
+				{
+					method:     "GET",
+					path:       fmt.Sprintf("/api/v1/tasks/%s/results", defaultTask.Name),
+					query:      "page=2&limit=1",
+					statusCode: http.StatusOK,
+					responseBody: openapi.ListTaskRecentTaskResultsV1Response{
+						Page: openapi.Page{
+							CurrentPage:  2,
+							ItemsPerPage: 1,
+							TotalItems:   2,
+							TotalPages:   2,
+							PreviousPage: 1,
+						},
+						TaskResults: []openapi.TaskResultV1{
+							{
+								PullRequestUrl: ptr.To("http://git.local/unit/other/pr/1"),
+								RepositoryName: "git.local/unit/other",
 								RunId:          3,
 								Status:         "merged",
 							},

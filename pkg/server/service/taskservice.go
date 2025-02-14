@@ -92,8 +92,9 @@ func (ts *TaskService) ListRecentTaskResultsByTask(opts ListRecentTaskResultsByT
 		return nil, listResult.Error
 	}
 
+	countQuery := ts.db.Table("(?)", subQ)
 	var count int64
-	countResult := baseQ.Count(&count)
+	countResult := countQuery.Count(&count)
 	if countResult.Error != nil {
 		return nil, countResult.Error
 	}
