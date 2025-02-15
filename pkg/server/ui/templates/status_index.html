@@ -1,0 +1,52 @@
+{{define "title"}}
+Info
+{{end}}
+
+{{define "breadcrumb"}}
+<nav class="breadcrumb" aria-label="breadcrumbs">
+  <ul>
+    <li><a href="/ui">Home</a></li>
+    <li class="is-active"><a href="/ui/status" aria-current="page">Status</a></li>
+  </ul>
+</nav>
+{{end}}
+
+{{define "body"}}
+<div class="columns">
+  <div class="column">
+    <h3 class="is-size-3">
+      Build & runtime information
+    </h3>
+    <table class="table is-bordered is-fullwidth">
+      <tbody>
+        <tr>
+          <td><b>Version:</b></td>
+          <td>{{.Version.Version}}</td>
+        </tr>
+        <tr>
+          <td><b>Build date:</b></td>
+          <td>{{.Version.BuildDate}}</td>
+        </tr>
+        <tr>
+          <td><b>Commit:</b></td>
+          <td>{{.Version.Commit}}</td>
+        </tr>
+        <tr>
+          <td><b>Go version:</b></td>
+          <td>{{.Version.GoVersion}}</td>
+        </tr>
+        <tr>
+          <td><b>Go OS:</b></td>
+          <td>{{.Version.GoOS}}</td>
+        </tr>
+        <tr>
+          <td><b>Go architecture:</b></td>
+          <td>{{.Version.GoArch}}</td>
+        </tr>
+      </tbody>
+    </table>
+  </div>
+</div>
+{{end}}
+
+{{ template "base.html" . }}

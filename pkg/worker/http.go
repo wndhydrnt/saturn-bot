@@ -4,7 +4,6 @@ import (
 	"encoding/json"
 	"fmt"
 	"net/http"
-	"runtime"
 	"time"
 
 	"github.com/wndhydrnt/saturn-bot/pkg/log"
@@ -22,7 +21,7 @@ func healthHandler(w http.ResponseWriter, _ *http.Request) {
 type infoResponse struct {
 	// The list of tasks loaded by the worker.
 	Tasks   []infoResponseTask  `json:"tasks"`
-	Version infoResponseVersion `json:"version"`
+	Version version.VersionInfo `json:"version"`
 }
 
 type infoResponseTask struct {
@@ -31,27 +30,11 @@ type infoResponseTask struct {
 	Task   string `json:"task"`
 }
 
-type infoResponseVersion struct {
-	BuildTime string `json:"buildTime"`
-	Commit    string `json:"commit"`
-	GoArch    string `json:"goArch"`
-	GoOS      string `json:"goOS"`
-	GoVersion string `json:"goVersion"`
-	Version   string `json:"version"`
-}
-
 // infoHandler returns information about the worker as JSON via HTTP.
 func infoHandler(worker *Worker) http.HandlerFunc {
 	return func(w http.ResponseWriter, r *http.Request) {
 		resp := infoResponse{
-			Version: infoResponseVersion{
-				BuildTime: version.DateTime,
-				Commit:    version.Hash,
-				GoArch:    runtime.GOARCH,
-				GoOS:      runtime.GOOS,
-				GoVersion: runtime.Version(),
-				Version:   version.Version,
-			},
+			Version: version.Info,
 		}
 		for _, workerTask := range worker.tasks {
 			resp.Tasks = append(resp.Tasks, infoResponseTask{Path: workerTask.Path, Sha256: workerTask.Sha256, Task: workerTask.Task.Name})
