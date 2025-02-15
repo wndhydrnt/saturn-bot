@@ -80,10 +80,10 @@ type Configuration struct {
 	// like `30m` or `12h`.
 	RepositoryCacheTtl string `json:"repositoryCacheTtl,omitempty" yaml:"repositoryCacheTtl,omitempty" mapstructure:"repositoryCacheTtl,omitempty"`
 
-	// Turn access log of server on or off.
+	// Turn HTTP access log of server on or off.
 	ServerAccessLog bool `json:"serverAccessLog,omitempty" yaml:"serverAccessLog,omitempty" mapstructure:"serverAccessLog,omitempty"`
 
-	// Address of the server.
+	// Address of the server in the format `<host>:<port>`.
 	ServerAddr string `json:"serverAddr,omitempty" yaml:"serverAddr,omitempty" mapstructure:"serverAddr,omitempty"`
 
 	// URL of the API server. The value is used to populate the `servers` array in the
@@ -98,7 +98,7 @@ type Configuration struct {
 	ServerDatabaseLog bool `json:"serverDatabaseLog,omitempty" yaml:"serverDatabaseLog,omitempty" mapstructure:"serverDatabaseLog,omitempty"`
 
 	// Path to the sqlite database of the server. If unset, defaults to
-	// `{{dataDir}}/db/saturn-bot.db`.
+	// `<dataDir>/db/saturn-bot.db`.
 	ServerDatabasePath string `json:"serverDatabasePath,omitempty" yaml:"serverDatabasePath,omitempty" mapstructure:"serverDatabasePath,omitempty"`
 
 	// Secret to authenticate webhook requests sent by GitHub.
@@ -112,7 +112,7 @@ type Configuration struct {
 	// If `true`, serves the user interface.
 	ServerServeUi bool `json:"serverServeUi,omitempty" yaml:"serverServeUi,omitempty" mapstructure:"serverServeUi,omitempty"`
 
-	// Interval at which a worker queries the server for new tasks to run.
+	// Interval at which a worker queries the server to receive new tasks to execute.
 	WorkerLoopInterval string `json:"workerLoopInterval,omitempty" yaml:"workerLoopInterval,omitempty" mapstructure:"workerLoopInterval,omitempty"`
 
 	// Number of parallel executions of tasks per worker.
@@ -479,7 +479,7 @@ func (j *Configuration) UnmarshalJSON(b []byte) error {
 		plain.WorkerLoopInterval = "10s"
 	}
 	if v, ok := raw["workerParallelExecutions"]; !ok || v == nil {
-		plain.WorkerParallelExecutions = 4.0
+		plain.WorkerParallelExecutions = 1.0
 	}
 	if v, ok := raw["workerServerAPIBaseURL"]; !ok || v == nil {
 		plain.WorkerServerAPIBaseURL = "http://localhost:3035"
@@ -581,7 +581,7 @@ func (j *Configuration) UnmarshalYAML(value *yaml.Node) error {
 		plain.WorkerLoopInterval = "10s"
 	}
 	if v, ok := raw["workerParallelExecutions"]; !ok || v == nil {
-		plain.WorkerParallelExecutions = 4.0
+		plain.WorkerParallelExecutions = 1.0
 	}
 	if v, ok := raw["workerServerAPIBaseURL"]; !ok || v == nil {
 		plain.WorkerServerAPIBaseURL = "http://localhost:3035"

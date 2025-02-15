@@ -239,3 +239,123 @@ Set to `ssh` to clone repositories via SSH.
 | Default | `6h`                            |
 | Env Var | `SATURN_BOT_REPOSITORYCACHETTL` |
 | Type    | `string`                        |
+
+## serverAccessLog
+
+[json-path:../pkg/config/config.schema.json:$.properties.serverAccessLog.description]
+
+| Name    | Value                         |
+| ------- | ----------------------------- |
+| Default | `false`                       |
+| Env Var | `SATURN_BOT_SERVERACCESSLOGS` |
+| Type    | `bool`                        |
+
+## serverAddr
+
+[json-path:../pkg/config/config.schema.json:$.properties.serverAddr.description]
+
+| Name    | Value                   |
+| ------- | ----------------------- |
+| Default | `:3035`                 |
+| Env Var | `SATURN_BOT_SERVERADDR` |
+| Type    | `string`                |
+
+## serverBaseUrl
+
+[json-path:../pkg/config/config.schema.json:$.properties.serverBaseUrl.description]
+
+| Name    | Value                      |
+| ------- | -------------------------- |
+| Default | `http://localhost:3035`    |
+| Env Var | `SATURN_BOT_SERVERBASEURL` |
+| Type    | `string`                   |
+
+## serverCompress
+
+[json-path:../pkg/config/config.schema.json:$.properties.serverCompress.description]
+
+| Name    | Value                       |
+| ------- | --------------------------- |
+| Default | `true`                      |
+| Env Var | `SATURN_BOT_SERVERCOMPRESS` |
+| Type    | `bool`                      |
+
+## serverDatabaseLog
+
+[json-path:../pkg/config/config.schema.json:$.properties.serverDatabaseLog.description]
+
+| Name    | Value                           |
+| ------- | ------------------------------- |
+| Default | `false`                         |
+| Env Var | `SATURN_BOT_SERVERDATABASEPATH` |
+| Type    | `bool`                          |
+
+## serverDatabasePath
+
+[json-path:../pkg/config/config.schema.json:$.properties.serverDatabasePath.description]
+
+| Name    | Value                           |
+| ------- | ------------------------------- |
+| Default | -                               |
+| Env Var | `SATURN_BOT_SERVERDATABASEPATH` |
+| Type    | `string`                        |
+
+## serverGithubWebhookSecret
+
+[json-path:../pkg/config/config.schema.json:$.properties.serverGithubWebhookSecret.description]
+
+| Name    | Value                                  |
+| ------- | -------------------------------------- |
+| Default | -                                      |
+| Env Var | `SATURN_BOT_SERVERGITHUBWEBHOOKSECRET` |
+| Type    | `string`                               |
+
+## serverGitlabWebhookSecret
+
+[json-path:../pkg/config/config.schema.json:$.properties.serverGitlabWebhookSecret.description]
+
+| Name    | Value                                  |
+| ------- | -------------------------------------- |
+| Default | -                                      |
+| Env Var | `SATURN_BOT_SERVERGITLABWEBHOOKSECRET` |
+| Type    | `string`                               |
+
+## serverServeUi
+
+[json-path:../pkg/config/config.schema.json:$.properties.serverServeUi.description]
+
+| Name    | Value                      |
+| ------- | -------------------------- |
+| Default | `true`                     |
+| Env Var | `SATURN_BOT_SERVERSERVEUI` |
+| Type    | `bool`                     |
+
+## workerLoopInterval
+
+[json-path:../pkg/config/config.schema.json:$.properties.workerLoopInterval.description]
+
+| Name    | Value                           |
+| ------- | ------------------------------- |
+| Default | `10s`                           |
+| Env Var | `SATURN_BOT_WORKERLOOPINTERVAL` |
+| Type    | `string`                        |
+
+## workerParallelExecutions
+
+[json-path:../pkg/config/config.schema.json:$.properties.workerParallelExecutions.description]
+
+| Name    | Value                                 |
+| ------- | ------------------------------------- |
+| Default | `1`                                   |
+| Env Var | `SATURN_BOT_WORKERPARALLELEXECUTIONS` |
+| Type    | `integer`                             |
+
+## workerServerAPIBaseURL
+
+[json-path:../pkg/config/config.schema.json:$.properties.workerServerAPIBaseURL.description]
+
+| Name    | Value                               |
+| ------- | ----------------------------------- |
+| Default | `http://localhost:3035`             |
+| Env Var | `SATURN_BOT_WORKERSERVERAPIBASEURL` |
+| Type    | `string`                            |
