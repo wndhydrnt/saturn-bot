@@ -128,12 +128,15 @@ func NewWorker(configPath string, taskPaths []string) (*Worker, error) {
 		router.Mount("/debug", middleware.Profiler())
 	}
 
-	return &Worker{
+	worker := &Worker{
 		Exec:       &APIExecutionSource{client: apiClient},
 		httpServer: newHttpServer("", router),
 		opts:       opts,
 		tasks:      tasks,
-	}, nil
+	}
+
+	router.Handle("GET /info", infoHandler(worker))
+	return worker, nil
 }
 
 func (w *Worker) Start() {
