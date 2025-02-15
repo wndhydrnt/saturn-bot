@@ -11,9 +11,7 @@ func createExperimentalCommand() *cobra.Command {
 		Long:  "Commands that are not ready for use in production.",
 		Run:   func(cmd *cobra.Command, args []string) {},
 	}
-	cmd.AddCommand(
-		createServerCommand(),
-		createWorkerCommand(),
-	)
+	// Add commands here
+	cmd.AddCommand()
 	return cmd
 }
