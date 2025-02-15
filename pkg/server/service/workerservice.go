@@ -322,6 +322,28 @@ func (ws *WorkerService) ListRuns(opts ListRunsOptions, listOpts *ListOptions) (
 	return runs, result.Error
 }
 
+func (ws *WorkerService) DeleteRun(id int) error {
+	run, err := ws.GetRun(id)
+	if err != nil {
+		return err
+	}
+
+	if run.Reason != db.RunReasonManual {
+		return sberror.NewRunCannotDeleteError()
+	}
+
+	if run.Status != db.RunStatusPending {
+		return sberror.NewRunCannotDeleteError()
+	}
+
+	result := ws.db.Delete(&run)
+	if result.Error != nil {
+		return fmt.Errorf("delete run '%d': %w", id, result.Error)
+	}
+
+	return nil
+}
+
 // GetRun returns a [db.Run] identified by id.
 //
 // It returns an error if no run is found.

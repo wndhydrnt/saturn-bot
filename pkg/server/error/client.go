@@ -9,6 +9,7 @@ const (
 	ClientIDTaskNotFound = iota + 1000
 	ClientIDInput
 	ClientIDRunNotFound
+	ClientIDRunCannotDelete
 )
 
 // Client defines an interface for errors caused by invalid inputs sent by a client.
@@ -88,4 +89,8 @@ func NewInputError(errors []error, taskName string) InputError {
 // NewTaskNotFoundError returns a client error that indicates that the run identified by id doesn't exist.
 func NewRunNotFoundError(id int) Client {
 	return client{ID: ClientIDRunNotFound, Message: "unknown run"}
+}
+
+func NewRunCannotDeleteError() Client {
+	return client{ID: ClientIDRunCannotDelete, Message: "cannot delete run"}
 }
