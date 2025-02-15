@@ -9,6 +9,7 @@ import (
 	"github.com/wndhydrnt/saturn-bot/pkg/server/api/openapi"
 )
 
+// RunsDestroy triggers the deletion of a run.
 func (u *Ui) RunsDestroy(w http.ResponseWriter, r *http.Request) {
 	runId, err := strconv.Atoi(chi.URLParam(r, "runId"))
 	if err != nil {

@@ -91,6 +91,7 @@ func NewRunNotFoundError(id int) Client {
 	return client{ID: ClientIDRunNotFound, Message: "unknown run"}
 }
 
+// NewRunCannotDeleteError returns a client error that indicates that the run cannot be deleted.
 func NewRunCannotDeleteError() Client {
 	return client{ID: ClientIDRunCannotDelete, Message: "cannot delete run"}
 }

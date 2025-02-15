@@ -322,6 +322,7 @@ func (ws *WorkerService) ListRuns(opts ListRunsOptions, listOpts *ListOptions) (
 	return runs, result.Error
 }
 
+// DeleteRun deletes a run by its id.
 func (ws *WorkerService) DeleteRun(id int) error {
 	run, err := ws.GetRun(id)
 	if err != nil {
