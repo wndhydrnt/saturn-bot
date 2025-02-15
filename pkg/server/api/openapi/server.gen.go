@@ -48,6 +48,9 @@ const (
 	TaskResultStateV1Unknown TaskResultStateV1 = "unknown"
 )
 
+// DeleteRunV1Response defines model for DeleteRunV1Response.
+type DeleteRunV1Response = map[string]interface{}
+
 // Error defines model for Error.
 type Error struct {
 	// Errors A list of errors.
@@ -341,6 +344,9 @@ type ServerInterface interface {
 	// Schedule a run.
 	// (POST /api/v1/runs)
 	ScheduleRunV1(w http.ResponseWriter, r *http.Request)
+	// Delete a run.
+	// (DELETE /api/v1/runs/{runId})
+	DeleteRunV1(w http.ResponseWriter, r *http.Request, runId int)
 	// View data of a run.
 	// (GET /api/v1/runs/{runId})
 	GetRunV1(w http.ResponseWriter, r *http.Request, runId int)
@@ -374,6 +380,12 @@ type Unimplemented struct{}
 // Schedule a run.
 // (POST /api/v1/runs)
 func (_ Unimplemented) ScheduleRunV1(w http.ResponseWriter, r *http.Request) {
+	w.WriteHeader(http.StatusNotImplemented)
+}
+
+// Delete a run.
+// (DELETE /api/v1/runs/{runId})
+func (_ Unimplemented) DeleteRunV1(w http.ResponseWriter, r *http.Request, runId int) {
 	w.WriteHeader(http.StatusNotImplemented)
 }
 
@@ -439,6 +451,31 @@ func (siw *ServerInterfaceWrapper) ScheduleRunV1(w http.ResponseWriter, r *http.
 
 	handler := http.Handler(http.HandlerFunc(func(w http.ResponseWriter, r *http.Request) {
 		siw.Handler.ScheduleRunV1(w, r)
+	}))
+
+	for _, middleware := range siw.HandlerMiddlewares {
+		handler = middleware(handler)
+	}
+
+	handler.ServeHTTP(w, r)
+}
+
+// DeleteRunV1 operation middleware
+func (siw *ServerInterfaceWrapper) DeleteRunV1(w http.ResponseWriter, r *http.Request) {
+
+	var err error
+
+	// ------------- Path parameter "runId" -------------
+	var runId int
+
+	err = runtime.BindStyledParameterWithOptions("simple", "runId", chi.URLParam(r, "runId"), &runId, runtime.BindStyledParameterOptions{ParamLocation: runtime.ParamLocationPath, Explode: false, Required: true})
+	if err != nil {
+		siw.ErrorHandlerFunc(w, r, &InvalidParamFormatError{ParamName: "runId", Err: err})
+		return
+	}
+
+	handler := http.Handler(http.HandlerFunc(func(w http.ResponseWriter, r *http.Request) {
+		siw.Handler.DeleteRunV1(w, r, runId)
 	}))
 
 	for _, middleware := range siw.HandlerMiddlewares {
@@ -787,6 +824,9 @@ func HandlerWithOptions(si ServerInterface, options ChiServerOptions) http.Handl
 		r.Post(options.BaseURL+"/api/v1/runs", wrapper.ScheduleRunV1)
 	})
 	r.Group(func(r chi.Router) {
+		r.Delete(options.BaseURL+"/api/v1/runs/{runId}", wrapper.DeleteRunV1)
+	})
+	r.Group(func(r chi.Router) {
 		r.Get(options.BaseURL+"/api/v1/runs/{runId}", wrapper.GetRunV1)
 	})
 	r.Group(func(r chi.Router) {
@@ -836,6 +876,41 @@ type ScheduleRunV1400JSONResponse Error
 func (response ScheduleRunV1400JSONResponse) VisitScheduleRunV1Response(w http.ResponseWriter) error {
 	w.Header().Set("Content-Type", "application/json")
 	w.WriteHeader(400)
+
+	return json.NewEncoder(w).Encode(response)
+}
+
+type DeleteRunV1RequestObject struct {
+	RunId int `json:"runId"`
+}
+
+type DeleteRunV1ResponseObject interface {
+	VisitDeleteRunV1Response(w http.ResponseWriter) error
+}
+
+type DeleteRunV1200JSONResponse DeleteRunV1Response
+
+func (response DeleteRunV1200JSONResponse) VisitDeleteRunV1Response(w http.ResponseWriter) error {
+	w.Header().Set("Content-Type", "application/json")
+	w.WriteHeader(200)
+
+	return json.NewEncoder(w).Encode(response)
+}
+
+type DeleteRunV1400JSONResponse Error
+
+func (response DeleteRunV1400JSONResponse) VisitDeleteRunV1Response(w http.ResponseWriter) error {
+	w.Header().Set("Content-Type", "application/json")
+	w.WriteHeader(400)
+
+	return json.NewEncoder(w).Encode(response)
+}
+
+type DeleteRunV1404JSONResponse Error
+
+func (response DeleteRunV1404JSONResponse) VisitDeleteRunV1Response(w http.ResponseWriter) error {
+	w.Header().Set("Content-Type", "application/json")
+	w.WriteHeader(404)
 
 	return json.NewEncoder(w).Encode(response)
 }
@@ -1025,6 +1100,9 @@ type StrictServerInterface interface {
 	// Schedule a run.
 	// (POST /api/v1/runs)
 	ScheduleRunV1(ctx context.Context, request ScheduleRunV1RequestObject) (ScheduleRunV1ResponseObject, error)
+	// Delete a run.
+	// (DELETE /api/v1/runs/{runId})
+	DeleteRunV1(ctx context.Context, request DeleteRunV1RequestObject) (DeleteRunV1ResponseObject, error)
 	// View data of a run.
 	// (GET /api/v1/runs/{runId})
 	GetRunV1(ctx context.Context, request GetRunV1RequestObject) (GetRunV1ResponseObject, error)
@@ -1104,6 +1182,32 @@ func (sh *strictHandler) ScheduleRunV1(w http.ResponseWriter, r *http.Request) {
 		sh.options.ResponseErrorHandlerFunc(w, r, err)
 	} else if validResponse, ok := response.(ScheduleRunV1ResponseObject); ok {
 		if err := validResponse.VisitScheduleRunV1Response(w); err != nil {
+			sh.options.ResponseErrorHandlerFunc(w, r, err)
+		}
+	} else if response != nil {
+		sh.options.ResponseErrorHandlerFunc(w, r, fmt.Errorf("unexpected response type: %T", response))
+	}
+}
+
+// DeleteRunV1 operation middleware
+func (sh *strictHandler) DeleteRunV1(w http.ResponseWriter, r *http.Request, runId int) {
+	var request DeleteRunV1RequestObject
+
+	request.RunId = runId
+
+	handler := func(ctx context.Context, w http.ResponseWriter, r *http.Request, request interface{}) (interface{}, error) {
+		return sh.ssi.DeleteRunV1(ctx, request.(DeleteRunV1RequestObject))
+	}
+	for _, middleware := range sh.middlewares {
+		handler = middleware(handler, "DeleteRunV1")
+	}
+
+	response, err := handler(r.Context(), w, r, request)
+
+	if err != nil {
+		sh.options.ResponseErrorHandlerFunc(w, r, err)
+	} else if validResponse, ok := response.(DeleteRunV1ResponseObject); ok {
+		if err := validResponse.VisitDeleteRunV1Response(w); err != nil {
 			sh.options.ResponseErrorHandlerFunc(w, r, err)
 		}
 	} else if response != nil {

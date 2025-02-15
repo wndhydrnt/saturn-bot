@@ -50,6 +50,9 @@ const (
 	TaskResultStateV1Unknown TaskResultStateV1 = "unknown"
 )
 
+// DeleteRunV1Response defines model for DeleteRunV1Response.
+type DeleteRunV1Response = map[string]interface{}
+
 // Error defines model for Error.
 type Error struct {
 	// Errors A list of errors.
@@ -416,6 +419,9 @@ type ClientInterface interface {
 
 	ScheduleRunV1(ctx context.Context, body ScheduleRunV1JSONRequestBody, reqEditors ...RequestEditorFn) (*http.Response, error)
 
+	// DeleteRunV1 request
+	DeleteRunV1(ctx context.Context, runId int, reqEditors ...RequestEditorFn) (*http.Response, error)
+
 	// GetRunV1 request
 	GetRunV1(ctx context.Context, runId int, reqEditors ...RequestEditorFn) (*http.Response, error)
 
@@ -457,6 +463,18 @@ func (c *Client) ScheduleRunV1WithBody(ctx context.Context, contentType string, 
 
 func (c *Client) ScheduleRunV1(ctx context.Context, body ScheduleRunV1JSONRequestBody, reqEditors ...RequestEditorFn) (*http.Response, error) {
 	req, err := NewScheduleRunV1Request(c.Server, body)
+	if err != nil {
+		return nil, err
+	}
+	req = req.WithContext(ctx)
+	if err := c.applyEditors(ctx, req, reqEditors); err != nil {
+		return nil, err
+	}
+	return c.Client.Do(req)
+}
+
+func (c *Client) DeleteRunV1(ctx context.Context, runId int, reqEditors ...RequestEditorFn) (*http.Response, error) {
+	req, err := NewDeleteRunV1Request(c.Server, runId)
 	if err != nil {
 		return nil, err
 	}
@@ -611,6 +629,40 @@ func NewScheduleRunV1RequestWithBody(server string, contentType string, body io.
 	}
 
 	req.Header.Add("Content-Type", contentType)
+
+	return req, nil
+}
+
+// NewDeleteRunV1Request generates requests for DeleteRunV1
+func NewDeleteRunV1Request(server string, runId int) (*http.Request, error) {
+	var err error
+
+	var pathParam0 string
+
+	pathParam0, err = runtime.StyleParamWithLocation("simple", false, "runId", runtime.ParamLocationPath, runId)
+	if err != nil {
+		return nil, err
+	}
+
+	serverURL, err := url.Parse(server)
+	if err != nil {
+		return nil, err
+	}
+
+	operationPath := fmt.Sprintf("/api/v1/runs/%s", pathParam0)
+	if operationPath[0] == '/' {
+		operationPath = "." + operationPath
+	}
+
+	queryURL, err := serverURL.Parse(operationPath)
+	if err != nil {
+		return nil, err
+	}
+
+	req, err := http.NewRequest("DELETE", queryURL.String(), nil)
+	if err != nil {
+		return nil, err
+	}
 
 	return req, nil
 }
@@ -1059,6 +1111,9 @@ type ClientWithResponsesInterface interface {
 
 	ScheduleRunV1WithResponse(ctx context.Context, body ScheduleRunV1JSONRequestBody, reqEditors ...RequestEditorFn) (*ScheduleRunV1ResponseBody, error)
 
+	// DeleteRunV1WithResponse request
+	DeleteRunV1WithResponse(ctx context.Context, runId int, reqEditors ...RequestEditorFn) (*DeleteRunV1ResponseBody, error)
+
 	// GetRunV1WithResponse request
 	GetRunV1WithResponse(ctx context.Context, runId int, reqEditors ...RequestEditorFn) (*GetRunV1ResponseBody, error)
 
@@ -1103,6 +1158,30 @@ func (r ScheduleRunV1ResponseBody) Status() string {
 
 // StatusCode returns HTTPResponse.StatusCode
 func (r ScheduleRunV1ResponseBody) StatusCode() int {
+	if r.HTTPResponse != nil {
+		return r.HTTPResponse.StatusCode
+	}
+	return 0
+}
+
+type DeleteRunV1ResponseBody struct {
+	Body         []byte
+	HTTPResponse *http.Response
+	JSON200      *DeleteRunV1Response
+	JSON400      *Error
+	JSON404      *Error
+}
+
+// Status returns HTTPResponse.Status
+func (r DeleteRunV1ResponseBody) Status() string {
+	if r.HTTPResponse != nil {
+		return r.HTTPResponse.Status
+	}
+	return http.StatusText(0)
+}
+
+// StatusCode returns HTTPResponse.StatusCode
+func (r DeleteRunV1ResponseBody) StatusCode() int {
 	if r.HTTPResponse != nil {
 		return r.HTTPResponse.StatusCode
 	}
@@ -1307,6 +1386,15 @@ func (c *ClientWithResponses) ScheduleRunV1WithResponse(ctx context.Context, bod
 	return ParseScheduleRunV1ResponseBody(rsp)
 }
 
+// DeleteRunV1WithResponse request returning *DeleteRunV1ResponseBody
+func (c *ClientWithResponses) DeleteRunV1WithResponse(ctx context.Context, runId int, reqEditors ...RequestEditorFn) (*DeleteRunV1ResponseBody, error) {
+	rsp, err := c.DeleteRunV1(ctx, runId, reqEditors...)
+	if err != nil {
+		return nil, err
+	}
+	return ParseDeleteRunV1ResponseBody(rsp)
+}
+
 // GetRunV1WithResponse request returning *GetRunV1ResponseBody
 func (c *ClientWithResponses) GetRunV1WithResponse(ctx context.Context, runId int, reqEditors ...RequestEditorFn) (*GetRunV1ResponseBody, error) {
 	rsp, err := c.GetRunV1(ctx, runId, reqEditors...)
@@ -1414,6 +1502,46 @@ func ParseScheduleRunV1ResponseBody(rsp *http.Response) (*ScheduleRunV1ResponseB
 			return nil, err
 		}
 		response.JSON400 = &dest
+
+	}
+
+	return response, nil
+}
+
+// ParseDeleteRunV1ResponseBody parses an HTTP response from a DeleteRunV1WithResponse call
+func ParseDeleteRunV1ResponseBody(rsp *http.Response) (*DeleteRunV1ResponseBody, error) {
+	bodyBytes, err := io.ReadAll(rsp.Body)
+	defer func() { _ = rsp.Body.Close() }()
+	if err != nil {
+		return nil, err
+	}
+
+	response := &DeleteRunV1ResponseBody{
+		Body:         bodyBytes,
+		HTTPResponse: rsp,
+	}
+
+	switch {
+	case strings.Contains(rsp.Header.Get("Content-Type"), "json") && rsp.StatusCode == 200:
+		var dest DeleteRunV1Response
+		if err := json.Unmarshal(bodyBytes, &dest); err != nil {
+			return nil, err
+		}
+		response.JSON200 = &dest
+
+	case strings.Contains(rsp.Header.Get("Content-Type"), "json") && rsp.StatusCode == 400:
+		var dest Error
+		if err := json.Unmarshal(bodyBytes, &dest); err != nil {
+			return nil, err
+		}
+		response.JSON400 = &dest
+
+	case strings.Contains(rsp.Header.Get("Content-Type"), "json") && rsp.StatusCode == 404:
+		var dest Error
+		if err := json.Unmarshal(bodyBytes, &dest); err != nil {
+			return nil, err
+		}
+		response.JSON404 = &dest
 
 	}
 
