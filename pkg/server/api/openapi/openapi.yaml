@@ -34,8 +34,9 @@ paths:
       operationId: deleteRunV1
       summary: Delete a run.
       description: |
-        Delete a run that is in state "pending".
+        Delete a run that is in state "pending" and has been created manually.
         A run in another state, like "running" or "finished", can't be deleted.
+        A run created by a trigger, like cron or webhook, can't be deleted.
       tags:
         - run
       parameters:
@@ -53,7 +54,8 @@ paths:
               schema:
                 $ref: "#/components/schemas/DeleteRunV1Response"
         "400":
-          description: Client sent invalid data.
+          description: |
+            The run is either not in state "pending" or has not been created manually.
           content:
             application/json:
               schema:
