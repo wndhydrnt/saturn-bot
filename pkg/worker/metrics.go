@@ -17,28 +17,20 @@ const (
 
 var (
 	metricRunsFailed = prometheus.NewCounter(prometheus.CounterOpts{
-		Namespace: metricNs,
-		Subsystem: metricSub,
-		Name:      "runs_failed_total",
-		Help:      "Number of runs processed by this worker that failed.",
+		Name: "worker_runs_failed_total",
+		Help: "Number of runs processed by this worker that failed.",
 	})
 	metricRuns = prometheus.NewGauge(prometheus.GaugeOpts{
-		Namespace: metricNs,
-		Subsystem: metricSub,
-		Name:      "runs",
-		Help:      "Current number of runs being processed in parallel.",
+		Name: "worker_runs",
+		Help: "Current number of runs being processed in parallel.",
 	})
 	metricRunsMax = prometheus.NewGauge(prometheus.GaugeOpts{
-		Namespace: metricNs,
-		Subsystem: metricSub,
-		Name:      "runs_max",
-		Help:      "Maximum number of runs that can be processed in parallel.",
+		Name: "worker_runs_max",
+		Help: "Maximum number of runs that can be processed in parallel.",
 	})
 	metricServerRequestsFailed = prometheus.NewCounterVec(prometheus.CounterOpts{
-		Namespace: metricNs,
-		Subsystem: metricSub,
-		Name:      "server_requests_failed_total",
-		Help:      "A counter that increases on failed requests to the server component. Splits by operation.",
+		Name: "worker_server_requests_failed_total",
+		Help: "A counter that increases on failed requests to the server component. Splits by operation.",
 	}, []string{"op"})
 )
 
@@ -47,7 +39,7 @@ func initMetrics() {
 	promversion.Revision = version.Hash
 	promversion.BuildDate = version.DateTime
 	prometheus.DefaultRegisterer.MustRegister(
-		promversioncollector.NewCollector("saturn_bot_worker"),
+		promversioncollector.NewCollector("worker"),
 		metricRunsFailed,
 		metricRuns,
 		metricRunsMax,

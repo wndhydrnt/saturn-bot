@@ -13,7 +13,7 @@ func Init(registry prometheus.Registerer) {
 	promversion.Version = version.Version
 	promversion.Revision = version.Hash
 	promversion.BuildDate = version.DateTime
-	registry.MustRegister(promversioncollector.NewCollector("saturn_bot_server"))
+	registry.MustRegister(promversioncollector.NewCollector("server"))
 }
 
 // RegisterPrometheusRouteOpts defines all options accepted by [RegisterPrometheusRoute].
