@@ -14,7 +14,7 @@ It allows the script to load additional files stored next to the task file.
 
 The script to execute. Mutually exclusive with [`scriptFromFile`](#scriptfromfile).
 
-Supports [template variables](../../features/templating.md).
+Supports [template variables](../../../user_guides/templating.md).
 
 | Name     | Value    |
 | -------- | -------- |
@@ -26,7 +26,7 @@ Supports [template variables](../../features/templating.md).
 
 The script to execute. Reads the content from a file. The path to the file can be an absolute path or relative to the task file. Mutually exclusive with [`script`](#script).
 
-Supports [template variables](../../features/templating.md).
+Supports [template variables](../../../user_guides/templating.md).
 
 | Name     | Value    |
 | -------- | -------- |

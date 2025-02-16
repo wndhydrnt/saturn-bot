@@ -20,8 +20,8 @@ The following variables are available:
 ### Run data
 
 Run data is dynamic data that is known only when the task is running.
-[Inputs](../task/inputs.md) are available via run data,
-as well as data set by [plugins](../task/plugins/index.md).
+[Inputs](../reference/task/inputs.md) are available via run data,
+as well as data set by [plugins](../reference/task/plugins/index.md).
 
 Run data can be accessed in a template in two ways.
 

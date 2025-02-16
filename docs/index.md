@@ -8,24 +8,24 @@ Create, modify or delete files in many repositories in parallel.
 
 ## Use cases
 
-- Onboard repositories to CI workflows and keep those files in sync.
-- Perform automatic rewrite of code scattered in many repositories and create pull requests.
+-   Onboard repositories to CI workflows and keep those files in sync.
+-   Perform automatic rewrite of code scattered in many repositories and create pull requests.
 
 ## Features
 
-- Create or delete files.
-- Insert, replace or delete lines in files.
-- [Filter](task/filters/index.md) which repositories to modify.
-- Support for GitHub and GitLab.
-- Write plugins in Go or Python to implement custom logic and complex changes.
-- Automatically merge pull requests if all checks have passed and all approvals have been given.
+-   Create or delete files.
+-   Insert, replace or delete lines in files.
+-   [Filter](./reference/task/filters/index.md) which repositories to modify.
+-   Support for GitHub and GitLab.
+-   Write plugins in Go or Python to implement custom logic and complex changes.
+-   Automatically merge pull requests if all checks have passed and all approvals have been given.
 
 ## Quickstart
 
 Requirements:
 
-- saturn-bot [installed](installation.md).
-- An access token.
+-   saturn-bot [installed](installation.md).
+-   An access token.
 
 Create the file `hello-world.yaml`:
 

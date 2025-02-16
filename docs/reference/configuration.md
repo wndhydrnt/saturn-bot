@@ -11,7 +11,7 @@ githubToken: xxxxx
 
 ## dataDir
 
-[json-path:../pkg/config/config.schema.json:$.properties.dataDir.description]
+[json-path:../../pkg/config/config.schema.json:$.properties.dataDir.description]
 
 | Name    | Value                |
 | ------- | -------------------- |
@@ -21,7 +21,7 @@ githubToken: xxxxx
 
 ## dryRun
 
-[json-path:../pkg/config/config.schema.json:$.properties.dryRun.description]
+[json-path:../../pkg/config/config.schema.json:$.properties.dryRun.description]
 
 | Name    | Value               |
 | ------- | ------------------- |
@@ -31,7 +31,7 @@ githubToken: xxxxx
 
 ## logFormat
 
-[json-path:../pkg/config/config.schema.json:$.properties.logFormat.description]
+[json-path:../../pkg/config/config.schema.json:$.properties.logFormat.description]
 
 | Name    | Value                     |
 | ------- | ------------------------- |
@@ -42,7 +42,7 @@ githubToken: xxxxx
 
 ## logLevel
 
-[json-path:../pkg/config/config.schema.json:$.properties.logLevel.description]
+[json-path:../../pkg/config/config.schema.json:$.properties.logLevel.description]
 
 | Name    | Value                            |
 | ------- | -------------------------------- |
@@ -53,7 +53,7 @@ githubToken: xxxxx
 
 ## gitAuthor
 
-[json-path:../pkg/config/config.schema.json:$.properties.gitAuthor.description]
+[json-path:../../pkg/config/config.schema.json:$.properties.gitAuthor.description]
 
 If not set, saturn-bot tries to discover the author via the host of the repository.
 
@@ -69,7 +69,7 @@ gitAuthor: "Saturn Bot <saturn-bot@example.local>"
 
 ## gitCloneOptions
 
-[json-path:../pkg/config/config.schema.json:$.properties.gitCloneOptions.description]
+[json-path:../../pkg/config/config.schema.json:$.properties.gitCloneOptions.description]
 
 | Name    | Value                        |
 | ------- | ---------------------------- |
@@ -79,7 +79,7 @@ gitAuthor: "Saturn Bot <saturn-bot@example.local>"
 
 ## gitCommitMessage
 
-[json-path:../pkg/config/config.schema.json:$.properties.gitCommitMessage.description]
+[json-path:../../pkg/config/config.schema.json:$.properties.gitCommitMessage.description]
 
 | Name    | Value                         |
 | ------- | ----------------------------- |
@@ -89,7 +89,7 @@ gitAuthor: "Saturn Bot <saturn-bot@example.local>"
 
 ## gitLogLevel
 
-[json-path:../pkg/config/config.schema.json:$.properties.gitLogLevel.description]
+[json-path:../../pkg/config/config.schema.json:$.properties.gitLogLevel.description]
 
 | Name    | Value                            |
 | ------- | -------------------------------- |
@@ -100,7 +100,7 @@ gitAuthor: "Saturn Bot <saturn-bot@example.local>"
 
 ## gitPath
 
-[json-path:../pkg/config/config.schema.json:$.properties.gitPath.description]
+[json-path:../../pkg/config/config.schema.json:$.properties.gitPath.description]
 
 | Name    | Value                |
 | ------- | -------------------- |
@@ -110,7 +110,7 @@ gitAuthor: "Saturn Bot <saturn-bot@example.local>"
 
 ## gitUrl
 
-[json-path:../pkg/config/config.schema.json:$.properties.gitUrl.description]
+[json-path:../../pkg/config/config.schema.json:$.properties.gitUrl.description]
 
 Set to `ssh` to clone repositories via SSH.
 
@@ -131,7 +131,7 @@ Set to `ssh` to clone repositories via SSH.
 
 ## githubAddress
 
-[json-path:../pkg/config/config.schema.json:$.properties.githubAddress.description]
+[json-path:../../pkg/config/config.schema.json:$.properties.githubAddress.description]
 
 | Name    | Value                      |
 | ------- | -------------------------- |
@@ -141,7 +141,7 @@ Set to `ssh` to clone repositories via SSH.
 
 ## githubCacheDisabled
 
-[json-path:../pkg/config/config.schema.json:$.properties.githubCacheDisabled.description]
+[json-path:../../pkg/config/config.schema.json:$.properties.githubCacheDisabled.description]
 
 | Name    | Value                            |
 | ------- | -------------------------------- |
@@ -151,7 +151,7 @@ Set to `ssh` to clone repositories via SSH.
 
 ## githubToken
 
-[json-path:../pkg/config/config.schema.json:$.properties.githubToken.description]
+[json-path:../../pkg/config/config.schema.json:$.properties.githubToken.description]
 
 | Name    | Value                    |
 | ------- | ------------------------ |
@@ -161,7 +161,7 @@ Set to `ssh` to clone repositories via SSH.
 
 ## gitlabAddress
 
-[json-path:../pkg/config/config.schema.json:$.properties.gitlabAddress.description]
+[json-path:../../pkg/config/config.schema.json:$.properties.gitlabAddress.description]
 
 | Name    | Value                      |
 | ------- | -------------------------- |
@@ -171,7 +171,7 @@ Set to `ssh` to clone repositories via SSH.
 
 ## gitlabToken
 
-[json-path:../pkg/config/config.schema.json:$.properties.gitlabToken.description]
+[json-path:../../pkg/config/config.schema.json:$.properties.gitlabToken.description]
 
 | Name    | Value                    |
 | ------- | ------------------------ |
@@ -181,7 +181,7 @@ Set to `ssh` to clone repositories via SSH.
 
 ## goProfiling
 
-[json-path:../pkg/config/config.schema.json:$.properties.goProfiling.description]
+[json-path:../../pkg/config/config.schema.json:$.properties.goProfiling.description]
 
 | Name    | Value                    |
 | ------- | ------------------------ |
@@ -191,7 +191,7 @@ Set to `ssh` to clone repositories via SSH.
 
 ## javaPath
 
-[json-path:../pkg/config/config.schema.json:$.properties.javaPath.description]
+[json-path:../../pkg/config/config.schema.json:$.properties.javaPath.description]
 
 | Name    | Value                 |
 | ------- | --------------------- |
@@ -201,7 +201,7 @@ Set to `ssh` to clone repositories via SSH.
 
 ## pluginLogLevel
 
-[json-path:../pkg/config/config.schema.json:$.properties.pluginLogLevel.description]
+[json-path:../../pkg/config/config.schema.json:$.properties.pluginLogLevel.description]
 
 | Name    | Value                            |
 | ------- | -------------------------------- |
@@ -212,7 +212,7 @@ Set to `ssh` to clone repositories via SSH.
 
 ## prometheusPushgatewayUrl
 
-[json-path:../pkg/config/config.schema.json:$.properties.prometheusPushgatewayUrl.description]
+[json-path:../../pkg/config/config.schema.json:$.properties.prometheusPushgatewayUrl.description]
 
 | Name    | Value                                 |
 | ------- | ------------------------------------- |
@@ -222,7 +222,7 @@ Set to `ssh` to clone repositories via SSH.
 
 ## pythonPath
 
-[json-path:../pkg/config/config.schema.json:$.properties.pythonPath.description]
+[json-path:../../pkg/config/config.schema.json:$.properties.pythonPath.description]
 
 | Name    | Value                   |
 | ------- | ----------------------- |
@@ -232,7 +232,7 @@ Set to `ssh` to clone repositories via SSH.
 
 ## repositoryCacheTtl
 
-[json-path:../pkg/config/config.schema.json:$.properties.repositoryCacheTtl.description]
+[json-path:../../pkg/config/config.schema.json:$.properties.repositoryCacheTtl.description]
 
 | Name    | Value                           |
 | ------- | ------------------------------- |
@@ -242,7 +242,7 @@ Set to `ssh` to clone repositories via SSH.
 
 ## serverAccessLog
 
-[json-path:../pkg/config/config.schema.json:$.properties.serverAccessLog.description]
+[json-path:../../pkg/config/config.schema.json:$.properties.serverAccessLog.description]
 
 | Name    | Value                         |
 | ------- | ----------------------------- |
@@ -252,7 +252,7 @@ Set to `ssh` to clone repositories via SSH.
 
 ## serverAddr
 
-[json-path:../pkg/config/config.schema.json:$.properties.serverAddr.description]
+[json-path:../../pkg/config/config.schema.json:$.properties.serverAddr.description]
 
 | Name    | Value                   |
 | ------- | ----------------------- |
@@ -262,7 +262,7 @@ Set to `ssh` to clone repositories via SSH.
 
 ## serverBaseUrl
 
-[json-path:../pkg/config/config.schema.json:$.properties.serverBaseUrl.description]
+[json-path:../../pkg/config/config.schema.json:$.properties.serverBaseUrl.description]
 
 | Name    | Value                      |
 | ------- | -------------------------- |
@@ -272,7 +272,7 @@ Set to `ssh` to clone repositories via SSH.
 
 ## serverCompress
 
-[json-path:../pkg/config/config.schema.json:$.properties.serverCompress.description]
+[json-path:../../pkg/config/config.schema.json:$.properties.serverCompress.description]
 
 | Name    | Value                       |
 | ------- | --------------------------- |
@@ -282,7 +282,7 @@ Set to `ssh` to clone repositories via SSH.
 
 ## serverDatabaseLog
 
-[json-path:../pkg/config/config.schema.json:$.properties.serverDatabaseLog.description]
+[json-path:../../pkg/config/config.schema.json:$.properties.serverDatabaseLog.description]
 
 | Name    | Value                           |
 | ------- | ------------------------------- |
@@ -292,7 +292,7 @@ Set to `ssh` to clone repositories via SSH.
 
 ## serverDatabasePath
 
-[json-path:../pkg/config/config.schema.json:$.properties.serverDatabasePath.description]
+[json-path:../../pkg/config/config.schema.json:$.properties.serverDatabasePath.description]
 
 | Name    | Value                           |
 | ------- | ------------------------------- |
@@ -302,7 +302,7 @@ Set to `ssh` to clone repositories via SSH.
 
 ## serverGithubWebhookSecret
 
-[json-path:../pkg/config/config.schema.json:$.properties.serverGithubWebhookSecret.description]
+[json-path:../../pkg/config/config.schema.json:$.properties.serverGithubWebhookSecret.description]
 
 | Name    | Value                                  |
 | ------- | -------------------------------------- |
@@ -312,7 +312,7 @@ Set to `ssh` to clone repositories via SSH.
 
 ## serverGitlabWebhookSecret
 
-[json-path:../pkg/config/config.schema.json:$.properties.serverGitlabWebhookSecret.description]
+[json-path:../../pkg/config/config.schema.json:$.properties.serverGitlabWebhookSecret.description]
 
 | Name    | Value                                  |
 | ------- | -------------------------------------- |
@@ -322,7 +322,7 @@ Set to `ssh` to clone repositories via SSH.
 
 ## serverServeUi
 
-[json-path:../pkg/config/config.schema.json:$.properties.serverServeUi.description]
+[json-path:../../pkg/config/config.schema.json:$.properties.serverServeUi.description]
 
 | Name    | Value                      |
 | ------- | -------------------------- |
@@ -332,7 +332,7 @@ Set to `ssh` to clone repositories via SSH.
 
 ## workerLoopInterval
 
-[json-path:../pkg/config/config.schema.json:$.properties.workerLoopInterval.description]
+[json-path:../../pkg/config/config.schema.json:$.properties.workerLoopInterval.description]
 
 | Name    | Value                           |
 | ------- | ------------------------------- |
@@ -342,7 +342,7 @@ Set to `ssh` to clone repositories via SSH.
 
 ## workerParallelExecutions
 
-[json-path:../pkg/config/config.schema.json:$.properties.workerParallelExecutions.description]
+[json-path:../../pkg/config/config.schema.json:$.properties.workerParallelExecutions.description]
 
 | Name    | Value                                 |
 | ------- | ------------------------------------- |
@@ -352,7 +352,7 @@ Set to `ssh` to clone repositories via SSH.
 
 ## workerServerAPIBaseURL
 
-[json-path:../pkg/config/config.schema.json:$.properties.workerServerAPIBaseURL.description]
+[json-path:../../pkg/config/config.schema.json:$.properties.workerServerAPIBaseURL.description]
 
 | Name    | Value                               |
 | ------- | ----------------------------------- |
