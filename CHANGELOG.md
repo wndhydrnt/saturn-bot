@@ -1,5 +1,23 @@
 # Changelog
 
+## [0.21.0](https://github.com/wndhydrnt/saturn-bot/compare/v0.20.0...v0.21.0) (2025-02-15)
+
+
+### Features
+
+* **host:** Retry HTTP requests to GitHub ([#152](https://github.com/wndhydrnt/saturn-bot/issues/152)) ([19151c0](https://github.com/wndhydrnt/saturn-bot/commit/19151c0db24c0482c4b5bc8e85f4134596db9842))
+* **server:** Add status information to the UI ([48f6521](https://github.com/wndhydrnt/saturn-bot/commit/48f65212266f895b2c5537e536f2f181d4c319dd))
+* **server:** Delete a run ([#153](https://github.com/wndhydrnt/saturn-bot/issues/153)) ([ed03dd6](https://github.com/wndhydrnt/saturn-bot/commit/ed03dd60bca2ff741d757e50fa4ffd614e31da36))
+* **task:** Add option to push to the default branch of a repository ([#149](https://github.com/wndhydrnt/saturn-bot/issues/149)) ([b9fae93](https://github.com/wndhydrnt/saturn-bot/commit/b9fae935926b7caa7ea72f84363d7d909a83e292))
+* **worker:** Add /info endpoint ([ff11580](https://github.com/wndhydrnt/saturn-bot/commit/ff11580749d23dfced0eb8918164e425fce8154e))
+* **worker:** Report result state "pushed" to the API ([#151](https://github.com/wndhydrnt/saturn-bot/issues/151)) ([19f13df](https://github.com/wndhydrnt/saturn-bot/commit/19f13df51a6a3aa27ae074f237d9d6a41f3c30cf))
+
+
+### Bug Fixes
+
+* **server:** Pagination on broken for API operation "listTaskRecentTaskResultsV1" ([7caa7bf](https://github.com/wndhydrnt/saturn-bot/commit/7caa7bfdccb0dcb6de136512377efb3dbc1802af))
+* **worker:** Error message contains object instead of string ([9c4f268](https://github.com/wndhydrnt/saturn-bot/commit/9c4f268d77443b4cccd2b25d5a06023ca2dbb701))
+
 ## [0.20.0](https://github.com/wndhydrnt/saturn-bot/compare/v0.19.0...v0.20.0) (2025-02-05)
 
 
