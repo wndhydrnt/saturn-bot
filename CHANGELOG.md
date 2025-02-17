@@ -1,5 +1,13 @@
 # Changelog
 
+## [0.21.1](https://github.com/wndhydrnt/saturn-bot/compare/v0.21.0...v0.21.1) (2025-02-17)
+
+
+### Bug Fixes
+
+* **server:** Use preformatted text element to display error message ([aa1efdc](https://github.com/wndhydrnt/saturn-bot/commit/aa1efdccd1d99d95ab5aec65c8c9795104831153))
+* **server:** Wrong page total when a filter for task results is set ([3b44b79](https://github.com/wndhydrnt/saturn-bot/commit/3b44b7982ba383626979e8c8da1a9b46b383820d))
+
 ## [0.21.0](https://github.com/wndhydrnt/saturn-bot/compare/v0.20.0...v0.21.0) (2025-02-15)
 
 
