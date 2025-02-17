@@ -93,6 +93,10 @@ func (ts *TaskService) ListRecentTaskResultsByTask(opts ListRecentTaskResultsByT
 	}
 
 	countQuery := ts.db.Table("(?)", subQ)
+	if len(opts.Status) > 0 {
+		countQuery = countQuery.Where("status IN ?", opts.Status)
+	}
+
 	var count int64
 	countResult := countQuery.Count(&count)
 	if countResult.Error != nil {
