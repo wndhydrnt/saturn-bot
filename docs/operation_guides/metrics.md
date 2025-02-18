@@ -2,9 +2,9 @@
 title: Metrics
 ---
 
-[saturn-bot run](../commands/run.md) pushes metrics
+[saturn-bot run](../reference/commands/run.md) pushes metrics
 to a [Prometheus Pushgateway](https://github.com/prometheus/pushgateway)
-if [prometheusPushgatewayUrl](../configuration.md#prometheuspushgatewayurl) is set.
+if [prometheusPushgatewayUrl](../reference/configuration.md#prometheuspushgatewayurl) is set.
 
 The `job` label added to all metrics is `saturn-bot`.
 

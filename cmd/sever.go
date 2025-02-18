@@ -5,11 +5,23 @@ import (
 	"github.com/wndhydrnt/saturn-bot/pkg/server"
 )
 
+var (
+	serverCommandHelp = `Starts the server component.
+
+"server" serves the API and the UI.
+
+Examples:
+
+# Start the server
+saturn-bot server --config config.yaml ./tasks/**/*.yaml
+`
+)
+
 func createServerCommand() *cobra.Command {
 	var cmd = &cobra.Command{
 		Use:   "server FILE [FILE...]",
-		Short: "Start the server",
-		Long:  "Start the server.",
+		Short: "Starts the server component",
+		Long:  serverCommandHelp,
 		Args:  cobra.MinimumNArgs(1),
 		Run: func(cmd *cobra.Command, args []string) {
 			err := server.Run(cfgFile, args)

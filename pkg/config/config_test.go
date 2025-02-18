@@ -41,7 +41,7 @@ func TestReadConfig(t *testing.T) {
 				ServerCompress:           true,
 				ServerServeUi:            true,
 				WorkerLoopInterval:       "10s",
-				WorkerParallelExecutions: 4,
+				WorkerParallelExecutions: 1,
 				WorkerServerAPIBaseURL:   "http://localhost:3035",
 			},
 		},

@@ -144,9 +144,9 @@ the plugin can detect that it is part of a CI run:
 
 ## Debug a plugin
 
-If [logs](#logs-of-plugins) aren't enough to understand what a plugin is doing, it is possible to start the plugin process separately and attach a debugger:
+If [logs](#logs-of-a-plugin) aren't enough to understand what a plugin is doing, it is possible to start the plugin process separately and attach a debugger:
 
-1. [Install](../../installation.md) saturn-bot
+1. [Install](../../../installation.md) saturn-bot
 1. Start the plugin in a debug process. How to do this depends on the IDE.
 
     - [Debugging in Visual Studio Code](https://code.visualstudio.com/docs/editor/debugging)
