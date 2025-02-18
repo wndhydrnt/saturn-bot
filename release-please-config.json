@@ -2,7 +2,10 @@
   "$schema": "https://raw.githubusercontent.com/googleapis/release-please/refs/heads/main/schemas/config.json",
   "packages": {
     ".": {
-      "extra-files": ["docs/installation.md"],
+      "extra-files": [
+        "docs/installation.md",
+        "pkg/server/api/openapi/openapi.yaml"
+      ],
       "release-type": "go"
     }
   }

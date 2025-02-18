@@ -1,7 +1,9 @@
 openapi: 3.0.3
 info:
   title: saturn-bot server API
+  # x-release-please-start-version
   version: 0.1.0
+  # x-release-please-end-version
 paths:
   /api/v1/runs:
     post:
