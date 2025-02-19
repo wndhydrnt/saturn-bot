@@ -115,12 +115,12 @@
     },
     "serverAccessLog": {
       "default": false,
-      "description": "Turn access log of server on or off.",
+      "description": "Turn HTTP access log of server on or off.",
       "type": "boolean"
     },
     "serverAddr": {
       "default": ":3035",
-      "description": "Address of the server.",
+      "description": "Address of the server in the format `<host>:<port>`.",
       "type": "string"
     },
     "serverBaseUrl": {
@@ -135,7 +135,7 @@
     },
     "serverDatabasePath": {
       "default": "",
-      "description": "Path to the sqlite database of the server. If unset, defaults to `{{dataDir}}/db/saturn-bot.db`.",
+      "description": "Path to the sqlite database of the server. If unset, defaults to `<dataDir>/db/saturn-bot.db`.",
       "type": "string"
     },
     "serverDatabaseLog": {
@@ -143,12 +143,12 @@
       "description": "If `true`, display executed SQL queries and errors of the database. Useful for debugging.",
       "type": "boolean"
     },
-    "serverGithubWebhookSecret": {
+    "serverWebhookSecretGithub": {
       "default": "",
       "description": "Secret to authenticate webhook requests sent by GitHub.",
       "type": "string"
     },
-    "serverGitlabWebhookSecret": {
+    "serverWebhookSecretGitlab": {
       "default": "",
       "description": "Secret to authenticate webhook requests sent by GitLab. See https://docs.gitlab.com/ee/user/project/integrations/webhooks.html#create-a-webhook for how to set up the token.",
       "type": "string"
@@ -160,11 +160,11 @@
     },
     "workerLoopInterval": {
       "default": "10s",
-      "description": "Interval at which a worker queries the server for new tasks to run.",
+      "description": "Interval at which a worker queries the server to receive new tasks to execute.",
       "type": "string"
     },
     "workerParallelExecutions": {
-      "default": 4,
+      "default": 1,
       "description": "Number of parallel executions of tasks per worker.",
       "type": "integer"
     },

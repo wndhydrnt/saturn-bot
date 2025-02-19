@@ -111,26 +111,24 @@ func (j *Filter) UnmarshalYAML(value *yaml.Node) error {
 }
 
 type GithubTrigger struct {
-	// Experimental: GitHub webhook event, like push. See
+	// GitHub webhook event, like push. See
 	// https://docs.github.com/en/webhooks/webhook-events-and-payloads for a list of
 	// all available events.
 	Event *string `json:"event,omitempty" yaml:"event,omitempty" mapstructure:"event,omitempty"`
 
-	// Experimental: jq expressions to apply to the body of the webhook. If all
-	// expressions match the content of the webhook then a new run of the task is
-	// scheduled.
+	// jq expressions to apply to the body of the webhook. If all expressions match
+	// the content of the webhook then a new run of the task is scheduled.
 	Filters []string `json:"filters,omitempty" yaml:"filters,omitempty" mapstructure:"filters,omitempty"`
 }
 
 type GitlabTrigger struct {
-	// Experimental: GitLab webhook event, like push. See
+	// GitLab webhook event, like push. See
 	// https://docs.gitlab.com/ee/user/project/integrations/webhook_events.html for a
 	// list of all available events.
 	Event *string `json:"event,omitempty" yaml:"event,omitempty" mapstructure:"event,omitempty"`
 
-	// Experimental: jq expressions to apply to the body of the webhook. If all
-	// expressions match the content of the webhook then a new run of the task is
-	// scheduled.
+	// jq expressions to apply to the body of the webhook. If all expressions match
+	// the content of the webhook then a new run of the task is scheduled.
 	Filters []string `json:"filters,omitempty" yaml:"filters,omitempty" mapstructure:"filters,omitempty"`
 }
 
@@ -319,28 +317,29 @@ type Task struct {
 	// A list of usernames to set as reviewers of the pull request.
 	Reviewers []string `json:"reviewers,omitempty" yaml:"reviewers,omitempty" mapstructure:"reviewers,omitempty"`
 
-	// Experimental: Define when the task gets executed. Only relevant in server mode.
+	// Define when the task gets executed. Only relevant in server mode.
 	Trigger *TaskTrigger `json:"trigger,omitempty" yaml:"trigger,omitempty" mapstructure:"trigger,omitempty"`
 }
 
-// Experimental: Define when the task gets executed. Only relevant in server mode.
+// Define when the task gets executed. Only relevant in server mode.
 type TaskTrigger struct {
-	// Experimental: Trigger the task based on a cron schedule.
+	// Trigger the task based on a cron schedule.
 	Cron *string `json:"cron,omitempty" yaml:"cron,omitempty" mapstructure:"cron,omitempty"`
 
-	// Experimental: Execute the task when the server receives a webhook.
+	// Execute the task when the server receives a webhook.
 	Webhook *TaskTriggerWebhook `json:"webhook,omitempty" yaml:"webhook,omitempty" mapstructure:"webhook,omitempty"`
 }
 
-// Experimental: Execute the task when the server receives a webhook.
+// Execute the task when the server receives a webhook.
 type TaskTriggerWebhook struct {
-	// Experimental: Delay the execution of the task by this many seconds.
+	// Delay the execution of the task, in seconds, after the webhook has been
+	// received by the server.
 	Delay int `json:"delay,omitempty" yaml:"delay,omitempty" mapstructure:"delay,omitempty"`
 
-	// Experimental: Execute the task when the server receives a webhook from GitHub.
+	// Execute the task when the server receives a webhook from GitHub.
 	Github []GithubTrigger `json:"github,omitempty" yaml:"github,omitempty" mapstructure:"github,omitempty"`
 
-	// Experimental: Execute the task when the server receives a webhook from GitLab.
+	// Execute the task when the server receives a webhook from GitLab.
 	Gitlab []GitlabTrigger `json:"gitlab,omitempty" yaml:"gitlab,omitempty" mapstructure:"gitlab,omitempty"`
 }
 

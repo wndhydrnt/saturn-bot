@@ -15,16 +15,22 @@ inputs:
   # Required input, no default value.
   - name: greeting
     description: How to greet.
+    # Optional regular expression that validates the input
+    validation: "^Hello|Hola$"
   # Optional input because a default value is set.
   - name: to
     description: Whom to great.
     default: World
+    # Optional list of allowed values
+    options:
+      - World
+      - Mundo
 ```
 
 Each input is passed to `saturn-bot run`:
 
 ```shell
-saturn-bot run --input greeting=Hola --input to=mundo path/to/task/file.yaml
+saturn-bot run --input greeting=Hola --input to=Mundo path/to/task/file.yaml
 ```
 
 !!! note

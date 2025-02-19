@@ -80,10 +80,10 @@ type Configuration struct {
 	// like `30m` or `12h`.
 	RepositoryCacheTtl string `json:"repositoryCacheTtl,omitempty" yaml:"repositoryCacheTtl,omitempty" mapstructure:"repositoryCacheTtl,omitempty"`
 
-	// Turn access log of server on or off.
+	// Turn HTTP access log of server on or off.
 	ServerAccessLog bool `json:"serverAccessLog,omitempty" yaml:"serverAccessLog,omitempty" mapstructure:"serverAccessLog,omitempty"`
 
-	// Address of the server.
+	// Address of the server in the format `<host>:<port>`.
 	ServerAddr string `json:"serverAddr,omitempty" yaml:"serverAddr,omitempty" mapstructure:"serverAddr,omitempty"`
 
 	// URL of the API server. The value is used to populate the `servers` array in the
@@ -98,21 +98,21 @@ type Configuration struct {
 	ServerDatabaseLog bool `json:"serverDatabaseLog,omitempty" yaml:"serverDatabaseLog,omitempty" mapstructure:"serverDatabaseLog,omitempty"`
 
 	// Path to the sqlite database of the server. If unset, defaults to
-	// `{{dataDir}}/db/saturn-bot.db`.
+	// `<dataDir>/db/saturn-bot.db`.
 	ServerDatabasePath string `json:"serverDatabasePath,omitempty" yaml:"serverDatabasePath,omitempty" mapstructure:"serverDatabasePath,omitempty"`
-
-	// Secret to authenticate webhook requests sent by GitHub.
-	ServerGithubWebhookSecret string `json:"serverGithubWebhookSecret,omitempty" yaml:"serverGithubWebhookSecret,omitempty" mapstructure:"serverGithubWebhookSecret,omitempty"`
-
-	// Secret to authenticate webhook requests sent by GitLab. See
-	// https://docs.gitlab.com/ee/user/project/integrations/webhooks.html#create-a-webhook
-	// for how to set up the token.
-	ServerGitlabWebhookSecret string `json:"serverGitlabWebhookSecret,omitempty" yaml:"serverGitlabWebhookSecret,omitempty" mapstructure:"serverGitlabWebhookSecret,omitempty"`
 
 	// If `true`, serves the user interface.
 	ServerServeUi bool `json:"serverServeUi,omitempty" yaml:"serverServeUi,omitempty" mapstructure:"serverServeUi,omitempty"`
 
-	// Interval at which a worker queries the server for new tasks to run.
+	// Secret to authenticate webhook requests sent by GitHub.
+	ServerWebhookSecretGithub string `json:"serverWebhookSecretGithub,omitempty" yaml:"serverWebhookSecretGithub,omitempty" mapstructure:"serverWebhookSecretGithub,omitempty"`
+
+	// Secret to authenticate webhook requests sent by GitLab. See
+	// https://docs.gitlab.com/ee/user/project/integrations/webhooks.html#create-a-webhook
+	// for how to set up the token.
+	ServerWebhookSecretGitlab string `json:"serverWebhookSecretGitlab,omitempty" yaml:"serverWebhookSecretGitlab,omitempty" mapstructure:"serverWebhookSecretGitlab,omitempty"`
+
+	// Interval at which a worker queries the server to receive new tasks to execute.
 	WorkerLoopInterval string `json:"workerLoopInterval,omitempty" yaml:"workerLoopInterval,omitempty" mapstructure:"workerLoopInterval,omitempty"`
 
 	// Number of parallel executions of tasks per worker.
@@ -466,20 +466,20 @@ func (j *Configuration) UnmarshalJSON(b []byte) error {
 	if v, ok := raw["serverDatabasePath"]; !ok || v == nil {
 		plain.ServerDatabasePath = ""
 	}
-	if v, ok := raw["serverGithubWebhookSecret"]; !ok || v == nil {
-		plain.ServerGithubWebhookSecret = ""
-	}
-	if v, ok := raw["serverGitlabWebhookSecret"]; !ok || v == nil {
-		plain.ServerGitlabWebhookSecret = ""
-	}
 	if v, ok := raw["serverServeUi"]; !ok || v == nil {
 		plain.ServerServeUi = true
+	}
+	if v, ok := raw["serverWebhookSecretGithub"]; !ok || v == nil {
+		plain.ServerWebhookSecretGithub = ""
+	}
+	if v, ok := raw["serverWebhookSecretGitlab"]; !ok || v == nil {
+		plain.ServerWebhookSecretGitlab = ""
 	}
 	if v, ok := raw["workerLoopInterval"]; !ok || v == nil {
 		plain.WorkerLoopInterval = "10s"
 	}
 	if v, ok := raw["workerParallelExecutions"]; !ok || v == nil {
-		plain.WorkerParallelExecutions = 4.0
+		plain.WorkerParallelExecutions = 1.0
 	}
 	if v, ok := raw["workerServerAPIBaseURL"]; !ok || v == nil {
 		plain.WorkerServerAPIBaseURL = "http://localhost:3035"
@@ -568,20 +568,20 @@ func (j *Configuration) UnmarshalYAML(value *yaml.Node) error {
 	if v, ok := raw["serverDatabasePath"]; !ok || v == nil {
 		plain.ServerDatabasePath = ""
 	}
-	if v, ok := raw["serverGithubWebhookSecret"]; !ok || v == nil {
-		plain.ServerGithubWebhookSecret = ""
-	}
-	if v, ok := raw["serverGitlabWebhookSecret"]; !ok || v == nil {
-		plain.ServerGitlabWebhookSecret = ""
-	}
 	if v, ok := raw["serverServeUi"]; !ok || v == nil {
 		plain.ServerServeUi = true
+	}
+	if v, ok := raw["serverWebhookSecretGithub"]; !ok || v == nil {
+		plain.ServerWebhookSecretGithub = ""
+	}
+	if v, ok := raw["serverWebhookSecretGitlab"]; !ok || v == nil {
+		plain.ServerWebhookSecretGitlab = ""
 	}
 	if v, ok := raw["workerLoopInterval"]; !ok || v == nil {
 		plain.WorkerLoopInterval = "10s"
 	}
 	if v, ok := raw["workerParallelExecutions"]; !ok || v == nil {
-		plain.WorkerParallelExecutions = 4.0
+		plain.WorkerParallelExecutions = 1.0
 	}
 	if v, ok := raw["workerServerAPIBaseURL"]; !ok || v == nil {
 		plain.WorkerServerAPIBaseURL = "http://localhost:3035"

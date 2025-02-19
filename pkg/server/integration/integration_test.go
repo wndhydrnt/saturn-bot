@@ -24,8 +24,8 @@ import (
 var (
 	defaultServerConfig = config.Configuration{
 		GithubToken:               ptr.To("unittest"),
-		ServerGithubWebhookSecret: "secret",
-		ServerGitlabWebhookSecret: "secret",
+		ServerWebhookSecretGithub: "secret",
+		ServerWebhookSecretGitlab: "secret",
 	}
 	defaultTask = schema.Task{
 		Name: "unittest",

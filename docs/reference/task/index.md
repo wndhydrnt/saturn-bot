@@ -27,13 +27,13 @@ actions:
 
 ## actions
 
-[json-path:../../pkg/task/schema/task.schema.json:$.properties.actions.description]
+[json-path:../../../pkg/task/schema/task.schema.json:$.properties.actions.description]
 
 All available actions can be found [here](./actions/index.md).
 
 ## active
 
-[json-path:../../pkg/task/schema/task.schema.json:$.properties.active.description]
+[json-path:../../../pkg/task/schema/task.schema.json:$.properties.active.description]
 
 Examples
 
@@ -49,7 +49,7 @@ active: false
 
 ## assignees
 
-[json-path:../../pkg/task/schema/task.schema.json:$.properties.assignees.description]
+[json-path:../../../pkg/task/schema/task.schema.json:$.properties.assignees.description]
 
 !!! note
 
@@ -66,7 +66,7 @@ assignees:
 
 ## autoCloseAfter
 
-[json-path:../../pkg/task/schema/task.schema.json:$.properties.autoCloseAfter.description]
+[json-path:../../../pkg/task/schema/task.schema.json:$.properties.autoCloseAfter.description]
 
 Examples
 
@@ -80,7 +80,7 @@ autoCloseAfter: 0
 
 ## autoMerge
 
-[json-path:../../pkg/task/schema/task.schema.json:$.properties.autoMerge.description]
+[json-path:../../../pkg/task/schema/task.schema.json:$.properties.autoMerge.description]
 
 Examples
 
@@ -96,7 +96,7 @@ autoMerge: false
 
 ## autoMergeAfter
 
-[json-path:../../pkg/task/schema/task.schema.json:$.properties.autoMergeAfter.description]
+[json-path:../../../pkg/task/schema/task.schema.json:$.properties.autoMergeAfter.description]
 
 Examples
 
@@ -112,9 +112,9 @@ autoMerge: false
 
 ## branchName
 
-[json-path:../../pkg/task/schema/task.schema.json:$.properties.branchName.description]
+[json-path:../../../pkg/task/schema/task.schema.json:$.properties.branchName.description]
 
-Supports [templating](../features/templating.md).
+Supports [templating](../../user_guides/templating.md).
 
 Some git hosts restrict the maximum length of branch names.
 The branch name is automatically cut to 230 characters.
@@ -131,7 +131,7 @@ branchName: "feature/{{.TaskName}}"
 
 ## changeLimit
 
-[json-path:../../pkg/task/schema/task.schema.json:$.properties.changeLimit.description]
+[json-path:../../../pkg/task/schema/task.schema.json:$.properties.changeLimit.description]
 
 ```yaml title="Allow up to 5 pull requests combined to be created or merged in one run of saturn-bot"
 changeLimit: 5
@@ -143,35 +143,35 @@ changeLimit: 0
 
 ## commitMessage
 
-[json-path:../../pkg/task/schema/task.schema.json:$.properties.commitMessage.description]
+[json-path:../../../pkg/task/schema/task.schema.json:$.properties.commitMessage.description]
 
 ## createOnly
 
-[json-path:../../pkg/task/schema/task.schema.json:$.properties.createOnly.description]
+[json-path:../../../pkg/task/schema/task.schema.json:$.properties.createOnly.description]
 
 ## filters
 
-[json-path:../../pkg/task/schema/task.schema.json:$.properties.filters.description]
+[json-path:../../../pkg/task/schema/task.schema.json:$.properties.filters.description]
 
 All available filters can be found [here](./filters/index.md).
 
 ## inputs
 
-[json-path:../../pkg/task/schema/task.schema.json:$.properties.inputs.description]
+[json-path:../../../pkg/task/schema/task.schema.json:$.properties.inputs.description]
 
 [Inputs](./inputs.md) provides more details on how to use them.
 
 ## keepBranchAfterMerge
 
-[json-path:../../pkg/task/schema/task.schema.json:$.properties.keepBranchAfterMerge.description]
+[json-path:../../../pkg/task/schema/task.schema.json:$.properties.keepBranchAfterMerge.description]
 
 ## labels
 
-[json-path:../../pkg/task/schema/task.schema.json:$.properties.labels.description]
+[json-path:../../../pkg/task/schema/task.schema.json:$.properties.labels.description]
 
 ## maxOpenPRs
 
-[json-path:../../pkg/task/schema/task.schema.json:$.properties.maxOpenPRs.description]
+[json-path:../../../pkg/task/schema/task.schema.json:$.properties.maxOpenPRs.description]
 
 ```yaml title="Allow 5 pull requests to be open at the same time"
 maxOpenPRs: 5
@@ -183,15 +183,15 @@ maxOpenPRs: 0
 
 ## mergeOnce
 
-[json-path:../../pkg/task/schema/task.schema.json:$.properties.mergeOnce.description]
+[json-path:../../../pkg/task/schema/task.schema.json:$.properties.mergeOnce.description]
 
 ## name
 
-[json-path:../../pkg/task/schema/task.schema.json:$.properties.name.description]
+[json-path:../../../pkg/task/schema/task.schema.json:$.properties.name.description]
 
 ## plugins
 
-[json-path:../../pkg/task/schema/task.schema.json:$.properties.plugins.description]
+[json-path:../../../pkg/task/schema/task.schema.json:$.properties.plugins.description]
 
 ```yaml title="Register a plugin"
 plugins:
@@ -205,9 +205,9 @@ Learn more about how to create plugins in the [documentation](plugins/index.md).
 
 ## prBody
 
-[json-path:../../pkg/task/schema/task.schema.json:$.properties.prBody.description]
+[json-path:../../../pkg/task/schema/task.schema.json:$.properties.prBody.description]
 
-Supports [templating](../features/templating.md).
+Supports [templating](../../user_guides/templating.md).
 
 Examples
 
@@ -225,9 +225,9 @@ prBody: |
 
 ## prTitle
 
-[json-path:../../pkg/task/schema/task.schema.json:$.properties.prTitle.description]
+[json-path:../../../pkg/task/schema/task.schema.json:$.properties.prTitle.description]
 
-Supports [templating](../features/templating.md).
+Supports [templating](../../user_guides/templating.md).
 
 Examples
 
@@ -241,7 +241,7 @@ prTitle: "Apply task {{.TaskName}}"
 
 ## pushToDefaultBranch
 
-[json-path:../../pkg/task/schema/task.schema.json:$.properties.pushToDefaultBranch.description]
+[json-path:../../../pkg/task/schema/task.schema.json:$.properties.pushToDefaultBranch.description]
 
 Defaults to `false`.
 
@@ -257,7 +257,7 @@ pushToDefaultBranch: true
 
 ## reviewers
 
-[json-path:../../pkg/task/schema/task.schema.json:$.properties.reviewers.description]
+[json-path:../../../pkg/task/schema/task.schema.json:$.properties.reviewers.description]
 
 !!! note
 
@@ -270,4 +270,36 @@ Examples
 reviewers:
   - ellie
   - joel
+```
+
+## trigger
+
+[json-path:../../../pkg/task/schema/task.schema.json:$.properties.trigger.description]
+
+### cron
+
+[json-path:../../../pkg/task/schema/task.schema.json:$.properties.trigger.properties.cron.description]
+
+[crontab.guru](https://crontab.guru) supports with writing the cron schedule expression.
+
+```yaml title="Define a cron trigger"
+trigger:
+  cron: "0 8,13 * * *"
+```
+
+### webhook
+
+[json-path:../../../pkg/task/schema/task.schema.json:$.properties.trigger.properties.webhook.description]
+
+[Webhook](./webhook.md) describes how to set up webhooks for GitHub or GitLab.
+
+#### delay
+
+[json-path:../../../pkg/task/schema/task.schema.json:$.properties.trigger.properties.webhook.properties.delay.description]
+
+```yaml title="Delay the task by 5 minutes"
+trigger:
+  webhook:
+    delay: 300
+    # ... other webhook settings
 ```

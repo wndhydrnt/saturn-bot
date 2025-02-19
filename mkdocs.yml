@@ -3,14 +3,12 @@ repo_name: wndhydrnt/saturn-bot # https://squidfunk.github.io/mkdocs-material/se
 repo_url: https://github.com/wndhydrnt/saturn-bot # https://squidfunk.github.io/mkdocs-material/setup/adding-a-git-repository/
 edit_uri: tree/main/docs # https://squidfunk.github.io/mkdocs-material/setup/adding-a-git-repository/
 nav:
-  - index.md
-  - installation.md
-  - how-it-works.md
-  - configuration.md
+  # Navigation set up in docs/.pages
   - ...
 theme:
   features:
     - content.action.view # https://squidfunk.github.io/mkdocs-material/setup/adding-a-git-repository/#code-actions
+    - content.code.annotate
     - content.code.copy
     - content.tabs.link
     - navigation.indexes
@@ -57,3 +55,7 @@ hooks:
 plugins:
   - awesome-pages
   - search
+  - redirects:
+      redirect_maps:
+        "configuration.md": "reference/configuration.md"
+        "task/index.md": "reference/task/index.md"
