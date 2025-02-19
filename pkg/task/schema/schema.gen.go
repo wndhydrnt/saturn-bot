@@ -111,26 +111,24 @@ func (j *Filter) UnmarshalYAML(value *yaml.Node) error {
 }
 
 type GithubTrigger struct {
-	// Experimental: GitHub webhook event, like push. See
+	// GitHub webhook event, like push. See
 	// https://docs.github.com/en/webhooks/webhook-events-and-payloads for a list of
 	// all available events.
 	Event *string `json:"event,omitempty" yaml:"event,omitempty" mapstructure:"event,omitempty"`
 
-	// Experimental: jq expressions to apply to the body of the webhook. If all
-	// expressions match the content of the webhook then a new run of the task is
-	// scheduled.
+	// jq expressions to apply to the body of the webhook. If all expressions match
+	// the content of the webhook then a new run of the task is scheduled.
 	Filters []string `json:"filters,omitempty" yaml:"filters,omitempty" mapstructure:"filters,omitempty"`
 }
 
 type GitlabTrigger struct {
-	// Experimental: GitLab webhook event, like push. See
+	// GitLab webhook event, like push. See
 	// https://docs.gitlab.com/ee/user/project/integrations/webhook_events.html for a
 	// list of all available events.
 	Event *string `json:"event,omitempty" yaml:"event,omitempty" mapstructure:"event,omitempty"`
 
-	// Experimental: jq expressions to apply to the body of the webhook. If all
-	// expressions match the content of the webhook then a new run of the task is
-	// scheduled.
+	// jq expressions to apply to the body of the webhook. If all expressions match
+	// the content of the webhook then a new run of the task is scheduled.
 	Filters []string `json:"filters,omitempty" yaml:"filters,omitempty" mapstructure:"filters,omitempty"`
 }
 
@@ -338,10 +336,10 @@ type TaskTriggerWebhook struct {
 	// received by the server.
 	Delay int `json:"delay,omitempty" yaml:"delay,omitempty" mapstructure:"delay,omitempty"`
 
-	// Experimental: Execute the task when the server receives a webhook from GitHub.
+	// Execute the task when the server receives a webhook from GitHub.
 	Github []GithubTrigger `json:"github,omitempty" yaml:"github,omitempty" mapstructure:"github,omitempty"`
 
-	// Experimental: Execute the task when the server receives a webhook from GitLab.
+	// Execute the task when the server receives a webhook from GitLab.
 	Gitlab []GitlabTrigger `json:"gitlab,omitempty" yaml:"gitlab,omitempty" mapstructure:"gitlab,omitempty"`
 }
 
