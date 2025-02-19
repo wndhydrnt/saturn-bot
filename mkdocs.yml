@@ -8,6 +8,7 @@ nav:
 theme:
   features:
     - content.action.view # https://squidfunk.github.io/mkdocs-material/setup/adding-a-git-repository/#code-actions
+    - content.code.annotate
     - content.code.copy
     - content.tabs.link
     - navigation.indexes

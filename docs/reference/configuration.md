@@ -300,24 +300,24 @@ Set to `ssh` to clone repositories via SSH.
 | Env Var | `SATURN_BOT_SERVERDATABASEPATH` |
 | Type    | `string`                        |
 
-## serverGithubWebhookSecret
+## serverWebhookSecretGithub
 
-[json-path:../../pkg/config/config.schema.json:$.properties.serverGithubWebhookSecret.description]
+[json-path:../../pkg/config/config.schema.json:$.properties.serverWebhookSecretGithub.description]
 
 | Name    | Value                                  |
 | ------- | -------------------------------------- |
 | Default | -                                      |
-| Env Var | `SATURN_BOT_SERVERGITHUBWEBHOOKSECRET` |
+| Env Var | `SATURN_BOT_SERVERWEBHOOKSECRETGITHUB` |
 | Type    | `string`                               |
 
-## serverGitlabWebhookSecret
+## serverWebhookSecretGitlab
 
-[json-path:../../pkg/config/config.schema.json:$.properties.serverGitlabWebhookSecret.description]
+[json-path:../../pkg/config/config.schema.json:$.properties.serverWebhookSecretGitlab.description]
 
 | Name    | Value                                  |
 | ------- | -------------------------------------- |
 | Default | -                                      |
-| Env Var | `SATURN_BOT_SERVERGITLABWEBHOOKSECRET` |
+| Env Var | `SATURN_BOT_SERVERWEBHOOKSECRETGITLAB` |
 | Type    | `string`                               |
 
 ## serverServeUi

@@ -129,20 +129,20 @@
       }
     },
     "trigger": {
-      "description": "Experimental: Define when the task gets executed. Only relevant in server mode.",
+      "description": "Define when the task gets executed. Only relevant in server mode.",
       "type": "object",
       "properties": {
         "cron": {
-          "description": "Experimental: Trigger the task based on a cron schedule.",
+          "description": "Trigger the task based on a cron schedule.",
           "type": "string",
           "format": "cron"
         },
         "webhook": {
-          "description": "Experimental: Execute the task when the server receives a webhook.",
+          "description": "Execute the task when the server receives a webhook.",
           "type": "object",
           "properties": {
             "delay": {
-              "description": "Experimental: Delay the execution of the task by this many seconds.",
+              "description": "Delay the execution of the task, in seconds, after the webhook has been received by the server.",
               "default": 0,
               "type": "integer"
             },

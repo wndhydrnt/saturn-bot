@@ -319,22 +319,23 @@ type Task struct {
 	// A list of usernames to set as reviewers of the pull request.
 	Reviewers []string `json:"reviewers,omitempty" yaml:"reviewers,omitempty" mapstructure:"reviewers,omitempty"`
 
-	// Experimental: Define when the task gets executed. Only relevant in server mode.
+	// Define when the task gets executed. Only relevant in server mode.
 	Trigger *TaskTrigger `json:"trigger,omitempty" yaml:"trigger,omitempty" mapstructure:"trigger,omitempty"`
 }
 
-// Experimental: Define when the task gets executed. Only relevant in server mode.
+// Define when the task gets executed. Only relevant in server mode.
 type TaskTrigger struct {
-	// Experimental: Trigger the task based on a cron schedule.
+	// Trigger the task based on a cron schedule.
 	Cron *string `json:"cron,omitempty" yaml:"cron,omitempty" mapstructure:"cron,omitempty"`
 
-	// Experimental: Execute the task when the server receives a webhook.
+	// Execute the task when the server receives a webhook.
 	Webhook *TaskTriggerWebhook `json:"webhook,omitempty" yaml:"webhook,omitempty" mapstructure:"webhook,omitempty"`
 }
 
-// Experimental: Execute the task when the server receives a webhook.
+// Execute the task when the server receives a webhook.
 type TaskTriggerWebhook struct {
-	// Experimental: Delay the execution of the task by this many seconds.
+	// Delay the execution of the task, in seconds, after the webhook has been
+	// received by the server.
 	Delay int `json:"delay,omitempty" yaml:"delay,omitempty" mapstructure:"delay,omitempty"`
 
 	// Experimental: Execute the task when the server receives a webhook from GitHub.

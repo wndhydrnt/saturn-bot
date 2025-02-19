@@ -143,12 +143,12 @@
       "description": "If `true`, display executed SQL queries and errors of the database. Useful for debugging.",
       "type": "boolean"
     },
-    "serverGithubWebhookSecret": {
+    "serverWebhookSecretGithub": {
       "default": "",
       "description": "Secret to authenticate webhook requests sent by GitHub.",
       "type": "string"
     },
-    "serverGitlabWebhookSecret": {
+    "serverWebhookSecretGitlab": {
       "default": "",
       "description": "Secret to authenticate webhook requests sent by GitLab. See https://docs.gitlab.com/ee/user/project/integrations/webhooks.html#create-a-webhook for how to set up the token.",
       "type": "string"

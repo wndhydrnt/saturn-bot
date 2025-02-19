@@ -271,3 +271,35 @@ reviewers:
   - ellie
   - joel
 ```
+
+## trigger
+
+[json-path:../../../pkg/task/schema/task.schema.json:$.properties.trigger.description]
+
+### cron
+
+[json-path:../../../pkg/task/schema/task.schema.json:$.properties.trigger.properties.cron.description]
+
+[crontab.guru](https://crontab.guru) supports with writing the cron schedule expression.
+
+```yaml title="Define a cron trigger"
+trigger:
+  cron: "0 8,13 * * *"
+```
+
+### webhook
+
+[json-path:../../../pkg/task/schema/task.schema.json:$.properties.trigger.properties.webhook.description]
+
+[Webhook](./webhook.md) describes how to set up webhooks for GitHub or GitLab.
+
+#### delay
+
+[json-path:../../../pkg/task/schema/task.schema.json:$.properties.trigger.properties.webhook.properties.delay.description]
+
+```yaml title="Delay the task by 5 minutes"
+trigger:
+  webhook:
+    delay: 300
+    # ... other webhook settings
+```

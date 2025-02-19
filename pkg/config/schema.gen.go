@@ -101,16 +101,16 @@ type Configuration struct {
 	// `<dataDir>/db/saturn-bot.db`.
 	ServerDatabasePath string `json:"serverDatabasePath,omitempty" yaml:"serverDatabasePath,omitempty" mapstructure:"serverDatabasePath,omitempty"`
 
+	// If `true`, serves the user interface.
+	ServerServeUi bool `json:"serverServeUi,omitempty" yaml:"serverServeUi,omitempty" mapstructure:"serverServeUi,omitempty"`
+
 	// Secret to authenticate webhook requests sent by GitHub.
-	ServerGithubWebhookSecret string `json:"serverGithubWebhookSecret,omitempty" yaml:"serverGithubWebhookSecret,omitempty" mapstructure:"serverGithubWebhookSecret,omitempty"`
+	ServerWebhookSecretGithub string `json:"serverWebhookSecretGithub,omitempty" yaml:"serverWebhookSecretGithub,omitempty" mapstructure:"serverWebhookSecretGithub,omitempty"`
 
 	// Secret to authenticate webhook requests sent by GitLab. See
 	// https://docs.gitlab.com/ee/user/project/integrations/webhooks.html#create-a-webhook
 	// for how to set up the token.
-	ServerGitlabWebhookSecret string `json:"serverGitlabWebhookSecret,omitempty" yaml:"serverGitlabWebhookSecret,omitempty" mapstructure:"serverGitlabWebhookSecret,omitempty"`
-
-	// If `true`, serves the user interface.
-	ServerServeUi bool `json:"serverServeUi,omitempty" yaml:"serverServeUi,omitempty" mapstructure:"serverServeUi,omitempty"`
+	ServerWebhookSecretGitlab string `json:"serverWebhookSecretGitlab,omitempty" yaml:"serverWebhookSecretGitlab,omitempty" mapstructure:"serverWebhookSecretGitlab,omitempty"`
 
 	// Interval at which a worker queries the server to receive new tasks to execute.
 	WorkerLoopInterval string `json:"workerLoopInterval,omitempty" yaml:"workerLoopInterval,omitempty" mapstructure:"workerLoopInterval,omitempty"`
@@ -466,14 +466,14 @@ func (j *Configuration) UnmarshalJSON(b []byte) error {
 	if v, ok := raw["serverDatabasePath"]; !ok || v == nil {
 		plain.ServerDatabasePath = ""
 	}
-	if v, ok := raw["serverGithubWebhookSecret"]; !ok || v == nil {
-		plain.ServerGithubWebhookSecret = ""
-	}
-	if v, ok := raw["serverGitlabWebhookSecret"]; !ok || v == nil {
-		plain.ServerGitlabWebhookSecret = ""
-	}
 	if v, ok := raw["serverServeUi"]; !ok || v == nil {
 		plain.ServerServeUi = true
+	}
+	if v, ok := raw["serverWebhookSecretGithub"]; !ok || v == nil {
+		plain.ServerWebhookSecretGithub = ""
+	}
+	if v, ok := raw["serverWebhookSecretGitlab"]; !ok || v == nil {
+		plain.ServerWebhookSecretGitlab = ""
 	}
 	if v, ok := raw["workerLoopInterval"]; !ok || v == nil {
 		plain.WorkerLoopInterval = "10s"
@@ -568,14 +568,14 @@ func (j *Configuration) UnmarshalYAML(value *yaml.Node) error {
 	if v, ok := raw["serverDatabasePath"]; !ok || v == nil {
 		plain.ServerDatabasePath = ""
 	}
-	if v, ok := raw["serverGithubWebhookSecret"]; !ok || v == nil {
-		plain.ServerGithubWebhookSecret = ""
-	}
-	if v, ok := raw["serverGitlabWebhookSecret"]; !ok || v == nil {
-		plain.ServerGitlabWebhookSecret = ""
-	}
 	if v, ok := raw["serverServeUi"]; !ok || v == nil {
 		plain.ServerServeUi = true
+	}
+	if v, ok := raw["serverWebhookSecretGithub"]; !ok || v == nil {
+		plain.ServerWebhookSecretGithub = ""
+	}
+	if v, ok := raw["serverWebhookSecretGitlab"]; !ok || v == nil {
+		plain.ServerWebhookSecretGitlab = ""
 	}
 	if v, ok := raw["workerLoopInterval"]; !ok || v == nil {
 		plain.WorkerLoopInterval = "10s"
