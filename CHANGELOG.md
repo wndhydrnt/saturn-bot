@@ -1,5 +1,12 @@
 # Changelog
 
+## [0.22.0](https://github.com/wndhydrnt/saturn-bot/compare/v0.21.1...v0.22.0) (2025-02-19)
+
+
+### Features
+
+* Commands "server" and "worker" are available ([#154](https://github.com/wndhydrnt/saturn-bot/issues/154)) ([15dfad3](https://github.com/wndhydrnt/saturn-bot/commit/15dfad34ed51ee5459383a67e624e38e421087a2))
+
 ## [0.21.1](https://github.com/wndhydrnt/saturn-bot/compare/v0.21.0...v0.21.1) (2025-02-17)
 
 
