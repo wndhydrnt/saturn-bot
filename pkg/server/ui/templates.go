@@ -8,6 +8,9 @@ import (
 	"strconv"
 
 	"github.com/Masterminds/sprig/v3"
+	"github.com/gomarkdown/markdown"
+	"github.com/gomarkdown/markdown/html"
+	"github.com/gomarkdown/markdown/parser"
 	"github.com/wndhydrnt/saturn-bot/pkg/log"
 	"github.com/wndhydrnt/saturn-bot/pkg/server/api/openapi"
 	"go.uber.org/zap"
@@ -17,6 +20,7 @@ import (
 var templateFS embed.FS
 
 var templateFuncs = template.FuncMap{
+	"markdown":                   renderMarkdown,
 	"pathEscape":                 url.PathEscape,
 	"renderUrl":                  renderUrl,
 	"runStatusToCssClass":        mapRunStatusToCssClass,
@@ -92,6 +96,29 @@ func renderUrl(u *url.URL, params ...any) string {
 	}
 
 	return u.Path + "?" + urlValues.Encode()
+}
+
+func renderMarkdown(input string) template.HTML {
+	// Escape any HTML already present in the input to prevent attacks.
+	// For example, **bold** works but <b>bold</b> does not.
+	escaped := template.HTMLEscapeString(input)
+	extensions := parser.CommonExtensions
+	p := parser.NewWithExtensions(extensions)
+	doc := p.Parse([]byte(escaped))
+	if len(doc.GetChildren()) < 1 {
+		// Return the escaped string if, for some reason,
+		// the parser didn't find a node.
+		return template.HTML(escaped)
+	}
+
+	// The parser always wraps the content in a paragraph (<p>).
+	// That behavior isn't desired here.
+	// Get rid of the paragraph by extracting its child nodes.
+	doc.SetChildren(doc.GetChildren()[0].GetChildren())
+	htmlFlags := html.CommonFlags | html.HrefTargetBlank
+	opts := html.RendererOptions{Flags: htmlFlags}
+	renderer := html.NewRenderer(opts)
+	return template.HTML(markdown.Render(doc, renderer))
 }
 
 func renderTemplate(data any, w http.ResponseWriter, names ...string) {
