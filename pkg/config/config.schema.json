@@ -120,7 +120,7 @@
     },
     "serverApiKey": {
       "default": "",
-      "description": "Secret required to authenticate at the API. Clients set the key as the value of HTTP header X-API-KEY. Required if saturn-bot runs in server mode.",
+      "description": "Secret required to authenticate at the API. Clients set the key as the value of the HTTP header X-API-KEY. Required if saturn-bot runs in server mode.",
       "type": "string"
     },
     "serverAddr": {

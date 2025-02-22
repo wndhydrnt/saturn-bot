@@ -87,7 +87,7 @@ type Configuration struct {
 	ServerAddr string `json:"serverAddr,omitempty" yaml:"serverAddr,omitempty" mapstructure:"serverAddr,omitempty"`
 
 	// Secret required to authenticate at the API. Clients set the key as the value of
-	// HTTP header X-API-KEY. Required if saturn-bot runs in server mode.
+	// the HTTP header X-API-KEY. Required if saturn-bot runs in server mode.
 	ServerApiKey string `json:"serverApiKey,omitempty" yaml:"serverApiKey,omitempty" mapstructure:"serverApiKey,omitempty"`
 
 	// URL of the API server. The value is used to populate the `servers` array in the
