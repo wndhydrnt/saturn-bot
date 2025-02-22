@@ -17,13 +17,19 @@ import (
 	"github.com/wndhydrnt/saturn-bot/pkg/options"
 	"github.com/wndhydrnt/saturn-bot/pkg/ptr"
 	"github.com/wndhydrnt/saturn-bot/pkg/server"
+	"github.com/wndhydrnt/saturn-bot/pkg/server/api/openapi"
 	"github.com/wndhydrnt/saturn-bot/pkg/task/schema"
 	"gopkg.in/yaml.v3"
+)
+
+const (
+	testApiKey = "testkey"
 )
 
 var (
 	defaultServerConfig = config.Configuration{
 		GithubToken:               ptr.To("unittest"),
+		ServerApiKey:              testApiKey,
 		ServerWebhookSecretGithub: "secret",
 		ServerWebhookSecretGitlab: "secret",
 	}
@@ -151,8 +157,16 @@ func testDate(day int, hour int, min int, sec int) time.Time {
 
 func assertApiCall(e *httpexpect.Expect, call apiCall) {
 	time.Sleep(call.sleep)
+	var requestHeaders map[string]string
+	if call.requestHeaders == nil {
+		requestHeaders = map[string]string{}
+	} else {
+		requestHeaders = call.requestHeaders
+	}
+
+	requestHeaders[openapi.HeaderApiKey] = testApiKey
 	req := e.Request(call.method, call.path).
-		WithHeaders(call.requestHeaders)
+		WithHeaders(requestHeaders)
 	if call.query != "" {
 		req = req.WithQueryString(call.query)
 	}
