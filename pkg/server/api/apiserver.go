@@ -93,7 +93,7 @@ func handleHttpError(w http.ResponseWriter, _ *http.Request, err error) {
 func newApiKeyMiddleware(key string) openapi.StrictMiddlewareFunc {
 	return func(f nethttp.StrictHTTPHandlerFunc, operationID string) nethttp.StrictHTTPHandlerFunc {
 		return func(ctx context.Context, w http.ResponseWriter, r *http.Request, request interface{}) (response interface{}, err error) {
-			if r.Header.Get("X-API-KEY") != key {
+			if r.Header.Get(openapi.HeaderApiKey) != key {
 				return nil, errUnknownApiKey
 			}
 

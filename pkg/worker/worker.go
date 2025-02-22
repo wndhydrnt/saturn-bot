@@ -20,6 +20,7 @@ import (
 	"github.com/wndhydrnt/saturn-bot/pkg/options"
 	"github.com/wndhydrnt/saturn-bot/pkg/processor"
 	"github.com/wndhydrnt/saturn-bot/pkg/ptr"
+	"github.com/wndhydrnt/saturn-bot/pkg/server/api/openapi"
 	"github.com/wndhydrnt/saturn-bot/pkg/server/task"
 	"github.com/wndhydrnt/saturn-bot/pkg/task/schema"
 	"github.com/wndhydrnt/saturn-bot/pkg/version"
@@ -116,7 +117,10 @@ func NewWorker(configPath string, taskPaths []string) (*Worker, error) {
 		return nil, err
 	}
 
-	apiClient, err := client.NewClientWithResponses(opts.Config.WorkerServerAPIBaseURL)
+	apiClient, err := client.NewClientWithResponses(
+		opts.Config.WorkerServerAPIBaseURL,
+		client.WithRequestEditorFn(newApiKeyAddFunc(openapi.HeaderApiKey, opts.Config.ServerApiKey)),
+	)
 	if err != nil {
 		return nil, fmt.Errorf("create openapi client: %w", err)
 	}
