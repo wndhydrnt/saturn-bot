@@ -17,6 +17,10 @@ import (
 	"github.com/oapi-codegen/runtime"
 )
 
+const (
+	ApiKeyAuthScopes = "ApiKeyAuth.Scopes"
+)
+
 // Defines values for ReportWorkV1ResponseResult.
 const (
 	Ok ReportWorkV1ResponseResult = "ok"
