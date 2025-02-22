@@ -10,6 +10,7 @@ const (
 	ClientIDInput
 	ClientIDRunNotFound
 	ClientIDRunCannotDelete
+	ClientUnknownApiKey
 )
 
 // Client defines an interface for errors caused by invalid inputs sent by a client.

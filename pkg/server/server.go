@@ -32,6 +32,10 @@ type Server struct {
 }
 
 func (s *Server) Start(opts options.Opts, taskPaths []string) error {
+	if opts.Config.ServerApiKey == "" {
+		return fmt.Errorf("required setting serverApiKey not configured")
+	}
+
 	metrics.Init(opts.PrometheusRegisterer)
 	taskRegistry := task.NewRegistry(options.Opts{
 		ActionFactories: opts.ActionFactories,
@@ -83,6 +87,7 @@ func (s *Server) Start(opts options.Opts, taskPaths []string) error {
 	}
 
 	handler, apiServer := api.RegisterAPIServer(&api.NewAPIServerOptions{
+		ApiKey:        opts.Config.ServerApiKey,
 		Clock:         opts.Clock,
 		Router:        router,
 		TaskService:   taskService,
