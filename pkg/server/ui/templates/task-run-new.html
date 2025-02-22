@@ -38,7 +38,7 @@
         </div>
         {{end}}
         <p class="help">
-          {{.Description}}
+          {{.Description | markdown}}
           {{if .Validation}}
           Must match regular expression <code>{{.Validation}}</code>.
           {{end}}

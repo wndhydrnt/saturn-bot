@@ -19,13 +19,17 @@ inputs:
     validation: "^Hello|Hola$"
   # Optional input because a default value is set.
   - name: to
-    description: Whom to great.
+    description: Whom to great. # (1)
     default: World
     # Optional list of allowed values
     options:
       - World
       - Mundo
 ```
+
+1.  The server UI supports Markdown formatting in this field.
+    For example, `**bold**` gets rendered as **bold** by the UI.
+    Links work too.
 
 Each input is passed to `saturn-bot run`:
 
