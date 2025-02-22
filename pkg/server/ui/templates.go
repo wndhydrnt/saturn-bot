@@ -108,7 +108,7 @@ func renderMarkdown(input string) template.HTML {
 	if len(doc.GetChildren()) < 1 {
 		// Return the escaped string if, for some reason,
 		// the parser didn't find a node.
-		return template.HTML(escaped)
+		return template.HTML(escaped) //nolint:gosec Input gets escaped above
 	}
 
 	// The parser always wraps the content in a paragraph (<p>).
@@ -118,7 +118,7 @@ func renderMarkdown(input string) template.HTML {
 	htmlFlags := html.CommonFlags | html.HrefTargetBlank
 	opts := html.RendererOptions{Flags: htmlFlags}
 	renderer := html.NewRenderer(opts)
-	return template.HTML(markdown.Render(doc, renderer))
+	return template.HTML(markdown.Render(doc, renderer)) //nolint:gosec Input gets escaped above
 }
 
 func renderTemplate(data any, w http.ResponseWriter, names ...string) {
