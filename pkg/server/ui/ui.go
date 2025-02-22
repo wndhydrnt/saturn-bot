@@ -21,12 +21,9 @@ func RegisterUiRoutes(router chi.Router, apiServer *api.APIServer) {
 	router.Get("/ui", app.GetHome)
 	router.Get("/ui/runs", app.ListRuns)
 	router.Get("/ui/runs/{runId}", app.RunsShow)
-	router.Post("/ui/runs/{runId}/destroy", app.RunsDestroy)
 	router.Get("/ui/tasks", app.ListTasks)
 	router.Get("/ui/tasks/{name}/file", app.GetTaskFile)
 	router.Get("/ui/tasks/{name}/results", app.GetTaskResults)
-	router.Get("/ui/tasks/{name}/run", app.NewRun)
-	router.Post("/ui/tasks/{name}/run", app.CreateRun)
 	router.Get("/ui/status", app.StatusIndex)
 	router.Group(func(r chi.Router) {
 		r.Use(
