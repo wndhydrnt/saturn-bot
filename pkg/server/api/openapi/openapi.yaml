@@ -4,6 +4,8 @@ info:
   # x-release-please-start-version
   version: 0.1.0
   # x-release-please-end-version
+security:
+  - ApiKeyAuth: []
 paths:
   /api/v1/runs:
     post:
@@ -281,6 +283,11 @@ paths:
               schema:
                 $ref: "#/components/schemas/ListRunsV1Response"
 components:
+  securitySchemes:
+    ApiKeyAuth:
+      type: apiKey
+      in: header
+      name: X-API-KEY
   schemas:
     ScheduleRunV1Request:
       type: object

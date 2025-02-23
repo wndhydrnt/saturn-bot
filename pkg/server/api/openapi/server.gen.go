@@ -15,6 +15,10 @@ import (
 	strictnethttp "github.com/oapi-codegen/runtime/strictmiddleware/nethttp"
 )
 
+const (
+	ApiKeyAuthScopes = "ApiKeyAuth.Scopes"
+)
+
 // Defines values for ReportWorkV1ResponseResult.
 const (
 	Ok ReportWorkV1ResponseResult = "ok"
@@ -449,6 +453,12 @@ type MiddlewareFunc func(http.Handler) http.Handler
 // ScheduleRunV1 operation middleware
 func (siw *ServerInterfaceWrapper) ScheduleRunV1(w http.ResponseWriter, r *http.Request) {
 
+	ctx := r.Context()
+
+	ctx = context.WithValue(ctx, ApiKeyAuthScopes, []string{})
+
+	r = r.WithContext(ctx)
+
 	handler := http.Handler(http.HandlerFunc(func(w http.ResponseWriter, r *http.Request) {
 		siw.Handler.ScheduleRunV1(w, r)
 	}))
@@ -473,6 +483,12 @@ func (siw *ServerInterfaceWrapper) DeleteRunV1(w http.ResponseWriter, r *http.Re
 		siw.ErrorHandlerFunc(w, r, &InvalidParamFormatError{ParamName: "runId", Err: err})
 		return
 	}
+
+	ctx := r.Context()
+
+	ctx = context.WithValue(ctx, ApiKeyAuthScopes, []string{})
+
+	r = r.WithContext(ctx)
 
 	handler := http.Handler(http.HandlerFunc(func(w http.ResponseWriter, r *http.Request) {
 		siw.Handler.DeleteRunV1(w, r, runId)
@@ -499,6 +515,12 @@ func (siw *ServerInterfaceWrapper) GetRunV1(w http.ResponseWriter, r *http.Reque
 		return
 	}
 
+	ctx := r.Context()
+
+	ctx = context.WithValue(ctx, ApiKeyAuthScopes, []string{})
+
+	r = r.WithContext(ctx)
+
 	handler := http.Handler(http.HandlerFunc(func(w http.ResponseWriter, r *http.Request) {
 		siw.Handler.GetRunV1(w, r, runId)
 	}))
@@ -514,6 +536,12 @@ func (siw *ServerInterfaceWrapper) GetRunV1(w http.ResponseWriter, r *http.Reque
 func (siw *ServerInterfaceWrapper) ListTaskResultsV1(w http.ResponseWriter, r *http.Request) {
 
 	var err error
+
+	ctx := r.Context()
+
+	ctx = context.WithValue(ctx, ApiKeyAuthScopes, []string{})
+
+	r = r.WithContext(ctx)
 
 	// Parameter object where we will unmarshal all parameters from the context
 	var params ListTaskResultsV1Params
@@ -556,6 +584,12 @@ func (siw *ServerInterfaceWrapper) ListTaskResultsV1(w http.ResponseWriter, r *h
 // ListTasksV1 operation middleware
 func (siw *ServerInterfaceWrapper) ListTasksV1(w http.ResponseWriter, r *http.Request) {
 
+	ctx := r.Context()
+
+	ctx = context.WithValue(ctx, ApiKeyAuthScopes, []string{})
+
+	r = r.WithContext(ctx)
+
 	handler := http.Handler(http.HandlerFunc(func(w http.ResponseWriter, r *http.Request) {
 		siw.Handler.ListTasksV1(w, r)
 	}))
@@ -581,6 +615,12 @@ func (siw *ServerInterfaceWrapper) GetTaskV1(w http.ResponseWriter, r *http.Requ
 		return
 	}
 
+	ctx := r.Context()
+
+	ctx = context.WithValue(ctx, ApiKeyAuthScopes, []string{})
+
+	r = r.WithContext(ctx)
+
 	handler := http.Handler(http.HandlerFunc(func(w http.ResponseWriter, r *http.Request) {
 		siw.Handler.GetTaskV1(w, r, task)
 	}))
@@ -605,6 +645,12 @@ func (siw *ServerInterfaceWrapper) ListTaskRecentTaskResultsV1(w http.ResponseWr
 		siw.ErrorHandlerFunc(w, r, &InvalidParamFormatError{ParamName: "task", Err: err})
 		return
 	}
+
+	ctx := r.Context()
+
+	ctx = context.WithValue(ctx, ApiKeyAuthScopes, []string{})
+
+	r = r.WithContext(ctx)
 
 	// Parameter object where we will unmarshal all parameters from the context
 	var params ListTaskRecentTaskResultsV1Params
@@ -640,6 +686,12 @@ func (siw *ServerInterfaceWrapper) ListTaskRecentTaskResultsV1(w http.ResponseWr
 func (siw *ServerInterfaceWrapper) ListRunsV1(w http.ResponseWriter, r *http.Request) {
 
 	var err error
+
+	ctx := r.Context()
+
+	ctx = context.WithValue(ctx, ApiKeyAuthScopes, []string{})
+
+	r = r.WithContext(ctx)
 
 	// Parameter object where we will unmarshal all parameters from the context
 	var params ListRunsV1Params
@@ -682,6 +734,12 @@ func (siw *ServerInterfaceWrapper) ListRunsV1(w http.ResponseWriter, r *http.Req
 // GetWorkV1 operation middleware
 func (siw *ServerInterfaceWrapper) GetWorkV1(w http.ResponseWriter, r *http.Request) {
 
+	ctx := r.Context()
+
+	ctx = context.WithValue(ctx, ApiKeyAuthScopes, []string{})
+
+	r = r.WithContext(ctx)
+
 	handler := http.Handler(http.HandlerFunc(func(w http.ResponseWriter, r *http.Request) {
 		siw.Handler.GetWorkV1(w, r)
 	}))
@@ -695,6 +753,12 @@ func (siw *ServerInterfaceWrapper) GetWorkV1(w http.ResponseWriter, r *http.Requ
 
 // ReportWorkV1 operation middleware
 func (siw *ServerInterfaceWrapper) ReportWorkV1(w http.ResponseWriter, r *http.Request) {
+
+	ctx := r.Context()
+
+	ctx = context.WithValue(ctx, ApiKeyAuthScopes, []string{})
+
+	r = r.WithContext(ctx)
 
 	handler := http.Handler(http.HandlerFunc(func(w http.ResponseWriter, r *http.Request) {
 		siw.Handler.ReportWorkV1(w, r)
