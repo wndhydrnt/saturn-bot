@@ -33,7 +33,7 @@ type Server struct {
 
 func (s *Server) Start(opts options.Opts, taskPaths []string) error {
 	if opts.Config.ServerApiKey == "" {
-		return fmt.Errorf("required setting serverApiKey not configured")
+		return fmt.Errorf("required setting serverApiKey not configured - see https://saturn-bot.readthedocs.io/en/latest/reference/configuration/#serverapikey")
 	}
 
 	metrics.Init(opts.PrometheusRegisterer)
