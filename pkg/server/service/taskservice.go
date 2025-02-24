@@ -27,6 +27,8 @@ func NewTaskService(clock clock.Clock, db *gorm.DB, taskRegistry *task.Registry)
 }
 
 // GetTask returns the task identified by taskName.
+// This method reads the task from the registry, not the database.
+// Use [GetTaskFromDatabase] to get the task from the database.
 //
 // It returns an error if no task matches taskName.
 func (ts *TaskService) GetTask(taskName string) (*task.Task, error) {
@@ -53,6 +55,23 @@ func (ts *TaskService) EncodeTaskBase64(taskName string) (string, error) {
 
 func (ts *TaskService) ListTasks() []*task.Task {
 	return ts.taskRegistry.GetTasks()
+}
+
+type ListTasksFromDatabaseOptions struct {
+	Active bool
+}
+
+func (ts *TaskService) ListTasksFromDatabase(opts ListTasksFromDatabaseOptions) ([]db.Task, error) {
+	var tasks []db.Task
+	result := ts.db.
+		Where("active = ?", opts.Active).
+		Order("name ASC").
+		Find(&tasks)
+	if result.Error != nil {
+		return nil, fmt.Errorf("list tasks from database: %w", result.Error)
+	}
+
+	return tasks, nil
 }
 
 // ListRecentTaskResultsByTaskOptions

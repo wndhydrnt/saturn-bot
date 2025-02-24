@@ -101,6 +101,15 @@ paths:
       description: Returns a list of registered tasks.
       tags:
         - task
+      parameters:
+        - in: query
+          name: active
+          schema:
+            type: boolean
+        - in: query
+          name: listOptions
+          schema:
+            $ref: "#/components/schemas/ListOptions"
       responses:
         "200":
           description: OK
@@ -422,12 +431,22 @@ components:
     ListTasksV1Response:
       type: object
       properties:
-        tasks:
+        results:
           description: Names of registered tasks.
           type: array
           items:
-            type: string
-      required: ["tasks"]
+            $ref: "#/components/schemas/ListTasksV1ResponseTask"
+      required: ["results"]
+    ListTasksV1ResponseTask:
+      type: object
+      properties:
+        active:
+          type: boolean
+        checksum:
+          type: string
+        name:
+          type: string
+      required: ["active", "checksum", "name"]
     GetTaskV1Response:
       type: object
       properties:

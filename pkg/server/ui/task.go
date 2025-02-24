@@ -10,12 +10,14 @@ import (
 )
 
 type dataListTasks struct {
-	Tasks []string
+	Tasks []openapi.ListTasksV1ResponseTask
 }
 
 // ListTasks renders the list of all tasks known to saturn-bot.
 func (u *Ui) ListTasks(w http.ResponseWriter, r *http.Request) {
-	listTasksResp, err := u.API.ListTasksV1(r.Context(), openapi.ListTasksV1RequestObject{})
+	listTasksResp, err := u.API.ListTasksV1(r.Context(), openapi.ListTasksV1RequestObject{
+		Params: openapi.ListTasksV1Params{Active: ptr.To(true)},
+	})
 	if err != nil {
 		renderError(fmt.Errorf("list tasks: %w", err), w)
 		return
@@ -23,7 +25,7 @@ func (u *Ui) ListTasks(w http.ResponseWriter, r *http.Request) {
 
 	taskList := listTasksResp.(openapi.ListTasksV1200JSONResponse)
 	var data dataListTasks
-	data.Tasks = taskList.Tasks
+	data.Tasks = taskList.Results
 	renderTemplate(data, w, "task-list.html")
 }
 

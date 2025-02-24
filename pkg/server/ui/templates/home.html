@@ -26,7 +26,7 @@ Home
           {{range .Tasks}}
           <tr>
             <td>
-              <a href="/ui/tasks/{{. | pathEscape}}/results">{{.}}</a>
+              <a href="/ui/tasks/{{.Name | pathEscape}}/results">{{.Name}}</a>
             </td>
           </tr>
           {{end}}

@@ -125,8 +125,15 @@ type ListTaskResultsV1Response struct {
 
 // ListTasksV1Response defines model for ListTasksV1Response.
 type ListTasksV1Response struct {
-	// Tasks Names of registered tasks.
-	Tasks []string `json:"tasks"`
+	// Results Names of registered tasks.
+	Results []ListTasksV1ResponseTask `json:"results"`
+}
+
+// ListTasksV1ResponseTask defines model for ListTasksV1ResponseTask.
+type ListTasksV1ResponseTask struct {
+	Active   bool   `json:"active"`
+	Checksum string `json:"checksum"`
+	Name     string `json:"name"`
 }
 
 // Page defines model for Page.
@@ -319,6 +326,12 @@ type ListTaskResultsV1Params struct {
 	ListOptions *ListOptions         `form:"listOptions,omitempty" json:"listOptions,omitempty"`
 }
 
+// ListTasksV1Params defines parameters for ListTasksV1.
+type ListTasksV1Params struct {
+	Active      *bool        `form:"active,omitempty" json:"active,omitempty"`
+	ListOptions *ListOptions `form:"listOptions,omitempty" json:"listOptions,omitempty"`
+}
+
 // ListTaskRecentTaskResultsV1Params defines parameters for ListTaskRecentTaskResultsV1.
 type ListTaskRecentTaskResultsV1Params struct {
 	Status      *[]TaskResultStateV1 `form:"status,omitempty" json:"status,omitempty"`
@@ -355,7 +368,7 @@ type ServerInterface interface {
 	ListTaskResultsV1(w http.ResponseWriter, r *http.Request, params ListTaskResultsV1Params)
 	// List tasks.
 	// (GET /api/v1/tasks)
-	ListTasksV1(w http.ResponseWriter, r *http.Request)
+	ListTasksV1(w http.ResponseWriter, r *http.Request, params ListTasksV1Params)
 	// Get information about a task.
 	// (GET /api/v1/tasks/{task})
 	GetTaskV1(w http.ResponseWriter, r *http.Request, task string)
@@ -403,7 +416,7 @@ func (_ Unimplemented) ListTaskResultsV1(w http.ResponseWriter, r *http.Request,
 
 // List tasks.
 // (GET /api/v1/tasks)
-func (_ Unimplemented) ListTasksV1(w http.ResponseWriter, r *http.Request) {
+func (_ Unimplemented) ListTasksV1(w http.ResponseWriter, r *http.Request, params ListTasksV1Params) {
 	w.WriteHeader(http.StatusNotImplemented)
 }
 
@@ -556,8 +569,29 @@ func (siw *ServerInterfaceWrapper) ListTaskResultsV1(w http.ResponseWriter, r *h
 // ListTasksV1 operation middleware
 func (siw *ServerInterfaceWrapper) ListTasksV1(w http.ResponseWriter, r *http.Request) {
 
+	var err error
+
+	// Parameter object where we will unmarshal all parameters from the context
+	var params ListTasksV1Params
+
+	// ------------- Optional query parameter "active" -------------
+
+	err = runtime.BindQueryParameter("form", true, false, "active", r.URL.Query(), &params.Active)
+	if err != nil {
+		siw.ErrorHandlerFunc(w, r, &InvalidParamFormatError{ParamName: "active", Err: err})
+		return
+	}
+
+	// ------------- Optional query parameter "listOptions" -------------
+
+	err = runtime.BindQueryParameter("form", true, false, "listOptions", r.URL.Query(), &params.ListOptions)
+	if err != nil {
+		siw.ErrorHandlerFunc(w, r, &InvalidParamFormatError{ParamName: "listOptions", Err: err})
+		return
+	}
+
 	handler := http.Handler(http.HandlerFunc(func(w http.ResponseWriter, r *http.Request) {
-		siw.Handler.ListTasksV1(w, r)
+		siw.Handler.ListTasksV1(w, r, params)
 	}))
 
 	for _, middleware := range siw.HandlerMiddlewares {
@@ -959,6 +993,7 @@ func (response ListTaskResultsV1200JSONResponse) VisitListTaskResultsV1Response(
 }
 
 type ListTasksV1RequestObject struct {
+	Params ListTasksV1Params
 }
 
 type ListTasksV1ResponseObject interface {
@@ -1268,8 +1303,10 @@ func (sh *strictHandler) ListTaskResultsV1(w http.ResponseWriter, r *http.Reques
 }
 
 // ListTasksV1 operation middleware
-func (sh *strictHandler) ListTasksV1(w http.ResponseWriter, r *http.Request) {
+func (sh *strictHandler) ListTasksV1(w http.ResponseWriter, r *http.Request, params ListTasksV1Params) {
 	var request ListTasksV1RequestObject
+
+	request.Params = params
 
 	handler := func(ctx context.Context, w http.ResponseWriter, r *http.Request, request interface{}) (interface{}, error) {
 		return sh.ssi.ListTasksV1(ctx, request.(ListTasksV1RequestObject))

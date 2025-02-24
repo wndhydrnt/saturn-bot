@@ -16,13 +16,17 @@
       <thead>
         <tr>
           <th>Task</th>
+          <th>Checksum</th>
         </tr>
       </thead>
       <tbody>
         {{range .Tasks}}
         <tr>
           <td>
-            <a href="/ui/tasks/{{. | pathEscape}}/results">{{.}}</a>
+            <a href="/ui/tasks/{{.Name | pathEscape}}/results">{{.Name}}</a>
+          </td>
+          <td>
+            <code>{{.Checksum}}</code>
           </td>
         </tr>
         {{end}}

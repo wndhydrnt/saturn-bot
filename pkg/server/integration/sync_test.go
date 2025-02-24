@@ -65,7 +65,12 @@ func Test_Sync(t *testing.T) {
 		path:       "/api/v1/tasks",
 		statusCode: 200,
 		responseBody: openapi.ListTasksV1Response{
-			Tasks: []string{"no-trigger", "cron-trigger", "cron-trigger-later", "with-input"},
+			Results: []openapi.ListTasksV1ResponseTask{
+				{Active: true, Name: "cron-trigger", Checksum: "33fee8a94207840f08247764d90f030cd641884975fbea5270fc4c03e6c17bce"},
+				{Active: true, Name: "cron-trigger-later", Checksum: "3781388c6b2ab635138216950c99a8abc10b8cfc75ff73a848a3438ae51d90a9"},
+				{Active: true, Name: "no-trigger", Checksum: "f4bd2a5e07bd61f8ac25edfd017821dac5a93d35dabf9862a1e1d623e3b448a3"},
+				{Active: true, Name: "with-input", Checksum: "6dfad7cb419141aa5621d29bf3febc9c3a20992a282442edd0fb9822ba8bb8cc"},
+			},
 		},
 	})
 	assertApiCall(e, apiCall{

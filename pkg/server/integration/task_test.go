@@ -22,7 +22,9 @@ func TestServer_API_ListTasksV1(t *testing.T) {
 					path:       "/api/v1/tasks",
 					statusCode: http.StatusOK,
 					responseBody: openapi.ListTasksV1Response{
-						Tasks: []string{"unittest"},
+						Results: []openapi.ListTasksV1ResponseTask{
+							{Active: true, Checksum: defaultTaskHash, Name: defaultTask.Name},
+						},
 					},
 				},
 			},

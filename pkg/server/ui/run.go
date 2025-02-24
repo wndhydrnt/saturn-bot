@@ -46,7 +46,9 @@ func (u *Ui) ListRuns(w http.ResponseWriter, r *http.Request) {
 	}
 
 	taskList := listTasksResp.(openapi.ListTasksV1200JSONResponse)
-	tplData.Filters.TaskNames = taskList.Tasks
+	for _, t := range taskList.Results {
+		tplData.Filters.TaskNames = append(tplData.Filters.TaskNames, t.Name)
+	}
 
 	limit := parseIntParam(r, "limit", 10)
 	page := parseIntParam(r, "page", 1)

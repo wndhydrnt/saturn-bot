@@ -3,6 +3,7 @@ package api
 import (
 	"context"
 	"errors"
+	"fmt"
 
 	"github.com/wndhydrnt/saturn-bot/pkg/ptr"
 	"github.com/wndhydrnt/saturn-bot/pkg/server/api/openapi"
@@ -50,10 +51,22 @@ func (a *APIServer) GetTaskV1(_ context.Context, request openapi.GetTaskV1Reques
 // ListTasksV1 implements [openapi.ServerInterface].
 func (th *APIServer) ListTasksV1(_ context.Context, request openapi.ListTasksV1RequestObject) (openapi.ListTasksV1ResponseObject, error) {
 	resp := openapi.ListTasksV1200JSONResponse{
-		Tasks: []string{},
+		Results: []openapi.ListTasksV1ResponseTask{},
 	}
-	for _, entry := range th.TaskService.ListTasks() {
-		resp.Tasks = append(resp.Tasks, entry.Task.Name)
+
+	tasks, err := th.TaskService.ListTasksFromDatabase(service.ListTasksFromDatabaseOptions{
+		Active: true,
+	})
+	if err != nil {
+		return nil, fmt.Errorf("ListTasksV1: %w", err)
+	}
+
+	for _, entry := range tasks {
+		resp.Results = append(resp.Results, openapi.ListTasksV1ResponseTask{
+			Active:   entry.Active,
+			Checksum: entry.Hash,
+			Name:     entry.Name,
+		})
 	}
 
 	return resp, nil
