@@ -1,0 +1,77 @@
+{{define "title"}}Tasks{{end}}
+
+{{define "breadcrumb"}}
+<nav class="breadcrumb" aria-label="breadcrumbs">
+  <ul>
+    <li><a href="/ui">Home</a></li>
+    <li class="is-active"><a href="/ui/tasks" aria-current="page">Tasks</a></li>
+  </ul>
+</nav>
+{{end}}
+
+{{define "body"}}
+<div class="columns">
+  <div class="column is-full">
+    <form method="get" action="/ui/tasks">
+      <div class="field is-grouped is-horizontal">
+        <p class="control">
+          <div class="select">
+            <select name="active" onchange="this.form.submit()">
+              <option value="true" {{if eq "true" $.Filters.ActiveCurrent}} selected{{end}}>Yes</option>
+              <option value="false" {{if eq "false" $.Filters.ActiveCurrent}} selected{{end}}>No</option>
+            </select>
+            <p class="help">Active</p>
+          </div>
+        </p>
+        <p class="control">
+          <button class="button is-primary">
+            Filter
+          </button>
+        </p>
+      </div>
+    </form>
+  </div>
+</div>
+<div class="columns">
+  <div class="column">
+    <table class="table is-striped is-fullwidth">
+      <thead>
+        <tr>
+          <th>Task</th>
+          <th>Checksum</th>
+          <th>Active</th>
+        </tr>
+      </thead>
+      <tbody>
+        {{range .Tasks}}
+        <tr>
+          <td>
+            {{if .Active}}
+            <a href="/ui/tasks/{{.Name | pathEscape}}/results">{{.Name}}</a>
+            {{else}}
+            {{.Name}}
+            {{end}}
+          </td>
+          <td>
+            <code>{{.Checksum}}</code>
+          </td>
+          <td>
+            {{if .Active}}Yes{{else}}No{{end}}
+          </td>
+        </tr>
+        {{end}}
+      </tbody>
+      <tfoot>
+        <tr>
+        <td colspan="3">
+          <b>Total:</b> {{.Pagination.Page.TotalItems}}
+        </td>
+      </tr>
+      </tfoot>
+    </table>
+    {{ template "pagination" .Pagination }}
+  </div>
+</div>
+{{end}}
+
+{{ template "base.html" . }}

@@ -27,6 +27,8 @@ func NewTaskService(clock clock.Clock, db *gorm.DB, taskRegistry *task.Registry)
 }
 
 // GetTask returns the task identified by taskName.
+// This method reads the task from the registry, not the database.
+// Use [GetTaskFromDatabase] to get the task from the database.
 //
 // It returns an error if no task matches taskName.
 func (ts *TaskService) GetTask(taskName string) (*task.Task, error) {
@@ -53,6 +55,41 @@ func (ts *TaskService) EncodeTaskBase64(taskName string) (string, error) {
 
 func (ts *TaskService) ListTasks() []*task.Task {
 	return ts.taskRegistry.GetTasks()
+}
+
+type ListTasksFromDatabaseOptions struct {
+	Active *bool
+}
+
+func (ts *TaskService) ListTasksFromDatabase(opts ListTasksFromDatabaseOptions, listOpts *ListOptions) ([]db.Task, error) {
+	query := ts.db
+	if opts.Active != nil {
+		query = query.Where("active = ?", opts.Active)
+	}
+
+	var tasks []db.Task
+	result := query.
+		Offset(listOpts.Offset()).
+		Limit(listOpts.Limit).
+		Order("name ASC").
+		Find(&tasks)
+	if result.Error != nil {
+		return nil, fmt.Errorf("list tasks from database: %w", result.Error)
+	}
+
+	var count int64
+	queryCount := ts.db.Model(&db.Task{})
+	if opts.Active != nil {
+		queryCount = queryCount.Where("active = ?", opts.Active)
+	}
+
+	countResult := queryCount.Count(&count)
+	if countResult.Error != nil {
+		return nil, fmt.Errorf("count list of tasks from database: %w", countResult.Error)
+	}
+
+	listOpts.SetTotalItems(int(count))
+	return tasks, nil
 }
 
 // ListRecentTaskResultsByTaskOptions

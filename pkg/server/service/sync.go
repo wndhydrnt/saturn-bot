@@ -121,7 +121,7 @@ func (s *Sync) updateTask(t *task.Task, taskDB db.Task) error {
 		return nil
 	}
 
-	log.Log().Debugf("Updating task in DB - %s", taskDB.Name)
+	log.Log().Infof("Updating task in DB - %s with checksum %s", taskDB.Name, t.Checksum())
 	return s.db.Transaction(func(tx *gorm.DB) error {
 		cronTime := calcNextCronTime(s.clock.Now(), t)
 		if t.Active && cronTime != nil {

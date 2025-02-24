@@ -9,7 +9,7 @@ import (
 
 type dataIndex struct {
 	RecentRuns openapi.ListRunsV1200JSONResponse
-	Tasks      []string
+	Tasks      []openapi.ListTasksV1ResponseTask
 }
 
 // GetHome renders the homepage.
@@ -22,10 +22,10 @@ func (u *Ui) GetHome(w http.ResponseWriter, r *http.Request) {
 
 	tplData := dataIndex{}
 	tasksObj := tasksResp.(openapi.ListTasksV1200JSONResponse)
-	if len(tasksObj.Tasks) > 5 {
-		tplData.Tasks = tasksObj.Tasks[0:5]
+	if len(tasksObj.Results) > 5 {
+		tplData.Tasks = tasksObj.Results[0:5]
 	} else {
-		tplData.Tasks = tasksObj.Tasks
+		tplData.Tasks = tasksObj.Results
 	}
 
 	reqRecent := openapi.ListRunsV1RequestObject{
