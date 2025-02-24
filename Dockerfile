@@ -16,7 +16,7 @@ RUN --mount=type=cache,target=/go/pkg/mod/ \
 # debian:bookworm-20250203-slim
 FROM debian@sha256:40b107342c492725bc7aacbe93a49945445191ae364184a6d24fedb28172f6f7
 ENV SATURN_BOT_DATADIR=/home/saturn-bot/data
-RUN useradd --create-home --shell /usr/sbin/nologin --uid 1001 --system saturn-bot && \
+RUN useradd --create-home --shell /usr/sbin/nologin --uid 1001 saturn-bot && \
     mkdir /home/saturn-bot/data && \
     chown 1001:1001 /home/saturn-bot/data && \
     apt-get update && \
