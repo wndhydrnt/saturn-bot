@@ -1,5 +1,15 @@
 # Changelog
 
+## [0.22.0](https://github.com/wndhydrnt/saturn-bot/compare/v0.21.1...v0.22.0) (2025-02-24)
+
+
+### Features
+
+* Commands "server" and "worker" are available ([#154](https://github.com/wndhydrnt/saturn-bot/issues/154)) ([15dfad3](https://github.com/wndhydrnt/saturn-bot/commit/15dfad34ed51ee5459383a67e624e38e421087a2))
+* **server:** Display checksum and inactive tasks in the UI ([#160](https://github.com/wndhydrnt/saturn-bot/issues/160)) ([e73c907](https://github.com/wndhydrnt/saturn-bot/commit/e73c907fe646c623227252f790b2c36fc2b0f7b2))
+* **server:** Remove all write endpoints from UI ([#158](https://github.com/wndhydrnt/saturn-bot/issues/158)) ([3a91a3b](https://github.com/wndhydrnt/saturn-bot/commit/3a91a3b97b766c6d4c40b46c4b3274998ef087ac))
+* **server:** Render Markdown in description of input in the UI ([#157](https://github.com/wndhydrnt/saturn-bot/issues/157)) ([a20838f](https://github.com/wndhydrnt/saturn-bot/commit/a20838fd76dd39b09e66300ad19052124879ce24))
+
 ## [0.21.1](https://github.com/wndhydrnt/saturn-bot/compare/v0.21.0...v0.21.1) (2025-02-17)
 
 
