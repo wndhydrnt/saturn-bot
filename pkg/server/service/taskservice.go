@@ -58,19 +58,37 @@ func (ts *TaskService) ListTasks() []*task.Task {
 }
 
 type ListTasksFromDatabaseOptions struct {
-	Active bool
+	Active *bool
 }
 
-func (ts *TaskService) ListTasksFromDatabase(opts ListTasksFromDatabaseOptions) ([]db.Task, error) {
+func (ts *TaskService) ListTasksFromDatabase(opts ListTasksFromDatabaseOptions, listOpts *ListOptions) ([]db.Task, error) {
+	query := ts.db
+	if opts.Active != nil {
+		query = query.Where("active = ?", opts.Active)
+	}
+
 	var tasks []db.Task
-	result := ts.db.
-		Where("active = ?", opts.Active).
+	result := query.
+		Offset(listOpts.Offset()).
+		Limit(listOpts.Limit).
 		Order("name ASC").
 		Find(&tasks)
 	if result.Error != nil {
 		return nil, fmt.Errorf("list tasks from database: %w", result.Error)
 	}
 
+	var count int64
+	queryCount := ts.db.Model(&db.Task{})
+	if opts.Active != nil {
+		queryCount = queryCount.Where("active = ?", opts.Active)
+	}
+
+	countResult := queryCount.Count(&count)
+	if countResult.Error != nil {
+		return nil, fmt.Errorf("count list of tasks from database: %w", countResult.Error)
+	}
+
+	listOpts.SetTotalItems(int(count))
 	return tasks, nil
 }
 

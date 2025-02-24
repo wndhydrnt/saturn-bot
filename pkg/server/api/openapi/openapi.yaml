@@ -431,12 +431,14 @@ components:
     ListTasksV1Response:
       type: object
       properties:
+        page:
+          $ref: "#/components/schemas/Page"
         results:
           description: Names of registered tasks.
           type: array
           items:
             $ref: "#/components/schemas/ListTasksV1ResponseTask"
-      required: ["results"]
+      required: ["page", "results"]
     ListTasksV1ResponseTask:
       type: object
       properties:

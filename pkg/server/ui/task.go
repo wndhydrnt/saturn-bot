@@ -9,26 +9,6 @@ import (
 	"github.com/wndhydrnt/saturn-bot/pkg/server/api/openapi"
 )
 
-type dataListTasks struct {
-	Tasks []openapi.ListTasksV1ResponseTask
-}
-
-// ListTasks renders the list of all tasks known to saturn-bot.
-func (u *Ui) ListTasks(w http.ResponseWriter, r *http.Request) {
-	listTasksResp, err := u.API.ListTasksV1(r.Context(), openapi.ListTasksV1RequestObject{
-		Params: openapi.ListTasksV1Params{Active: ptr.To(true)},
-	})
-	if err != nil {
-		renderError(fmt.Errorf("list tasks: %w", err), w)
-		return
-	}
-
-	taskList := listTasksResp.(openapi.ListTasksV1200JSONResponse)
-	var data dataListTasks
-	data.Tasks = taskList.Results
-	renderTemplate(data, w, "task-list.html")
-}
-
 type dataGetTaskFile struct {
 	Content  string
 	TaskName string

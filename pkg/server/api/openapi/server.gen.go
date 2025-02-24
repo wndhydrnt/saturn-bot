@@ -125,6 +125,8 @@ type ListTaskResultsV1Response struct {
 
 // ListTasksV1Response defines model for ListTasksV1Response.
 type ListTasksV1Response struct {
+	Page Page `json:"page"`
+
 	// Results Names of registered tasks.
 	Results []ListTasksV1ResponseTask `json:"results"`
 }

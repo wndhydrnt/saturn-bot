@@ -53,10 +53,10 @@ func (th *APIServer) ListTasksV1(_ context.Context, request openapi.ListTasksV1R
 	resp := openapi.ListTasksV1200JSONResponse{
 		Results: []openapi.ListTasksV1ResponseTask{},
 	}
-
+	listOpts := toListOptions(request.Params.ListOptions)
 	tasks, err := th.TaskService.ListTasksFromDatabase(service.ListTasksFromDatabaseOptions{
-		Active: true,
-	})
+		Active: request.Params.Active,
+	}, &listOpts)
 	if err != nil {
 		return nil, fmt.Errorf("ListTasksV1: %w", err)
 	}
@@ -69,6 +69,14 @@ func (th *APIServer) ListTasksV1(_ context.Context, request openapi.ListTasksV1R
 		})
 	}
 
+	resp.Page = openapi.Page{
+		PreviousPage: listOpts.Previous(),
+		CurrentPage:  listOpts.Page,
+		NextPage:     listOpts.Next(),
+		ItemsPerPage: listOpts.Limit,
+		TotalItems:   listOpts.TotalItems(),
+		TotalPages:   listOpts.TotalPages(),
+	}
 	return resp, nil
 }
 
