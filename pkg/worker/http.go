@@ -27,9 +27,9 @@ type infoResponse struct {
 }
 
 type infoResponseTask struct {
-	Path   string `json:"path"`
-	Sha256 string `json:"sha256"`
-	Task   string `json:"task"`
+	Checksum string `json:"checksum"`
+	Path     string `json:"path"`
+	Task     string `json:"task"`
 }
 
 // infoHandler returns information about the worker as JSON via HTTP.
@@ -39,7 +39,7 @@ func infoHandler(worker *Worker) http.HandlerFunc {
 			Version: version.Info,
 		}
 		for _, workerTask := range worker.tasks {
-			resp.Tasks = append(resp.Tasks, infoResponseTask{Path: workerTask.Path, Sha256: workerTask.Sha256, Task: workerTask.Task.Name})
+			resp.Tasks = append(resp.Tasks, infoResponseTask{Path: workerTask.Path(), Checksum: workerTask.Checksum(), Task: workerTask.Name})
 		}
 
 		err := json.NewEncoder(w).Encode(&resp)

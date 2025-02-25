@@ -21,8 +21,7 @@ import (
 	"github.com/wndhydrnt/saturn-bot/pkg/processor"
 	"github.com/wndhydrnt/saturn-bot/pkg/ptr"
 	"github.com/wndhydrnt/saturn-bot/pkg/server/api/openapi"
-	"github.com/wndhydrnt/saturn-bot/pkg/server/task"
-	"github.com/wndhydrnt/saturn-bot/pkg/task/schema"
+	"github.com/wndhydrnt/saturn-bot/pkg/task"
 	"github.com/wndhydrnt/saturn-bot/pkg/version"
 	"github.com/wndhydrnt/saturn-bot/pkg/worker/client"
 	"go.uber.org/zap"
@@ -103,7 +102,7 @@ type Worker struct {
 	httpServer *http.Server
 	opts       options.Opts
 	resultChan chan Result
-	tasks      []schema.ReadResult
+	tasks      []*task.Task
 	stopped    bool
 	stopChan   chan chan struct{}
 }
@@ -124,7 +123,11 @@ func NewWorker(configPath string, taskPaths []string) (*Worker, error) {
 		return nil, err
 	}
 
-	tasks, err := task.Load(taskPaths)
+	// The registry holds tasks for validation.
+	// No need to start plugins here.
+	opts.SkipPlugins = true
+	reg := task.NewRegistry(opts)
+	err = reg.ReadAll(taskPaths)
 	if err != nil {
 		return nil, err
 	}
@@ -148,7 +151,7 @@ func NewWorker(configPath string, taskPaths []string) (*Worker, error) {
 		Exec:       &APIExecutionSource{client: apiClient},
 		httpServer: newHttpServer("", router),
 		opts:       opts,
-		tasks:      tasks,
+		tasks:      reg.GetTasks(),
 	}
 
 	router.Handle("GET /info", infoHandler(worker))
@@ -243,7 +246,8 @@ func (w *Worker) executeRun(exec Execution, result chan Result) {
 		}
 		return
 	}
-	taskPaths := []string{t.Path}
+
+	taskPaths := []string{t.Path()}
 
 	var repositories []string
 	if exec.Repositories != nil {
@@ -265,18 +269,18 @@ func (w *Worker) executeRun(exec Execution, result chan Result) {
 	}
 }
 
-func (w *Worker) findTaskByName(name string, hash string) (schema.ReadResult, error) {
+func (w *Worker) findTaskByName(name string, hash string) (*task.Task, error) {
 	for _, t := range w.tasks {
 		if t.Task.Name == name {
-			if t.Sha256 == hash {
+			if t.Checksum() == hash {
 				return t, nil
 			} else {
-				return schema.ReadResult{}, fmt.Errorf("hash of task '%s' does not match - got '%s' want '%s'", name, hash, t.Sha256)
+				return nil, fmt.Errorf("hash of task '%s' does not match - got '%s' want '%s'", name, hash, t.Checksum())
 			}
 		}
 	}
 
-	return schema.ReadResult{}, fmt.Errorf("task '%s' not found", name)
+	return nil, fmt.Errorf("task '%s' not found", name)
 }
 
 func (w *Worker) startHttpServer() {
