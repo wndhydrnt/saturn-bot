@@ -131,8 +131,17 @@ type ListTaskResultsV1Response struct {
 
 // ListTasksV1Response defines model for ListTasksV1Response.
 type ListTasksV1Response struct {
-	// Tasks Names of registered tasks.
-	Tasks []string `json:"tasks"`
+	Page Page `json:"page"`
+
+	// Results Names of registered tasks.
+	Results []ListTasksV1ResponseTask `json:"results"`
+}
+
+// ListTasksV1ResponseTask defines model for ListTasksV1ResponseTask.
+type ListTasksV1ResponseTask struct {
+	Active   bool   `json:"active"`
+	Checksum string `json:"checksum"`
+	Name     string `json:"name"`
 }
 
 // Page defines model for Page.
@@ -325,6 +334,12 @@ type ListTaskResultsV1Params struct {
 	ListOptions *ListOptions         `form:"listOptions,omitempty" json:"listOptions,omitempty"`
 }
 
+// ListTasksV1Params defines parameters for ListTasksV1.
+type ListTasksV1Params struct {
+	Active      *bool        `form:"active,omitempty" json:"active,omitempty"`
+	ListOptions *ListOptions `form:"listOptions,omitempty" json:"listOptions,omitempty"`
+}
+
 // ListTaskRecentTaskResultsV1Params defines parameters for ListTaskRecentTaskResultsV1.
 type ListTaskRecentTaskResultsV1Params struct {
 	Status      *[]TaskResultStateV1 `form:"status,omitempty" json:"status,omitempty"`
@@ -433,7 +448,7 @@ type ClientInterface interface {
 	ListTaskResultsV1(ctx context.Context, params *ListTaskResultsV1Params, reqEditors ...RequestEditorFn) (*http.Response, error)
 
 	// ListTasksV1 request
-	ListTasksV1(ctx context.Context, reqEditors ...RequestEditorFn) (*http.Response, error)
+	ListTasksV1(ctx context.Context, params *ListTasksV1Params, reqEditors ...RequestEditorFn) (*http.Response, error)
 
 	// GetTaskV1 request
 	GetTaskV1(ctx context.Context, task string, reqEditors ...RequestEditorFn) (*http.Response, error)
@@ -513,8 +528,8 @@ func (c *Client) ListTaskResultsV1(ctx context.Context, params *ListTaskResultsV
 	return c.Client.Do(req)
 }
 
-func (c *Client) ListTasksV1(ctx context.Context, reqEditors ...RequestEditorFn) (*http.Response, error) {
-	req, err := NewListTasksV1Request(c.Server)
+func (c *Client) ListTasksV1(ctx context.Context, params *ListTasksV1Params, reqEditors ...RequestEditorFn) (*http.Response, error) {
+	req, err := NewListTasksV1Request(c.Server, params)
 	if err != nil {
 		return nil, err
 	}
@@ -787,7 +802,7 @@ func NewListTaskResultsV1Request(server string, params *ListTaskResultsV1Params)
 }
 
 // NewListTasksV1Request generates requests for ListTasksV1
-func NewListTasksV1Request(server string) (*http.Request, error) {
+func NewListTasksV1Request(server string, params *ListTasksV1Params) (*http.Request, error) {
 	var err error
 
 	serverURL, err := url.Parse(server)
@@ -803,6 +818,44 @@ func NewListTasksV1Request(server string) (*http.Request, error) {
 	queryURL, err := serverURL.Parse(operationPath)
 	if err != nil {
 		return nil, err
+	}
+
+	if params != nil {
+		queryValues := queryURL.Query()
+
+		if params.Active != nil {
+
+			if queryFrag, err := runtime.StyleParamWithLocation("form", true, "active", runtime.ParamLocationQuery, *params.Active); err != nil {
+				return nil, err
+			} else if parsed, err := url.ParseQuery(queryFrag); err != nil {
+				return nil, err
+			} else {
+				for k, v := range parsed {
+					for _, v2 := range v {
+						queryValues.Add(k, v2)
+					}
+				}
+			}
+
+		}
+
+		if params.ListOptions != nil {
+
+			if queryFrag, err := runtime.StyleParamWithLocation("form", true, "listOptions", runtime.ParamLocationQuery, *params.ListOptions); err != nil {
+				return nil, err
+			} else if parsed, err := url.ParseQuery(queryFrag); err != nil {
+				return nil, err
+			} else {
+				for k, v := range parsed {
+					for _, v2 := range v {
+						queryValues.Add(k, v2)
+					}
+				}
+			}
+
+		}
+
+		queryURL.RawQuery = queryValues.Encode()
 	}
 
 	req, err := http.NewRequest("GET", queryURL.String(), nil)
@@ -1125,7 +1178,7 @@ type ClientWithResponsesInterface interface {
 	ListTaskResultsV1WithResponse(ctx context.Context, params *ListTaskResultsV1Params, reqEditors ...RequestEditorFn) (*ListTaskResultsV1ResponseBody, error)
 
 	// ListTasksV1WithResponse request
-	ListTasksV1WithResponse(ctx context.Context, reqEditors ...RequestEditorFn) (*ListTasksV1ResponseBody, error)
+	ListTasksV1WithResponse(ctx context.Context, params *ListTasksV1Params, reqEditors ...RequestEditorFn) (*ListTasksV1ResponseBody, error)
 
 	// GetTaskV1WithResponse request
 	GetTaskV1WithResponse(ctx context.Context, task string, reqEditors ...RequestEditorFn) (*GetTaskV1ResponseBody, error)
@@ -1418,8 +1471,8 @@ func (c *ClientWithResponses) ListTaskResultsV1WithResponse(ctx context.Context,
 }
 
 // ListTasksV1WithResponse request returning *ListTasksV1ResponseBody
-func (c *ClientWithResponses) ListTasksV1WithResponse(ctx context.Context, reqEditors ...RequestEditorFn) (*ListTasksV1ResponseBody, error) {
-	rsp, err := c.ListTasksV1(ctx, reqEditors...)
+func (c *ClientWithResponses) ListTasksV1WithResponse(ctx context.Context, params *ListTasksV1Params, reqEditors ...RequestEditorFn) (*ListTasksV1ResponseBody, error) {
+	rsp, err := c.ListTasksV1(ctx, params, reqEditors...)
 	if err != nil {
 		return nil, err
 	}

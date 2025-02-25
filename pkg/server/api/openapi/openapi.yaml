@@ -2,7 +2,7 @@ openapi: 3.0.3
 info:
   title: saturn-bot server API
   # x-release-please-start-version
-  version: 0.1.0
+  version: 0.22.0
   # x-release-please-end-version
 security:
   - ApiKeyAuth: []
@@ -103,6 +103,15 @@ paths:
       description: Returns a list of registered tasks.
       tags:
         - task
+      parameters:
+        - in: query
+          name: active
+          schema:
+            type: boolean
+        - in: query
+          name: listOptions
+          schema:
+            $ref: "#/components/schemas/ListOptions"
       responses:
         "200":
           description: OK
@@ -429,12 +438,24 @@ components:
     ListTasksV1Response:
       type: object
       properties:
-        tasks:
+        page:
+          $ref: "#/components/schemas/Page"
+        results:
           description: Names of registered tasks.
           type: array
           items:
-            type: string
-      required: ["tasks"]
+            $ref: "#/components/schemas/ListTasksV1ResponseTask"
+      required: ["page", "results"]
+    ListTasksV1ResponseTask:
+      type: object
+      properties:
+        active:
+          type: boolean
+        checksum:
+          type: string
+        name:
+          type: string
+      required: ["active", "checksum", "name"]
     GetTaskV1Response:
       type: object
       properties:
