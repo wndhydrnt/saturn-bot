@@ -324,6 +324,9 @@ type WorkTaskV1 struct {
 	Name string `json:"name"`
 }
 
+// Unauthorized defines model for Unauthorized.
+type Unauthorized = Error
+
 // ListTaskResultsV1Params defines parameters for ListTaskResultsV1.
 type ListTaskResultsV1Params struct {
 	// RunId ID of a run to filter by.
@@ -954,6 +957,8 @@ func HandlerWithOptions(si ServerInterface, options ChiServerOptions) http.Handl
 	return r
 }
 
+type UnauthorizedJSONResponse Error
+
 type ScheduleRunV1RequestObject struct {
 	Body *ScheduleRunV1JSONRequestBody
 }
@@ -976,6 +981,15 @@ type ScheduleRunV1400JSONResponse Error
 func (response ScheduleRunV1400JSONResponse) VisitScheduleRunV1Response(w http.ResponseWriter) error {
 	w.Header().Set("Content-Type", "application/json")
 	w.WriteHeader(400)
+
+	return json.NewEncoder(w).Encode(response)
+}
+
+type ScheduleRunV1401JSONResponse struct{ UnauthorizedJSONResponse }
+
+func (response ScheduleRunV1401JSONResponse) VisitScheduleRunV1Response(w http.ResponseWriter) error {
+	w.Header().Set("Content-Type", "application/json")
+	w.WriteHeader(401)
 
 	return json.NewEncoder(w).Encode(response)
 }
@@ -1006,6 +1020,15 @@ func (response DeleteRunV1400JSONResponse) VisitDeleteRunV1Response(w http.Respo
 	return json.NewEncoder(w).Encode(response)
 }
 
+type DeleteRunV1401JSONResponse struct{ UnauthorizedJSONResponse }
+
+func (response DeleteRunV1401JSONResponse) VisitDeleteRunV1Response(w http.ResponseWriter) error {
+	w.Header().Set("Content-Type", "application/json")
+	w.WriteHeader(401)
+
+	return json.NewEncoder(w).Encode(response)
+}
+
 type DeleteRunV1404JSONResponse Error
 
 func (response DeleteRunV1404JSONResponse) VisitDeleteRunV1Response(w http.ResponseWriter) error {
@@ -1028,6 +1051,15 @@ type GetRunV1200JSONResponse GetRunV1Response
 func (response GetRunV1200JSONResponse) VisitGetRunV1Response(w http.ResponseWriter) error {
 	w.Header().Set("Content-Type", "application/json")
 	w.WriteHeader(200)
+
+	return json.NewEncoder(w).Encode(response)
+}
+
+type GetRunV1401JSONResponse struct{ UnauthorizedJSONResponse }
+
+func (response GetRunV1401JSONResponse) VisitGetRunV1Response(w http.ResponseWriter) error {
+	w.Header().Set("Content-Type", "application/json")
+	w.WriteHeader(401)
 
 	return json.NewEncoder(w).Encode(response)
 }
@@ -1058,6 +1090,15 @@ func (response ListTaskResultsV1200JSONResponse) VisitListTaskResultsV1Response(
 	return json.NewEncoder(w).Encode(response)
 }
 
+type ListTaskResultsV1401JSONResponse struct{ UnauthorizedJSONResponse }
+
+func (response ListTaskResultsV1401JSONResponse) VisitListTaskResultsV1Response(w http.ResponseWriter) error {
+	w.Header().Set("Content-Type", "application/json")
+	w.WriteHeader(401)
+
+	return json.NewEncoder(w).Encode(response)
+}
+
 type ListTasksV1RequestObject struct {
 	Params ListTasksV1Params
 }
@@ -1075,6 +1116,15 @@ func (response ListTasksV1200JSONResponse) VisitListTasksV1Response(w http.Respo
 	return json.NewEncoder(w).Encode(response)
 }
 
+type ListTasksV1401JSONResponse struct{ UnauthorizedJSONResponse }
+
+func (response ListTasksV1401JSONResponse) VisitListTasksV1Response(w http.ResponseWriter) error {
+	w.Header().Set("Content-Type", "application/json")
+	w.WriteHeader(401)
+
+	return json.NewEncoder(w).Encode(response)
+}
+
 type GetTaskV1RequestObject struct {
 	Task string `json:"task"`
 }
@@ -1088,6 +1138,15 @@ type GetTaskV1200JSONResponse GetTaskV1Response
 func (response GetTaskV1200JSONResponse) VisitGetTaskV1Response(w http.ResponseWriter) error {
 	w.Header().Set("Content-Type", "application/json")
 	w.WriteHeader(200)
+
+	return json.NewEncoder(w).Encode(response)
+}
+
+type GetTaskV1401JSONResponse struct{ UnauthorizedJSONResponse }
+
+func (response GetTaskV1401JSONResponse) VisitGetTaskV1Response(w http.ResponseWriter) error {
+	w.Header().Set("Content-Type", "application/json")
+	w.WriteHeader(401)
 
 	return json.NewEncoder(w).Encode(response)
 }
@@ -1128,6 +1187,15 @@ func (response ListTaskRecentTaskResultsV1200JSONResponse) VisitListTaskRecentTa
 	return json.NewEncoder(w).Encode(response)
 }
 
+type ListTaskRecentTaskResultsV1401JSONResponse struct{ UnauthorizedJSONResponse }
+
+func (response ListTaskRecentTaskResultsV1401JSONResponse) VisitListTaskRecentTaskResultsV1Response(w http.ResponseWriter) error {
+	w.Header().Set("Content-Type", "application/json")
+	w.WriteHeader(401)
+
+	return json.NewEncoder(w).Encode(response)
+}
+
 type ListTaskRecentTaskResultsV1404JSONResponse Error
 
 func (response ListTaskRecentTaskResultsV1404JSONResponse) VisitListTaskRecentTaskResultsV1Response(w http.ResponseWriter) error {
@@ -1163,6 +1231,15 @@ func (response ListRunsV1200JSONResponse) VisitListRunsV1Response(w http.Respons
 	return json.NewEncoder(w).Encode(response)
 }
 
+type ListRunsV1401JSONResponse struct{ UnauthorizedJSONResponse }
+
+func (response ListRunsV1401JSONResponse) VisitListRunsV1Response(w http.ResponseWriter) error {
+	w.Header().Set("Content-Type", "application/json")
+	w.WriteHeader(401)
+
+	return json.NewEncoder(w).Encode(response)
+}
+
 type GetWorkV1RequestObject struct {
 }
 
@@ -1175,6 +1252,15 @@ type GetWorkV1200JSONResponse GetWorkV1Response
 func (response GetWorkV1200JSONResponse) VisitGetWorkV1Response(w http.ResponseWriter) error {
 	w.Header().Set("Content-Type", "application/json")
 	w.WriteHeader(200)
+
+	return json.NewEncoder(w).Encode(response)
+}
+
+type GetWorkV1401JSONResponse struct{ UnauthorizedJSONResponse }
+
+func (response GetWorkV1401JSONResponse) VisitGetWorkV1Response(w http.ResponseWriter) error {
+	w.Header().Set("Content-Type", "application/json")
+	w.WriteHeader(401)
 
 	return json.NewEncoder(w).Encode(response)
 }
@@ -1192,6 +1278,15 @@ type ReportWorkV1201JSONResponse ReportWorkV1Response
 func (response ReportWorkV1201JSONResponse) VisitReportWorkV1Response(w http.ResponseWriter) error {
 	w.Header().Set("Content-Type", "application/json")
 	w.WriteHeader(201)
+
+	return json.NewEncoder(w).Encode(response)
+}
+
+type ReportWorkV1401JSONResponse struct{ UnauthorizedJSONResponse }
+
+func (response ReportWorkV1401JSONResponse) VisitReportWorkV1Response(w http.ResponseWriter) error {
+	w.Header().Set("Content-Type", "application/json")
+	w.WriteHeader(401)
 
 	return json.NewEncoder(w).Encode(response)
 }

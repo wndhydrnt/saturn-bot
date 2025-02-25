@@ -81,7 +81,7 @@ func handleHttpError(w http.ResponseWriter, _ *http.Request, err error) {
 			Message: "internal server error",
 		})
 	}
-
+	w.Header().Set("Content-Type", "application/json")
 	w.WriteHeader(statusCode)
 	enc := json.NewEncoder(w)
 	encErr := enc.Encode(apiError)

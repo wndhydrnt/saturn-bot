@@ -326,6 +326,9 @@ type WorkTaskV1 struct {
 	Name string `json:"name"`
 }
 
+// Unauthorized defines model for Unauthorized.
+type Unauthorized = Error
+
 // ListTaskResultsV1Params defines parameters for ListTaskResultsV1.
 type ListTaskResultsV1Params struct {
 	// RunId ID of a run to filter by.
@@ -1203,6 +1206,7 @@ type ScheduleRunV1ResponseBody struct {
 	HTTPResponse *http.Response
 	JSON200      *ScheduleRunV1Response
 	JSON400      *Error
+	JSON401      *Unauthorized
 }
 
 // Status returns HTTPResponse.Status
@@ -1226,6 +1230,7 @@ type DeleteRunV1ResponseBody struct {
 	HTTPResponse *http.Response
 	JSON200      *DeleteRunV1Response
 	JSON400      *Error
+	JSON401      *Unauthorized
 	JSON404      *Error
 }
 
@@ -1249,6 +1254,7 @@ type GetRunV1ResponseBody struct {
 	Body         []byte
 	HTTPResponse *http.Response
 	JSON200      *GetRunV1Response
+	JSON401      *Unauthorized
 	JSON404      *Error
 }
 
@@ -1272,6 +1278,7 @@ type ListTaskResultsV1ResponseBody struct {
 	Body         []byte
 	HTTPResponse *http.Response
 	JSON200      *ListTaskResultsV1Response
+	JSON401      *Unauthorized
 }
 
 // Status returns HTTPResponse.Status
@@ -1294,6 +1301,7 @@ type ListTasksV1ResponseBody struct {
 	Body         []byte
 	HTTPResponse *http.Response
 	JSON200      *ListTasksV1Response
+	JSON401      *Unauthorized
 }
 
 // Status returns HTTPResponse.Status
@@ -1316,6 +1324,7 @@ type GetTaskV1ResponseBody struct {
 	Body         []byte
 	HTTPResponse *http.Response
 	JSON200      *GetTaskV1Response
+	JSON401      *Unauthorized
 	JSON404      *Error
 	JSON500      *Error
 }
@@ -1340,6 +1349,7 @@ type ListTaskRecentTaskResultsV1ResponseBody struct {
 	Body         []byte
 	HTTPResponse *http.Response
 	JSON200      *ListTaskRecentTaskResultsV1Response
+	JSON401      *Unauthorized
 	JSON404      *Error
 	JSON500      *Error
 }
@@ -1364,6 +1374,7 @@ type ListRunsV1ResponseBody struct {
 	Body         []byte
 	HTTPResponse *http.Response
 	JSON200      *ListRunsV1Response
+	JSON401      *Unauthorized
 }
 
 // Status returns HTTPResponse.Status
@@ -1386,6 +1397,7 @@ type GetWorkV1ResponseBody struct {
 	Body         []byte
 	HTTPResponse *http.Response
 	JSON200      *GetWorkV1Response
+	JSON401      *Unauthorized
 }
 
 // Status returns HTTPResponse.Status
@@ -1408,6 +1420,7 @@ type ReportWorkV1ResponseBody struct {
 	Body         []byte
 	HTTPResponse *http.Response
 	JSON201      *ReportWorkV1Response
+	JSON401      *Unauthorized
 }
 
 // Status returns HTTPResponse.Status
@@ -1560,6 +1573,13 @@ func ParseScheduleRunV1ResponseBody(rsp *http.Response) (*ScheduleRunV1ResponseB
 		}
 		response.JSON400 = &dest
 
+	case strings.Contains(rsp.Header.Get("Content-Type"), "json") && rsp.StatusCode == 401:
+		var dest Unauthorized
+		if err := json.Unmarshal(bodyBytes, &dest); err != nil {
+			return nil, err
+		}
+		response.JSON401 = &dest
+
 	}
 
 	return response, nil
@@ -1592,6 +1612,13 @@ func ParseDeleteRunV1ResponseBody(rsp *http.Response) (*DeleteRunV1ResponseBody,
 			return nil, err
 		}
 		response.JSON400 = &dest
+
+	case strings.Contains(rsp.Header.Get("Content-Type"), "json") && rsp.StatusCode == 401:
+		var dest Unauthorized
+		if err := json.Unmarshal(bodyBytes, &dest); err != nil {
+			return nil, err
+		}
+		response.JSON401 = &dest
 
 	case strings.Contains(rsp.Header.Get("Content-Type"), "json") && rsp.StatusCode == 404:
 		var dest Error
@@ -1626,6 +1653,13 @@ func ParseGetRunV1ResponseBody(rsp *http.Response) (*GetRunV1ResponseBody, error
 		}
 		response.JSON200 = &dest
 
+	case strings.Contains(rsp.Header.Get("Content-Type"), "json") && rsp.StatusCode == 401:
+		var dest Unauthorized
+		if err := json.Unmarshal(bodyBytes, &dest); err != nil {
+			return nil, err
+		}
+		response.JSON401 = &dest
+
 	case strings.Contains(rsp.Header.Get("Content-Type"), "json") && rsp.StatusCode == 404:
 		var dest Error
 		if err := json.Unmarshal(bodyBytes, &dest); err != nil {
@@ -1659,6 +1693,13 @@ func ParseListTaskResultsV1ResponseBody(rsp *http.Response) (*ListTaskResultsV1R
 		}
 		response.JSON200 = &dest
 
+	case strings.Contains(rsp.Header.Get("Content-Type"), "json") && rsp.StatusCode == 401:
+		var dest Unauthorized
+		if err := json.Unmarshal(bodyBytes, &dest); err != nil {
+			return nil, err
+		}
+		response.JSON401 = &dest
+
 	}
 
 	return response, nil
@@ -1685,6 +1726,13 @@ func ParseListTasksV1ResponseBody(rsp *http.Response) (*ListTasksV1ResponseBody,
 		}
 		response.JSON200 = &dest
 
+	case strings.Contains(rsp.Header.Get("Content-Type"), "json") && rsp.StatusCode == 401:
+		var dest Unauthorized
+		if err := json.Unmarshal(bodyBytes, &dest); err != nil {
+			return nil, err
+		}
+		response.JSON401 = &dest
+
 	}
 
 	return response, nil
@@ -1710,6 +1758,13 @@ func ParseGetTaskV1ResponseBody(rsp *http.Response) (*GetTaskV1ResponseBody, err
 			return nil, err
 		}
 		response.JSON200 = &dest
+
+	case strings.Contains(rsp.Header.Get("Content-Type"), "json") && rsp.StatusCode == 401:
+		var dest Unauthorized
+		if err := json.Unmarshal(bodyBytes, &dest); err != nil {
+			return nil, err
+		}
+		response.JSON401 = &dest
 
 	case strings.Contains(rsp.Header.Get("Content-Type"), "json") && rsp.StatusCode == 404:
 		var dest Error
@@ -1751,6 +1806,13 @@ func ParseListTaskRecentTaskResultsV1ResponseBody(rsp *http.Response) (*ListTask
 		}
 		response.JSON200 = &dest
 
+	case strings.Contains(rsp.Header.Get("Content-Type"), "json") && rsp.StatusCode == 401:
+		var dest Unauthorized
+		if err := json.Unmarshal(bodyBytes, &dest); err != nil {
+			return nil, err
+		}
+		response.JSON401 = &dest
+
 	case strings.Contains(rsp.Header.Get("Content-Type"), "json") && rsp.StatusCode == 404:
 		var dest Error
 		if err := json.Unmarshal(bodyBytes, &dest); err != nil {
@@ -1791,6 +1853,13 @@ func ParseListRunsV1ResponseBody(rsp *http.Response) (*ListRunsV1ResponseBody, e
 		}
 		response.JSON200 = &dest
 
+	case strings.Contains(rsp.Header.Get("Content-Type"), "json") && rsp.StatusCode == 401:
+		var dest Unauthorized
+		if err := json.Unmarshal(bodyBytes, &dest); err != nil {
+			return nil, err
+		}
+		response.JSON401 = &dest
+
 	}
 
 	return response, nil
@@ -1817,6 +1886,13 @@ func ParseGetWorkV1ResponseBody(rsp *http.Response) (*GetWorkV1ResponseBody, err
 		}
 		response.JSON200 = &dest
 
+	case strings.Contains(rsp.Header.Get("Content-Type"), "json") && rsp.StatusCode == 401:
+		var dest Unauthorized
+		if err := json.Unmarshal(bodyBytes, &dest); err != nil {
+			return nil, err
+		}
+		response.JSON401 = &dest
+
 	}
 
 	return response, nil
@@ -1842,6 +1918,13 @@ func ParseReportWorkV1ResponseBody(rsp *http.Response) (*ReportWorkV1ResponseBod
 			return nil, err
 		}
 		response.JSON201 = &dest
+
+	case strings.Contains(rsp.Header.Get("Content-Type"), "json") && rsp.StatusCode == 401:
+		var dest Unauthorized
+		if err := json.Unmarshal(bodyBytes, &dest); err != nil {
+			return nil, err
+		}
+		response.JSON401 = &dest
 
 	}
 
