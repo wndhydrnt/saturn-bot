@@ -260,6 +260,16 @@ Set to `ssh` to clone repositories via SSH.
 | Env Var | `SATURN_BOT_SERVERADDR` |
 | Type    | `string`                |
 
+## serverApiKey
+
+[json-path:../../pkg/config/config.schema.json:$.properties.serverApiKey.description]
+
+| Name    | Value                     |
+| ------- | ------------------------- |
+| Default | -                         |
+| Env Var | `SATURN_BOT_SERVERAPIKEY` |
+| Type    | `string`                  |
+
 ## serverBaseUrl
 
 [json-path:../../pkg/config/config.schema.json:$.properties.serverBaseUrl.description]

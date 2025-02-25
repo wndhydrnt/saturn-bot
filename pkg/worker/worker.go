@@ -20,6 +20,7 @@ import (
 	"github.com/wndhydrnt/saturn-bot/pkg/options"
 	"github.com/wndhydrnt/saturn-bot/pkg/processor"
 	"github.com/wndhydrnt/saturn-bot/pkg/ptr"
+	"github.com/wndhydrnt/saturn-bot/pkg/server/api/openapi"
 	"github.com/wndhydrnt/saturn-bot/pkg/server/task"
 	"github.com/wndhydrnt/saturn-bot/pkg/task/schema"
 	"github.com/wndhydrnt/saturn-bot/pkg/version"
@@ -52,15 +53,27 @@ type APIExecutionSource struct {
 func (a *APIExecutionSource) Next() (Execution, error) {
 	resp, err := a.client.GetWorkV1WithResponse(ctx)
 	if err != nil {
-		metricServerRequestsFailed.WithLabelValues(metricLabelOpGetWorkV1).Inc()
 		return Execution{}, fmt.Errorf("api request to get work: %w", err)
 	}
 
-	if resp.JSON200.RunID == 0 {
-		return Execution{}, ErrNoExec
+	if resp.JSON200 != nil {
+		if resp.JSON200.RunID == 0 {
+			return Execution{}, ErrNoExec
+		}
+
+		return Execution(*resp.JSON200), nil
 	}
 
-	return Execution(*resp.JSON200), nil
+	if resp.JSON401 != nil {
+		var errs []error
+		for _, apiErr := range resp.JSON401.Errors {
+			errs = append(errs, fmt.Errorf("%d: %s", apiErr.Error, apiErr.Message))
+		}
+
+		return Execution{}, errors.Join(errs...)
+	}
+
+	return Execution{}, fmt.Errorf("server returned an unexpected response: %s", resp.Status())
 }
 
 func (a *APIExecutionSource) Report(result Result) error {
@@ -116,7 +129,10 @@ func NewWorker(configPath string, taskPaths []string) (*Worker, error) {
 		return nil, err
 	}
 
-	apiClient, err := client.NewClientWithResponses(opts.Config.WorkerServerAPIBaseURL)
+	apiClient, err := client.NewClientWithResponses(
+		opts.Config.WorkerServerAPIBaseURL,
+		client.WithRequestEditorFn(newApiKeyAddFunc(openapi.HeaderApiKey, opts.Config.ServerApiKey)),
+	)
 	if err != nil {
 		return nil, fmt.Errorf("create openapi client: %w", err)
 	}
@@ -166,6 +182,7 @@ func (w *Worker) Start() {
 			exec, err := w.Exec.Next()
 			if err != nil {
 				if !errors.Is(err, ErrNoExec) {
+					metricServerRequestsFailed.WithLabelValues(metricLabelOpGetWorkV1).Inc()
 					log.Log().Errorw("Failed to get next execution", zap.Error(err))
 				}
 

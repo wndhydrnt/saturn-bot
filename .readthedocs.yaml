@@ -13,6 +13,7 @@ build:
       - mkdir -p docs/schemas
       - cp pkg/config/config.schema.json docs/schemas/
       - cp pkg/task/schema/task.schema.json docs/schemas/
+      - cp pkg/server/api/openapi/openapi.yaml docs/schemas/openapi.yaml
 
 mkdocs:
   configuration: mkdocs.yml

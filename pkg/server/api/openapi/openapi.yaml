@@ -4,6 +4,8 @@ info:
   # x-release-please-start-version
   version: 0.22.0
   # x-release-please-end-version
+security:
+  - ApiKeyAuth: []
 paths:
   /api/v1/runs:
     post:
@@ -31,6 +33,8 @@ paths:
             application/json:
               schema:
                 $ref: "#/components/schemas/Error"
+        "401":
+          $ref: "#/components/responses/Unauthorized"
   /api/v1/runs/{runId}:
     delete:
       operationId: deleteRunV1
@@ -62,6 +66,8 @@ paths:
             application/json:
               schema:
                 $ref: "#/components/schemas/Error"
+        "401":
+          $ref: "#/components/responses/Unauthorized"
         "404":
           description: The run does not exist.
           content:
@@ -88,6 +94,8 @@ paths:
             application/json:
               schema:
                 $ref: "#/components/schemas/GetRunV1Response"
+        "401":
+          $ref: "#/components/responses/Unauthorized"
         "404":
           description: The run does not exist.
           content:
@@ -117,6 +125,8 @@ paths:
             application/json:
               schema:
                 $ref: "#/components/schemas/ListTasksV1Response"
+        "401":
+          $ref: "#/components/responses/Unauthorized"
   /api/v1/tasks/{task}:
     get:
       operationId: getTaskV1
@@ -138,6 +148,8 @@ paths:
             application/json:
               schema:
                 $ref: "#/components/schemas/GetTaskV1Response"
+        "401":
+          $ref: "#/components/responses/Unauthorized"
         "404":
           description: Not Found
           content:
@@ -182,6 +194,8 @@ paths:
             application/json:
               schema:
                 $ref: "#/components/schemas/ListTaskRecentTaskResultsV1Response"
+        "401":
+          $ref: "#/components/responses/Unauthorized"
         "404":
           description: Not Found
           content:
@@ -224,6 +238,8 @@ paths:
             application/json:
               schema:
                 $ref: "#/components/schemas/ListTaskResultsV1Response"
+        "401":
+          $ref: "#/components/responses/Unauthorized"
   /api/v1/worker/work:
     get:
       operationId: getWorkV1
@@ -238,6 +254,8 @@ paths:
             application/json:
               schema:
                 $ref: "#/components/schemas/GetWorkV1Response"
+        "401":
+          $ref: "#/components/responses/Unauthorized"
     post:
       operationId: reportWorkV1
       summary: Report the result of a unit of work
@@ -257,6 +275,8 @@ paths:
             application/json:
               schema:
                 $ref: "#/components/schemas/ReportWorkV1Response"
+        "401":
+          $ref: "#/components/responses/Unauthorized"
   /api/v1/worker/runs:
     get:
       operationId: listRunsV1
@@ -289,7 +309,21 @@ paths:
             application/json:
               schema:
                 $ref: "#/components/schemas/ListRunsV1Response"
+        "401":
+          $ref: "#/components/responses/Unauthorized"
 components:
+  responses:
+    Unauthorized:
+      description: The client presented an unknown API key.
+      content:
+        application/json:
+          schema:
+            $ref: "#/components/schemas/Error"
+  securitySchemes:
+    ApiKeyAuth:
+      type: apiKey
+      in: header
+      name: X-API-KEY
   schemas:
     ScheduleRunV1Request:
       type: object
