@@ -228,7 +228,6 @@ func matchTaskToRepository(ctx context.Context, filters []filter.Filter, logger 
 		}
 
 		if !match {
-			logger.Debugf("Filter %s does not match", filter.String())
 			return false, nil
 		}
 	}
