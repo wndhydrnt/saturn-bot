@@ -1,5 +1,19 @@
 # Changelog
 
+## [0.23.0](https://github.com/wndhydrnt/saturn-bot/compare/v0.22.0...v0.23.0) (2025-02-28)
+
+
+### Features
+
+* **server:** Support authentication at the API via an API key ([#159](https://github.com/wndhydrnt/saturn-bot/issues/159)) ([c57dd59](https://github.com/wndhydrnt/saturn-bot/commit/c57dd591cf9dcddbf3807a5b270e717bbd27c07f))
+* **worker:** Use task registry to load tasks ([fcb08d4](https://github.com/wndhydrnt/saturn-bot/commit/fcb08d4b19fef984e0e85cce6ef7790885c65910))
+
+
+### Bug Fixes
+
+* **processor:** Remove a chatty log line ([6472d96](https://github.com/wndhydrnt/saturn-bot/commit/6472d9628cf72ba4efa38694d668819d1387a183))
+* **worker:** Report task result if there are no changes ([5b46138](https://github.com/wndhydrnt/saturn-bot/commit/5b461381a849da639c5ddd96eec68724a8465900))
+
 ## [0.22.0](https://github.com/wndhydrnt/saturn-bot/compare/v0.21.1...v0.22.0) (2025-02-24)
 
 
