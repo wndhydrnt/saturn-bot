@@ -1,5 +1,12 @@
 # Changelog
 
+## [0.23.1](https://github.com/wndhydrnt/saturn-bot/compare/v0.23.0...v0.23.1) (2025-03-04)
+
+
+### Bug Fixes
+
+* Remove a chatty log line ([1978506](https://github.com/wndhydrnt/saturn-bot/commit/1978506fde556bebeda89cc774fe3b62e0ca64bf))
+
 ## [0.23.0](https://github.com/wndhydrnt/saturn-bot/compare/v0.22.0...v0.23.0) (2025-02-28)
 
 
