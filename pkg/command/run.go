@@ -79,7 +79,6 @@ func (r *Run) Run(repositoryNames, taskFiles []string, inputs map[string]string)
 	for {
 		select {
 		case repo := <-repos:
-			log.Log().Debugf("Discovered repository %s", repo.FullName())
 			doFilter := len(repositoryNames) == 0
 			processResults := r.Processor.Process(r.DryRun, repo, tasks, doFilter)
 			for _, p := range processResults {
