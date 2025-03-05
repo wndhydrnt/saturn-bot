@@ -83,7 +83,7 @@ func Test_Sync(t *testing.T) {
 	})
 	assertApiCall(e, apiCall{
 		method:     "GET",
-		path:       "/api/v1/worker/runs",
+		path:       "/api/v1/runs",
 		statusCode: 200,
 		responseBody: openapi.ListRunsV1Response{
 			Page: openapi.Page{CurrentPage: 1, ItemsPerPage: 20, TotalItems: 2, TotalPages: 1},

@@ -121,7 +121,7 @@ func TestServer_WebhookGithub(t *testing.T) {
 				{
 					sleep:      5 * time.Millisecond, // Need to sleep because write of webhook happens in goroutine
 					method:     "GET",
-					path:       "/api/v1/worker/runs",
+					path:       "/api/v1/runs",
 					statusCode: http.StatusOK,
 					responseBody: openapi.ListRunsV1Response{
 						Page: openapi.Page{CurrentPage: 1, ItemsPerPage: 20, TotalItems: 1, TotalPages: 1},

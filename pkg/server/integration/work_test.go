@@ -65,7 +65,7 @@ func TestServer_API_ListRunsV1(t *testing.T) {
 				// List the runs of the task. Limit to one result to test pagination.
 				{
 					method:     "GET",
-					path:       "/api/v1/worker/runs",
+					path:       "/api/v1/runs",
 					query:      fmt.Sprintf("limit=1&page=1&task=%s", defaultTask.Name),
 					statusCode: http.StatusOK,
 					responseBody: openapi.ListRunsV1Response{
@@ -84,7 +84,7 @@ func TestServer_API_ListRunsV1(t *testing.T) {
 				// List the next page of runs.
 				{
 					method:     "GET",
-					path:       "/api/v1/worker/runs",
+					path:       "/api/v1/runs",
 					query:      fmt.Sprintf("limit=1&page=2&task=%s", defaultTask.Name),
 					statusCode: http.StatusOK,
 					responseBody: openapi.ListRunsV1Response{
@@ -295,7 +295,7 @@ func TestServer_API_ScheduleRunV1(t *testing.T) {
 				// Check that the task got scheduled
 				{
 					method:     "GET",
-					path:       "/api/v1/worker/runs",
+					path:       "/api/v1/runs",
 					statusCode: http.StatusOK,
 					responseBody: openapi.ListRunsV1Response{
 						Page: openapi.Page{CurrentPage: 1, ItemsPerPage: 20, TotalItems: 1, TotalPages: 1},
@@ -372,7 +372,7 @@ func TestServer_API_ReportWorkV1(t *testing.T) {
 				// List the runs of the task.
 				{
 					method:     "GET",
-					path:       "/api/v1/worker/runs",
+					path:       "/api/v1/runs",
 					statusCode: http.StatusOK,
 					responseBody: openapi.ListRunsV1Response{
 						Page: openapi.Page{CurrentPage: 1, ItemsPerPage: 20, TotalItems: 2, TotalPages: 1},
@@ -452,7 +452,7 @@ func TestServer_API_ReportWorkV1(t *testing.T) {
 				// List the runs of the task.
 				{
 					method:     "GET",
-					path:       "/api/v1/worker/runs",
+					path:       "/api/v1/runs",
 					statusCode: http.StatusOK,
 					responseBody: openapi.ListRunsV1Response{
 						Page: openapi.Page{CurrentPage: 1, ItemsPerPage: 20, TotalItems: 2, TotalPages: 1},
@@ -797,7 +797,7 @@ func TestServer_API_ReportWorkV1_AutoMergeOpenPrSchedule1Hour(t *testing.T) {
 			// List the runs of the task.
 			{
 				method:     "GET",
-				path:       "/api/v1/worker/runs",
+				path:       "/api/v1/runs",
 				statusCode: http.StatusOK,
 				responseBody: openapi.ListRunsV1Response{
 					Page: openapi.Page{CurrentPage: 1, ItemsPerPage: 20, TotalItems: 2, TotalPages: 1},
