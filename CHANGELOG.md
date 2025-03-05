@@ -1,5 +1,12 @@
 # Changelog
 
+## [0.23.2](https://github.com/wndhydrnt/saturn-bot/compare/v0.23.1...v0.23.2) (2025-03-05)
+
+
+### Bug Fixes
+
+* **worker:** Plugins do not start ([#163](https://github.com/wndhydrnt/saturn-bot/issues/163)) ([19f9e37](https://github.com/wndhydrnt/saturn-bot/commit/19f9e3749eca89b510e02e0c1e4a45e7c97a90fe))
+
 ## [0.23.1](https://github.com/wndhydrnt/saturn-bot/compare/v0.23.0...v0.23.1) (2025-03-04)
 
 
