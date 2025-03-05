@@ -10,14 +10,6 @@
 </nav>
 {{end}}
 
-{{define "actions"}}
-{{if and (eq .Run.Status "pending") (eq .Run.Reason "manual")}}
-<form action="/ui/runs/{{.Run.Id}}/destroy" method="post">
-  <button type="submit" class="button is-danger">Delete run</button>
-</form>
-{{end}}
-{{end}}
-
 {{define "body"}}
 {{if .Run.Error}}
 <div class="columns">
