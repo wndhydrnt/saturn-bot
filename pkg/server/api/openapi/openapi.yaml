@@ -8,12 +8,45 @@ security:
   - ApiKeyAuth: []
 paths:
   /api/v1/runs:
+    get:
+      operationId: listRunsV1
+      summary: List of runs.
+      description: |
+        Returns a list of past and future runs.
+        Optional filters can be applied.
+      tags:
+        - run
+      parameters:
+        - in: query
+          name: task
+          schema:
+            type: string
+          description: Name of the task to filter by.
+        - in: query
+          name: listOptions
+          schema:
+            $ref: "#/components/schemas/ListOptions"
+        - in: query
+          name: status
+          schema:
+            type: array
+            items:
+              $ref: "#/components/schemas/RunStatusV1"
+      responses:
+        "200":
+          description: OK
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/ListRunsV1Response"
+        "401":
+          $ref: "#/components/responses/Unauthorized"
     post:
       operationId: scheduleRunV1
       summary: Schedule a run.
       description: Add a new run to the queue.
       tags:
-        - worker
+        - run
       requestBody:
         content:
           application/json:
@@ -79,7 +112,7 @@ paths:
       summary: View data of a run.
       description: Returns details of a single run.
       tags:
-        - worker
+        - run
       parameters:
         - in: path
           name: runId
@@ -275,40 +308,6 @@ paths:
             application/json:
               schema:
                 $ref: "#/components/schemas/ReportWorkV1Response"
-        "401":
-          $ref: "#/components/responses/Unauthorized"
-  /api/v1/worker/runs:
-    get:
-      operationId: listRunsV1
-      summary: List of runs.
-      description: |
-        Returns a list of past and future runs.
-        Optional filters can be applied.
-      tags:
-        - worker
-      parameters:
-        - in: query
-          name: task
-          schema:
-            type: string
-          description: Name of the task to filter by.
-        - in: query
-          name: listOptions
-          schema:
-            $ref: "#/components/schemas/ListOptions"
-        - in: query
-          name: status
-          schema:
-            type: array
-            items:
-              $ref: "#/components/schemas/RunStatusV1"
-      responses:
-        "200":
-          description: OK
-          content:
-            application/json:
-              schema:
-                $ref: "#/components/schemas/ListRunsV1Response"
         "401":
           $ref: "#/components/responses/Unauthorized"
 components:

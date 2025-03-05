@@ -327,6 +327,14 @@ type WorkTaskV1 struct {
 // Unauthorized defines model for Unauthorized.
 type Unauthorized = Error
 
+// ListRunsV1Params defines parameters for ListRunsV1.
+type ListRunsV1Params struct {
+	// Task Name of the task to filter by.
+	Task        *string        `form:"task,omitempty" json:"task,omitempty"`
+	ListOptions *ListOptions   `form:"listOptions,omitempty" json:"listOptions,omitempty"`
+	Status      *[]RunStatusV1 `form:"status,omitempty" json:"status,omitempty"`
+}
+
 // ListTaskResultsV1Params defines parameters for ListTaskResultsV1.
 type ListTaskResultsV1Params struct {
 	// RunId ID of a run to filter by.
@@ -347,14 +355,6 @@ type ListTaskRecentTaskResultsV1Params struct {
 	ListOptions *ListOptions         `form:"listOptions,omitempty" json:"listOptions,omitempty"`
 }
 
-// ListRunsV1Params defines parameters for ListRunsV1.
-type ListRunsV1Params struct {
-	// Task Name of the task to filter by.
-	Task        *string        `form:"task,omitempty" json:"task,omitempty"`
-	ListOptions *ListOptions   `form:"listOptions,omitempty" json:"listOptions,omitempty"`
-	Status      *[]RunStatusV1 `form:"status,omitempty" json:"status,omitempty"`
-}
-
 // ScheduleRunV1JSONRequestBody defines body for ScheduleRunV1 for application/json ContentType.
 type ScheduleRunV1JSONRequestBody = ScheduleRunV1Request
 
@@ -363,6 +363,9 @@ type ReportWorkV1JSONRequestBody = ReportWorkV1Request
 
 // ServerInterface represents all server handlers.
 type ServerInterface interface {
+	// List of runs.
+	// (GET /api/v1/runs)
+	ListRunsV1(w http.ResponseWriter, r *http.Request, params ListRunsV1Params)
 	// Schedule a run.
 	// (POST /api/v1/runs)
 	ScheduleRunV1(w http.ResponseWriter, r *http.Request)
@@ -384,9 +387,6 @@ type ServerInterface interface {
 	// List recent run results of a task by repository.
 	// (GET /api/v1/tasks/{task}/results)
 	ListTaskRecentTaskResultsV1(w http.ResponseWriter, r *http.Request, task string, params ListTaskRecentTaskResultsV1Params)
-	// List of runs.
-	// (GET /api/v1/worker/runs)
-	ListRunsV1(w http.ResponseWriter, r *http.Request, params ListRunsV1Params)
 	// Get a unit of work.
 	// (GET /api/v1/worker/work)
 	GetWorkV1(w http.ResponseWriter, r *http.Request)
@@ -398,6 +398,12 @@ type ServerInterface interface {
 // Unimplemented server implementation that returns http.StatusNotImplemented for each endpoint.
 
 type Unimplemented struct{}
+
+// List of runs.
+// (GET /api/v1/runs)
+func (_ Unimplemented) ListRunsV1(w http.ResponseWriter, r *http.Request, params ListRunsV1Params) {
+	w.WriteHeader(http.StatusNotImplemented)
+}
 
 // Schedule a run.
 // (POST /api/v1/runs)
@@ -441,12 +447,6 @@ func (_ Unimplemented) ListTaskRecentTaskResultsV1(w http.ResponseWriter, r *htt
 	w.WriteHeader(http.StatusNotImplemented)
 }
 
-// List of runs.
-// (GET /api/v1/worker/runs)
-func (_ Unimplemented) ListRunsV1(w http.ResponseWriter, r *http.Request, params ListRunsV1Params) {
-	w.WriteHeader(http.StatusNotImplemented)
-}
-
 // Get a unit of work.
 // (GET /api/v1/worker/work)
 func (_ Unimplemented) GetWorkV1(w http.ResponseWriter, r *http.Request) {
@@ -467,6 +467,55 @@ type ServerInterfaceWrapper struct {
 }
 
 type MiddlewareFunc func(http.Handler) http.Handler
+
+// ListRunsV1 operation middleware
+func (siw *ServerInterfaceWrapper) ListRunsV1(w http.ResponseWriter, r *http.Request) {
+
+	var err error
+
+	ctx := r.Context()
+
+	ctx = context.WithValue(ctx, ApiKeyAuthScopes, []string{})
+
+	r = r.WithContext(ctx)
+
+	// Parameter object where we will unmarshal all parameters from the context
+	var params ListRunsV1Params
+
+	// ------------- Optional query parameter "task" -------------
+
+	err = runtime.BindQueryParameter("form", true, false, "task", r.URL.Query(), &params.Task)
+	if err != nil {
+		siw.ErrorHandlerFunc(w, r, &InvalidParamFormatError{ParamName: "task", Err: err})
+		return
+	}
+
+	// ------------- Optional query parameter "listOptions" -------------
+
+	err = runtime.BindQueryParameter("form", true, false, "listOptions", r.URL.Query(), &params.ListOptions)
+	if err != nil {
+		siw.ErrorHandlerFunc(w, r, &InvalidParamFormatError{ParamName: "listOptions", Err: err})
+		return
+	}
+
+	// ------------- Optional query parameter "status" -------------
+
+	err = runtime.BindQueryParameter("form", true, false, "status", r.URL.Query(), &params.Status)
+	if err != nil {
+		siw.ErrorHandlerFunc(w, r, &InvalidParamFormatError{ParamName: "status", Err: err})
+		return
+	}
+
+	handler := http.Handler(http.HandlerFunc(func(w http.ResponseWriter, r *http.Request) {
+		siw.Handler.ListRunsV1(w, r, params)
+	}))
+
+	for _, middleware := range siw.HandlerMiddlewares {
+		handler = middleware(handler)
+	}
+
+	handler.ServeHTTP(w, r)
+}
 
 // ScheduleRunV1 operation middleware
 func (siw *ServerInterfaceWrapper) ScheduleRunV1(w http.ResponseWriter, r *http.Request) {
@@ -721,55 +770,6 @@ func (siw *ServerInterfaceWrapper) ListTaskRecentTaskResultsV1(w http.ResponseWr
 	handler.ServeHTTP(w, r)
 }
 
-// ListRunsV1 operation middleware
-func (siw *ServerInterfaceWrapper) ListRunsV1(w http.ResponseWriter, r *http.Request) {
-
-	var err error
-
-	ctx := r.Context()
-
-	ctx = context.WithValue(ctx, ApiKeyAuthScopes, []string{})
-
-	r = r.WithContext(ctx)
-
-	// Parameter object where we will unmarshal all parameters from the context
-	var params ListRunsV1Params
-
-	// ------------- Optional query parameter "task" -------------
-
-	err = runtime.BindQueryParameter("form", true, false, "task", r.URL.Query(), &params.Task)
-	if err != nil {
-		siw.ErrorHandlerFunc(w, r, &InvalidParamFormatError{ParamName: "task", Err: err})
-		return
-	}
-
-	// ------------- Optional query parameter "listOptions" -------------
-
-	err = runtime.BindQueryParameter("form", true, false, "listOptions", r.URL.Query(), &params.ListOptions)
-	if err != nil {
-		siw.ErrorHandlerFunc(w, r, &InvalidParamFormatError{ParamName: "listOptions", Err: err})
-		return
-	}
-
-	// ------------- Optional query parameter "status" -------------
-
-	err = runtime.BindQueryParameter("form", true, false, "status", r.URL.Query(), &params.Status)
-	if err != nil {
-		siw.ErrorHandlerFunc(w, r, &InvalidParamFormatError{ParamName: "status", Err: err})
-		return
-	}
-
-	handler := http.Handler(http.HandlerFunc(func(w http.ResponseWriter, r *http.Request) {
-		siw.Handler.ListRunsV1(w, r, params)
-	}))
-
-	for _, middleware := range siw.HandlerMiddlewares {
-		handler = middleware(handler)
-	}
-
-	handler.ServeHTTP(w, r)
-}
-
 // GetWorkV1 operation middleware
 func (siw *ServerInterfaceWrapper) GetWorkV1(w http.ResponseWriter, r *http.Request) {
 
@@ -924,6 +924,9 @@ func HandlerWithOptions(si ServerInterface, options ChiServerOptions) http.Handl
 	}
 
 	r.Group(func(r chi.Router) {
+		r.Get(options.BaseURL+"/api/v1/runs", wrapper.ListRunsV1)
+	})
+	r.Group(func(r chi.Router) {
 		r.Post(options.BaseURL+"/api/v1/runs", wrapper.ScheduleRunV1)
 	})
 	r.Group(func(r chi.Router) {
@@ -945,9 +948,6 @@ func HandlerWithOptions(si ServerInterface, options ChiServerOptions) http.Handl
 		r.Get(options.BaseURL+"/api/v1/tasks/{task}/results", wrapper.ListTaskRecentTaskResultsV1)
 	})
 	r.Group(func(r chi.Router) {
-		r.Get(options.BaseURL+"/api/v1/worker/runs", wrapper.ListRunsV1)
-	})
-	r.Group(func(r chi.Router) {
 		r.Get(options.BaseURL+"/api/v1/worker/work", wrapper.GetWorkV1)
 	})
 	r.Group(func(r chi.Router) {
@@ -958,6 +958,32 @@ func HandlerWithOptions(si ServerInterface, options ChiServerOptions) http.Handl
 }
 
 type UnauthorizedJSONResponse Error
+
+type ListRunsV1RequestObject struct {
+	Params ListRunsV1Params
+}
+
+type ListRunsV1ResponseObject interface {
+	VisitListRunsV1Response(w http.ResponseWriter) error
+}
+
+type ListRunsV1200JSONResponse ListRunsV1Response
+
+func (response ListRunsV1200JSONResponse) VisitListRunsV1Response(w http.ResponseWriter) error {
+	w.Header().Set("Content-Type", "application/json")
+	w.WriteHeader(200)
+
+	return json.NewEncoder(w).Encode(response)
+}
+
+type ListRunsV1401JSONResponse struct{ UnauthorizedJSONResponse }
+
+func (response ListRunsV1401JSONResponse) VisitListRunsV1Response(w http.ResponseWriter) error {
+	w.Header().Set("Content-Type", "application/json")
+	w.WriteHeader(401)
+
+	return json.NewEncoder(w).Encode(response)
+}
 
 type ScheduleRunV1RequestObject struct {
 	Body *ScheduleRunV1JSONRequestBody
@@ -1214,32 +1240,6 @@ func (response ListTaskRecentTaskResultsV1500JSONResponse) VisitListTaskRecentTa
 	return json.NewEncoder(w).Encode(response)
 }
 
-type ListRunsV1RequestObject struct {
-	Params ListRunsV1Params
-}
-
-type ListRunsV1ResponseObject interface {
-	VisitListRunsV1Response(w http.ResponseWriter) error
-}
-
-type ListRunsV1200JSONResponse ListRunsV1Response
-
-func (response ListRunsV1200JSONResponse) VisitListRunsV1Response(w http.ResponseWriter) error {
-	w.Header().Set("Content-Type", "application/json")
-	w.WriteHeader(200)
-
-	return json.NewEncoder(w).Encode(response)
-}
-
-type ListRunsV1401JSONResponse struct{ UnauthorizedJSONResponse }
-
-func (response ListRunsV1401JSONResponse) VisitListRunsV1Response(w http.ResponseWriter) error {
-	w.Header().Set("Content-Type", "application/json")
-	w.WriteHeader(401)
-
-	return json.NewEncoder(w).Encode(response)
-}
-
 type GetWorkV1RequestObject struct {
 }
 
@@ -1293,6 +1293,9 @@ func (response ReportWorkV1401JSONResponse) VisitReportWorkV1Response(w http.Res
 
 // StrictServerInterface represents all server handlers.
 type StrictServerInterface interface {
+	// List of runs.
+	// (GET /api/v1/runs)
+	ListRunsV1(ctx context.Context, request ListRunsV1RequestObject) (ListRunsV1ResponseObject, error)
 	// Schedule a run.
 	// (POST /api/v1/runs)
 	ScheduleRunV1(ctx context.Context, request ScheduleRunV1RequestObject) (ScheduleRunV1ResponseObject, error)
@@ -1314,9 +1317,6 @@ type StrictServerInterface interface {
 	// List recent run results of a task by repository.
 	// (GET /api/v1/tasks/{task}/results)
 	ListTaskRecentTaskResultsV1(ctx context.Context, request ListTaskRecentTaskResultsV1RequestObject) (ListTaskRecentTaskResultsV1ResponseObject, error)
-	// List of runs.
-	// (GET /api/v1/worker/runs)
-	ListRunsV1(ctx context.Context, request ListRunsV1RequestObject) (ListRunsV1ResponseObject, error)
 	// Get a unit of work.
 	// (GET /api/v1/worker/work)
 	GetWorkV1(ctx context.Context, request GetWorkV1RequestObject) (GetWorkV1ResponseObject, error)
@@ -1352,6 +1352,32 @@ type strictHandler struct {
 	ssi         StrictServerInterface
 	middlewares []StrictMiddlewareFunc
 	options     StrictHTTPServerOptions
+}
+
+// ListRunsV1 operation middleware
+func (sh *strictHandler) ListRunsV1(w http.ResponseWriter, r *http.Request, params ListRunsV1Params) {
+	var request ListRunsV1RequestObject
+
+	request.Params = params
+
+	handler := func(ctx context.Context, w http.ResponseWriter, r *http.Request, request interface{}) (interface{}, error) {
+		return sh.ssi.ListRunsV1(ctx, request.(ListRunsV1RequestObject))
+	}
+	for _, middleware := range sh.middlewares {
+		handler = middleware(handler, "ListRunsV1")
+	}
+
+	response, err := handler(r.Context(), w, r, request)
+
+	if err != nil {
+		sh.options.ResponseErrorHandlerFunc(w, r, err)
+	} else if validResponse, ok := response.(ListRunsV1ResponseObject); ok {
+		if err := validResponse.VisitListRunsV1Response(w); err != nil {
+			sh.options.ResponseErrorHandlerFunc(w, r, err)
+		}
+	} else if response != nil {
+		sh.options.ResponseErrorHandlerFunc(w, r, fmt.Errorf("unexpected response type: %T", response))
+	}
 }
 
 // ScheduleRunV1 operation middleware
@@ -1535,32 +1561,6 @@ func (sh *strictHandler) ListTaskRecentTaskResultsV1(w http.ResponseWriter, r *h
 		sh.options.ResponseErrorHandlerFunc(w, r, err)
 	} else if validResponse, ok := response.(ListTaskRecentTaskResultsV1ResponseObject); ok {
 		if err := validResponse.VisitListTaskRecentTaskResultsV1Response(w); err != nil {
-			sh.options.ResponseErrorHandlerFunc(w, r, err)
-		}
-	} else if response != nil {
-		sh.options.ResponseErrorHandlerFunc(w, r, fmt.Errorf("unexpected response type: %T", response))
-	}
-}
-
-// ListRunsV1 operation middleware
-func (sh *strictHandler) ListRunsV1(w http.ResponseWriter, r *http.Request, params ListRunsV1Params) {
-	var request ListRunsV1RequestObject
-
-	request.Params = params
-
-	handler := func(ctx context.Context, w http.ResponseWriter, r *http.Request, request interface{}) (interface{}, error) {
-		return sh.ssi.ListRunsV1(ctx, request.(ListRunsV1RequestObject))
-	}
-	for _, middleware := range sh.middlewares {
-		handler = middleware(handler, "ListRunsV1")
-	}
-
-	response, err := handler(r.Context(), w, r, request)
-
-	if err != nil {
-		sh.options.ResponseErrorHandlerFunc(w, r, err)
-	} else if validResponse, ok := response.(ListRunsV1ResponseObject); ok {
-		if err := validResponse.VisitListRunsV1Response(w); err != nil {
 			sh.options.ResponseErrorHandlerFunc(w, r, err)
 		}
 	} else if response != nil {

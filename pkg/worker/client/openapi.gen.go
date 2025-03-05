@@ -329,6 +329,14 @@ type WorkTaskV1 struct {
 // Unauthorized defines model for Unauthorized.
 type Unauthorized = Error
 
+// ListRunsV1Params defines parameters for ListRunsV1.
+type ListRunsV1Params struct {
+	// Task Name of the task to filter by.
+	Task        *string        `form:"task,omitempty" json:"task,omitempty"`
+	ListOptions *ListOptions   `form:"listOptions,omitempty" json:"listOptions,omitempty"`
+	Status      *[]RunStatusV1 `form:"status,omitempty" json:"status,omitempty"`
+}
+
 // ListTaskResultsV1Params defines parameters for ListTaskResultsV1.
 type ListTaskResultsV1Params struct {
 	// RunId ID of a run to filter by.
@@ -347,14 +355,6 @@ type ListTasksV1Params struct {
 type ListTaskRecentTaskResultsV1Params struct {
 	Status      *[]TaskResultStateV1 `form:"status,omitempty" json:"status,omitempty"`
 	ListOptions *ListOptions         `form:"listOptions,omitempty" json:"listOptions,omitempty"`
-}
-
-// ListRunsV1Params defines parameters for ListRunsV1.
-type ListRunsV1Params struct {
-	// Task Name of the task to filter by.
-	Task        *string        `form:"task,omitempty" json:"task,omitempty"`
-	ListOptions *ListOptions   `form:"listOptions,omitempty" json:"listOptions,omitempty"`
-	Status      *[]RunStatusV1 `form:"status,omitempty" json:"status,omitempty"`
 }
 
 // ScheduleRunV1JSONRequestBody defines body for ScheduleRunV1 for application/json ContentType.
@@ -436,6 +436,9 @@ func WithRequestEditorFn(fn RequestEditorFn) ClientOption {
 
 // The interface specification for the client above.
 type ClientInterface interface {
+	// ListRunsV1 request
+	ListRunsV1(ctx context.Context, params *ListRunsV1Params, reqEditors ...RequestEditorFn) (*http.Response, error)
+
 	// ScheduleRunV1WithBody request with any body
 	ScheduleRunV1WithBody(ctx context.Context, contentType string, body io.Reader, reqEditors ...RequestEditorFn) (*http.Response, error)
 
@@ -459,9 +462,6 @@ type ClientInterface interface {
 	// ListTaskRecentTaskResultsV1 request
 	ListTaskRecentTaskResultsV1(ctx context.Context, task string, params *ListTaskRecentTaskResultsV1Params, reqEditors ...RequestEditorFn) (*http.Response, error)
 
-	// ListRunsV1 request
-	ListRunsV1(ctx context.Context, params *ListRunsV1Params, reqEditors ...RequestEditorFn) (*http.Response, error)
-
 	// GetWorkV1 request
 	GetWorkV1(ctx context.Context, reqEditors ...RequestEditorFn) (*http.Response, error)
 
@@ -469,6 +469,18 @@ type ClientInterface interface {
 	ReportWorkV1WithBody(ctx context.Context, contentType string, body io.Reader, reqEditors ...RequestEditorFn) (*http.Response, error)
 
 	ReportWorkV1(ctx context.Context, body ReportWorkV1JSONRequestBody, reqEditors ...RequestEditorFn) (*http.Response, error)
+}
+
+func (c *Client) ListRunsV1(ctx context.Context, params *ListRunsV1Params, reqEditors ...RequestEditorFn) (*http.Response, error) {
+	req, err := NewListRunsV1Request(c.Server, params)
+	if err != nil {
+		return nil, err
+	}
+	req = req.WithContext(ctx)
+	if err := c.applyEditors(ctx, req, reqEditors); err != nil {
+		return nil, err
+	}
+	return c.Client.Do(req)
 }
 
 func (c *Client) ScheduleRunV1WithBody(ctx context.Context, contentType string, body io.Reader, reqEditors ...RequestEditorFn) (*http.Response, error) {
@@ -567,18 +579,6 @@ func (c *Client) ListTaskRecentTaskResultsV1(ctx context.Context, task string, p
 	return c.Client.Do(req)
 }
 
-func (c *Client) ListRunsV1(ctx context.Context, params *ListRunsV1Params, reqEditors ...RequestEditorFn) (*http.Response, error) {
-	req, err := NewListRunsV1Request(c.Server, params)
-	if err != nil {
-		return nil, err
-	}
-	req = req.WithContext(ctx)
-	if err := c.applyEditors(ctx, req, reqEditors); err != nil {
-		return nil, err
-	}
-	return c.Client.Do(req)
-}
-
 func (c *Client) GetWorkV1(ctx context.Context, reqEditors ...RequestEditorFn) (*http.Response, error) {
 	req, err := NewGetWorkV1Request(c.Server)
 	if err != nil {
@@ -613,6 +613,87 @@ func (c *Client) ReportWorkV1(ctx context.Context, body ReportWorkV1JSONRequestB
 		return nil, err
 	}
 	return c.Client.Do(req)
+}
+
+// NewListRunsV1Request generates requests for ListRunsV1
+func NewListRunsV1Request(server string, params *ListRunsV1Params) (*http.Request, error) {
+	var err error
+
+	serverURL, err := url.Parse(server)
+	if err != nil {
+		return nil, err
+	}
+
+	operationPath := fmt.Sprintf("/api/v1/runs")
+	if operationPath[0] == '/' {
+		operationPath = "." + operationPath
+	}
+
+	queryURL, err := serverURL.Parse(operationPath)
+	if err != nil {
+		return nil, err
+	}
+
+	if params != nil {
+		queryValues := queryURL.Query()
+
+		if params.Task != nil {
+
+			if queryFrag, err := runtime.StyleParamWithLocation("form", true, "task", runtime.ParamLocationQuery, *params.Task); err != nil {
+				return nil, err
+			} else if parsed, err := url.ParseQuery(queryFrag); err != nil {
+				return nil, err
+			} else {
+				for k, v := range parsed {
+					for _, v2 := range v {
+						queryValues.Add(k, v2)
+					}
+				}
+			}
+
+		}
+
+		if params.ListOptions != nil {
+
+			if queryFrag, err := runtime.StyleParamWithLocation("form", true, "listOptions", runtime.ParamLocationQuery, *params.ListOptions); err != nil {
+				return nil, err
+			} else if parsed, err := url.ParseQuery(queryFrag); err != nil {
+				return nil, err
+			} else {
+				for k, v := range parsed {
+					for _, v2 := range v {
+						queryValues.Add(k, v2)
+					}
+				}
+			}
+
+		}
+
+		if params.Status != nil {
+
+			if queryFrag, err := runtime.StyleParamWithLocation("form", true, "status", runtime.ParamLocationQuery, *params.Status); err != nil {
+				return nil, err
+			} else if parsed, err := url.ParseQuery(queryFrag); err != nil {
+				return nil, err
+			} else {
+				for k, v := range parsed {
+					for _, v2 := range v {
+						queryValues.Add(k, v2)
+					}
+				}
+			}
+
+		}
+
+		queryURL.RawQuery = queryValues.Encode()
+	}
+
+	req, err := http.NewRequest("GET", queryURL.String(), nil)
+	if err != nil {
+		return nil, err
+	}
+
+	return req, nil
 }
 
 // NewScheduleRunV1Request calls the generic ScheduleRunV1 builder with application/json body
@@ -975,87 +1056,6 @@ func NewListTaskRecentTaskResultsV1Request(server string, task string, params *L
 	return req, nil
 }
 
-// NewListRunsV1Request generates requests for ListRunsV1
-func NewListRunsV1Request(server string, params *ListRunsV1Params) (*http.Request, error) {
-	var err error
-
-	serverURL, err := url.Parse(server)
-	if err != nil {
-		return nil, err
-	}
-
-	operationPath := fmt.Sprintf("/api/v1/worker/runs")
-	if operationPath[0] == '/' {
-		operationPath = "." + operationPath
-	}
-
-	queryURL, err := serverURL.Parse(operationPath)
-	if err != nil {
-		return nil, err
-	}
-
-	if params != nil {
-		queryValues := queryURL.Query()
-
-		if params.Task != nil {
-
-			if queryFrag, err := runtime.StyleParamWithLocation("form", true, "task", runtime.ParamLocationQuery, *params.Task); err != nil {
-				return nil, err
-			} else if parsed, err := url.ParseQuery(queryFrag); err != nil {
-				return nil, err
-			} else {
-				for k, v := range parsed {
-					for _, v2 := range v {
-						queryValues.Add(k, v2)
-					}
-				}
-			}
-
-		}
-
-		if params.ListOptions != nil {
-
-			if queryFrag, err := runtime.StyleParamWithLocation("form", true, "listOptions", runtime.ParamLocationQuery, *params.ListOptions); err != nil {
-				return nil, err
-			} else if parsed, err := url.ParseQuery(queryFrag); err != nil {
-				return nil, err
-			} else {
-				for k, v := range parsed {
-					for _, v2 := range v {
-						queryValues.Add(k, v2)
-					}
-				}
-			}
-
-		}
-
-		if params.Status != nil {
-
-			if queryFrag, err := runtime.StyleParamWithLocation("form", true, "status", runtime.ParamLocationQuery, *params.Status); err != nil {
-				return nil, err
-			} else if parsed, err := url.ParseQuery(queryFrag); err != nil {
-				return nil, err
-			} else {
-				for k, v := range parsed {
-					for _, v2 := range v {
-						queryValues.Add(k, v2)
-					}
-				}
-			}
-
-		}
-
-		queryURL.RawQuery = queryValues.Encode()
-	}
-
-	req, err := http.NewRequest("GET", queryURL.String(), nil)
-	if err != nil {
-		return nil, err
-	}
-
-	return req, nil
-}
-
 // NewGetWorkV1Request generates requests for GetWorkV1
 func NewGetWorkV1Request(server string) (*http.Request, error) {
 	var err error
@@ -1166,6 +1166,9 @@ func WithBaseURL(baseURL string) ClientOption {
 
 // ClientWithResponsesInterface is the interface specification for the client with responses above.
 type ClientWithResponsesInterface interface {
+	// ListRunsV1WithResponse request
+	ListRunsV1WithResponse(ctx context.Context, params *ListRunsV1Params, reqEditors ...RequestEditorFn) (*ListRunsV1ResponseBody, error)
+
 	// ScheduleRunV1WithBodyWithResponse request with any body
 	ScheduleRunV1WithBodyWithResponse(ctx context.Context, contentType string, body io.Reader, reqEditors ...RequestEditorFn) (*ScheduleRunV1ResponseBody, error)
 
@@ -1189,9 +1192,6 @@ type ClientWithResponsesInterface interface {
 	// ListTaskRecentTaskResultsV1WithResponse request
 	ListTaskRecentTaskResultsV1WithResponse(ctx context.Context, task string, params *ListTaskRecentTaskResultsV1Params, reqEditors ...RequestEditorFn) (*ListTaskRecentTaskResultsV1ResponseBody, error)
 
-	// ListRunsV1WithResponse request
-	ListRunsV1WithResponse(ctx context.Context, params *ListRunsV1Params, reqEditors ...RequestEditorFn) (*ListRunsV1ResponseBody, error)
-
 	// GetWorkV1WithResponse request
 	GetWorkV1WithResponse(ctx context.Context, reqEditors ...RequestEditorFn) (*GetWorkV1ResponseBody, error)
 
@@ -1199,6 +1199,29 @@ type ClientWithResponsesInterface interface {
 	ReportWorkV1WithBodyWithResponse(ctx context.Context, contentType string, body io.Reader, reqEditors ...RequestEditorFn) (*ReportWorkV1ResponseBody, error)
 
 	ReportWorkV1WithResponse(ctx context.Context, body ReportWorkV1JSONRequestBody, reqEditors ...RequestEditorFn) (*ReportWorkV1ResponseBody, error)
+}
+
+type ListRunsV1ResponseBody struct {
+	Body         []byte
+	HTTPResponse *http.Response
+	JSON200      *ListRunsV1Response
+	JSON401      *Unauthorized
+}
+
+// Status returns HTTPResponse.Status
+func (r ListRunsV1ResponseBody) Status() string {
+	if r.HTTPResponse != nil {
+		return r.HTTPResponse.Status
+	}
+	return http.StatusText(0)
+}
+
+// StatusCode returns HTTPResponse.StatusCode
+func (r ListRunsV1ResponseBody) StatusCode() int {
+	if r.HTTPResponse != nil {
+		return r.HTTPResponse.StatusCode
+	}
+	return 0
 }
 
 type ScheduleRunV1ResponseBody struct {
@@ -1370,29 +1393,6 @@ func (r ListTaskRecentTaskResultsV1ResponseBody) StatusCode() int {
 	return 0
 }
 
-type ListRunsV1ResponseBody struct {
-	Body         []byte
-	HTTPResponse *http.Response
-	JSON200      *ListRunsV1Response
-	JSON401      *Unauthorized
-}
-
-// Status returns HTTPResponse.Status
-func (r ListRunsV1ResponseBody) Status() string {
-	if r.HTTPResponse != nil {
-		return r.HTTPResponse.Status
-	}
-	return http.StatusText(0)
-}
-
-// StatusCode returns HTTPResponse.StatusCode
-func (r ListRunsV1ResponseBody) StatusCode() int {
-	if r.HTTPResponse != nil {
-		return r.HTTPResponse.StatusCode
-	}
-	return 0
-}
-
 type GetWorkV1ResponseBody struct {
 	Body         []byte
 	HTTPResponse *http.Response
@@ -1437,6 +1437,15 @@ func (r ReportWorkV1ResponseBody) StatusCode() int {
 		return r.HTTPResponse.StatusCode
 	}
 	return 0
+}
+
+// ListRunsV1WithResponse request returning *ListRunsV1ResponseBody
+func (c *ClientWithResponses) ListRunsV1WithResponse(ctx context.Context, params *ListRunsV1Params, reqEditors ...RequestEditorFn) (*ListRunsV1ResponseBody, error) {
+	rsp, err := c.ListRunsV1(ctx, params, reqEditors...)
+	if err != nil {
+		return nil, err
+	}
+	return ParseListRunsV1ResponseBody(rsp)
 }
 
 // ScheduleRunV1WithBodyWithResponse request with arbitrary body returning *ScheduleRunV1ResponseBody
@@ -1510,15 +1519,6 @@ func (c *ClientWithResponses) ListTaskRecentTaskResultsV1WithResponse(ctx contex
 	return ParseListTaskRecentTaskResultsV1ResponseBody(rsp)
 }
 
-// ListRunsV1WithResponse request returning *ListRunsV1ResponseBody
-func (c *ClientWithResponses) ListRunsV1WithResponse(ctx context.Context, params *ListRunsV1Params, reqEditors ...RequestEditorFn) (*ListRunsV1ResponseBody, error) {
-	rsp, err := c.ListRunsV1(ctx, params, reqEditors...)
-	if err != nil {
-		return nil, err
-	}
-	return ParseListRunsV1ResponseBody(rsp)
-}
-
 // GetWorkV1WithResponse request returning *GetWorkV1ResponseBody
 func (c *ClientWithResponses) GetWorkV1WithResponse(ctx context.Context, reqEditors ...RequestEditorFn) (*GetWorkV1ResponseBody, error) {
 	rsp, err := c.GetWorkV1(ctx, reqEditors...)
@@ -1543,6 +1543,39 @@ func (c *ClientWithResponses) ReportWorkV1WithResponse(ctx context.Context, body
 		return nil, err
 	}
 	return ParseReportWorkV1ResponseBody(rsp)
+}
+
+// ParseListRunsV1ResponseBody parses an HTTP response from a ListRunsV1WithResponse call
+func ParseListRunsV1ResponseBody(rsp *http.Response) (*ListRunsV1ResponseBody, error) {
+	bodyBytes, err := io.ReadAll(rsp.Body)
+	defer func() { _ = rsp.Body.Close() }()
+	if err != nil {
+		return nil, err
+	}
+
+	response := &ListRunsV1ResponseBody{
+		Body:         bodyBytes,
+		HTTPResponse: rsp,
+	}
+
+	switch {
+	case strings.Contains(rsp.Header.Get("Content-Type"), "json") && rsp.StatusCode == 200:
+		var dest ListRunsV1Response
+		if err := json.Unmarshal(bodyBytes, &dest); err != nil {
+			return nil, err
+		}
+		response.JSON200 = &dest
+
+	case strings.Contains(rsp.Header.Get("Content-Type"), "json") && rsp.StatusCode == 401:
+		var dest Unauthorized
+		if err := json.Unmarshal(bodyBytes, &dest); err != nil {
+			return nil, err
+		}
+		response.JSON401 = &dest
+
+	}
+
+	return response, nil
 }
 
 // ParseScheduleRunV1ResponseBody parses an HTTP response from a ScheduleRunV1WithResponse call
@@ -1826,39 +1859,6 @@ func ParseListTaskRecentTaskResultsV1ResponseBody(rsp *http.Response) (*ListTask
 			return nil, err
 		}
 		response.JSON500 = &dest
-
-	}
-
-	return response, nil
-}
-
-// ParseListRunsV1ResponseBody parses an HTTP response from a ListRunsV1WithResponse call
-func ParseListRunsV1ResponseBody(rsp *http.Response) (*ListRunsV1ResponseBody, error) {
-	bodyBytes, err := io.ReadAll(rsp.Body)
-	defer func() { _ = rsp.Body.Close() }()
-	if err != nil {
-		return nil, err
-	}
-
-	response := &ListRunsV1ResponseBody{
-		Body:         bodyBytes,
-		HTTPResponse: rsp,
-	}
-
-	switch {
-	case strings.Contains(rsp.Header.Get("Content-Type"), "json") && rsp.StatusCode == 200:
-		var dest ListRunsV1Response
-		if err := json.Unmarshal(bodyBytes, &dest); err != nil {
-			return nil, err
-		}
-		response.JSON200 = &dest
-
-	case strings.Contains(rsp.Header.Get("Content-Type"), "json") && rsp.StatusCode == 401:
-		var dest Unauthorized
-		if err := json.Unmarshal(bodyBytes, &dest); err != nil {
-			return nil, err
-		}
-		response.JSON401 = &dest
 
 	}
 
