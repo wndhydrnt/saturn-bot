@@ -123,10 +123,17 @@ func NewWorker(configPath string, taskPaths []string) (*Worker, error) {
 		return nil, err
 	}
 
-	// The registry holds tasks for validation.
-	// No need to start plugins here.
-	opts.SkipPlugins = true
-	reg := task.NewRegistry(opts)
+	reg := task.NewRegistry(options.Opts{
+		ActionFactories: opts.ActionFactories,
+		Config:          opts.Config,
+		Clock:           opts.Clock,
+		FilterFactories: opts.FilterFactories,
+		Hosts:           opts.Hosts,
+		IsCi:            opts.IsCi,
+		// This registry holds tasks to perform validation.
+		// No need to start plugins here.
+		SkipPlugins: true,
+	})
 	err = reg.ReadAll(taskPaths)
 	if err != nil {
 		return nil, err

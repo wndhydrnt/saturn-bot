@@ -52,7 +52,13 @@ func (rc *RepositoryFileCache) List(hosts []Host, result chan Repository, errCha
 
 func (rc *RepositoryFileCache) remove(repo Repository) error {
 	d := filepath.Join(rc.Dir, repo.FullName())
-	return os.RemoveAll(d)
+	_, err := os.Stat(d)
+	if err == nil {
+		log.Log().Debugf("Removing archived repository from file cache %s", repo.FullName())
+		return os.RemoveAll(d)
+	}
+
+	return nil
 }
 
 func (rc *RepositoryFileCache) readLastUpdateTimestamp(h Host) (*time.Time, error) {
@@ -197,7 +203,6 @@ func (rc *RepositoryFileCache) receiveRepositories(expectedFinishes int, results
 		case repoList := <-results:
 			for _, repo := range repoList {
 				if repo.IsArchived() {
-					log.Log().Debugf("Removing archived repository from file cache %s", repo.FullName())
 					_ = rc.remove(repo)
 					continue
 				}
