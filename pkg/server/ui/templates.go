@@ -6,6 +6,7 @@ import (
 	"net/http"
 	"net/url"
 	"strconv"
+	"time"
 
 	"github.com/Masterminds/sprig/v3"
 	"github.com/gomarkdown/markdown"
@@ -25,6 +26,7 @@ var templateFuncs = template.FuncMap{
 	"renderUrl":                  renderUrl,
 	"runStatusToCssClass":        mapRunStatusToCssClass,
 	"taskResultStatusToCssClass": mapTaskResultStatusToCssClass,
+	"timeSub":                    timeSub,
 }
 
 var templateRoot = template.Must(template.New("").Funcs(templateFuncs).Funcs(sprig.FuncMap()).ParseFS(templateFS, "templates/base.html"))
@@ -140,4 +142,12 @@ func renderTemplate(data any, w http.ResponseWriter, names ...string) {
 		w.WriteHeader(http.StatusInternalServerError)
 		return
 	}
+}
+
+// timeSub returns the duration that has passed between start and end
+// by subtracting start from end.
+//
+// It returns the duration in seconds, without nanoseconds.
+func timeSub(start, end time.Time) string {
+	return strconv.FormatFloat(end.Sub(start).Seconds(), 'f', 0, 64)
 }

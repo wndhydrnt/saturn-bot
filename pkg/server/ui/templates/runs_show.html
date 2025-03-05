@@ -124,6 +124,19 @@
         <p class="datetime">{{.Run.ScheduleAfter | unixEpoch}}</p>
       </div>
     </div>
+    {{if and .Run.StartedAt .Run.FinishedAt}}
+    <div class="columns">
+      <div class="column">
+        <p>
+          <strong>Duration:</strong>
+        </p>
+      </div>
+      <div class="column">
+        <p>{{timeSub .Run.StartedAt .Run.FinishedAt | duration}}</p>
+      </div>
+    </div>
+    {{end}}
+    {{if .Run.StartedAt}}
     <div class="columns">
       <div class="column">
         <p>
@@ -131,13 +144,11 @@
         </p>
       </div>
       <div class="column">
-        {{if .Run.StartedAt}}
         <p class="datetime">{{.Run.StartedAt | unixEpoch}}</p>
-        {{else}}
-        <p>Not started yet</p>
-        {{end}}
       </div>
     </div>
+    {{end}}
+    {{if .Run.FinishedAt}}
     <div class="columns">
       <div class="column">
         <p>
@@ -145,13 +156,10 @@
         </p>
       </div>
       <div class="column">
-        {{if .Run.FinishedAt}}
         <p class="datetime">{{.Run.FinishedAt | unixEpoch}}</p>
-        {{else}}
-        <p>Not finished yet</p>
-        {{end}}
       </div>
     </div>
+    {{end}}
   </div>
 </div>
 {{end}}
