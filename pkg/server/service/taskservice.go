@@ -113,6 +113,7 @@ func (ts *TaskService) ListRecentTaskResultsByTask(opts ListRecentTaskResultsByT
 		Joins("INNER JOIN runs ON task_results.run_id = runs.id").
 		Where("runs.task_name = ?", opts.TaskName).
 		Group("task_results.repository_name").
+		Group("runs.run_data").
 		Order("task_results.created_at DESC")
 	// Prepare query. Used by both other queries that return data and count rows.
 	baseQ := ts.db.Table("(?)", subQ)

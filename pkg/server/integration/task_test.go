@@ -5,6 +5,7 @@ import (
 	"net/http"
 	"testing"
 
+	"github.com/wndhydrnt/saturn-bot/pkg/processor"
 	"github.com/wndhydrnt/saturn-bot/pkg/ptr"
 	"github.com/wndhydrnt/saturn-bot/pkg/server/api/openapi"
 	sberror "github.com/wndhydrnt/saturn-bot/pkg/server/error"
@@ -194,6 +195,118 @@ func TestServer_API_ListTaskRecentTaskResultsV1(t *testing.T) {
 			executeTestCase(t, tc)
 		})
 	}
+}
+
+func Test_API_ListTaskRecentTaskResultsV1_DifferentRunData(t *testing.T) {
+	task := schema.Task{
+		Name: "unittest",
+		Inputs: []schema.Input{
+			{Name: "user"},
+		},
+	}
+
+	tc := testCase{
+		tasks: []schema.Task{task},
+		apiCalls: []apiCall{
+			// Schedule a new run for user=ellie.
+			{
+				method: "POST",
+				path:   "/api/v1/runs",
+				requestBody: openapi.ScheduleRunV1Request{
+					TaskName: task.Name,
+					RunData:  ptr.To(map[string]string{"user": "ellie"}),
+				},
+				statusCode: http.StatusOK,
+				responseBody: openapi.ScheduleRunV1Response{
+					RunID: 1,
+				},
+			},
+			// And report the result of the run for user=ellie.
+			{
+				method: "POST",
+				path:   "/api/v1/worker/work",
+				requestBody: openapi.ReportWorkV1Request{
+					RunID: 1,
+					Task: openapi.WorkTaskV1{
+						Name: task.Name,
+					},
+					TaskResults: []openapi.ReportWorkV1TaskResult{
+						{
+							PullRequestUrl: ptr.To("https://git.local/unittest/one/pr/1"),
+							RepositoryName: "git.local/unittest/one",
+							Result:         int(processor.ResultPrOpen),
+							State:          openapi.TaskResultStateV1Open,
+						},
+					},
+				},
+				statusCode: http.StatusCreated,
+				responseBody: openapi.ReportWorkV1Response{
+					Result: "ok",
+				},
+			},
+			// Schedule a new run for user=joel.
+			{
+				method: "POST",
+				path:   "/api/v1/runs",
+				requestBody: openapi.ScheduleRunV1Request{
+					TaskName: task.Name,
+					RunData:  ptr.To(map[string]string{"user": "joel"}),
+				},
+				statusCode: http.StatusOK,
+				responseBody: openapi.ScheduleRunV1Response{
+					RunID: 3,
+				},
+			},
+			// And report the result of the run for user=joel.
+			{
+				method: "POST",
+				path:   "/api/v1/worker/work",
+				requestBody: openapi.ReportWorkV1Request{
+					RunID: 3,
+					Task: openapi.WorkTaskV1{
+						Name: task.Name,
+					},
+					TaskResults: []openapi.ReportWorkV1TaskResult{
+						{
+							PullRequestUrl: ptr.To("https://git.local/unittest/one/pr/2"),
+							RepositoryName: "git.local/unittest/one",
+							Result:         int(processor.ResultPrOpen),
+							State:          openapi.TaskResultStateV1Open,
+						},
+					},
+				},
+				statusCode: http.StatusCreated,
+				responseBody: openapi.ReportWorkV1Response{
+					Result: "ok",
+				},
+			},
+			// And verify that the task results have been properly stored.
+			{
+				method:     "GET",
+				path:       "/api/v1/tasks/" + task.Name + "/results",
+				statusCode: http.StatusOK,
+				responseBody: openapi.ListTaskRecentTaskResultsV1Response{
+					Page: openapi.Page{CurrentPage: 1, ItemsPerPage: 20, TotalItems: 2, TotalPages: 1},
+					TaskResults: []openapi.TaskResultV1{
+						{
+							PullRequestUrl: ptr.To("https://git.local/unittest/one/pr/2"),
+							RepositoryName: "git.local/unittest/one",
+							RunId:          3,
+							Status:         openapi.TaskResultStateV1Open,
+						},
+						{
+							PullRequestUrl: ptr.To("https://git.local/unittest/one/pr/1"),
+							RepositoryName: "git.local/unittest/one",
+							RunId:          1,
+							Status:         openapi.TaskResultStateV1Open,
+						},
+					},
+				},
+			},
+		},
+	}
+
+	executeTestCase(t, tc)
 }
 
 func TestServer_API_GetTaskV1(t *testing.T) {
