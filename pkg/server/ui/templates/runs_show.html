@@ -76,11 +76,13 @@
         </p>
       </div>
       <div class="column">
-        <code>
+        <ul>
           {{range $key, $value := .Run.RunData}}
-          {{$key}}={{$value}}
+          <li>
+            <code>{{$key}}={{$value}}</code>
+          </li>
           {{end}}
-        </code>
+        </ul>
       </div>
     </div>
     {{end}}
