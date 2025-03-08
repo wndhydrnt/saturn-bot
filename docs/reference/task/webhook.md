@@ -2,6 +2,8 @@
 
 [json-path:../../../pkg/task/schema/task.schema.json:$.properties.trigger.properties.webhook.description]
 
+[Trigger a task when a webhook is received](../../user_guides/webhook.md) describes how to set up a webhook.
+
 ## delay
 
 [json-path:../../../pkg/task/schema/task.schema.json:$.properties.trigger.properties.webhook.properties.delay.description]

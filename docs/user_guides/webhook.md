@@ -50,6 +50,8 @@ trigger:
         filters: # (2)
           - '.repository.full_name == "wndhydrnt/saturn-bot"'
           - '.ref | startswith("refs/tags/")'
+        runData: # (3)
+          tag: '.ref | match("refs\/tags\/(.+)") | .captures[0].string'
 ```
 
 1.  This value must match one of the events selected during [Create the webhook](#create-the-webhook).
@@ -57,6 +59,9 @@ trigger:
 2.  `filters` allow to further select the webhook(s) that trigger a task by inspecting the body of the webhook.
     Each filter is a [`jq`](https://jqlang.org) expression.
     [Webhook events and payloads](https://docs.github.com/en/webhooks/webhook-events-and-payloads) documents payloads of webhook events.
+3.  Optionally, extract data from the webhook payload and add it as data to the scheduled run.
+    The key is the key to set in the data of the run.
+    The value is a [`jq`](https://jqlang.org) expression that extracts the data.
 
 ## GitLab
 
@@ -90,6 +95,8 @@ trigger:
         filters: # (2)
           - '.project.path_with_namespace == "mike/diaspora"'
           - '.ref == "refs/heads/main"'
+        runData: # (3)
+          "branch": '.ref | match("refs\/heads\/(.+)") | .captures[0].string'
 ```
 
 1.  This value must match one of the events selected during [Create the webhook](#create-the-webhook_1).
@@ -97,3 +104,6 @@ trigger:
 2.  `filters` allow to further select the webhook(s) that trigger a task by inspecting the body of the webhook.
     Each filter is a [`jq`](https://jqlang.org) expression.
     [Webhook events](https://docs.gitlab.com/user/project/integrations/webhook_events/) documents payloads of webhook events.
+3.  Optionally, extract data from the webhook payload and add it as data to the scheduled run.
+    The key is the key to set in the data of the run.
+    The value is a [`jq`](https://jqlang.org) expression that extracts the data.
