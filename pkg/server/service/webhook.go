@@ -25,6 +25,9 @@ type cacheEntry struct {
 	delay   time.Duration
 	event   string
 	filters []*gojq.Code
+	// Key is the key to set in the run data map.
+	// Value is the jq expression that extracts data from the payload of a webhook.
+	runDataExtractors map[string]*gojq.Code
 }
 
 // WebhookService handles scheduling new runs when a webhook is received.
@@ -76,8 +79,9 @@ func (s *WebhookService) enqueue(in *WebhookEnqueueInput, triggerCache map[strin
 		for _, trigger := range triggers {
 			if match(in.Event, trigger, in.Payload) {
 				log.Log().Debugf("Task %s matches %s webhook %s", taskName, wtype, in.ID)
+				runData := extractRunData(in.Payload, trigger.runDataExtractors)
 				scheduleAfter := s.clock.Now().Add(trigger.delay)
-				_, err := s.workerService.ScheduleRun(db.RunReasonWebhook, nil, scheduleAfter, taskName, map[string]string{}, nil)
+				_, err := s.workerService.ScheduleRun(db.RunReasonWebhook, nil, scheduleAfter, taskName, runData, nil)
 				errs = append(errs, err)
 				break
 			}
@@ -114,13 +118,19 @@ func (s *WebhookService) populateGithubCache(t *task.Task) error {
 	for idxHook, hook := range t.Trigger.Webhook.Github {
 		filters, err := parseHookFilters(hook.Filters)
 		if err != nil {
-			return fmt.Errorf("parse GitHub webhook %d: %w", idxHook, err)
+			return fmt.Errorf("parse filters of GitHub webhook %d: %w", idxHook, err)
+		}
+
+		extractors, err := parseHookExtractors(hook.RunData)
+		if err != nil {
+			return fmt.Errorf("parse runData extractors of GitHub webhook %d: %w", idxHook, err)
 		}
 
 		cacheEntries[idxHook] = cacheEntry{
-			delay:   time.Duration(t.Trigger.Webhook.Delay) * time.Second,
-			event:   ptr.From(hook.Event),
-			filters: filters,
+			delay:             time.Duration(t.Trigger.Webhook.Delay) * time.Second,
+			event:             ptr.From(hook.Event),
+			filters:           filters,
+			runDataExtractors: extractors,
 		}
 	}
 
@@ -133,13 +143,19 @@ func (s *WebhookService) populateGitlabCache(t *task.Task) error {
 	for idxHook, hook := range t.Trigger.Webhook.Gitlab {
 		filters, err := parseHookFilters(hook.Filters)
 		if err != nil {
-			return fmt.Errorf("parse GitLab webhook %d: %w", idxHook, err)
+			return fmt.Errorf("parse filters of GitLab webhook %d: %w", idxHook, err)
+		}
+
+		extractors, err := parseHookExtractors(hook.RunData)
+		if err != nil {
+			return fmt.Errorf("parse runData extractors of GitLab webhook %d: %w", idxHook, err)
 		}
 
 		cacheEntries[idxHook] = cacheEntry{
-			delay:   time.Duration(t.Trigger.Webhook.Delay) * time.Second,
-			event:   ptr.From(hook.Event),
-			filters: filters,
+			delay:             time.Duration(t.Trigger.Webhook.Delay) * time.Second,
+			event:             ptr.From(hook.Event),
+			filters:           filters,
+			runDataExtractors: extractors,
 		}
 	}
 
@@ -229,4 +245,42 @@ func parseHookFilters(filters []string) ([]*gojq.Code, error) {
 	}
 
 	return codes, nil
+}
+
+func extractRunData(payload any, extractors map[string]*gojq.Code) map[string]string {
+	data := map[string]string{}
+	for key, code := range extractors {
+		valueRaw, hasNext := code.Run(payload).Next()
+		if !hasNext {
+			continue
+		}
+
+		if valueRaw == nil {
+			// Query matches nothing.
+			continue
+		}
+
+		data[key] = fmt.Sprintf("%v", valueRaw)
+	}
+
+	return data
+}
+
+func parseHookExtractors(raw map[string]string) (map[string]*gojq.Code, error) {
+	extractors := make(map[string]*gojq.Code, len(raw))
+	for key, expr := range raw {
+		query, err := gojq.Parse(expr)
+		if err != nil {
+			return nil, fmt.Errorf("parse jq expression of runData for key %s: %w", key, err)
+		}
+
+		compiledQuery, err := gojq.Compile(query)
+		if err != nil {
+			return nil, fmt.Errorf("compile jq expression of runData for key %s: %w", key, err)
+		}
+
+		extractors[key] = compiledQuery
+	}
+
+	return extractors, nil
 }

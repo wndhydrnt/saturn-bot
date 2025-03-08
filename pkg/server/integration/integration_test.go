@@ -75,6 +75,7 @@ type testCase struct {
 }
 
 func executeTestCase(t *testing.T, tc testCase) {
+	t.Helper()
 	opts := setupOptions(t, tc.config, tc.fakeClock)
 	taskFiles := bootstrapTaskFiles(t, tc.tasks)
 

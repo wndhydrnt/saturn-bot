@@ -262,6 +262,13 @@
           "items": {
             "type": "string"
           }
+        },
+        "runData": {
+          "description": "Key/value pairs to extract run data from the webhook payload. Key is the key to set in the run data and value is a jq expression.",
+          "type": "object",
+          "additionalProperties": {
+            "type": "string"
+          }
         }
       }
     },
@@ -276,6 +283,13 @@
           "description": "jq expressions to apply to the body of the webhook. If all expressions match the content of the webhook then a new run of the task is scheduled.",
           "type": "array",
           "items": {
+            "type": "string"
+          }
+        },
+        "runData": {
+          "description": "Key/value pairs to extract run data from the webhook payload. Key is the key to set in the run data and value is a jq expression.",
+          "type": "object",
+          "additionalProperties": {
             "type": "string"
           }
         }

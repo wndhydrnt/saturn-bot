@@ -50,6 +50,7 @@ markdown_extensions:
       alternate_style: true
   - toc:
       permalink: true
+  - pymdownx.magiclink
 hooks:
   - mkdocs-hooks/json_path.py
 plugins:

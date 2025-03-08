@@ -119,7 +119,15 @@ type GithubTrigger struct {
 	// jq expressions to apply to the body of the webhook. If all expressions match
 	// the content of the webhook then a new run of the task is scheduled.
 	Filters []string `json:"filters,omitempty" yaml:"filters,omitempty" mapstructure:"filters,omitempty"`
+
+	// Key/value pairs to extract run data from the webhook payload. Key is the key to
+	// set in the run data and value is a jq expression.
+	RunData GithubTriggerRunData `json:"runData,omitempty" yaml:"runData,omitempty" mapstructure:"runData,omitempty"`
 }
+
+// Key/value pairs to extract run data from the webhook payload. Key is the key to
+// set in the run data and value is a jq expression.
+type GithubTriggerRunData map[string]string
 
 type GitlabTrigger struct {
 	// GitLab webhook event, like push. See
@@ -130,7 +138,15 @@ type GitlabTrigger struct {
 	// jq expressions to apply to the body of the webhook. If all expressions match
 	// the content of the webhook then a new run of the task is scheduled.
 	Filters []string `json:"filters,omitempty" yaml:"filters,omitempty" mapstructure:"filters,omitempty"`
+
+	// Key/value pairs to extract run data from the webhook payload. Key is the key to
+	// set in the run data and value is a jq expression.
+	RunData GitlabTriggerRunData `json:"runData,omitempty" yaml:"runData,omitempty" mapstructure:"runData,omitempty"`
 }
+
+// Key/value pairs to extract run data from the webhook payload. Key is the key to
+// set in the run data and value is a jq expression.
+type GitlabTriggerRunData map[string]string
 
 // A input allows customizing a task at runtime.
 type Input struct {
@@ -150,24 +166,6 @@ type Input struct {
 	Validation *string `json:"validation,omitempty" yaml:"validation,omitempty" mapstructure:"validation,omitempty"`
 }
 
-// UnmarshalYAML implements yaml.Unmarshaler.
-func (j *Input) UnmarshalYAML(value *yaml.Node) error {
-	var raw map[string]interface{}
-	if err := value.Decode(&raw); err != nil {
-		return err
-	}
-	if _, ok := raw["name"]; raw != nil && !ok {
-		return fmt.Errorf("field name in Input: required")
-	}
-	type Plain Input
-	var plain Plain
-	if err := value.Decode(&plain); err != nil {
-		return err
-	}
-	*j = Input(plain)
-	return nil
-}
-
 // UnmarshalJSON implements json.Unmarshaler.
 func (j *Input) UnmarshalJSON(b []byte) error {
 	var raw map[string]interface{}
@@ -180,6 +178,24 @@ func (j *Input) UnmarshalJSON(b []byte) error {
 	type Plain Input
 	var plain Plain
 	if err := json.Unmarshal(b, &plain); err != nil {
+		return err
+	}
+	*j = Input(plain)
+	return nil
+}
+
+// UnmarshalYAML implements yaml.Unmarshaler.
+func (j *Input) UnmarshalYAML(value *yaml.Node) error {
+	var raw map[string]interface{}
+	if err := value.Decode(&raw); err != nil {
+		return err
+	}
+	if _, ok := raw["name"]; raw != nil && !ok {
+		return fmt.Errorf("field name in Input: required")
+	}
+	type Plain Input
+	var plain Plain
+	if err := value.Decode(&plain); err != nil {
 		return err
 	}
 	*j = Input(plain)
@@ -343,24 +359,6 @@ type TaskTriggerWebhook struct {
 	Gitlab []GitlabTrigger `json:"gitlab,omitempty" yaml:"gitlab,omitempty" mapstructure:"gitlab,omitempty"`
 }
 
-// UnmarshalJSON implements json.Unmarshaler.
-func (j *TaskTriggerWebhook) UnmarshalJSON(b []byte) error {
-	var raw map[string]interface{}
-	if err := json.Unmarshal(b, &raw); err != nil {
-		return err
-	}
-	type Plain TaskTriggerWebhook
-	var plain Plain
-	if err := json.Unmarshal(b, &plain); err != nil {
-		return err
-	}
-	if v, ok := raw["delay"]; !ok || v == nil {
-		plain.Delay = 0.0
-	}
-	*j = TaskTriggerWebhook(plain)
-	return nil
-}
-
 // UnmarshalYAML implements yaml.Unmarshaler.
 func (j *TaskTriggerWebhook) UnmarshalYAML(value *yaml.Node) error {
 	var raw map[string]interface{}
@@ -370,6 +368,24 @@ func (j *TaskTriggerWebhook) UnmarshalYAML(value *yaml.Node) error {
 	type Plain TaskTriggerWebhook
 	var plain Plain
 	if err := value.Decode(&plain); err != nil {
+		return err
+	}
+	if v, ok := raw["delay"]; !ok || v == nil {
+		plain.Delay = 0.0
+	}
+	*j = TaskTriggerWebhook(plain)
+	return nil
+}
+
+// UnmarshalJSON implements json.Unmarshaler.
+func (j *TaskTriggerWebhook) UnmarshalJSON(b []byte) error {
+	var raw map[string]interface{}
+	if err := json.Unmarshal(b, &raw); err != nil {
+		return err
+	}
+	type Plain TaskTriggerWebhook
+	var plain Plain
+	if err := json.Unmarshal(b, &plain); err != nil {
 		return err
 	}
 	if v, ok := raw["delay"]; !ok || v == nil {
