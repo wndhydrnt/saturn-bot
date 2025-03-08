@@ -18,12 +18,12 @@ type Ui struct {
 func RegisterUiRoutes(router chi.Router, apiServer *api.APIServer) {
 	app := &Ui{API: apiServer}
 	router.Handle("/", http.RedirectHandler("/ui", http.StatusMovedPermanently))
-	router.Get("/ui", app.GetHome)
-	router.Get("/ui/runs", app.ListRuns)
+	router.Get("/ui", app.Home)
+	router.Get("/ui/runs", app.RunsIndex)
 	router.Get("/ui/runs/{runId}", app.RunsShow)
 	router.Get("/ui/tasks", app.TasksIndex)
-	router.Get("/ui/tasks/{name}/file", app.GetTaskFile)
-	router.Get("/ui/tasks/{name}/results", app.GetTaskResults)
+	router.Get("/ui/tasks/{name}/file", app.TasksFileShow)
+	router.Get("/ui/tasks/{name}/results", app.ResultsIndex)
 	router.Get("/ui/status", app.StatusIndex)
 	router.Group(func(r chi.Router) {
 		r.Use(

@@ -7,20 +7,20 @@ import (
 	"github.com/wndhydrnt/saturn-bot/pkg/server/api/openapi"
 )
 
-type dataIndex struct {
+type dataHome struct {
 	RecentRuns openapi.ListRunsV1200JSONResponse
 	Tasks      []openapi.ListTasksV1ResponseTask
 }
 
-// GetHome renders the homepage.
-func (u *Ui) GetHome(w http.ResponseWriter, r *http.Request) {
+// Home renders the homepage.
+func (u *Ui) Home(w http.ResponseWriter, r *http.Request) {
 	tasksResp, err := u.API.ListTasksV1(r.Context(), openapi.ListTasksV1RequestObject{})
 	if err != nil {
 		renderError(err, w)
 		return
 	}
 
-	tplData := dataIndex{}
+	tplData := dataHome{}
 	tasksObj := tasksResp.(openapi.ListTasksV1200JSONResponse)
 	if len(tasksObj.Results) > 5 {
 		tplData.Tasks = tasksObj.Results[0:5]

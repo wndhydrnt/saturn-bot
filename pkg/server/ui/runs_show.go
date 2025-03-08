@@ -12,7 +12,7 @@ import (
 
 type dataRunsShow struct {
 	DisplayRunLink bool
-	Filters        dataTaskResultsFilters
+	Filters        dataResultsIndexFilters
 	Pagination     pagination
 	Run            openapi.RunV1
 	TaskResults    []openapi.TaskResultV1
@@ -38,7 +38,7 @@ func (u *Ui) RunsShow(w http.ResponseWriter, r *http.Request) {
 	statusParam := r.URL.Query().Get("status")
 	data := dataRunsShow{
 		DisplayRunLink: false,
-		Filters: dataTaskResultsFilters{
+		Filters: dataResultsIndexFilters{
 			TaskResultStatusCurrent: statusParam,
 			TaskResultStatusList:    taskResultStatusOptions,
 		},
@@ -77,5 +77,5 @@ func (u *Ui) RunsShow(w http.ResponseWriter, r *http.Request) {
 		URL:  r.URL,
 	}
 	data.TaskResults = listTaskResultsObj.TaskResults
-	renderTemplate(data, w, "task-results-table.html", "runs_show.html")
+	renderTemplate(data, w, "results_table.html", "runs_show.html")
 }

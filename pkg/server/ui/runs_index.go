@@ -9,13 +9,13 @@ import (
 	"github.com/wndhydrnt/saturn-bot/pkg/server/api/openapi"
 )
 
-type dataListRuns struct {
+type dataRunsIndex struct {
 	Runs       []openapi.RunV1
 	Pagination pagination
-	Filters    dataListRunsFilters
+	Filters    dataRunsIndexFilters
 }
 
-type dataListRunsFilters struct {
+type dataRunsIndexFilters struct {
 	RunStatusList    []string
 	RunStatusCurrent string
 	TaskNames        []string
@@ -28,11 +28,11 @@ var (
 )
 
 // ListRun renders the list of known runs.
-func (u *Ui) ListRuns(w http.ResponseWriter, r *http.Request) {
+func (u *Ui) RunsIndex(w http.ResponseWriter, r *http.Request) {
 	queryStatus := r.URL.Query().Get("status")
 	queryTask := r.URL.Query().Get("task")
-	tplData := dataListRuns{
-		Filters: dataListRunsFilters{
+	tplData := dataRunsIndex{
+		Filters: dataRunsIndexFilters{
 			RunStatusList:    runStatusOptions,
 			RunStatusCurrent: queryStatus,
 			TaskNameCurrent:  queryTask,
@@ -82,5 +82,5 @@ func (u *Ui) ListRuns(w http.ResponseWriter, r *http.Request) {
 		tplData.Runs = payload.Result
 	}
 
-	renderTemplate(tplData, w, "run-list.html")
+	renderTemplate(tplData, w, "runs_index.html")
 }

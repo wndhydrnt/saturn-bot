@@ -8,7 +8,7 @@ import (
 	"github.com/wndhydrnt/saturn-bot/pkg/server/api/openapi"
 )
 
-type dataListTasks struct {
+type dataTasksIndex struct {
 	Filters struct {
 		ActiveCurrent string
 	}
@@ -45,7 +45,7 @@ func (u *Ui) TasksIndex(w http.ResponseWriter, r *http.Request) {
 	}
 
 	taskList := listTasksResp.(openapi.ListTasksV1200JSONResponse)
-	var data dataListTasks
+	var data dataTasksIndex
 	data.Filters = struct{ ActiveCurrent string }{queryActive}
 	data.Tasks = taskList.Results
 	data.Pagination = pagination{
