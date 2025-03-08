@@ -291,7 +291,9 @@ trigger:
 
 [json-path:../../../pkg/task/schema/task.schema.json:$.properties.trigger.properties.webhook.description]
 
-[Webhook](./webhook.md) describes how to set up webhooks for GitHub or GitLab.
+[Trigger a task when a webhook is received](../../user_guides/webhook.md) describes how to set up a webhook.
+
+See [Webhook](./webhook.md) for reference.
 
 #### delay
 
