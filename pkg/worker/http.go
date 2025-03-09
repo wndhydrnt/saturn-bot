@@ -7,9 +7,9 @@ import (
 	"net/http"
 	"time"
 
+	"github.com/wndhydrnt/saturn-bot/pkg/client"
 	"github.com/wndhydrnt/saturn-bot/pkg/log"
 	"github.com/wndhydrnt/saturn-bot/pkg/version"
-	"github.com/wndhydrnt/saturn-bot/pkg/worker/client"
 )
 
 func healthHandler(w http.ResponseWriter, _ *http.Request) {

@@ -13,6 +13,7 @@ import (
 	"github.com/go-chi/chi/v5"
 	"github.com/go-chi/chi/v5/middleware"
 	"github.com/prometheus/client_golang/prometheus/promhttp"
+	"github.com/wndhydrnt/saturn-bot/pkg/client"
 	"github.com/wndhydrnt/saturn-bot/pkg/command"
 	"github.com/wndhydrnt/saturn-bot/pkg/config"
 	"github.com/wndhydrnt/saturn-bot/pkg/host"
@@ -23,7 +24,6 @@ import (
 	"github.com/wndhydrnt/saturn-bot/pkg/server/api/openapi"
 	"github.com/wndhydrnt/saturn-bot/pkg/task"
 	"github.com/wndhydrnt/saturn-bot/pkg/version"
-	"github.com/wndhydrnt/saturn-bot/pkg/worker/client"
 	"go.uber.org/zap"
 )
 
