@@ -21,7 +21,6 @@ import (
 	"github.com/wndhydrnt/saturn-bot/pkg/options"
 	"github.com/wndhydrnt/saturn-bot/pkg/processor"
 	"github.com/wndhydrnt/saturn-bot/pkg/ptr"
-	"github.com/wndhydrnt/saturn-bot/pkg/server/api/openapi"
 	"github.com/wndhydrnt/saturn-bot/pkg/task"
 	"github.com/wndhydrnt/saturn-bot/pkg/version"
 	"go.uber.org/zap"
@@ -139,10 +138,10 @@ func NewWorker(configPath string, taskPaths []string) (*Worker, error) {
 		return nil, err
 	}
 
-	apiClient, err := client.NewClientWithResponses(
-		opts.Config.WorkerServerAPIBaseURL,
-		client.WithRequestEditorFn(newApiKeyAddFunc(openapi.HeaderApiKey, opts.Config.ServerApiKey)),
-	)
+	apiClient, err := client.NewCustomClientWithResponses(client.CustomClientWithResponsesOptions{
+		ApiKey:  opts.Config.ServerApiKey,
+		BaseUrl: opts.Config.WorkerServerAPIBaseURL,
+	})
 	if err != nil {
 		return nil, fmt.Errorf("create openapi client: %w", err)
 	}

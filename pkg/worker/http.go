@@ -1,13 +1,11 @@
 package worker
 
 import (
-	"context"
 	"encoding/json"
 	"fmt"
 	"net/http"
 	"time"
 
-	"github.com/wndhydrnt/saturn-bot/pkg/client"
 	"github.com/wndhydrnt/saturn-bot/pkg/log"
 	"github.com/wndhydrnt/saturn-bot/pkg/version"
 )
@@ -58,12 +56,5 @@ func newHttpServer(addr string, mux http.Handler) *http.Server {
 		Addr:              addr,
 		Handler:           mux,
 		ReadHeaderTimeout: 10 * time.Millisecond,
-	}
-}
-
-func newApiKeyAddFunc(key, value string) client.RequestEditorFn {
-	return func(_ context.Context, req *http.Request) error {
-		req.Header.Set(key, value)
-		return nil
 	}
 }
