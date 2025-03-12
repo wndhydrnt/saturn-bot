@@ -28,6 +28,7 @@ func Execute() int {
 	rootCmd.AddCommand(createRunCommand())
 	rootCmd.AddCommand(createTryCommand())
 	rootCmd.AddCommand(createVersionCommand())
+	rootCmd.AddCommand(createScheduleCommand())
 	rootCmd.AddCommand(createServerCommand())
 	rootCmd.AddCommand(createWorkerCommand())
 	if err := rootCmd.Execute(); err != nil {
