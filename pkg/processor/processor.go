@@ -352,6 +352,13 @@ func applyTaskToRepository(ctx context.Context, dryRun bool, gitc git.GitClient,
 		}
 	}
 
+	// If no PR is currently open, always force-rebase.
+	// This ensures that commits made by users to a
+	// branch created by previous runs get removed.
+	if prID != nil && !repo.IsPullRequestOpen(prID) {
+		forceRebase = true
+	}
+
 	hasConflict, err := gitc.UpdateTaskBranch(branchName, forceRebase, repo)
 	if err != nil {
 		var branchModifiedErr *git.BranchModifiedError
