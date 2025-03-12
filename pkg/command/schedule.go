@@ -13,9 +13,9 @@ import (
 )
 
 var (
-	ctx             = context.Background()
-	errWaitExceeded = errors.New("run did not finish in time")
-	errFailed       = errors.New("run failed")
+	ctx                 = context.Background()
+	ErrSchedule         = errors.New("schedule")
+	errSchedulingFailed = errors.New("failed to schedule the run")
 )
 
 type ScheduleOptions struct {
@@ -64,10 +64,10 @@ func (s *ScheduleRunner) Run(out io.Writer, payload client.ScheduleRunV1Request)
 		}
 	case response.JSON400 != nil:
 		handleApiError(out, response.JSON400)
-		return fmt.Errorf("failed to schedule run")
+		return errSchedulingFailed
 	case response.JSON401 != nil:
 		handleApiError(out, response.JSON401)
-		return fmt.Errorf("failed to schedule run")
+		return errSchedulingFailed
 	default:
 		return fmt.Errorf("unexpected HTTP response with code %d", response.HTTPResponse.StatusCode)
 	}
@@ -92,9 +92,10 @@ func (s *ScheduleRunner) waitForRun(out io.Writer, id int) error {
 			case response.JSON200 != nil:
 				switch response.JSON200.Run.Status {
 				case client.Failed:
-					return errFailed
+					_, _ = fmt.Fprintf(out, "❌ Run failed\n")
+					return ErrSchedule
 				case client.Finished:
-					fmt.Fprintf(out, "✅ Run %d finished\n", id)
+					_, _ = fmt.Fprintf(out, "✅ Run %d finished\n", id)
 					return nil
 				default:
 					_, _ = fmt.Fprintf(out, "🔁 Run %d %s - %s until next check\n", id, response.JSON200.Run.Status, s.waitInterval)
@@ -103,11 +104,16 @@ func (s *ScheduleRunner) waitForRun(out io.Writer, id int) error {
 				return fmt.Errorf("failed to authenticate")
 			case response.JSON404 != nil:
 				return fmt.Errorf("run %d not found", id)
+			default:
+				if response.HTTPResponse != nil {
+					_, _ = fmt.Fprintf(out, "🔁 Got unexpected status code %d - %s until next check\n", response.HTTPResponse.StatusCode, s.waitInterval)
+				}
 			}
 		}
 
 		if tries == int64(maxTries) {
-			return errWaitExceeded
+			_, _ = fmt.Fprintf(out, "❌ Run failed to finish after %s\n", s.waitFor)
+			return ErrSchedule
 		}
 	}
 

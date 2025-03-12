@@ -1,6 +1,8 @@
 package cmd
 
 import (
+	"errors"
+	"fmt"
 	"time"
 
 	"github.com/spf13/cobra"
@@ -16,7 +18,7 @@ var (
 provided by --server-url.
 It blocks until the run has finished and reports its result.
 
-If blocking isn't desired, pass --wait 0.
+If blocking isn't desired, pass --wait=0.
 
 Examples:
 
@@ -50,19 +52,34 @@ func createScheduleCommand() *cobra.Command {
 		Use:   "schedule TASK_NAME",
 		Short: "Schedule a run via the server API",
 		Long:  scheduleCommandHelp,
-		Run: func(cmd *cobra.Command, args []string) {
+		RunE: func(cmd *cobra.Command, args []string) error {
+			if len(args) < 1 {
+				return fmt.Errorf("missing argument TASK_NAME")
+			}
+
+			if len(args) > 1 {
+				return fmt.Errorf("requires exactly one argument TASK_NAME, %d given", len(args))
+			}
+
 			runner, err := command.NewScheduleRunner(command.ScheduleOptions{
 				WaitFor:      waitFor,
 				WaitInterval: waitCheckInterval,
 				ServerApiKey: serverApiKey,
 				ServerUrl:    serverUrl,
 			})
-			handleError(err, cmd.ErrOrStderr())
+			if err != nil {
+				return err
+			}
+
 			err = runner.Run(cmd.OutOrStdout(), client.ScheduleRunV1Request{
 				RunData:  ptr.To(inputs),
 				TaskName: args[0],
 			})
-			handleError(err, cmd.ErrOrStderr())
+			if errors.Is(err, command.ErrSchedule) {
+				return nil
+			}
+
+			return err
 		},
 	}
 	cmd.Flags().StringToStringVar(&inputs, "input", map[string]string{}, `Key/value pair in the format <key>=<value>
@@ -70,7 +87,7 @@ to use as an input parameter of a task.
 Can be supplied multiple times to set multiple inputs.`)
 	cmd.Flags().StringVar(&serverApiKey, "server-api-key", "", "Key to authenticate at the server API.")
 	cmd.Flags().StringVar(&serverUrl, "server-url", "http://localhost:3035", "Base URL of the server API.")
-	cmd.Flags().DurationVar(&waitFor, "wait", 5*time.Minute, `Wait for the run to finish.
+	cmd.Flags().DurationVar(&waitFor, "wait", 15*time.Minute, `Wait for the run to finish.
 The command blocks until the duration is over.
 Useful to provide users with feedback on the result of the scheduled run.`)
 	cmd.Flags().DurationVar(&waitCheckInterval, "wait-check-interval", 10*time.Second, "Time to wait between checks. Only relevant if --wait is set.")
