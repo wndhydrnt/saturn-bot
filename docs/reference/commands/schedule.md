@@ -1,6 +1,6 @@
 # schedule
 
-```{.text mdox-exec="./saturn-bot schedule --help" title="run"}
+```{.text mdox-exec="./saturn-bot schedule --help" title="schedule"}
 Schedule a run via the server API.
 
 "schedule" schedules a new run of TASK_NAME at the server
