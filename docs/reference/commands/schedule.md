@@ -7,7 +7,7 @@ Schedule a run via the server API.
 provided by --server-url.
 It blocks until the run has finished and reports its result.
 
-If blocking isn't desired, pass --wait 0.
+If blocking isn't desired, pass --wait=0.
 
 Examples:
 
