@@ -15,23 +15,32 @@ Examples:
 
 # Schedule a run of task with the name "hello-world"
 # using default values.
-saturn-bot schedule hello-world
+saturn-bot schedule \
+  --server-url http://saturn-bot.local \
+  --server-api-key secret \
+  hello-world
 
 # Schedule a run of task with the name "hello-world"
 # and do not wait for it to finish.
 saturn-bot schedule \
+  --server-url http://saturn-bot.local \
+  --server-api-key secret \
   --wait 0 \
   hello-world
 
 # Schedule a run of task with the name "hello-world",
 # wait for it to finish and report the results as JSON.
 saturn-bot schedule \
+  --server-url http://saturn-bot.local \
+  --server-api-key secret \
   --output json \
   hello-world
 
 # Schedule a run of task with the name "hello-world"
 # and inputs.
 saturn-bot schedule \
+  --server-url http://saturn-bot.local \
+  --server-api-key secret \
   --input greeting=Hello \
   --input to=World \
   hello-world
