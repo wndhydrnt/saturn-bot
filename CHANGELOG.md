@@ -1,5 +1,24 @@
 # Changelog
 
+## [0.24.0](https://github.com/wndhydrnt/saturn-bot/compare/v0.23.2...v0.24.0) (2025-03-23)
+
+
+### Features
+
+* **server:** Add command "schedule" ([#168](https://github.com/wndhydrnt/saturn-bot/issues/168)) ([bbb0838](https://github.com/wndhydrnt/saturn-bot/commit/bbb0838bbce373a519091e29bf1db39d40f6ff15))
+* **server:** Display the duration of a run on its detail page ([1f86a0a](https://github.com/wndhydrnt/saturn-bot/commit/1f86a0a7cad9021d58e9ef9a7a6daf1970fc210c))
+* **server:** Extract run data from the payload of a webhook ([#166](https://github.com/wndhydrnt/saturn-bot/issues/166)) ([b391768](https://github.com/wndhydrnt/saturn-bot/commit/b391768827297dc04388864b9350530233523fd9))
+* **server:** Format run data as a list in run detail view ([56564bd](https://github.com/wndhydrnt/saturn-bot/commit/56564bdea0fb737147eeb7a88bf8911a4313a51e))
+* **server:** Re-organize OpenAPI spec ([8f4e1bd](https://github.com/wndhydrnt/saturn-bot/commit/8f4e1bd6ceff3a9eac70efe9cfd14343c65062d5))
+
+
+### Bug Fixes
+
+* **build:** Update git package to "1:2.39.5-0+deb12u2" ([99c33d9](https://github.com/wndhydrnt/saturn-bot/commit/99c33d9fe468d00751eb9c6b12442c2455152dd9))
+* **processor:** Skip detectection of foreign commits if pull request isn't open ([#167](https://github.com/wndhydrnt/saturn-bot/issues/167)) ([3670a8b](https://github.com/wndhydrnt/saturn-bot/commit/3670a8b5881acd4e4254b71a9e277fb3a910d2f0))
+* **server:** Endpoint ListTaskRecentTaskResultsV1 does not account for run data ([ad5cbac](https://github.com/wndhydrnt/saturn-bot/commit/ad5cbac7f91b91ebc3d1ba465634b86129655c34))
+* **server:** Remove "Delete run" button from run detail view ([b995caf](https://github.com/wndhydrnt/saturn-bot/commit/b995caf201bc55e1e29543fad970ced04baa1d7a))
+
 ## [0.23.2](https://github.com/wndhydrnt/saturn-bot/compare/v0.23.1...v0.23.2) (2025-03-05)
 
 
