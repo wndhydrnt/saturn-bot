@@ -5,9 +5,11 @@ Schedule a run via the server API.
 
 "schedule" schedules a new run of TASK_NAME at the server
 provided by --server-url.
-It blocks until the run has finished and reports its result.
 
+It blocks until the run has finished and reports its result.
 If blocking isn't desired, pass --wait=0.
+
+It can report the results of the task as JSON.
 
 Examples:
 
@@ -36,6 +38,7 @@ Flags:
       --input stringToString           Key/value pair in the format <key>=<value>
                                        to use as an input parameter of a task.
                                        Can be supplied multiple times to set multiple inputs. (default [])
+      --output string                  The output format to use when reporting task results. One of json or none. (default "none")
       --server-api-key string          Key to authenticate at the server API.
       --server-url string              Base URL of the server API. (default "http://localhost:3035")
       --wait duration                  Wait for the run to finish.
