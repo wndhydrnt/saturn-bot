@@ -11,6 +11,7 @@ require (
 	github.com/go-chi/chi/v5 v5.0.13
 	github.com/gofrs/flock v0.12.1
 	github.com/golang-migrate/migrate/v4 v4.18.1
+	github.com/gomarkdown/markdown v0.0.0-20250207164621-7a1f277a159e
 	github.com/google/go-github/v68 v68.0.0
 	github.com/gosimple/slug v1.13.1
 	github.com/gregjones/httpcache v0.0.0-20190611155906-901d90724c79
@@ -63,7 +64,6 @@ require (
 	github.com/gobwas/glob v0.2.3 // indirect
 	github.com/golang/groupcache v0.0.0-20210331224755-41bb18bfe9da // indirect
 	github.com/golang/protobuf v1.5.4 // indirect
-	github.com/gomarkdown/markdown v0.0.0-20250207164621-7a1f277a159e // indirect
 	github.com/google/go-querystring v1.1.0 // indirect
 	github.com/google/uuid v1.6.0 // indirect
 	github.com/gorilla/websocket v1.4.2 // indirect
