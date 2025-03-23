@@ -34,6 +34,12 @@ saturn-bot schedule \
   --wait 0 \
   hello-world
 
+# Schedule a run of task with the name "hello-world",
+# wait for it to finish and report the results as JSON.
+saturn-bot schedule \
+  --output json \
+  hello-world
+
 # Schedule a run of task with the name "hello-world"
 # and inputs.
 saturn-bot schedule \
@@ -64,10 +70,7 @@ func createScheduleCommand() *cobra.Command {
 				return fmt.Errorf("requires exactly one argument TASK_NAME, %d given", len(args))
 			}
 
-			runner, err := command.NewScheduleRunner(command.ScheduleOptions{
-				OutputFormat: outputFormat,
-				WaitFor:      waitFor,
-				WaitInterval: waitCheckInterval,
+			runner, err := command.NewScheduleRunner(command.NewScheduleRunnerOptions{
 				ServerApiKey: serverApiKey,
 				ServerUrl:    serverUrl,
 			})
@@ -75,11 +78,18 @@ func createScheduleCommand() *cobra.Command {
 				return err
 			}
 
-			err = runner.Run(cmd.OutOrStdout(), cmd.OutOrStdout(), client.ScheduleRunV1Request{
-				RunData:  ptr.To(inputs),
-				TaskName: args[0],
+			err = runner.Run(command.ScheduleRunnerRunOptions{
+				OutLog:       cmd.ErrOrStderr(),
+				OutReport:    cmd.OutOrStdout(),
+				OutputFormat: outputFormat,
+				ScheduleRequest: client.ScheduleRunV1Request{
+					RunData:  ptr.To(inputs),
+					TaskName: args[0],
+				},
+				WaitFor:      waitFor,
+				WaitInterval: waitCheckInterval,
 			})
-			if errors.Is(err, command.ErrSchedule) {
+			if errors.Is(err, command.ErrRunFailed) {
 				return nil
 			}
 

@@ -23,6 +23,12 @@ saturn-bot schedule \
   --wait 0 \
   hello-world
 
+# Schedule a run of task with the name "hello-world",
+# wait for it to finish and report the results as JSON.
+saturn-bot schedule \
+  --output json \
+  hello-world
+
 # Schedule a run of task with the name "hello-world"
 # and inputs.
 saturn-bot schedule \

@@ -35,12 +35,16 @@ func TestScheduleRunner_Run_ScheduleNoWait(t *testing.T) {
 	logOut := &bytes.Buffer{}
 	reportOut := &bytes.Buffer{}
 
-	runner, err := command.NewScheduleRunner(command.ScheduleOptions{
+	runner, err := command.NewScheduleRunner(command.NewScheduleRunnerOptions{
 		HttpClient: setupClient(),
 		ServerUrl:  testServerUrl,
 	})
 	require.NoError(t, err)
-	err = runner.Run(logOut, reportOut, client.ScheduleRunV1Request{TaskName: "unittest"})
+	err = runner.Run(command.ScheduleRunnerRunOptions{
+		OutLog:          logOut,
+		OutReport:       reportOut,
+		ScheduleRequest: client.ScheduleRunV1Request{TaskName: "unittest"},
+	})
 	require.NoError(t, err)
 
 	require.Equal(t, "▶️ Run 1 has been scheduled\n", logOut.String())
@@ -89,17 +93,21 @@ func TestScheduleRunner_Run_ScheduleWait(t *testing.T) {
 			},
 		})
 
-	runner, err := command.NewScheduleRunner(command.ScheduleOptions{
-		HttpClient:   setupClient(),
-		OutputFormat: "json",
-		WaitFor:      5 * time.Millisecond,
-		WaitInterval: 1 * time.Millisecond,
-		ServerUrl:    testServerUrl,
+	runner, err := command.NewScheduleRunner(command.NewScheduleRunnerOptions{
+		HttpClient: setupClient(),
+		ServerUrl:  testServerUrl,
 	})
 	require.NoError(t, err)
 	logOut := &bytes.Buffer{}
 	reportOut := &bytes.Buffer{}
-	err = runner.Run(logOut, reportOut, client.ScheduleRunV1Request{TaskName: "unittest"})
+	err = runner.Run(command.ScheduleRunnerRunOptions{
+		OutLog:          logOut,
+		OutReport:       reportOut,
+		OutputFormat:    "json",
+		ScheduleRequest: client.ScheduleRunV1Request{TaskName: "unittest"},
+		WaitFor:         5 * time.Millisecond,
+		WaitInterval:    1 * time.Millisecond,
+	})
 	require.NoError(t, err)
 
 	expectedLogOut := `▶️ Run 1 has been scheduled
@@ -144,16 +152,20 @@ func TestScheduleRunner_Run_WaitExceeded(t *testing.T) {
 			Status: client.Running,
 		}})
 
-	runner, err := command.NewScheduleRunner(command.ScheduleOptions{
-		HttpClient:   setupClient(),
-		WaitFor:      2 * time.Millisecond,
-		WaitInterval: 1 * time.Millisecond,
-		ServerUrl:    testServerUrl,
+	runner, err := command.NewScheduleRunner(command.NewScheduleRunnerOptions{
+		HttpClient: setupClient(),
+		ServerUrl:  testServerUrl,
 	})
 	require.NoError(t, err)
 	logOut := &bytes.Buffer{}
 	reportOut := &bytes.Buffer{}
-	err = runner.Run(logOut, reportOut, client.ScheduleRunV1Request{TaskName: "unittest"})
+	err = runner.Run(command.ScheduleRunnerRunOptions{
+		OutLog:          logOut,
+		OutReport:       reportOut,
+		ScheduleRequest: client.ScheduleRunV1Request{TaskName: "unittest"},
+		WaitFor:         2 * time.Millisecond,
+		WaitInterval:    1 * time.Millisecond,
+	})
 	require.Error(t, err)
 
 	expectedOut := `▶️ Run 1 has been scheduled
@@ -187,16 +199,20 @@ func TestScheduleRunner_Run_Fails(t *testing.T) {
 			Status: client.Failed,
 		}})
 
-	runner, err := command.NewScheduleRunner(command.ScheduleOptions{
-		HttpClient:   setupClient(),
-		WaitFor:      2 * time.Millisecond,
-		WaitInterval: 1 * time.Millisecond,
-		ServerUrl:    testServerUrl,
+	runner, err := command.NewScheduleRunner(command.NewScheduleRunnerOptions{
+		HttpClient: setupClient(),
+		ServerUrl:  testServerUrl,
 	})
 	require.NoError(t, err)
 	logOut := &bytes.Buffer{}
 	reportOut := &bytes.Buffer{}
-	err = runner.Run(logOut, reportOut, client.ScheduleRunV1Request{TaskName: "unittest"})
+	err = runner.Run(command.ScheduleRunnerRunOptions{
+		OutLog:          logOut,
+		OutReport:       reportOut,
+		ScheduleRequest: client.ScheduleRunV1Request{TaskName: "unittest"},
+		WaitFor:         2 * time.Millisecond,
+		WaitInterval:    1 * time.Millisecond,
+	})
 	require.Error(t, err)
 
 	expectedOut := `▶️ Run 1 has been scheduled
@@ -221,12 +237,16 @@ func TestScheduleRunner_Run_BadRequest(t *testing.T) {
 	logOut := &bytes.Buffer{}
 	reportOut := &bytes.Buffer{}
 
-	runner, err := command.NewScheduleRunner(command.ScheduleOptions{
+	runner, err := command.NewScheduleRunner(command.NewScheduleRunnerOptions{
 		HttpClient: setupClient(),
 		ServerUrl:  testServerUrl,
 	})
 	require.NoError(t, err)
-	err = runner.Run(logOut, reportOut, client.ScheduleRunV1Request{TaskName: "unittest"})
+	err = runner.Run(command.ScheduleRunnerRunOptions{
+		OutLog:          logOut,
+		OutReport:       reportOut,
+		ScheduleRequest: client.ScheduleRunV1Request{TaskName: "unittest"},
+	})
 	require.Error(t, err)
 
 	require.Equal(t, "❌ Failed to schedule run:\n  Error: bad request\n", logOut.String())
