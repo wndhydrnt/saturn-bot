@@ -20,7 +20,7 @@ RUN useradd --create-home --shell /usr/sbin/nologin --uid 1001 saturn-bot && \
     mkdir /home/saturn-bot/data && \
     chown 1001:1001 /home/saturn-bot/data && \
     apt-get update && \
-    apt-get install --no-install-recommends -y git=1:2.39.5-0+deb12u1 ca-certificates=20230311 && \
+    apt-get install --no-install-recommends -y git=1:2.39.5-0+deb12u2 ca-certificates=20230311 && \
     apt-get clean && \
     rm -rf /var/lib/apt/lists/*
 COPY --from=builder --chown=1001:1001 /src/saturn-bot /bin/saturn-bot
