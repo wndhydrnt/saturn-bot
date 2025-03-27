@@ -36,7 +36,6 @@ func (s *Server) Start(opts options.Opts, taskPaths []string) error {
 		return fmt.Errorf("required setting serverApiKey not configured - see https://saturn-bot.readthedocs.io/en/latest/reference/configuration/#serverapikey")
 	}
 
-	metrics.Init(opts.PrometheusRegisterer)
 	taskRegistry := task.NewRegistry(options.Opts{
 		ActionFactories: opts.ActionFactories,
 		FilterFactories: opts.FilterFactories,
@@ -57,12 +56,15 @@ func (s *Server) Start(opts options.Opts, taskPaths []string) error {
 		return fmt.Errorf("initialize database: %w", err)
 	}
 
+	dbInfoService := service.NewDbInfo(database)
 	taskService := service.NewTaskService(opts.Clock, database, taskRegistry)
 	workerService := service.NewWorkerService(opts.Clock, database, taskService)
 	syncService := service.NewSync(opts.Clock, database, taskService, workerService)
 	if err := syncService.SyncTasksInDatabase(); err != nil {
 		return err
 	}
+
+	metrics.Init(opts.PrometheusRegisterer, dbInfoService)
 
 	router := newRouter(opts)
 	webhookService, err := service.NewWebhookService(opts.Clock, taskRegistry, workerService)
