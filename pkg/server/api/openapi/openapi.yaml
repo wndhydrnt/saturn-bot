@@ -2,7 +2,7 @@ openapi: 3.0.3
 info:
   title: saturn-bot server API
   # x-release-please-start-version
-  version: 0.24.0
+  version: 0.25.0
   # x-release-please-end-version
 security:
   - ApiKeyAuth: []
