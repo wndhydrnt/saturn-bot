@@ -321,7 +321,7 @@ func mapRunResultsToTaskResults(runResults []command.RunResult) []client.ReportW
 	for _, rr := range runResults {
 		// Always report if a pull request is available.
 		// Do this to update state in the database of the server.
-		if rr.PullRequest == nil && !canReport(rr.Result) {
+		if rr.PullRequest == nil && !shouldReport(rr.Result) {
 			continue
 		}
 
@@ -356,8 +356,10 @@ func Run(configPath string, taskPaths []string) error {
 	return nil
 }
 
-func canReport(result processor.Result) bool {
+func shouldReport(result processor.Result) bool {
 	switch result {
+	case processor.ResultNoChanges:
+		return false
 	case processor.ResultNoMatch:
 		return false
 	case processor.ResultSkip:
