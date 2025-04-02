@@ -39,6 +39,10 @@ func TestServer_WebhookGithub_Success(t *testing.T) {
 		tasks: []schema.Task{
 			{
 				Name: "unittest",
+				Inputs: []schema.Input{
+					{Name: "repoID"},
+					{Name: "tag"},
+				},
 				Trigger: &schema.TaskTrigger{
 					Webhook: &schema.TaskTriggerWebhook{
 						Github: []schema.GithubTrigger{
@@ -79,7 +83,7 @@ func TestServer_WebhookGithub_Success(t *testing.T) {
 						"repoID": "100",
 					}),
 					Task: openapi.WorkTaskV1{
-						Hash: "4ebc85491822e40239d27d97c01baf7c302441c369aa479fa401ab3ac0f9857b",
+						Hash: "cf5314bd91353334688e7399141f0b75e02664382189f89724b69ffdecd1f6ea",
 						Name: "unittest",
 					},
 				},

@@ -5,6 +5,7 @@ import (
 	"context"
 	"fmt"
 	htmlTemplate "html/template"
+	"maps"
 	"regexp"
 	"slices"
 	"strings"
@@ -13,6 +14,7 @@ import (
 	"github.com/gosimple/slug"
 	protoV1 "github.com/wndhydrnt/saturn-bot-go/protocol/v1"
 	"github.com/wndhydrnt/saturn-bot/pkg/action"
+	sbcontext "github.com/wndhydrnt/saturn-bot/pkg/context"
 	"github.com/wndhydrnt/saturn-bot/pkg/filter"
 	"github.com/wndhydrnt/saturn-bot/pkg/host"
 	"github.com/wndhydrnt/saturn-bot/pkg/log"
@@ -315,7 +317,9 @@ func (tw *Task) Stop() {
 // It returns a list of errors where each error details a failed validation.
 func ValidateInputs(data map[string]string, t *Task) []error {
 	var errors []error
+	var allowedKeys []string
 	for _, input := range t.Inputs {
+		allowedKeys = append(allowedKeys, input.Name)
 		value := data[input.Name]
 		if value == "" && input.Default == nil {
 			errors = append(errors, fmt.Errorf("missing value for input '%s'", input.Name))
@@ -331,6 +335,12 @@ func ValidateInputs(data map[string]string, t *Task) []error {
 		if len(input.Options) > 0 && slices.Contains(input.Options, value) {
 			errors = append(errors, fmt.Errorf("value of input '%s' must be one of '%s'", input.Name, strings.Join(input.Options, ",")))
 			continue
+		}
+	}
+
+	for key := range maps.Keys(data) {
+		if !slices.Contains(allowedKeys, key) && key != sbcontext.RunDataKeyAssignees && key != sbcontext.RunDataKeyReviewers {
+			errors = append(errors, fmt.Errorf("task does not support an input with the key '%s'", key))
 		}
 	}
 

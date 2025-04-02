@@ -255,7 +255,7 @@ func TestServer_API_ScheduleRunV1(t *testing.T) {
 					statusCode: http.StatusBadRequest,
 					responseBody: openapi.Error{
 						Errors: []openapi.ErrorDetail{
-							{Error: 1001, Message: "missing required input", Detail: ptr.To("missing value for input 'greeting'")},
+							{Error: 1001, Message: "invalid input", Detail: ptr.To("missing value for input 'greeting'")},
 						},
 					},
 				},

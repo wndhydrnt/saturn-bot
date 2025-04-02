@@ -18,6 +18,9 @@ func TestServer_WebhookGitlab_Success(t *testing.T) {
 		tasks: []schema.Task{
 			{
 				Name: "unittest",
+				Inputs: []schema.Input{
+					{Name: "branch"},
+				},
 				Trigger: &schema.TaskTrigger{
 					Webhook: &schema.TaskTriggerWebhook{
 						Gitlab: []schema.GitlabTrigger{
@@ -60,7 +63,7 @@ func TestServer_WebhookGitlab_Success(t *testing.T) {
 						"branch": "main",
 					}),
 					Task: openapi.WorkTaskV1{
-						Hash: "76bdf6a24e10ad948d39f1d0fdaf67ffbc4ab42a950abceb01368dc2e1af3af8",
+						Hash: "2453412a09d8856d199a9c9ce8ed116c9c49162e0d69ad68fcbbcf755525d96d",
 						Name: "unittest",
 					},
 				},

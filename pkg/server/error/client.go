@@ -66,7 +66,7 @@ type InputError struct {
 
 // ToApiError implements [Client].
 func (e InputError) ToApiError() openapi.Error {
-	const msg = "missing required input"
+	const msg = "invalid input"
 	var details []openapi.ErrorDetail
 	for _, err := range e.errors {
 		details = append(details, openapi.ErrorDetail{

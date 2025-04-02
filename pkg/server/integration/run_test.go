@@ -176,3 +176,37 @@ func Test_API_DeleteRunV1(t *testing.T) {
 		})
 	}
 }
+
+func Test_API_ScheduleRunV1__unknown_input(t *testing.T) {
+	testCase := testCase{
+		tasks: []schema.Task{
+			{
+				Name: "unittest",
+				Inputs: []schema.Input{
+					{Name: "greeting"},
+				},
+			},
+		},
+		apiCalls: []apiCall{
+			{
+				method: "POST",
+				path:   "/api/v1/runs",
+				requestBody: openapi.ScheduleRunV1Request{
+					TaskName: "unittest",
+					RunData: ptr.To(map[string]string{
+						"greeting": "Hello",
+						"other":    "not expected",
+					}),
+				},
+				statusCode: http.StatusBadRequest,
+				responseBody: openapi.Error{
+					Errors: []openapi.ErrorDetail{
+						{Error: 1001, Message: "invalid input", Detail: ptr.To("task does not support an input with the key 'other'")},
+					},
+				},
+			},
+		},
+	}
+
+	executeTestCase(t, testCase)
+}
