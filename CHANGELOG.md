@@ -1,5 +1,12 @@
 # Changelog
 
+## [0.26.0](https://github.com/wndhydrnt/saturn-bot/compare/v0.25.0...v0.26.0) (2025-04-07)
+
+
+### Features
+
+* **task:** Keep run data that isn't defined in inputs ([#171](https://github.com/wndhydrnt/saturn-bot/issues/171)) ([ed57a5d](https://github.com/wndhydrnt/saturn-bot/commit/ed57a5df574d9f265018357cfecfd69ef0bac345))
+
 ## [0.25.0](https://github.com/wndhydrnt/saturn-bot/compare/v0.24.0...v0.25.0) (2025-03-31)
 
 
