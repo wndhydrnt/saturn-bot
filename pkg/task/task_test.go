@@ -311,8 +311,10 @@ func TestTask_SetInputs_NoSharedState(t *testing.T) {
 	}}
 	runData := map[string]string{}
 
-	taskOne.SetInputs(runData)
-	taskTwo.SetInputs(runData)
+	err := taskOne.SetInputs(runData)
+	require.NoError(t, err)
+	err = taskTwo.SetInputs(runData)
+	require.NoError(t, err)
 
 	require.Equal(t, map[string]string{"character": "joel"}, taskOne.RunData(), "default value in run data")
 	require.Equal(t, map[string]string{"character": "tommy"}, taskTwo.RunData(), "default value in run data")
