@@ -271,6 +271,15 @@ func TestTask_Inputs(t *testing.T) {
 			inputs: map[string]string{},
 			err:    errors.New("input unittest not set and has no default value"),
 		},
+
+		{
+			name: "keeps run data items for which no input has been specified",
+			task: schema.Task{Inputs: []schema.Input{
+				{Name: "category"},
+			}},
+			inputs: map[string]string{"category": "unittest", "type": "table"},
+			result: map[string]string{"category": "unittest", "type": "table"},
+		},
 	}
 
 	for _, tc := range testCases {
@@ -279,7 +288,7 @@ func TestTask_Inputs(t *testing.T) {
 			err := tw.SetInputs(tc.inputs)
 			if tc.err == nil {
 				require.NoError(t, err)
-				require.Equal(t, tc.result, tw.InputData())
+				require.Equal(t, tc.result, tw.RunData())
 			} else {
 				require.EqualError(t, err, tc.err.Error())
 			}
