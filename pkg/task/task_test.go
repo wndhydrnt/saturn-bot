@@ -295,3 +295,26 @@ func TestTask_Inputs(t *testing.T) {
 		})
 	}
 }
+
+func TestTask_SetInputs_NoSharedState(t *testing.T) {
+	taskOne := &task.Task{Task: schema.Task{
+		Name: "Task One",
+		Inputs: []schema.Input{
+			{Default: ptr.To("joel"), Name: "character"},
+		},
+	}}
+	taskTwo := &task.Task{Task: schema.Task{
+		Name: "Task Two",
+		Inputs: []schema.Input{
+			{Default: ptr.To("tommy"), Name: "character"},
+		},
+	}}
+	runData := map[string]string{}
+
+	taskOne.SetInputs(runData)
+	taskTwo.SetInputs(runData)
+
+	require.Equal(t, map[string]string{"character": "joel"}, taskOne.RunData(), "default value in run data")
+	require.Equal(t, map[string]string{"character": "tommy"}, taskTwo.RunData(), "default value in run data")
+	require.Equal(t, map[string]string{}, runData, "state of global run data has not changed")
+}
