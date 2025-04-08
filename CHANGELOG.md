@@ -1,5 +1,17 @@
 # Changelog
 
+## [0.25.0](https://github.com/wndhydrnt/saturn-bot/compare/v0.24.0...v0.25.0) (2025-03-31)
+
+
+### Features
+
+* **server:** Export the size of the sqlite file as a metric ([7a8495f](https://github.com/wndhydrnt/saturn-bot/commit/7a8495fe4d4efe0859870520445683acec2fc137))
+
+
+### Bug Fixes
+
+* **worker:** Over-reporting of results if repository did not change ([71446d5](https://github.com/wndhydrnt/saturn-bot/commit/71446d52f5eabea1b7c515c82fb25e2188f56e5d))
+
 ## [0.24.0](https://github.com/wndhydrnt/saturn-bot/compare/v0.23.2...v0.24.0) (2025-03-23)
 
 

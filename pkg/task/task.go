@@ -3,8 +3,10 @@ package task
 import (
 	"bytes"
 	"context"
+	"errors"
 	"fmt"
 	htmlTemplate "html/template"
+	"maps"
 	"regexp"
 	"slices"
 	"strings"
@@ -106,7 +108,7 @@ type Task struct {
 	plugins                []*plugin.Plugin
 	templateBranchName     *htmlTemplate.Template
 	templatePrTitle        *htmlTemplate.Template
-	inputData              map[string]string
+	runData                map[string]string
 	inputValidators        map[string]*regexp.Regexp
 }
 
@@ -189,27 +191,32 @@ func (tw *Task) HasReachedChangeLimit() bool {
 	return tw.changeLimitCount >= tw.ChangeLimit
 }
 
-// SetInputs takes inputs supplied via the command-line and stores them for later processing.
+// SetInputs takes incoming runData and verifies it against the inputs defined by a task.
+// Cerates a copy of runData and stores it as part of the [Task].
+// Applies default values of inputs if the key of an input isn't set in runData.
 // It returns an error if an expected input isn't supplied and no default value for the input has been set.
-func (tw *Task) SetInputs(cliInputs map[string]string) error {
-	if tw.inputData == nil {
-		tw.inputData = map[string]string{}
+func (tw *Task) SetInputs(runData map[string]string) error {
+	if tw.runData == nil {
+		tw.runData = map[string]string{}
 	}
 
+	// Copy incoming run data to not share state globally between tasks.
+	// A shared state could lead to unexpected errors when multiple tasks
+	// share the same input keys.
+	maps.Copy(tw.runData, runData)
+	var err error
 	for _, input := range tw.Inputs {
-		value := cliInputs[input.Name]
+		value := tw.runData[input.Name]
 		if value == "" {
 			if input.Default == nil {
-				return fmt.Errorf("input %s not set and has no default value", input.Name)
+				err = errors.Join(err, fmt.Errorf("input %s not set and has no default value", input.Name))
 			} else {
-				tw.inputData[input.Name] = ptr.From(input.Default)
+				tw.runData[input.Name] = ptr.From(input.Default)
 			}
-		} else {
-			tw.inputData[input.Name] = value
 		}
 	}
 
-	return nil
+	return err
 }
 
 func (tw *Task) HasReachMaxOpenPRs() bool {
@@ -232,14 +239,14 @@ func (tw *Task) IncOpenPRsCount() {
 	}
 }
 
-// InputData returns a map where every key is an input defined by the task
-// and every value is what has been set via the command-line for that key.
-func (tw *Task) InputData() map[string]string {
-	if tw.inputData == nil {
-		tw.inputData = map[string]string{}
+// RunData returns a map that stores runtime data.
+// This includes inputs set via the command-line interface.
+func (tw *Task) RunData() map[string]string {
+	if tw.runData == nil {
+		tw.runData = map[string]string{}
 	}
 
-	return tw.inputData
+	return tw.runData
 }
 
 var (

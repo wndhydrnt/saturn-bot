@@ -271,6 +271,15 @@ func TestTask_Inputs(t *testing.T) {
 			inputs: map[string]string{},
 			err:    errors.New("input unittest not set and has no default value"),
 		},
+
+		{
+			name: "keeps run data items for which no input has been specified",
+			task: schema.Task{Inputs: []schema.Input{
+				{Name: "category"},
+			}},
+			inputs: map[string]string{"category": "unittest", "type": "table"},
+			result: map[string]string{"category": "unittest", "type": "table"},
+		},
 	}
 
 	for _, tc := range testCases {
@@ -279,10 +288,35 @@ func TestTask_Inputs(t *testing.T) {
 			err := tw.SetInputs(tc.inputs)
 			if tc.err == nil {
 				require.NoError(t, err)
-				require.Equal(t, tc.result, tw.InputData())
+				require.Equal(t, tc.result, tw.RunData())
 			} else {
 				require.EqualError(t, err, tc.err.Error())
 			}
 		})
 	}
+}
+
+func TestTask_SetInputs_NoSharedState(t *testing.T) {
+	taskOne := &task.Task{Task: schema.Task{
+		Name: "Task One",
+		Inputs: []schema.Input{
+			{Default: ptr.To("joel"), Name: "character"},
+		},
+	}}
+	taskTwo := &task.Task{Task: schema.Task{
+		Name: "Task Two",
+		Inputs: []schema.Input{
+			{Default: ptr.To("tommy"), Name: "character"},
+		},
+	}}
+	runData := map[string]string{}
+
+	err := taskOne.SetInputs(runData)
+	require.NoError(t, err)
+	err = taskTwo.SetInputs(runData)
+	require.NoError(t, err)
+
+	require.Equal(t, map[string]string{"character": "joel"}, taskOne.RunData(), "default value in run data")
+	require.Equal(t, map[string]string{"character": "tommy"}, taskTwo.RunData(), "default value in run data")
+	require.Equal(t, map[string]string{}, runData, "state of global run data has not changed")
 }
