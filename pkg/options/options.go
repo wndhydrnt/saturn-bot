@@ -15,7 +15,6 @@ import (
 	"github.com/wndhydrnt/saturn-bot/pkg/filter"
 	"github.com/wndhydrnt/saturn-bot/pkg/host"
 	"github.com/wndhydrnt/saturn-bot/pkg/log"
-	sLog "github.com/wndhydrnt/saturn-bot/pkg/log"
 	"github.com/wndhydrnt/saturn-bot/pkg/metrics"
 )
 
@@ -140,7 +139,7 @@ func createHostsFromConfig(cfg config.Configuration) ([]host.Host, error) {
 // Initialize ensures that outside dependencies needed on every execution of saturn-bot are set up.
 // Such dependencies can be logging or directories.
 func Initialize(opts *Opts) error {
-	sLog.InitLog(opts.Config.LogFormat, opts.Config.LogLevel, opts.Config.GitLogLevel)
+	log.InitLog(opts.Config.LogFormat, opts.Config.LogLevel, opts.Config.GitLogLevel)
 
 	var dataDir string
 	if opts.Config.DataDir == nil {

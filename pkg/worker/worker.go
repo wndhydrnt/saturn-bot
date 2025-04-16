@@ -277,7 +277,7 @@ func (w *Worker) executeRun(exec Execution, result chan Result) {
 
 func (w *Worker) findTaskByName(name string, hash string) (*task.Task, error) {
 	for _, t := range w.tasks {
-		if t.Task.Name == name {
+		if t.Name == name {
 			if t.Checksum() == hash {
 				return t, nil
 			} else {
