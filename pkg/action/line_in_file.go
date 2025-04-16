@@ -2,6 +2,7 @@ package action
 
 import (
 	"bufio"
+	"bytes"
 	"context"
 	"fmt"
 	"os"
@@ -16,6 +17,10 @@ import (
 const (
 	beginningOfFile = "BOF"
 	endOfFile       = "EOF"
+)
+
+var (
+	lineFeed = []byte("\n")
 )
 
 type LineDeleteFactory struct{}
@@ -89,11 +94,12 @@ func (d *lineDelete) Apply(_ context.Context) error {
 
 	for _, path := range paths {
 		err := forEachLine(path, func(line []byte) ([]byte, error) {
-			if d.search != "" && string(line) == d.search {
+			lineTrim := bytes.TrimSpace(line)
+			if d.search != "" && string(lineTrim) == d.search {
 				return nil, nil
 			}
 
-			if d.regex != nil && d.regex.Match(line) {
+			if d.regex != nil && d.regex.Match(lineTrim) {
 				return nil, nil
 			}
 
@@ -341,12 +347,22 @@ func (a *lineReplace) Apply(_ context.Context) error {
 
 	for _, path := range paths {
 		err := forEachLine(path, func(line []byte) ([]byte, error) {
-			if a.search != "" && a.search == string(line) {
-				return []byte(a.line), nil
+			lineTrim := bytes.TrimSuffix(line, lineFeed)
+			if a.search != "" && a.search == string(lineTrim) {
+				new := []byte(a.line)
+				if bytes.HasSuffix(line, lineFeed) {
+					new = append(new, lineFeed...)
+				}
+
+				return new, nil
 			}
 
-			if a.regexp != nil && a.regexp.Match(line) {
-				new := a.regexp.ReplaceAll(line, []byte(a.line))
+			if a.regexp != nil && a.regexp.Match(lineTrim) {
+				new := a.regexp.ReplaceAll(lineTrim, []byte(a.line))
+				if bytes.HasSuffix(line, lineFeed) {
+					new = append(new, lineFeed...)
+				}
+
 				return new, nil
 			}
 
@@ -381,9 +397,11 @@ func forEachLine(filePath string, f func(line []byte) ([]byte, error)) error {
 	}
 
 	defer target.Close()
-	scanner := bufio.NewScanner(source)
-	for scanner.Scan() {
-		newB, err := f(scanner.Bytes())
+
+	reader := bufio.NewReader(source)
+	for {
+		oldB, readErr := reader.ReadBytes('\n')
+		newB, err := f(oldB)
 		if err != nil {
 			return err
 		}
@@ -393,16 +411,11 @@ func forEachLine(filePath string, f func(line []byte) ([]byte, error)) error {
 			if err != nil {
 				return fmt.Errorf("write line to temporary file: %w", err)
 			}
-
-			_, err = target.WriteString("\n")
-			if err != nil {
-				return fmt.Errorf("write linefeed to temporary file: %w", err)
-			}
 		}
-	}
 
-	if err = scanner.Err(); err != nil {
-		return fmt.Errorf("scanner failed: %w", err)
+		if readErr != nil {
+			break
+		}
 	}
 
 	sourceStat, err := source.Stat()
