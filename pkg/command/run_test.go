@@ -160,7 +160,7 @@ func TestExecuteRunner_Run(t *testing.T) {
 		}
 	}()
 	procMock := processormock.NewMockRepositoryTaskProcessor(ctrl)
-	var anyTask []*task.Task = []*task.Task{}
+	anyTask := []*task.Task{}
 	procMock.EXPECT().
 		Process(false, repoOne, gomock.AssignableToTypeOf(anyTask), true).
 		Return([]processor.ProcessResult{
@@ -211,7 +211,7 @@ func TestExecuteRunner_Run_DryRun(t *testing.T) {
 		}
 	}()
 	procMock := processormock.NewMockRepositoryTaskProcessor(ctrl)
-	var anyTask []*task.Task = []*task.Task{}
+	anyTask := []*task.Task{}
 	procMock.EXPECT().
 		Process(true, repo, gomock.AssignableToTypeOf(anyTask), true).
 		Return([]processor.ProcessResult{
@@ -248,7 +248,7 @@ func TestExecuteRunner_Run_RepositoriesCLI(t *testing.T) {
 		}
 	}()
 	procMock := processormock.NewMockRepositoryTaskProcessor(ctrl)
-	var anyTask []*task.Task = []*task.Task{}
+	anyTask := []*task.Task{}
 	procMock.EXPECT().
 		Process(false, repo, gomock.AssignableToTypeOf(anyTask), false).
 		Return([]processor.ProcessResult{
