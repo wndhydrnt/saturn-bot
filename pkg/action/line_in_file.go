@@ -94,7 +94,7 @@ func (d *lineDelete) Apply(_ context.Context) error {
 
 	for _, path := range paths {
 		err := forEachLine(path, func(line []byte) ([]byte, error) {
-			lineTrim := bytes.TrimSpace(line)
+			lineTrim := bytes.TrimSuffix(line, lineFeed)
 			if d.search != "" && string(lineTrim) == d.search {
 				return nil, nil
 			}
