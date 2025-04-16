@@ -1,11 +1,31 @@
-issues:
-  exclude-dirs:
-    # Copied code from upstream.
-    # Don't want to change it.
-    - pkg/server/db/sqlite3
-
+version: "2"
 linters:
   enable:
-    - gofmt
     - gosec
     - sloglint
+  exclusions:
+    generated: lax
+    presets:
+      - comments
+      - common-false-positives
+      - legacy
+      - std-error-handling
+    paths:
+      # Copied code from upstream.
+      # Don't want to change it.
+      - pkg/server/db/sqlite3
+      - third_party$
+      - builtin$
+      - examples$
+formatters:
+  enable:
+    - gofmt
+  exclusions:
+    generated: lax
+    paths:
+      # Copied code from upstream.
+      # Don't want to change it.
+      - pkg/server/db/sqlite3
+      - third_party$
+      - builtin$
+      - examples$
