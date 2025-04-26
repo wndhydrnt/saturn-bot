@@ -83,6 +83,13 @@
       "description": "Token to use for authentication at the GitLab API.",
       "type": "string"
     },
+    "goAutoMemLimitRatio": {
+      "default": 0.0,
+      "description": "Automatically set GOMEMLIMIT to the ratio of the detected maximum container or system memory. Can improve memory usage by triggering garbage collection early. A value of 0 turns off the feature.",
+      "type": "number",
+      "minimum": 0.0,
+      "maximum": 1.0
+    },
     "goProfiling": {
       "default": false,
       "description": "Activate Go profiling endpoints for server or worker. The endpoints are available at /debug/pprof/. See https://go.dev/blog/pprof.",

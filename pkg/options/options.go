@@ -7,6 +7,7 @@ import (
 	"path/filepath"
 	"time"
 
+	"github.com/KimMachineGun/automemlimit/memlimit"
 	"github.com/prometheus/client_golang/prometheus"
 	"github.com/prometheus/client_golang/prometheus/push"
 	"github.com/wndhydrnt/saturn-bot/pkg/action"
@@ -16,6 +17,7 @@ import (
 	"github.com/wndhydrnt/saturn-bot/pkg/host"
 	"github.com/wndhydrnt/saturn-bot/pkg/log"
 	"github.com/wndhydrnt/saturn-bot/pkg/metrics"
+	"go.uber.org/zap"
 )
 
 var (
@@ -193,6 +195,22 @@ func Initialize(opts *Opts) error {
 
 	if opts.Clock == nil {
 		opts.Clock = clock.Default
+	}
+
+	if opts.Config.GoAutoMemLimitRatio > 0 {
+		log.Log().Debugf("Configuring GOMEMLIMIT with ratio of %d", opts.Config.GoAutoMemLimitRatio)
+		_, err := memlimit.SetGoMemLimitWithOpts(
+			memlimit.WithRatio(opts.Config.GoAutoMemLimitRatio),
+			memlimit.WithProvider(
+				memlimit.ApplyFallback(
+					memlimit.FromCgroup,
+					memlimit.FromSystem,
+				),
+			),
+		)
+		if err != nil {
+			log.Log().Warnw("Failed to configure GOMEMLIMIT", zap.Error(err))
+		}
 	}
 
 	return nil
