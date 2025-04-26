@@ -179,6 +179,21 @@ Set to `ssh` to clone repositories via SSH.
 | Env Var | `SATURN_BOT_GITLABTOKEN` |
 | Type    | `string`                 |
 
+## goAutoMemLimitRatio
+
+[json-path:../../pkg/config/config.schema.json:$.properties.goAutoMemLimitRatio.description]
+
+| Name    | Value                            |
+| ------- | -------------------------------- |
+| Default | `0.0`                            |
+| Env Var | `SATURN_BOT_GOAUTOMEMLIMITRATIO` |
+| Type    | `number`                         |
+
+```yaml title="Example"
+# Set the soft limit of the Go runtime to 90% of the current container or system memory
+goAutoMemLimitRatio: 0.9
+```
+
 ## goProfiling
 
 [json-path:../../pkg/config/config.schema.json:$.properties.goProfiling.description]
