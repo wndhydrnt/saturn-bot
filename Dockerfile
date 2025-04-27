@@ -15,15 +15,16 @@ RUN --mount=type=cache,target=/go/pkg/mod/ \
 
 # debian:bookworm-20250203-slim
 FROM debian@sha256:40b107342c492725bc7aacbe93a49945445191ae364184a6d24fedb28172f6f7
-ENV SATURN_BOT_DATADIR=/home/saturn-bot/data
-RUN useradd --create-home --shell /usr/sbin/nologin --uid 1001 saturn-bot && \
-    mkdir /home/saturn-bot/data && \
-    chown 1001:1001 /home/saturn-bot/data && \
+ENV SATURN_BOT_DATADIR=/var/lib/saturn-bot
+RUN groupadd --system --gid 1001 saturn-bot && \
+    useradd --system --gid saturn-bot --no-create-home --home /nonexistent --comment "saturn-bot user" --shell /bin/false --uid 1001 saturn-bot && \
+    mkdir ${SATURN_BOT_DATADIR} && \
+    chown 1001:1001 ${SATURN_BOT_DATADIR} && \
     apt-get update && \
-    apt-get install --no-install-recommends -y git=1:2.39.5-0+deb12u2 ca-certificates=20230311 && \
+    apt-get install --no-install-recommends -y git=1:2.39.5-0+deb12u2 ca-certificates=20230311 curl=7.88.1-10+deb12u12 && \
     apt-get clean && \
     rm -rf /var/lib/apt/lists/*
 COPY --from=builder --chown=1001:1001 /src/saturn-bot /bin/saturn-bot
 USER saturn-bot
-WORKDIR /home/saturn-bot
+WORKDIR ${SATURN_BOT_DATADIR}
 ENTRYPOINT ["saturn-bot"]

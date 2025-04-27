@@ -11,3 +11,4 @@ __pycache__/
 docs/schemas/
 gorm.db
 saturn-bot.db*
+deploy/docker-compose/config.yaml

@@ -3,6 +3,7 @@
   "packages": {
     ".": {
       "extra-files": [
+        "deploy/docker-compose/docker-compose.yml",
         "docs/installation.md",
         "pkg/server/api/openapi/openapi.yaml"
       ],

@@ -1,0 +1,67 @@
+name: saturn-bot
+
+services:
+  server:
+    command:
+      - "server"
+      - "--config"
+      - "/run/secrets/config"
+      - "/etc/saturn-bot/tasks/**/*.yaml"
+    healthcheck:
+      test: ["CMD", "curl", "-f", "http://localhost:3035/healthz"]
+      interval: "1m"
+      timeout: "1s"
+      retries: 2
+      start_period: 5s
+    image: ghcr.io/wndhydrnt/saturn-bot:v0.25.0 # x-release-please-version
+    networks:
+      - saturn-bot
+    ports:
+      - "3035:3035/tcp"
+    restart: always
+    secrets:
+      - config
+    user: 1001:1001
+    volumes:
+      - "server:/var/lib/saturn-bot"
+      - "./tasks:/etc/saturn-bot/tasks:ro"
+  worker:
+    command:
+      - "worker"
+      - "--config"
+      - "/run/secrets/config"
+      - "/etc/saturn-bot/tasks/**/*.yaml"
+    depends_on:
+      server:
+        condition: service_started
+    environment:
+      SATURN_BOT_WORKERSERVERAPIBASEURL: "http://server:3035"
+    healthcheck:
+      test: ["CMD", "curl", "-f", "http://localhost:3036/healthz"]
+      interval: "1m"
+      timeout: "1s"
+      retries: 2
+      start_period: 5s
+    image: ghcr.io/wndhydrnt/saturn-bot:v0.25.0 # x-release-please-version
+    networks:
+      - saturn-bot
+    ports:
+      - "3036:3036/tcp"
+    restart: always
+    secrets:
+      - config
+    user: 1001:1001
+    volumes:
+      - "worker:/var/lib/saturn-bot"
+      - "./tasks:/etc/saturn-bot/tasks:ro"
+
+networks:
+  saturn-bot: {}
+
+secrets:
+  config:
+    file: ./config.yaml
+
+volumes:
+  server:
+  worker:
