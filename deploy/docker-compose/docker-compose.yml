@@ -13,7 +13,7 @@ services:
       timeout: "1s"
       retries: 2
       start_period: 5s
-    image: saturn-bot
+    image: ghcr.io/wndhydrnt/saturn-bot:v0.25.0 # x-release-please-version
     networks:
       - saturn-bot
     ports:
@@ -24,6 +24,7 @@ services:
     user: 1001:1001
     volumes:
       - "server:/var/lib/saturn-bot"
+      - "./tasks:/etc/saturn-bot/tasks:ro"
   worker:
     command:
       - "worker"
@@ -41,7 +42,7 @@ services:
       timeout: "1s"
       retries: 2
       start_period: 5s
-    image: saturn-bot
+    image: ghcr.io/wndhydrnt/saturn-bot:v0.25.0 # x-release-please-version
     networks:
       - saturn-bot
     ports:
@@ -52,6 +53,7 @@ services:
     user: 1001:1001
     volumes:
       - "worker:/var/lib/saturn-bot"
+      - "./tasks:/etc/saturn-bot/tasks:ro"
 
 networks:
   saturn-bot: {}
