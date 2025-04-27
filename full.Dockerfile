@@ -6,5 +6,5 @@ RUN apt-get update && \
     apt-get clean && \
     rm -rf /var/lib/apt/lists/*
 USER saturn-bot
-RUN python3 -m venv --prompt saturn-bot ${SATURN_BOT_DATADIR}/venv
+RUN python3 -m venv --prompt saturn-bot "${SATURN_BOT_DATADIR}/venv"
 ENV SATURN_BOT_PYTHONPATH=${SATURN_BOT_DATADIR}/venv/bin/python
