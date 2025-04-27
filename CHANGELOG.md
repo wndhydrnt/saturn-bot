@@ -1,5 +1,19 @@
 # Changelog
 
+## [0.26.0](https://github.com/wndhydrnt/saturn-bot/compare/v0.25.0...v0.26.0) (2025-04-27)
+
+
+### Features
+
+* **action:** Make lineInsert preserve newline at the end of a file ([#176](https://github.com/wndhydrnt/saturn-bot/issues/176)) ([e3a5488](https://github.com/wndhydrnt/saturn-bot/commit/e3a548837474711f8ad9b13ce6c7edf63a596c62))
+* Add docker-compose example ([#177](https://github.com/wndhydrnt/saturn-bot/issues/177)) ([6cc260c](https://github.com/wndhydrnt/saturn-bot/commit/6cc260cc20a13f12fe3409b1774419a8c6ee68e3))
+* **task:** Keep run data that isn't defined in inputs ([#171](https://github.com/wndhydrnt/saturn-bot/issues/171)) ([ed57a5d](https://github.com/wndhydrnt/saturn-bot/commit/ed57a5df574d9f265018357cfecfd69ef0bac345))
+
+
+### Bug Fixes
+
+* **action:** Do not add extra newline at the end of a file ([#173](https://github.com/wndhydrnt/saturn-bot/issues/173)) ([0829474](https://github.com/wndhydrnt/saturn-bot/commit/08294745027b2ef38b6547931a03ee601a6ff813))
+
 ## [0.25.0](https://github.com/wndhydrnt/saturn-bot/compare/v0.24.0...v0.25.0) (2025-03-31)
 
 
