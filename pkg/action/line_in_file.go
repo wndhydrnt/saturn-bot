@@ -4,7 +4,9 @@ import (
 	"bufio"
 	"bytes"
 	"context"
+	"errors"
 	"fmt"
+	"io"
 	"os"
 	"path/filepath"
 	"regexp"
@@ -93,7 +95,7 @@ func (d *lineDelete) Apply(_ context.Context) error {
 	}
 
 	for _, path := range paths {
-		err := forEachLine(path, func(line []byte) ([]byte, error) {
+		err := forEachLine(path, func(line []byte, _ bool) ([]byte, error) {
 			lineTrim := bytes.TrimSuffix(line, lineFeed)
 			if d.search != "" && string(lineTrim) == d.search {
 				return nil, nil
@@ -157,7 +159,7 @@ func (f LineInsertFactory) Create(params params.Params, _ string) (Action, error
 
 	return &lineInsert{
 		insertAt: insertAt,
-		line:     line,
+		line:     []byte(line),
 		path:     path,
 	}, nil
 }
@@ -168,7 +170,7 @@ func (f LineInsertFactory) Name() string {
 
 type lineInsert struct {
 	insertAt string
-	line     string
+	line     []byte
 	path     string
 }
 
@@ -178,84 +180,44 @@ func (a *lineInsert) Apply(_ context.Context) error {
 		return fmt.Errorf("parse glob pattern to insert line: %w", err)
 	}
 
+	atBeginning := true
 	for _, path := range paths {
-		source, err := os.Open(path)
-		if err != nil {
-			return fmt.Errorf("open file to insert line: %w", err)
-		}
-
-		defer source.Close()
-		target, err := os.CreateTemp(filepath.Dir(path), "*")
-		if err != nil {
-			return fmt.Errorf("create temporary file: %w", err)
-		}
-
-		defer target.Close()
-
-		atBeginning := true
-		var lastLine string
-		scanner := bufio.NewScanner(source)
-		for scanner.Scan() {
+		err := forEachLine(path, func(line []byte, eof bool) ([]byte, error) {
+			lineTrim := bytes.TrimSuffix(line, lineFeed)
 			if atBeginning {
-				if a.insertAt == beginningOfFile && a.line != scanner.Text() {
-					_, err := target.WriteString(a.line)
-					if err != nil {
-						return fmt.Errorf("write line at the beginning of temporary file: %w", err)
-					}
-
-					_, err = target.WriteString("\n")
-					if err != nil {
-						return fmt.Errorf("write linefeed at the beginning of temporary file: %w", err)
-					}
-				}
-
 				atBeginning = false
+				if a.insertAt == beginningOfFile && !bytes.Equal(lineTrim, []byte(a.line)) {
+					result := []byte{}
+					result = append(result, a.line...)
+					result = append(result, lineFeed...)
+					result = append(result, line...)
+					return result, nil
+				}
 			}
 
-			_, err := target.Write(scanner.Bytes())
-			if err != nil {
-				return fmt.Errorf("write line to temporary file: %w", err)
+			if a.insertAt == endOfFile && eof {
+				result := []byte{}
+				if len(line) == 0 {
+					// Length of 0 indicates that the last line of the file ends in a newline.
+					// Add the line and a newline in that case.
+					result = append(result, a.line...)
+					result = append(result, lineFeed...)
+					return result, nil
+				} else {
+					// Do not add a newline at the end of the file
+					// if the original file doesn't do so.
+					result = append(result, line...)
+					result = append(result, lineFeed...)
+					result = append(result, a.line...)
+					return result, nil
+				}
 			}
 
-			_, err = target.WriteString("\n")
-			if err != nil {
-				return fmt.Errorf("write linefeed to temporary file: %w", err)
-			}
+			return line, nil
+		})
 
-			lastLine = scanner.Text()
-		}
-
-		if err = scanner.Err(); err != nil {
-			return fmt.Errorf("scanner failed: %w", err)
-		}
-
-		if a.insertAt == endOfFile && a.line != lastLine {
-			_, err := target.WriteString(a.line)
-			if err != nil {
-				return fmt.Errorf("write line at the end of temporary file: %w", err)
-			}
-
-			_, err = target.WriteString("\n")
-			if err != nil {
-				return fmt.Errorf("write linefeed at the end of temporary file: %w", err)
-			}
-		}
-
-		sourceStat, err := source.Stat()
 		if err != nil {
-			return fmt.Errorf("stat source file: %w", err)
-		}
-
-		err = target.Chmod(sourceStat.Mode())
-		if err != nil {
-			return fmt.Errorf("chmod target file: %w", err)
-		}
-
-		_ = source.Close()
-		_ = target.Close()
-		err = os.Rename(target.Name(), source.Name())
-		if err != nil {
-			return fmt.Errorf("move target file to source file: %w", err)
+			return err
 		}
 	}
 
@@ -346,7 +308,7 @@ func (a *lineReplace) Apply(_ context.Context) error {
 	}
 
 	for _, path := range paths {
-		err := forEachLine(path, func(line []byte) ([]byte, error) {
+		err := forEachLine(path, func(line []byte, _ bool) ([]byte, error) {
 			lineTrim := bytes.TrimSuffix(line, lineFeed)
 			if a.search != "" && a.search == string(lineTrim) {
 				new := []byte(a.line)
@@ -384,7 +346,7 @@ func (a *lineReplace) String() string {
 	return fmt.Sprintf("lineReplace(line=%s,path=%s,regexp=%s)", a.line, a.path, a.regexp.String())
 }
 
-func forEachLine(filePath string, f func(line []byte) ([]byte, error)) error {
+func forEachLine(filePath string, f func(line []byte, eof bool) ([]byte, error)) error {
 	source, err := os.Open(filePath)
 	if err != nil {
 		return fmt.Errorf("open file to delete line: %w", err)
@@ -398,10 +360,15 @@ func forEachLine(filePath string, f func(line []byte) ([]byte, error)) error {
 
 	defer target.Close()
 
+	isEOF := false
 	reader := bufio.NewReader(source)
 	for {
 		oldB, readErr := reader.ReadBytes('\n')
-		newB, err := f(oldB)
+		if errors.Is(readErr, io.EOF) {
+			isEOF = true
+		}
+
+		newB, err := f(oldB, isEOF)
 		if err != nil {
 			return err
 		}

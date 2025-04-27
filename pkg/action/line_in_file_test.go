@@ -123,6 +123,16 @@ func TestLineInsert_Apply(t *testing.T) {
 			},
 		},
 		{
+			name:    "When the file does not end with a newline then does not add a newline",
+			files:   map[string]string{"test.txt": "abc\n  def\n\nghi\njkl"},
+			factory: LineInsertFactory{},
+			params: map[string]any{
+				"line": "ttt",
+				"path": "test.txt",
+			},
+			wantFiles: map[string]string{"test.txt": "abc\n  def\n\nghi\njkl\nttt"},
+		},
+		{
 			name:    "When parameter `insertAt=BOF` then it adds the line at the beginning of the file",
 			files:   map[string]string{"test.txt": testContent},
 			factory: LineInsertFactory{},
