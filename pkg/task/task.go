@@ -416,7 +416,7 @@ func (tr *Registry) ReadTasks(taskFile string) error {
 			return fmt.Errorf("parse actions of task: %w", err)
 		}
 
-		wrapper.filtersPreClone, wrapper.filtersPostClone, err = createFiltersForTask(wrapper.Task.Filters, tr.filterFactories, tr.hosts)
+		wrapper.filtersPreClone, wrapper.filtersPostClone, err = createFiltersForTask(wrapper.Filters, tr.filterFactories, tr.hosts)
 		if err != nil {
 			return fmt.Errorf("parse filters of task file '%s': %w", entry.Path, err)
 		}
