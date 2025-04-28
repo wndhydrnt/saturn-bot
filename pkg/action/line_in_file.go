@@ -180,8 +180,8 @@ func (a *lineInsert) Apply(_ context.Context) error {
 		return fmt.Errorf("parse glob pattern to insert line: %w", err)
 	}
 
-	atBeginning := true
 	for _, path := range paths {
+		atBeginning := true
 		err := forEachLine(path, func(line []byte, eof bool) ([]byte, error) {
 			lineTrim := bytes.TrimSuffix(line, lineFeed)
 			if atBeginning {

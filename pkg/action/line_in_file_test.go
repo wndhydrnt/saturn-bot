@@ -133,15 +133,18 @@ func TestLineInsert_Apply(t *testing.T) {
 			wantFiles: map[string]string{"test.txt": "abc\n  def\n\nghi\njkl\nttt"},
 		},
 		{
-			name:    "When parameter `insertAt=BOF` then it adds the line at the beginning of the file",
-			files:   map[string]string{"test.txt": testContent},
+			name:    "When parameter `insertAt=BOF` then it adds the line at the beginning of each file",
+			files:   map[string]string{"test1.txt": testContent, "test2.txt": testContent},
 			factory: LineInsertFactory{},
 			params: map[string]any{
 				"insertAt": "BOF",
 				"line":     "ttt",
-				"path":     "test.txt",
+				"path":     "*.txt",
 			},
-			wantFiles: map[string]string{"test.txt": "ttt\nabc\n  def\n\nghi\njkl\n"},
+			wantFiles: map[string]string{
+				"test1.txt": "ttt\nabc\n  def\n\nghi\njkl\n",
+				"test2.txt": "ttt\nabc\n  def\n\nghi\njkl\n",
+			},
 		},
 		{
 			name:    "When the value of `insertAt` is invalid then it errors",
