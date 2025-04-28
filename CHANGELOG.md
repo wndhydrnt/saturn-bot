@@ -1,5 +1,13 @@
 # Changelog
 
+## [0.26.1](https://github.com/wndhydrnt/saturn-bot/compare/v0.26.0...v0.26.1) (2025-04-28)
+
+
+### Bug Fixes
+
+* **action:** Fix lineInsert not working for more than one file when insertAt=BOF ([ee3a9dd](https://github.com/wndhydrnt/saturn-bot/commit/ee3a9dd988faf887ef2c81c9a8790adc977625c8))
+* **docker:** Fix virtualenv dir being overwritten when mounting data dir ([2872828](https://github.com/wndhydrnt/saturn-bot/commit/28728284381454690df00b59c6a3f66092e253bd))
+
 ## [0.26.0](https://github.com/wndhydrnt/saturn-bot/compare/v0.25.0...v0.26.0) (2025-04-27)
 
 
