@@ -577,7 +577,7 @@ The commit(s) that modified the pull request:
 	gitc.EXPECT().
 		UpdateTaskBranch("saturn-bot--unittest", false, repo).
 		Return(false, &git.BranchModifiedError{Checksums: []string{"abc", "def"}})
-	tw := &task.Task{Task: schema.Task{Name: "unittest"}}
+	tw := &task.Task{Task: schema.Task{Name: "unittest", MaxOpenPRs: 1}}
 	tw.AddPreCloneFilters(&trueFilter{})
 
 	p := &processor.Processor{Git: gitc}
@@ -587,6 +587,7 @@ The commit(s) that modified the pull request:
 	assert.NoError(t, results[0].Error)
 	assert.Equal(t, processor.ResultBranchModified, results[0].Result)
 	assert.Nil(t, results[0].PullRequest)
+	assert.Equal(t, true, tw.HasReachMaxOpenPRs(), "Increases Max Open PRs counter")
 }
 
 func TestProcessor_Process_ForceRebaseByUser(t *testing.T) {

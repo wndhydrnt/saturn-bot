@@ -223,7 +223,7 @@ func (ws *WorkerService) ReportRun(req openapi.ReportWorkV1Request) error {
 
 		prIsOpen := false
 		for _, taskResult := range req.TaskResults {
-			if !prIsOpen && isPrOpen(taskResult.Result) {
+			if !prIsOpen && processor.IsPrOpen(processor.Result(taskResult.Result)) {
 				prIsOpen = true
 			}
 
@@ -444,26 +444,6 @@ func calcNextCronTime(now time.Time, t *task.Task) *time.Time {
 
 	nextTick, _ := gronx.NextTickAfter(ptr.From(t.Trigger.Cron), now, true)
 	return ptr.To(nextTick)
-}
-
-func isPrOpen(result int) bool {
-	// A bit verbose but better than a single, long case.
-	switch processor.Result(result) {
-	case processor.ResultPrCreated:
-		return true
-	case processor.ResultPrOpen:
-		return true
-	case processor.ResultAutoMergeTooEarly:
-		return true
-	case processor.ResultBranchModified:
-		return true
-	case processor.ResultChecksFailed:
-		return true
-	case processor.ResultConflict:
-		return true
-	}
-
-	return false
 }
 
 func mapTaskResultStateFromApiToDb(state openapi.TaskResultStateV1) db.TaskResultStatus {

@@ -209,7 +209,7 @@ func (p *Processor) processPostClone(ctx context.Context, repo host.Repository, 
 		return ResultUnknown, prDetail, fmt.Errorf("task failed: %w", err)
 	}
 
-	if result == ResultPrCreated || result == ResultPrOpen {
+	if IsPrOpen(result) {
 		task.IncOpenPRsCount()
 	}
 
@@ -638,4 +638,26 @@ func mergeUsers(ctx context.Context, key string, static []string) []string {
 	users = append(users, static...)
 	slices.Sort(users)
 	return slices.Compact(users)
+}
+
+// IsPrOpen returns true for all types of results which indicate
+// that a pull request is still open.
+func IsPrOpen(result Result) bool {
+	// A bit verbose but better than a single, long case.
+	switch result {
+	case ResultPrCreated:
+		return true
+	case ResultPrOpen:
+		return true
+	case ResultAutoMergeTooEarly:
+		return true
+	case ResultBranchModified:
+		return true
+	case ResultChecksFailed:
+		return true
+	case ResultConflict:
+		return true
+	}
+
+	return false
 }
