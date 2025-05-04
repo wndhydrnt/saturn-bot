@@ -363,8 +363,9 @@ func (ws *WorkerService) GetRun(id int) (db.Run, error) {
 }
 
 type ListTaskResultsOptions struct {
-	RunId  int
-	Status []db.TaskResultStatus
+	RepositoryName string
+	RunId          int
+	Status         []db.TaskResultStatus
 }
 
 // ListTaskResults returns a list of [db.TaskResult].
@@ -373,6 +374,10 @@ type ListTaskResultsOptions struct {
 // Allows filtering via [ListTaskResultsOptions] and pagination via [ListOptions].
 func (ws *WorkerService) ListTaskResults(opts ListTaskResultsOptions, listOpts *ListOptions) ([]db.TaskResult, error) {
 	query := ws.db
+	if opts.RepositoryName != "" {
+		query = query.Where("repository_name = ?", opts.RepositoryName)
+	}
+
 	if opts.RunId != 0 {
 		query = query.Where("run_id = ?", opts.RunId)
 	}
@@ -393,6 +398,10 @@ func (ws *WorkerService) ListTaskResults(opts ListTaskResultsOptions, listOpts *
 
 	var count int64
 	queryCount := ws.db.Model(&db.TaskResult{})
+	if opts.RepositoryName != "" {
+		queryCount = queryCount.Where("repository_name = ?", opts.RepositoryName)
+	}
+
 	if opts.RunId != 0 {
 		queryCount = queryCount.Where("run_id = ?", opts.RunId)
 	}

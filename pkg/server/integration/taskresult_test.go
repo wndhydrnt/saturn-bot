@@ -122,6 +122,24 @@ func Test_API_ListTaskResultsV1(t *testing.T) {
 						},
 					},
 				},
+				// And verify that filtering by name of repository works.
+				{
+					method:     "GET",
+					path:       "/api/v1/taskResults",
+					query:      "repositoryName=git.local/unittest/two",
+					statusCode: http.StatusOK,
+					responseBody: openapi.ListTaskResultsV1Response{
+						Page: openapi.Page{CurrentPage: 1, ItemsPerPage: 20, TotalItems: 1, TotalPages: 1},
+						TaskResults: []openapi.TaskResultV1{
+							{
+								PullRequestUrl: ptr.To("https://git.local/unittest/two/pr/1"),
+								RepositoryName: "git.local/unittest/two",
+								RunId:          2,
+								Status:         openapi.TaskResultStateV1Closed,
+							},
+						},
+					},
+				},
 			},
 		},
 

@@ -83,6 +83,10 @@ func (th *APIServer) ListTasksV1(_ context.Context, request openapi.ListTasksV1R
 // ListTaskResultsV1 implements [openapi.ServerInterface].
 func (a *APIServer) ListTaskResultsV1(ctx context.Context, request openapi.ListTaskResultsV1RequestObject) (openapi.ListTaskResultsV1ResponseObject, error) {
 	opts := service.ListTaskResultsOptions{}
+	if request.Params.RepositoryName != nil {
+		opts.RepositoryName = ptr.From(request.Params.RepositoryName)
+	}
+
 	if request.Params.RunId != nil {
 		opts.RunId = ptr.From(request.Params.RunId)
 	}
