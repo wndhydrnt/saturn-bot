@@ -21,6 +21,7 @@ func RegisterUiRoutes(router chi.Router, apiServer *api.APIServer) {
 	router.Get("/ui", app.Home)
 	router.Get("/ui/runs", app.RunsIndex)
 	router.Get("/ui/runs/{runId}", app.RunsShow)
+	router.Get("/ui/runs/{runId}/{repositoryName}/error", app.RunsRepositoryErrorShow)
 	router.Get("/ui/tasks", app.TasksIndex)
 	router.Get("/ui/tasks/{name}/file", app.TasksFileShow)
 	router.Get("/ui/tasks/{name}/results", app.ResultsIndex)
