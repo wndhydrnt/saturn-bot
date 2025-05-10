@@ -339,6 +339,9 @@ type ListRunsV1Params struct {
 
 // ListTaskResultsV1Params defines parameters for ListTaskResultsV1.
 type ListTaskResultsV1Params struct {
+	// RepositoryName Name of a repository to filter by.
+	RepositoryName *string `form:"repositoryName,omitempty" json:"repositoryName,omitempty"`
+
 	// RunId ID of a run to filter by.
 	RunId       *int                 `form:"runId,omitempty" json:"runId,omitempty"`
 	Status      *[]TaskResultStateV1 `form:"status,omitempty" json:"status,omitempty"`
@@ -825,6 +828,22 @@ func NewListTaskResultsV1Request(server string, params *ListTaskResultsV1Params)
 
 	if params != nil {
 		queryValues := queryURL.Query()
+
+		if params.RepositoryName != nil {
+
+			if queryFrag, err := runtime.StyleParamWithLocation("form", true, "repositoryName", runtime.ParamLocationQuery, *params.RepositoryName); err != nil {
+				return nil, err
+			} else if parsed, err := url.ParseQuery(queryFrag); err != nil {
+				return nil, err
+			} else {
+				for k, v := range parsed {
+					for _, v2 := range v {
+						queryValues.Add(k, v2)
+					}
+				}
+			}
+
+		}
 
 		if params.RunId != nil {
 

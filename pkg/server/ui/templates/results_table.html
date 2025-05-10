@@ -52,6 +52,11 @@
           </td>
           <td>
             <span class="tag {{.Status | taskResultStatusToCssClass}}">{{.Status}}</span>
+            {{if eq .Status "error"}}
+            <a href="/ui/runs/{{.RunId}}/{{.RepositoryName | pathEscape}}/error" title="View error">
+              <i class="bi bi-box-arrow-up-right"></i>
+            </a>
+            {{end}}
           </td>
           {{if $.DisplayRunLink}}
           <td>

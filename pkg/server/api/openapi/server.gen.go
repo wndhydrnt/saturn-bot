@@ -337,6 +337,9 @@ type ListRunsV1Params struct {
 
 // ListTaskResultsV1Params defines parameters for ListTaskResultsV1.
 type ListTaskResultsV1Params struct {
+	// RepositoryName Name of a repository to filter by.
+	RepositoryName *string `form:"repositoryName,omitempty" json:"repositoryName,omitempty"`
+
 	// RunId ID of a run to filter by.
 	RunId       *int                 `form:"runId,omitempty" json:"runId,omitempty"`
 	Status      *[]TaskResultStateV1 `form:"status,omitempty" json:"status,omitempty"`
@@ -612,6 +615,14 @@ func (siw *ServerInterfaceWrapper) ListTaskResultsV1(w http.ResponseWriter, r *h
 
 	// Parameter object where we will unmarshal all parameters from the context
 	var params ListTaskResultsV1Params
+
+	// ------------- Optional query parameter "repositoryName" -------------
+
+	err = runtime.BindQueryParameter("form", true, false, "repositoryName", r.URL.Query(), &params.RepositoryName)
+	if err != nil {
+		siw.ErrorHandlerFunc(w, r, &InvalidParamFormatError{ParamName: "repositoryName", Err: err})
+		return
+	}
 
 	// ------------- Optional query parameter "runId" -------------
 
