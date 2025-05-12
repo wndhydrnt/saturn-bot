@@ -360,8 +360,6 @@ func shouldReport(result processor.Result) bool {
 	switch result {
 	case processor.ResultNoChanges:
 		return false
-	case processor.ResultNoMatch:
-		return false
 	case processor.ResultSkip:
 		return false
 	default:
