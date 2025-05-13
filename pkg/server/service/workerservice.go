@@ -238,28 +238,11 @@ func (ws *WorkerService) ReportRun(req openapi.ReportWorkV1Request) error {
 				return fmt.Errorf("read most recent task result: %w", resultDbStmt.Error)
 			}
 
-			status := mapTaskResultStateFromApiToDb(taskResult.State)
-			if resultDb.Status == status && isSamePullRequestUrl(taskResult.PullRequestUrl, resultDb.PullRequestUrl) {
-				// No change in status. Skip this result.
-				continue
-			}
-
-			result := db.TaskResult{
-				RepositoryName: taskResult.RepositoryName,
-				Result:         taskResult.Result,
-				RunID:          runCurrent.ID,
-				Status:         status,
-			}
-			if taskResult.Error != nil {
-				result.Error = taskResult.Error
-			}
-
-			if taskResult.PullRequestUrl != nil {
-				result.PullRequestUrl = taskResult.PullRequestUrl
-			}
-
-			if err := tx.Save(&result).Error; err != nil {
-				return err
+			taskResultDbNew := handleWorkResult(runCurrent.ID, taskResult, resultDb)
+			if taskResultDbNew != nil {
+				if err := tx.Save(taskResultDbNew).Error; err != nil {
+					return err
+				}
 			}
 		}
 
@@ -275,6 +258,48 @@ func (ws *WorkerService) ReportRun(req openapi.ReportWorkV1Request) error {
 	})
 
 	return err
+}
+
+func handleWorkResult(runId uint, taskResultApi openapi.ReportWorkV1TaskResult, taskResultDbLast db.TaskResult) *db.TaskResult {
+	if processor.Result(taskResultApi.Result) == processor.ResultNoMatch {
+		if taskResultDbLast.Status == db.TaskResultStatusOpen {
+			// Handle the case where a previous run reported an open PR,
+			// the user merged the PR manually
+			// and the task doesn't match anymore because the changes are now in the default branch.
+			// Consider the PR "merged" in this case.
+			return &db.TaskResult{
+				PullRequestUrl: taskResultDbLast.PullRequestUrl,
+				RepositoryName: taskResultApi.RepositoryName,
+				Result:         taskResultApi.Result,
+				RunID:          runId,
+				Status:         db.TaskResultStatusMerged,
+			}
+		} else {
+			return nil
+		}
+	}
+
+	status := mapTaskResultStateFromApiToDb(taskResultApi.State)
+	if taskResultDbLast.Status == status && isSamePullRequestUrl(taskResultApi.PullRequestUrl, taskResultDbLast.PullRequestUrl) {
+		// No change in status. Skip this result.
+		return nil
+	}
+
+	result := db.TaskResult{
+		RepositoryName: taskResultApi.RepositoryName,
+		Result:         taskResultApi.Result,
+		RunID:          runId,
+		Status:         status,
+	}
+	if taskResultApi.Error != nil {
+		result.Error = taskResultApi.Error
+	}
+
+	if taskResultApi.PullRequestUrl != nil {
+		result.PullRequestUrl = taskResultApi.PullRequestUrl
+	}
+
+	return &result
 }
 
 type ListRunsOptions struct {
