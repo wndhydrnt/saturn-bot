@@ -15,6 +15,7 @@ import (
 	"github.com/go-chi/chi/v5/middleware"
 	chiprometheus "github.com/toshi0607/chi-prometheus"
 	"github.com/wndhydrnt/saturn-bot/pkg/config"
+	sbdb "github.com/wndhydrnt/saturn-bot/pkg/db"
 	"github.com/wndhydrnt/saturn-bot/pkg/log"
 	"github.com/wndhydrnt/saturn-bot/pkg/options"
 	"github.com/wndhydrnt/saturn-bot/pkg/server/api"
@@ -51,7 +52,7 @@ func (s *Server) Start(opts options.Opts, taskPaths []string) error {
 		dbPath = filepath.Join(opts.DataDir(), "db", "saturn-bot.db")
 	}
 
-	database, err := db.New(opts.Config.ServerDatabaseLog, true, dbPath)
+	database, err := sbdb.New(opts.Config.ServerDatabaseLog, dbPath, sbdb.Migrate(db.Migrations()))
 	if err != nil {
 		return fmt.Errorf("initialize database: %w", err)
 	}
