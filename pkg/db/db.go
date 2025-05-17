@@ -22,7 +22,7 @@ const (
 	sqlitePragmaBusyTimeout = "PRAGMA busy_timeout = 5000;"
 )
 
-func New(enableLog, migrate bool, path string) (*gorm.DB, error) {
+func New(enableLog bool, path string, migrate Migrator) (*gorm.DB, error) {
 	dir := filepath.Dir(path)
 	if dir != "" {
 		_, err := os.Stat(dir)
@@ -51,16 +51,16 @@ func New(enableLog, migrate bool, path string) (*gorm.DB, error) {
 		return nil, err
 	}
 
-	if migrate {
-		err := Migrate(db)
-		if err != nil {
-			return nil, fmt.Errorf("db migration failed: %w", err)
-		}
-	}
-
 	err = configureSqlite(gormDb, sqlitePragmaJournalMode, sqlitePragmaSynchronous, sqlitePragmaCacheSize, sqlitePragmaForeignKeys, sqlitePragmaBusyTimeout)
 	if err != nil {
 		return nil, fmt.Errorf("configure sqlite: %w", err)
+	}
+
+	if migrate != nil {
+		err := migrate(db)
+		if err != nil {
+			return nil, fmt.Errorf("db migration failed: %w", err)
+		}
 	}
 
 	return gormDb, nil
