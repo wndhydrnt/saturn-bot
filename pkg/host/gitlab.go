@@ -389,7 +389,7 @@ func (g *GitLabRepository) PullRequest(pr any) *PullRequest {
 		CreatedAt: createdAt,
 		Number:    int64(mr.IID),
 		WebURL:    mr.WebURL,
-		Raw:       pr,
+		Raw:       mr,
 		State:     mapToPullRequestStateGitLab(mr),
 	}
 }
