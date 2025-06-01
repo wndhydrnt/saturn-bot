@@ -9,6 +9,7 @@ import (
 
 	"github.com/prometheus/client_golang/prometheus/push"
 	"github.com/wndhydrnt/saturn-bot/pkg/action"
+	"github.com/wndhydrnt/saturn-bot/pkg/cache"
 	"github.com/wndhydrnt/saturn-bot/pkg/clock"
 	"github.com/wndhydrnt/saturn-bot/pkg/git"
 	"github.com/wndhydrnt/saturn-bot/pkg/host"
@@ -145,12 +146,19 @@ func ExecuteRun(opts options.Opts, repositoryNames, taskFiles []string, inputs m
 		Ttl:   opts.RepositoryCacheTtl(),
 	}
 
+	dataCache, err := cache.New(opts)
+	if err != nil {
+		return nil, err
+	}
+
+	prCache := cache.NewPullRequestCache(dataCache, clock.Default)
 	e := &Run{
 		DryRun: opts.Config.DryRun,
 		Hosts:  opts.Hosts,
 		Processor: &processor.Processor{
-			DataDir: opts.DataDir(),
-			Git:     gitClient,
+			DataDir:          opts.DataDir(),
+			Git:              gitClient,
+			PullRequestCache: prCache,
 		},
 		PushGateway:      opts.PushGateway,
 		RepositoryLister: repositoryFileCache,

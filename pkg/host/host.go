@@ -6,6 +6,7 @@ import (
 	"errors"
 	"fmt"
 	htmlTemplate "html/template"
+	"iter"
 	"strings"
 	"time"
 
@@ -40,6 +41,14 @@ type PullRequest struct {
 	WebURL string
 	// State denotes the current state of the pull request.
 	State PullRequestState
+	// Raw is the raw data structure of the pull request returned by the host.
+	Raw any
+	// HostName is the name of the [Host] that returned the pull request.
+	HostName string
+	// BranchName is the name of the source branch.
+	BranchName string
+	// RepositoryName is the full name of the repository for which the pull request has been created.
+	RepositoryName string
 }
 
 type PullRequestComment struct {
@@ -135,6 +144,10 @@ type Repository interface {
 	MergePullRequest(deleteBranch bool, pr interface{}) error
 	Name() string
 	PullRequest(pr any) *PullRequest
+	// PullRequestStruct returns the instance of an empty struct that defines a Pull Request object of the implementation.
+	// For example, the code that implements a GitHub repository should return an instance of the struct that represents a GitHub pull request.
+	// Used by code that deserializes cached data.
+	PullRequestStruct() any
 	Owner() string
 	UpdatePullRequest(data PullRequestData, pr interface{}) error
 	WebUrl() string
@@ -154,6 +167,12 @@ type Host interface {
 	CreateFromJson(dec *json.Decoder) (Repository, error)
 	ListRepositories(since *time.Time, result chan []Repository, errChan chan error)
 	ListRepositoriesWithOpenPullRequests(result chan []Repository, errChan chan error)
+	PullRequestIterator() PullRequestIterator
+}
+
+type PullRequestIterator interface {
+	ListPullRequests(since *time.Time) iter.Seq[*PullRequest]
+	ListPullRequestsError() error
 }
 
 type UserInfo struct {
