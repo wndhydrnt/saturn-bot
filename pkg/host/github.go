@@ -35,8 +35,8 @@ func (g *GitHubRepository) BaseBranch() string {
 	return g.repo.GetDefaultBranch()
 }
 
-func (g *GitHubRepository) CanMergePullRequest(pr interface{}) (bool, error) {
-	gpr := pr.(*github.PullRequest)
+func (g *GitHubRepository) CanMergePullRequest(pr *PullRequest) (bool, error) {
+	gpr := pr.Raw.(*github.PullRequest)
 	if gpr.Mergeable == nil {
 		return true, nil
 	}
@@ -52,8 +52,8 @@ func (g *GitHubRepository) CloneUrlSsh() string {
 	return g.repo.GetSSHURL()
 }
 
-func (g *GitHubRepository) ClosePullRequest(msg string, pr interface{}) error {
-	gpr := pr.(*github.PullRequest)
+func (g *GitHubRepository) ClosePullRequest(msg string, pr *PullRequest) error {
+	gpr := pr.Raw.(*github.PullRequest)
 	comment := &github.IssueComment{Body: github.Ptr(msg)}
 	_, _, err := g.client.Issues.CreateComment(ctx, g.repo.GetOwner().GetLogin(), g.repo.GetName(), gpr.GetNumber(), comment)
 	if err != nil {
@@ -69,8 +69,8 @@ func (g *GitHubRepository) ClosePullRequest(msg string, pr interface{}) error {
 	return nil
 }
 
-func (g *GitHubRepository) CreatePullRequestComment(body string, pr interface{}) error {
-	gpr := pr.(*github.PullRequest)
+func (g *GitHubRepository) CreatePullRequestComment(body string, pr *PullRequest) error {
+	gpr := pr.Raw.(*github.PullRequest)
 	comment := &github.IssueComment{Body: github.Ptr(body)}
 	_, _, err := g.client.Issues.CreateComment(ctx, g.repo.GetOwner().GetLogin(), g.repo.GetName(), gpr.GetNumber(), comment)
 	if err != nil {
@@ -121,7 +121,7 @@ func (g *GitHubRepository) CreatePullRequest(branch string, data PullRequestData
 	return g.PullRequest(pr), nil
 }
 
-func (g *GitHubRepository) FindPullRequest(branch string) (any, error) {
+func (g *GitHubRepository) FindPullRequest(branch string) (*PullRequest, error) {
 	opts := &github.PullRequestListOptions{
 		State: "all",
 		ListOptions: github.ListOptions{
@@ -137,7 +137,7 @@ func (g *GitHubRepository) FindPullRequest(branch string) (any, error) {
 
 		for _, pr := range prs {
 			if pr.GetHead().GetRef() == branch {
-				return pr, nil
+				return g.PullRequest(pr), nil
 			}
 		}
 
@@ -153,23 +153,18 @@ func (g *GitHubRepository) FullName() string {
 	return fmt.Sprintf("github.com/%s/%s", g.repo.GetOwner().GetLogin(), g.repo.GetName())
 }
 
-func (g *GitHubRepository) GetPullRequestBody(pr interface{}) string {
-	gpr := pr.(*github.PullRequest)
+func (g *GitHubRepository) GetPullRequestBody(pr *PullRequest) string {
+	gpr := pr.Raw.(*github.PullRequest)
 	return gpr.GetBody()
 }
 
-func (g *GitHubRepository) GetPullRequestCreationTime(pr interface{}) time.Time {
-	gpr := pr.(*github.PullRequest)
-	return gpr.GetCreatedAt().Time
-}
-
-func (g *GitHubRepository) DeleteBranch(pr interface{}) error {
+func (g *GitHubRepository) DeleteBranch(pr *PullRequest) error {
 	// GitHub handles deletion
 	if g.repo.GetDeleteBranchOnMerge() {
 		return nil
 	}
 
-	gpr := pr.(*github.PullRequest)
+	gpr := pr.Raw.(*github.PullRequest)
 	_, err := g.client.Git.DeleteRef(ctx, g.repo.GetOwner().GetLogin(), g.repo.GetName(), "heads/"+gpr.GetHead().GetRef())
 	if err != nil {
 		return fmt.Errorf("delete GitHub branch %s: %w", gpr.GetHead().GetRef(), err)
@@ -178,7 +173,7 @@ func (g *GitHubRepository) DeleteBranch(pr interface{}) error {
 	return nil
 }
 
-func (g *GitHubRepository) DeletePullRequestComment(comment PullRequestComment, pr interface{}) error {
+func (g *GitHubRepository) DeletePullRequestComment(comment PullRequestComment, _ *PullRequest) error {
 	_, err := g.client.Issues.DeleteComment(ctx, g.repo.GetOwner().GetLogin(), g.repo.GetName(), comment.ID)
 	if err != nil {
 		return fmt.Errorf("delete pull request comment with ID %d: %w", comment.ID, err)
@@ -187,8 +182,8 @@ func (g *GitHubRepository) DeletePullRequestComment(comment PullRequestComment, 
 	return nil
 }
 
-func (g *GitHubRepository) HasSuccessfulPullRequestBuild(pr interface{}) (bool, error) {
-	gpr := pr.(*github.PullRequest)
+func (g *GitHubRepository) HasSuccessfulPullRequestBuild(pr *PullRequest) (bool, error) {
+	gpr := pr.Raw.(*github.PullRequest)
 	opts := &github.ListCheckRunsOptions{
 		ListOptions: github.ListOptions{
 			Page:    1,
@@ -229,7 +224,7 @@ func (g *GitHubRepository) ID() int64 {
 // IsPullRequestClosed implements [Repository].
 // Note: uses MergedAt attribute instead of Merged
 // because Merge attribute isn't set when listing pull requests via the GitHub API.
-func (g *GitHubRepository) IsPullRequestClosed(pr interface{}) bool {
+func (g *GitHubRepository) IsPullRequestClosed(pr PullRequestRaw) bool {
 	gpr := pr.(*github.PullRequest)
 	return isGithubPullRequestClosed(gpr)
 }
@@ -237,19 +232,19 @@ func (g *GitHubRepository) IsPullRequestClosed(pr interface{}) bool {
 // IsPullRequestMerged implements [Repository].
 // Note: uses MergedAt attribute instead of Merged
 // because Merge attribute isn't set when listing pull requests via the GitHub API.
-func (g *GitHubRepository) IsPullRequestMerged(pr interface{}) bool {
+func (g *GitHubRepository) IsPullRequestMerged(pr PullRequestRaw) bool {
 	gpr := pr.(*github.PullRequest)
 	return isGithubPullRequestMerged(gpr)
 }
 
 // IsPullRequestOpen implements [Repository].
-func (g *GitHubRepository) IsPullRequestOpen(pr interface{}) bool {
+func (g *GitHubRepository) IsPullRequestOpen(pr PullRequestRaw) bool {
 	gpr := pr.(*github.PullRequest)
 	return isGithubPullRequestOpen(gpr)
 }
 
-func (g *GitHubRepository) ListPullRequestComments(pr interface{}) ([]PullRequestComment, error) {
-	gpr := pr.(*github.PullRequest)
+func (g *GitHubRepository) ListPullRequestComments(pr *PullRequest) ([]PullRequestComment, error) {
+	gpr := pr.Raw.(*github.PullRequest)
 	opts := &github.IssueListCommentsOptions{
 		ListOptions: github.ListOptions{
 			Page:    1,
@@ -280,8 +275,8 @@ func (g *GitHubRepository) ListPullRequestComments(pr interface{}) ([]PullReques
 	return pullRequestComments, nil
 }
 
-func (g *GitHubRepository) MergePullRequest(deleteBranch bool, pr interface{}) error {
-	gpr := pr.(*github.PullRequest)
+func (g *GitHubRepository) MergePullRequest(deleteBranch bool, pr *PullRequest) error {
+	gpr := pr.Raw.(*github.PullRequest)
 	opts := &github.PullRequestOptions{
 		MergeMethod: g.determineMergeMethod(),
 	}
@@ -332,15 +327,16 @@ func (g *GitHubRepository) PullRequest(pr any) *PullRequest {
 	}
 
 	return &PullRequest{
-		CreatedAt: &gpr.CreatedAt.Time,
+		CreatedAt: gpr.GetCreatedAt().Time,
 		Number:    int64(gpr.GetNumber()),
 		WebURL:    gpr.GetHTMLURL(),
+		Raw:       gpr,
 		State:     mapGithubPrToPullRequestState(gpr),
 	}
 }
 
-func (g *GitHubRepository) UpdatePullRequest(data PullRequestData, pr interface{}) error {
-	gpr := pr.(*github.PullRequest)
+func (g *GitHubRepository) UpdatePullRequest(data PullRequestData, pr *PullRequest) error {
+	gpr := pr.Raw.(*github.PullRequest)
 	needsUpdate := false
 	if gpr.GetTitle() != data.Title {
 		needsUpdate = true
@@ -837,7 +833,7 @@ func (it *githubPullRequestIterator) ListPullRequestsError() error {
 
 func convertGithubPullRequestToPullRequest(gpr *github.PullRequest, hostName string) *PullRequest {
 	return &PullRequest{
-		CreatedAt:      &gpr.CreatedAt.Time,
+		CreatedAt:      gpr.GetCreatedAt().Time,
 		Number:         int64(gpr.GetNumber()),
 		WebURL:         gpr.GetHTMLURL(),
 		State:          mapGithubPrToPullRequestState(gpr),

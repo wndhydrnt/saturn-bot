@@ -385,45 +385,42 @@ func applyTaskToRepository(ctx context.Context, dryRun bool, gitc git.GitClient,
 		return ResultUnknown, nil, fmt.Errorf("find pull request: %w", err)
 	}
 
-	prDetail := repo.PullRequest(prID)
-	if prID != nil && repo.IsPullRequestClosed(prID) {
+	if prID != nil && prID.State == host.PullRequestStateClosed {
 		if task.MergeOnce {
 			logger.Info("Existing PR has been closed")
-			return ResultPrClosedBefore, prDetail, nil
+			return ResultPrClosedBefore, prID, nil
 		} else {
 			logger.Debug("Previous pull request closed - resetting to create a new pull request")
 			prID = nil
 		}
 	}
 
-	if prID != nil && repo.IsPullRequestMerged(prID) && task.MergeOnce {
+	if prID != nil && prID.State == host.PullRequestStateMerged && task.MergeOnce {
 		logger.Info("Existing PR has been merged")
-		return ResultPrMergedBefore, prDetail, nil
+		return ResultPrMergedBefore, prID, nil
 	}
 
 	if prID != nil && task.CreateOnly {
 		logger.Info("PR exists and is create only")
-		return ResultPrOpen, prDetail, nil
+		return ResultPrOpen, prID, nil
 	}
 
-	if prID != nil && repo.IsPullRequestOpen(prID) {
-		if prDetail != nil {
-			ctx = context.WithValue(ctx, sbcontext.PullRequestKey{}, *prDetail)
-		}
+	if prID != nil && prID.State == host.PullRequestStateOpen {
+		ctx = context.WithValue(ctx, sbcontext.PullRequestKey{}, *prID)
 
-		if task.AutoCloseAfter > 0 && prDetail != nil && prDetail.CreatedAt != nil {
+		if task.AutoCloseAfter > 0 && !prID.CreatedAt.IsZero() {
 			dur := time.Duration(task.AutoCloseAfter) * time.Second
-			if time.Now().After(prDetail.CreatedAt.Add(dur)) {
+			if time.Now().After(prID.CreatedAt.Add(dur)) {
 				logger.Info("Auto-closing pull request")
 				if !dryRun {
 					msg := fmt.Sprintf("Pull request has been open for longer than %s. Closing automatically.", dur.String())
 					err := repo.ClosePullRequest(msg, prID)
 					if err != nil {
-						return ResultUnknown, prDetail, fmt.Errorf("auto-close pull request: %w", err)
+						return ResultUnknown, prID, fmt.Errorf("auto-close pull request: %w", err)
 					}
 				}
 
-				return ResultPrClosed, prDetail, nil
+				return ResultPrClosed, prID, nil
 			}
 		}
 	}
@@ -435,7 +432,7 @@ func applyTaskToRepository(ctx context.Context, dryRun bool, gitc git.GitClient,
 		if !dryRun {
 			err := host.DeletePullRequestCommentByIdentifier("branch-modified", prID, repo)
 			if err != nil {
-				return ResultUnknown, prDetail, err
+				return ResultUnknown, prID, err
 			}
 		}
 	}
@@ -443,72 +440,72 @@ func applyTaskToRepository(ctx context.Context, dryRun bool, gitc git.GitClient,
 	// If no PR is currently open, always force-rebase.
 	// This ensures that commits made by users to a
 	// branch created by previous runs get removed.
-	if prID != nil && !repo.IsPullRequestOpen(prID) {
+	if prID != nil && prID.State != host.PullRequestStateOpen {
 		forceRebase = true
 	}
 
 	hasConflict, err := gitc.UpdateTaskBranch(branchName, forceRebase, repo)
 	if err != nil {
 		var branchModifiedErr *git.BranchModifiedError
-		if errors.As(err, &branchModifiedErr) && prID != nil && repo.IsPullRequestOpen(prID) {
+		if errors.As(err, &branchModifiedErr) && prID != nil && prID.State == host.PullRequestStateOpen {
 			logger.Warn("Branch contains commits not made by saturn-bot")
 			body, err := template.RenderBranchModified(template.BranchModifiedInput{
 				Checksums:     branchModifiedErr.Checksums,
 				DefaultBranch: repo.BaseBranch(),
 			})
 			if err != nil {
-				return ResultUnknown, prDetail, err
+				return ResultUnknown, prID, err
 			}
 
 			logger.Debug("Creating pull request comment because the branch was modified")
 			if !dryRun {
 				err := host.CreatePullRequestCommentWithIdentifier(body, "branch-modified", prID, repo)
 				if err != nil {
-					return ResultUnknown, prDetail, fmt.Errorf("create comment on merge request: %w", err)
+					return ResultUnknown, prID, fmt.Errorf("create comment on merge request: %w", err)
 				}
 			}
 
-			return ResultBranchModified, prDetail, nil
+			return ResultBranchModified, prID, nil
 		}
 
 		var emptyErr git.EmptyRepositoryError
 		if errors.Is(err, emptyErr) {
 			logger.Debug("Repository is empty")
-			return ResultNoMatch, prDetail, nil
+			return ResultNoMatch, prID, nil
 		}
 
-		return ResultUnknown, prDetail, fmt.Errorf("update of git branch of task failed: %w", err)
+		return ResultUnknown, prID, fmt.Errorf("update of git branch of task failed: %w", err)
 	}
 
 	err = applyActionsInDirectory(task.Actions(), ctx, workDir)
 	if err != nil {
-		return ResultUnknown, prDetail, err
+		return ResultUnknown, prID, err
 	}
 
 	hasLocalChanges, err := gitc.HasLocalChanges()
 	if err != nil {
-		return ResultUnknown, prDetail, fmt.Errorf("check for local changes failed: %w", err)
+		return ResultUnknown, prID, fmt.Errorf("check for local changes failed: %w", err)
 	}
 
 	if hasLocalChanges {
 		commitMsg := task.CommitMessage
 		err := gitc.CommitChanges(commitMsg)
 		if err != nil {
-			return ResultUnknown, prDetail, fmt.Errorf("committing changes failed: %w", err)
+			return ResultUnknown, prID, fmt.Errorf("committing changes failed: %w", err)
 		}
 	}
 
 	hasChangesInRemoteDefaultBranch, err := gitc.HasRemoteChanges(repo.BaseBranch())
 	if err != nil {
-		return ResultUnknown, prDetail, fmt.Errorf("check for remote changes in default branch failed: %w", err)
+		return ResultUnknown, prID, fmt.Errorf("check for remote changes in default branch failed: %w", err)
 	}
 
-	if !hasChangesInRemoteDefaultBranch && prID != nil && repo.IsPullRequestOpen(prID) {
+	if !hasChangesInRemoteDefaultBranch && prID != nil && prID.State == host.PullRequestStateOpen {
 		logger.Info("Closing pull request because base branch contains all changes")
 		if !dryRun {
 			err := repo.ClosePullRequest("Everything up-to-date. Closing.", prID)
 			if err != nil {
-				return ResultUnknown, prDetail, fmt.Errorf("close pull request: %w", err)
+				return ResultUnknown, prID, fmt.Errorf("close pull request: %w", err)
 			}
 		}
 
@@ -516,21 +513,21 @@ func applyTaskToRepository(ctx context.Context, dryRun bool, gitc git.GitClient,
 		if !dryRun {
 			err := repo.DeleteBranch(prID)
 			if err != nil {
-				return ResultUnknown, prDetail, fmt.Errorf("delete branch: %w", err)
+				return ResultUnknown, prID, fmt.Errorf("delete branch: %w", err)
 			}
 		}
 
 		err = task.OnPrClosed(ctx)
 		if err != nil {
-			return ResultUnknown, prDetail, fmt.Errorf("pr closed event failed: %w", err)
+			return ResultUnknown, prID, fmt.Errorf("pr closed event failed: %w", err)
 		}
 
-		return ResultPrClosed, prDetail, nil
+		return ResultPrClosed, prID, nil
 	}
 
 	hasRemoteChanges, err := gitc.HasRemoteChanges(branchName)
 	if err != nil {
-		return ResultUnknown, prDetail, fmt.Errorf("check for remote changes failed: %w", err)
+		return ResultUnknown, prID, fmt.Errorf("check for remote changes failed: %w", err)
 	}
 
 	hasChanges := (hasLocalChanges && hasRemoteChanges) || hasConflict
@@ -539,7 +536,7 @@ func applyTaskToRepository(ctx context.Context, dryRun bool, gitc git.GitClient,
 		if !dryRun {
 			err := gitc.Push(branchName, true)
 			if err != nil {
-				return ResultUnknown, prDetail, fmt.Errorf("push failed: %w", err)
+				return ResultUnknown, prID, fmt.Errorf("push failed: %w", err)
 			}
 		}
 	} else {
@@ -549,7 +546,7 @@ func applyTaskToRepository(ctx context.Context, dryRun bool, gitc git.GitClient,
 	ctx = updateTemplateVars(ctx, repo, task)
 	prTitle, err := task.RenderPrTitle(template.FromContext(ctx))
 	if err != nil {
-		return ResultUnknown, prDetail, err
+		return ResultUnknown, prID, err
 	}
 
 	prData := host.PullRequestData{
@@ -567,82 +564,82 @@ func applyTaskToRepository(ctx context.Context, dryRun bool, gitc git.GitClient,
 
 	// Always create if branch of task contains changes compared to default branch and no PR has been created yet.
 	// Create if branch of task contains changes and the PR has been merged or closed before.
-	if (hasChangesInRemoteDefaultBranch && prID == nil) || (hasChanges && (prID == nil || repo.IsPullRequestMerged(prID) || repo.IsPullRequestClosed(prID))) {
+	if (hasChangesInRemoteDefaultBranch && prID == nil) || (hasChanges && (prID == nil || prID.State == host.PullRequestStateMerged || prID.State == host.PullRequestStateClosed)) {
 		logger.Info("Creating pull request")
 		if !dryRun {
-			prDetail, err = repo.CreatePullRequest(branchName, prData)
+			prID, err = repo.CreatePullRequest(branchName, prData)
 			if err != nil {
-				return ResultUnknown, prDetail, fmt.Errorf("failed to create pull request: %w", err)
+				return ResultUnknown, prID, fmt.Errorf("failed to create pull request: %w", err)
 			}
 		}
 
 		err = task.OnPrCreated(ctx)
 		if err != nil {
-			return ResultUnknown, prDetail, fmt.Errorf("pr created event failed: %w", err)
+			return ResultUnknown, prID, fmt.Errorf("pr created event failed: %w", err)
 		}
 
-		return ResultPrCreated, prDetail, nil
+		return ResultPrCreated, prID, nil
 	}
 
 	// Try to merge if auto-merge is enabled, no new changes have been detected and the pull request is open
-	if task.AutoMerge && !hasChanges && prID != nil && repo.IsPullRequestOpen(prID) {
+	if task.AutoMerge && !hasChanges && prID != nil && prID.State == host.PullRequestStateOpen {
 		success, err := repo.HasSuccessfulPullRequestBuild(prID)
 		if err != nil {
-			return ResultUnknown, prDetail, fmt.Errorf("check for successful pull request build failed: %w", err)
+			return ResultUnknown, prID, fmt.Errorf("check for successful pull request build failed: %w", err)
 		}
 
 		if !success {
-			return ResultChecksFailed, prDetail, nil
+			return ResultChecksFailed, prID, nil
 		}
 
-		if !canMergeAfter(repo.GetPullRequestCreationTime(prID), task.CalcAutoMergeAfter()) {
+		if !canMergeAfter(prID.CreatedAt, task.CalcAutoMergeAfter()) {
 			logger.Info("Too early to merge pull request")
-			return ResultAutoMergeTooEarly, prDetail, nil
+			return ResultAutoMergeTooEarly, prID, nil
 		}
 
 		canMerge, err := repo.CanMergePullRequest(prID)
 		if err != nil {
-			return ResultUnknown, prDetail, fmt.Errorf("check if pull request can be merged: %w", err)
+			return ResultUnknown, prID, fmt.Errorf("check if pull request can be merged: %w", err)
 		}
 
 		if !canMerge {
 			logger.Warn("Cannot merge pull request")
-			return ResultConflict, prDetail, nil
+			return ResultConflict, prID, nil
 		}
 
 		logger.Info("Merging pull request")
 		if !dryRun {
 			err := repo.MergePullRequest(!task.KeepBranchAfterMerge, prID)
 			if err != nil {
-				return ResultUnknown, prDetail, fmt.Errorf("failed to merge pull request: %w", err)
+				return ResultUnknown, prID, fmt.Errorf("failed to merge pull request: %w", err)
 			}
 		}
 
 		err = task.OnPrMerged(ctx)
 		if err != nil {
-			return ResultUnknown, prDetail, fmt.Errorf("pr merged event failed: %w", err)
+			return ResultUnknown, prID, fmt.Errorf("pr merged event failed: %w", err)
 		}
 
-		prDetail.State = host.PullRequestStateMerged
-		return ResultPrMerged, prDetail, nil
+		prID.State = host.PullRequestStateMerged
+		return ResultPrMerged, prID, nil
 	}
 
-	if prID != nil && repo.IsPullRequestOpen(prID) {
+	if prID != nil && prID.State == host.PullRequestStateOpen {
 		logger.Debug("Updating pull request")
 		if !dryRun {
 			err := repo.UpdatePullRequest(prData, prID)
 			if err != nil {
-				return ResultUnknown, prDetail, fmt.Errorf("failed to update pull request: %w", err)
+				return ResultUnknown, prID, fmt.Errorf("failed to update pull request: %w", err)
 			}
 		}
 
-		return ResultPrOpen, prDetail, nil
+		return ResultPrOpen, prID, nil
 	}
 
-	return ResultNoChanges, prDetail, nil
+	return ResultNoChanges, prID, nil
 }
 
-func needsRebaseByUser(repo host.Repository, pr any) bool {
+func needsRebaseByUser(repo host.Repository, pr *host.PullRequest) bool {
 	body := repo.GetPullRequestBody(pr)
 	return strings.Contains(body, "[x] If you want to rebase this PR")
 }
@@ -745,7 +742,7 @@ func IsPrOpen(result Result) bool {
 		return true
 	case ResultConflict:
 		return true
+	default:
+		return false
 	}
-
-	return false
 }

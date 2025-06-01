@@ -31,18 +31,21 @@ const (
 	PullRequestStateMerged
 )
 
+// PullRequestRaw is the raw, underlying struct of a Pull Request in a host.
+type PullRequestRaw any
+
 // PullRequest holds data on an existing pull request.
 type PullRequest struct {
 	// CreatedAt is the time and date at which the pull request has been created.
-	CreatedAt *time.Time
+	CreatedAt time.Time
 	// Number is the identifier of the pull request.
 	Number int64
 	// WebURL is the URL humans visit to view the pull request.
 	WebURL string
+	// Raw is the raw data structure of the Pull Request.
+	Raw PullRequestRaw
 	// State denotes the current state of the pull request.
 	State PullRequestState
-	// Raw is the raw data structure of the pull request returned by the host.
-	Raw any
 	// HostName is the name of the [Host] that returned the pull request.
 	HostName string
 	// BranchName is the name of the source branch.
@@ -119,37 +122,32 @@ func (prd PullRequestData) GetBody() (string, error) {
 
 type Repository interface {
 	BaseBranch() string
-	CanMergePullRequest(pr interface{}) (bool, error)
+	CanMergePullRequest(pr *PullRequest) (bool, error)
 	CloneUrlHttp() string
 	CloneUrlSsh() string
-	ClosePullRequest(msg string, pr interface{}) error
-	CreatePullRequestComment(body string, pr interface{}) error
+	ClosePullRequest(msg string, pr *PullRequest) error
+	CreatePullRequestComment(body string, pr *PullRequest) error
 	CreatePullRequest(branch string, data PullRequestData) (*PullRequest, error)
-	DeleteBranch(pr interface{}) error
-	DeletePullRequestComment(comment PullRequestComment, pr interface{}) error
-	FindPullRequest(branch string) (any, error)
+	DeleteBranch(pr *PullRequest) error
+	DeletePullRequestComment(comment PullRequestComment, pr *PullRequest) error
+	FindPullRequest(branch string) (*PullRequest, error)
 	FullName() string
-	GetPullRequestBody(pr interface{}) string
-	GetPullRequestCreationTime(pr interface{}) time.Time
-	HasSuccessfulPullRequestBuild(pr interface{}) (bool, error)
+	GetPullRequestBody(pr *PullRequest) string
+	HasSuccessfulPullRequestBuild(pr *PullRequest) (bool, error)
 	Host() HostDetail
 	// ID returns the global, unique identifier of the repository in the host.
 	ID() int64
 	// IsArchived returns true if the repository has been archived on the host.
 	IsArchived() bool
-	IsPullRequestClosed(pr interface{}) bool
-	IsPullRequestMerged(pr interface{}) bool
-	IsPullRequestOpen(pr interface{}) bool
-	ListPullRequestComments(pr interface{}) ([]PullRequestComment, error)
-	MergePullRequest(deleteBranch bool, pr interface{}) error
+	ListPullRequestComments(pr *PullRequest) ([]PullRequestComment, error)
+	MergePullRequest(deleteBranch bool, pr *PullRequest) error
 	Name() string
-	PullRequest(pr any) *PullRequest
 	// PullRequestStruct returns the instance of an empty struct that defines a Pull Request object of the implementation.
 	// For example, the code that implements a GitHub repository should return an instance of the struct that represents a GitHub pull request.
 	// Used by code that deserializes cached data.
 	PullRequestStruct() any
 	Owner() string
-	UpdatePullRequest(data PullRequestData, pr interface{}) error
+	UpdatePullRequest(data PullRequestData, pr *PullRequest) error
 	WebUrl() string
 	// Raw returns the underlying data structure of the Repository struct.
 	// The raw struct is marshalled to JSON.
@@ -194,7 +192,7 @@ type RepositoryLister interface {
 	List(hosts []Host, result chan Repository, errChan chan error)
 }
 
-func CreatePullRequestCommentWithIdentifier(body string, identifier string, pr interface{}, repo Repository) error {
+func CreatePullRequestCommentWithIdentifier(body string, identifier string, pr *PullRequest, repo Repository) error {
 	if identifier == "" {
 		return errors.New("identifier is empty")
 	}
@@ -215,7 +213,7 @@ func CreatePullRequestCommentWithIdentifier(body string, identifier string, pr i
 	return repo.CreatePullRequestComment(prefix+"\n"+body, pr)
 }
 
-func DeletePullRequestCommentByIdentifier(identifier string, pr interface{}, repo Repository) error {
+func DeletePullRequestCommentByIdentifier(identifier string, pr *PullRequest, repo Repository) error {
 	if identifier == "" {
 		return errors.New("identifier is empty")
 	}
