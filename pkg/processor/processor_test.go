@@ -10,6 +10,7 @@ import (
 	"github.com/stretchr/testify/assert"
 	"github.com/stretchr/testify/require"
 	"github.com/wndhydrnt/saturn-bot/pkg/cache"
+	"github.com/wndhydrnt/saturn-bot/pkg/clock"
 	"github.com/wndhydrnt/saturn-bot/pkg/config"
 	"github.com/wndhydrnt/saturn-bot/pkg/git"
 	"github.com/wndhydrnt/saturn-bot/pkg/host"
@@ -56,7 +57,7 @@ func setupRepoMock(ctrl *gomock.Controller) *hostmock.MockRepository {
 	return r
 }
 
-func setupPullRequestCache(t *testing.T, tempDir string) *cache.PullRequest {
+func setupPullRequestCache(t *testing.T, tempDir string) *host.PullRequestCache {
 	cfg := config.Configuration{
 		DataDir:            ptr.To(tempDir),
 		WorkerLoopInterval: "1m",
@@ -65,9 +66,9 @@ func setupPullRequestCache(t *testing.T, tempDir string) *cache.PullRequest {
 	opts := options.Opts{Config: cfg}
 	err := options.Initialize(&opts)
 	require.NoError(t, err)
-	db, err := cache.NewCacheDb(opts)
+	db, err := cache.New(opts)
 	require.NoError(t, err)
-	return cache.NewPullRequestCache(db)
+	return host.NewPullRequestCache(db, clock.Default)
 }
 
 func TestProcessor_Process_CreatePullRequestLocalChanges(t *testing.T) {
@@ -103,7 +104,7 @@ func TestProcessor_Process_CreatePullRequestLocalChanges(t *testing.T) {
 	assert.Equal(t, prCreate, results[0].PullRequest)
 	assert.True(t, tw.HasReachedChangeLimit(), "Updates the change limit")
 	assert.NoError(t, results[0].Error)
-	assert.Equal(t, prCreate, p.PullRequestCache.Get(tw, repo), "Adds the pull request to the cache")
+	assert.Equal(t, prCreate, p.PullRequestCache.Get("saturn-bot--unittest", repo.FullName()), "Adds the pull request to the cache")
 }
 
 func TestProcessor_Process_CreatePullRequestRemoteChanges(t *testing.T) {
@@ -137,7 +138,7 @@ func TestProcessor_Process_CreatePullRequestRemoteChanges(t *testing.T) {
 	assert.NoError(t, results[0].Error)
 	assert.Equal(t, processor.ResultPrCreated, results[0].Result)
 	assert.Equal(t, prCreate, results[0].PullRequest)
-	assert.Equal(t, prCreate, p.PullRequestCache.Get(tw, repo), "Adds the pull request to the cache")
+	assert.Equal(t, prCreate, p.PullRequestCache.Get("saturn-bot--unittest", repo.FullName()), "Adds the pull request to the cache")
 }
 
 func TestProcessor_Process_CreatePullRequestPreviouslyClosed(t *testing.T) {
@@ -176,7 +177,7 @@ func TestProcessor_Process_CreatePullRequestPreviouslyClosed(t *testing.T) {
 	assert.NoError(t, results[0].Error)
 	assert.Equal(t, processor.ResultPrCreated, results[0].Result)
 	assert.Equal(t, prCreate, results[0].PullRequest)
-	assert.Equal(t, prCreate, p.PullRequestCache.Get(tw, repo), "Adds the pull request to the cache")
+	assert.Equal(t, prCreate, p.PullRequestCache.Get("saturn-bot--unittest", repo.FullName()), "Adds the pull request to the cache")
 }
 
 func TestProcessor_Process_PullRequestClosedAndMergeOnceActive(t *testing.T) {

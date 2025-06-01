@@ -42,7 +42,7 @@ type PullRequest struct {
 	Number int64
 	// WebURL is the URL humans visit to view the pull request.
 	WebURL string
-	// Raw is the raw data structure of the Pull Request.
+	// Raw is the raw data structure of the pull request.
 	Raw PullRequestRaw
 	// State denotes the current state of the pull request.
 	State PullRequestState
@@ -142,10 +142,6 @@ type Repository interface {
 	ListPullRequestComments(pr *PullRequest) ([]PullRequestComment, error)
 	MergePullRequest(deleteBranch bool, pr *PullRequest) error
 	Name() string
-	// PullRequestStruct returns the instance of an empty struct that defines a Pull Request object of the implementation.
-	// For example, the code that implements a GitHub repository should return an instance of the struct that represents a GitHub pull request.
-	// Used by code that deserializes cached data.
-	PullRequestStruct() any
 	Owner() string
 	UpdatePullRequest(data PullRequestData, pr *PullRequest) error
 	WebUrl() string
@@ -168,8 +164,13 @@ type Host interface {
 	PullRequestIterator() PullRequestIterator
 }
 
+// PullRequestIterator is an iterator to iterate over pull requests in a host.
 type PullRequestIterator interface {
+	// ListPullRequests returns an iter.Seq to iterate over pull requests in a host.
+	// If since is not nil, the function should return only the pull requests that have changed since the given time.
 	ListPullRequests(since *time.Time) iter.Seq[*PullRequest]
+	// ListPullRequestsError returns an error that occurred during ListPullRequests.
+	// Callers of ListPullRequests should call this function after the iterator has returned to check if there was an error.
 	ListPullRequestsError() error
 }
 

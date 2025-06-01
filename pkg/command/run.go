@@ -151,7 +151,7 @@ func ExecuteRun(opts options.Opts, repositoryNames, taskFiles []string, inputs m
 		return nil, err
 	}
 
-	prCache := cache.NewPullRequestCache(dataCache, clock.Default)
+	prCache := host.NewPullRequestCache(dataCache, clock.Default)
 	e := &Run{
 		DryRun: opts.Config.DryRun,
 		Hosts:  opts.Hosts,

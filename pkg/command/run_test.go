@@ -40,6 +40,7 @@ type repoCacheItem struct {
 }
 
 type mockHost struct {
+	pullRequestIterator              host.PullRequestIterator
 	repositories                     []host.Repository
 	repositoriesWithOpenPullRequests []host.Repository
 }
@@ -57,7 +58,7 @@ func (m *mockHost) CreateFromJson(dec *json.Decoder) (host.Repository, error) {
 		}
 	}
 
-	return nil, fmt.Errorf("Repository not found")
+	return nil, fmt.Errorf("repository not found")
 }
 
 func (m *mockHost) CreateFromName(name string) (host.Repository, error) {
@@ -86,6 +87,10 @@ func (m *mockHost) AuthenticatedUser() (*host.UserInfo, error) {
 
 func (m *mockHost) Name() string {
 	return "git.local"
+}
+
+func (m *mockHost) PullRequestIterator() host.PullRequestIterator {
+	return m.pullRequestIterator
 }
 
 func createTestTask(nameFilter string) schema.Task {

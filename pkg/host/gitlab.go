@@ -200,7 +200,7 @@ func (g *GitLabRepository) CreatePullRequest(branch string, data PullRequestData
 		return nil, fmt.Errorf("create merge request for project %d: %w", g.project.ID, err)
 	}
 
-	return g.PullRequest(mr), nil
+	return convertGitlabMergeRequestToPullRequest(mr), nil
 }
 
 func (g *GitLabRepository) DeleteBranch(pr *PullRequest) error {
@@ -794,7 +794,7 @@ func convertGitlabMergeRequestToPullRequest(mr *gitlab.MergeRequest) *PullReques
 		Raw:            mr,
 		HostName:       u.Host,
 		BranchName:     mr.SourceBranch,
-		RepositoryName: fmt.Sprintf("%s/%s", u.Host, parts[0]),
+		RepositoryName: u.Host + "" + parts[0],
 	}
 }
 
