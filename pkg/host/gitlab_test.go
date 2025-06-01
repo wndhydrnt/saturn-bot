@@ -47,16 +47,7 @@ func TestGitLabRepository_GetPullRequestBody(t *testing.T) {
 
 	underTest := &GitLabRepository{}
 
-	require.Equal(t, "Unit Test", underTest.GetPullRequestBody(mr))
-}
-
-func TestGitLabRepository_GetPullRequestCreationTime(t *testing.T) {
-	createdAt := time.Now()
-	mr := &gitlab.MergeRequest{CreatedAt: &createdAt}
-
-	underTest := &GitLabRepository{}
-
-	require.Equal(t, createdAt, underTest.GetPullRequestCreationTime(mr))
+	require.Equal(t, "Unit Test", underTest.GetPullRequestBody(toSbPr(mr)))
 }
 
 func TestGitLabRepository_CanMergePullRequest(t *testing.T) {
@@ -64,7 +55,7 @@ func TestGitLabRepository_CanMergePullRequest(t *testing.T) {
 
 	underTest := &GitLabRepository{}
 
-	result, err := underTest.CanMergePullRequest(mr)
+	result, err := underTest.CanMergePullRequest(toSbPr(mr))
 	require.NoError(t, err)
 	require.True(t, result)
 }
@@ -88,7 +79,7 @@ func TestGitLabRepository_ClosePullRequest(t *testing.T) {
 
 	underTest := &GitLabRepository{client: setupClient(), project: project}
 
-	err := underTest.ClosePullRequest("Unit Test", mr)
+	err := underTest.ClosePullRequest("Unit Test", toSbPr(mr))
 	require.NoError(t, err)
 	require.True(t, gock.IsDone())
 }
@@ -106,7 +97,7 @@ func TestGitLabRepository_CreatePullRequestComment(t *testing.T) {
 
 	underTest := &GitLabRepository{client: setupClient(), project: project}
 
-	err := underTest.CreatePullRequestComment("Unit Test", mr)
+	err := underTest.CreatePullRequestComment("Unit Test", toSbPr(mr))
 	require.NoError(t, err)
 	require.True(t, gock.IsDone())
 }
@@ -297,7 +288,7 @@ func TestGitLabRepository_DeleteBranch(t *testing.T) {
 	mr := &gitlab.MergeRequest{IID: 987, SourceBranch: "saturn-bot--unit-test"}
 
 	underTest := &GitLabRepository{client: setupClient(), project: project}
-	err := underTest.DeleteBranch(mr)
+	err := underTest.DeleteBranch(toSbPr(mr))
 
 	require.NoError(t, err)
 	require.True(t, gock.IsDone())
@@ -309,7 +300,7 @@ func TestGitLabRepository_DeleteBranch_NoDeleteIfGitLabDeletesMR(t *testing.T) {
 	mr := &gitlab.MergeRequest{IID: 987, SourceBranch: "saturn-bot--unit-test", ShouldRemoveSourceBranch: true}
 
 	underTest := &GitLabRepository{client: setupClient(), project: project}
-	err := underTest.DeleteBranch(mr)
+	err := underTest.DeleteBranch(toSbPr(mr))
 
 	require.NoError(t, err)
 	require.True(t, gock.IsDone(), "not all mocks of gock have been called")
@@ -326,7 +317,7 @@ func TestGitLabRepository_DeletePullRequestComment(t *testing.T) {
 	mr := &gitlab.MergeRequest{IID: 987}
 
 	underTest := &GitLabRepository{client: setupClient(), project: project}
-	err := underTest.DeletePullRequestComment(comment, mr)
+	err := underTest.DeletePullRequestComment(comment, toSbPr(mr))
 
 	require.NoError(t, err)
 	require.True(t, gock.IsDone())
@@ -339,7 +330,13 @@ func TestGitLabRepository_FindPullRequest(t *testing.T) {
 		MatchParams(map[string]string{"source_branch": "saturn-bot--unit-test", "state": "all"}).
 		Reply(200).
 		JSON([]*gitlab.MergeRequest{
-			{SourceBranch: "saturn-bot--unit-test"},
+			{
+				CreatedAt:    ptr.To(time.Now()),
+				IID:          123,
+				SourceBranch: "saturn-bot--unit-test",
+				State:        "opened",
+				WebURL:       "https://gitlab.com/unit/test/-/merge_requests/123",
+			},
 		})
 	project := &gitlab.Project{ID: 123}
 
@@ -347,7 +344,11 @@ func TestGitLabRepository_FindPullRequest(t *testing.T) {
 	result, err := underTest.FindPullRequest("saturn-bot--unit-test")
 
 	require.NoError(t, err)
-	require.IsType(t, &gitlab.MergeRequest{}, result)
+	require.IsType(t, time.Time{}, result.CreatedAt)
+	require.Equal(t, int64(123), result.Number)
+	require.Equal(t, "https://gitlab.com/unit/test/-/merge_requests/123", result.WebURL)
+	require.IsType(t, &gitlab.MergeRequest{}, result.Raw)
+	require.Equal(t, PullRequestStateOpen, result.State)
 	require.True(t, gock.IsDone())
 }
 
@@ -388,7 +389,7 @@ func TestGitLabRepository_HasSuccessfulPullRequestBuild(t *testing.T) {
 	project := &gitlab.Project{ID: 123}
 
 	underTest := &GitLabRepository{client: setupClient(), project: project}
-	result, err := underTest.HasSuccessfulPullRequestBuild(mr)
+	result, err := underTest.HasSuccessfulPullRequestBuild(toSbPr(mr))
 
 	require.NoError(t, err)
 	require.True(t, result)
@@ -410,7 +411,7 @@ func TestGitLabRepository_HasSuccessfulPullRequestBuild_RuleNotApproved(t *testi
 	project := &gitlab.Project{ID: 123}
 
 	underTest := &GitLabRepository{client: setupClient(), project: project}
-	result, err := underTest.HasSuccessfulPullRequestBuild(mr)
+	result, err := underTest.HasSuccessfulPullRequestBuild(toSbPr(mr))
 
 	require.NoError(t, err)
 	require.False(t, result)
@@ -437,7 +438,7 @@ func TestGitLabRepository_HasSuccessfulPullRequestBuild_FailedBuild(t *testing.T
 	project := &gitlab.Project{ID: 123}
 
 	underTest := &GitLabRepository{client: setupClient(), project: project}
-	result, err := underTest.HasSuccessfulPullRequestBuild(mr)
+	result, err := underTest.HasSuccessfulPullRequestBuild(toSbPr(mr))
 
 	require.NoError(t, err)
 	require.False(t, result)
@@ -543,7 +544,7 @@ func TestGitLabRepository_ListPullRequestComments(t *testing.T) {
 	project := &gitlab.Project{DefaultBranch: "main", ID: 123}
 
 	underTest := &GitLabRepository{client: setupClient(), project: project}
-	result, err := underTest.ListPullRequestComments(mr)
+	result, err := underTest.ListPullRequestComments(toSbPr(mr))
 
 	require.NoError(t, err)
 	wantComments := []PullRequestComment{
@@ -566,7 +567,7 @@ func TestGitLabRepository_MergePullRequest(t *testing.T) {
 	mr := &gitlab.MergeRequest{IID: 987}
 
 	underTest := &GitLabRepository{client: setupClient(), project: project}
-	err := underTest.MergePullRequest(true, mr)
+	err := underTest.MergePullRequest(true, toSbPr(mr))
 
 	require.NoError(t, err)
 	require.True(t, gock.IsDone())
@@ -591,7 +592,7 @@ func TestGitLabRepository_UpdatePullRequest(t *testing.T) {
 	mr := &gitlab.MergeRequest{Description: "PR Body", IID: 987, Title: "PR Title"}
 
 	underTest := &GitLabRepository{client: setupClient(), project: project}
-	err := underTest.UpdatePullRequest(prData, mr)
+	err := underTest.UpdatePullRequest(prData, toSbPr(mr))
 
 	require.NoError(t, err)
 	require.True(t, gock.IsDone())
@@ -611,7 +612,7 @@ func TestGitLabRepository_UpdatePullRequest_NoUpdateRequired(t *testing.T) {
 	}
 
 	underTest := &GitLabRepository{client: setupClient(), project: project}
-	err := underTest.UpdatePullRequest(prData, mr)
+	err := underTest.UpdatePullRequest(prData, toSbPr(mr))
 
 	require.NoError(t, err)
 	require.True(t, gock.IsDone())
@@ -677,7 +678,7 @@ func TestGitLabRepository_UpdatePullRequest_UpdatedAssigneesReviewers(t *testing
 	}
 
 	underTest := &GitLabRepository{client: setupClient(), project: project, userCache: uc}
-	err := underTest.UpdatePullRequest(prData, mr)
+	err := underTest.UpdatePullRequest(prData, toSbPr(mr))
 
 	require.NoError(t, err)
 	require.True(t, gock.IsDone())

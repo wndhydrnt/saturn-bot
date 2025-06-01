@@ -57,7 +57,7 @@ func (mr *MockRepositoryMockRecorder) BaseBranch() *gomock.Call {
 }
 
 // CanMergePullRequest mocks base method.
-func (m *MockRepository) CanMergePullRequest(pr any) (bool, error) {
+func (m *MockRepository) CanMergePullRequest(pr *host.PullRequest) (bool, error) {
 	m.ctrl.T.Helper()
 	ret := m.ctrl.Call(m, "CanMergePullRequest", pr)
 	ret0, _ := ret[0].(bool)
@@ -100,7 +100,7 @@ func (mr *MockRepositoryMockRecorder) CloneUrlSsh() *gomock.Call {
 }
 
 // ClosePullRequest mocks base method.
-func (m *MockRepository) ClosePullRequest(msg string, pr any) error {
+func (m *MockRepository) ClosePullRequest(msg string, pr *host.PullRequest) error {
 	m.ctrl.T.Helper()
 	ret := m.ctrl.Call(m, "ClosePullRequest", msg, pr)
 	ret0, _ := ret[0].(error)
@@ -129,7 +129,7 @@ func (mr *MockRepositoryMockRecorder) CreatePullRequest(branch, data any) *gomoc
 }
 
 // CreatePullRequestComment mocks base method.
-func (m *MockRepository) CreatePullRequestComment(body string, pr any) error {
+func (m *MockRepository) CreatePullRequestComment(body string, pr *host.PullRequest) error {
 	m.ctrl.T.Helper()
 	ret := m.ctrl.Call(m, "CreatePullRequestComment", body, pr)
 	ret0, _ := ret[0].(error)
@@ -143,7 +143,7 @@ func (mr *MockRepositoryMockRecorder) CreatePullRequestComment(body, pr any) *go
 }
 
 // DeleteBranch mocks base method.
-func (m *MockRepository) DeleteBranch(pr any) error {
+func (m *MockRepository) DeleteBranch(pr *host.PullRequest) error {
 	m.ctrl.T.Helper()
 	ret := m.ctrl.Call(m, "DeleteBranch", pr)
 	ret0, _ := ret[0].(error)
@@ -157,7 +157,7 @@ func (mr *MockRepositoryMockRecorder) DeleteBranch(pr any) *gomock.Call {
 }
 
 // DeletePullRequestComment mocks base method.
-func (m *MockRepository) DeletePullRequestComment(comment host.PullRequestComment, pr any) error {
+func (m *MockRepository) DeletePullRequestComment(comment host.PullRequestComment, pr *host.PullRequest) error {
 	m.ctrl.T.Helper()
 	ret := m.ctrl.Call(m, "DeletePullRequestComment", comment, pr)
 	ret0, _ := ret[0].(error)
@@ -171,10 +171,10 @@ func (mr *MockRepositoryMockRecorder) DeletePullRequestComment(comment, pr any) 
 }
 
 // FindPullRequest mocks base method.
-func (m *MockRepository) FindPullRequest(branch string) (any, error) {
+func (m *MockRepository) FindPullRequest(branch string) (*host.PullRequest, error) {
 	m.ctrl.T.Helper()
 	ret := m.ctrl.Call(m, "FindPullRequest", branch)
-	ret0, _ := ret[0].(any)
+	ret0, _ := ret[0].(*host.PullRequest)
 	ret1, _ := ret[1].(error)
 	return ret0, ret1
 }
@@ -200,7 +200,7 @@ func (mr *MockRepositoryMockRecorder) FullName() *gomock.Call {
 }
 
 // GetPullRequestBody mocks base method.
-func (m *MockRepository) GetPullRequestBody(pr any) string {
+func (m *MockRepository) GetPullRequestBody(pr *host.PullRequest) string {
 	m.ctrl.T.Helper()
 	ret := m.ctrl.Call(m, "GetPullRequestBody", pr)
 	ret0, _ := ret[0].(string)
@@ -213,22 +213,8 @@ func (mr *MockRepositoryMockRecorder) GetPullRequestBody(pr any) *gomock.Call {
 	return mr.mock.ctrl.RecordCallWithMethodType(mr.mock, "GetPullRequestBody", reflect.TypeOf((*MockRepository)(nil).GetPullRequestBody), pr)
 }
 
-// GetPullRequestCreationTime mocks base method.
-func (m *MockRepository) GetPullRequestCreationTime(pr any) time.Time {
-	m.ctrl.T.Helper()
-	ret := m.ctrl.Call(m, "GetPullRequestCreationTime", pr)
-	ret0, _ := ret[0].(time.Time)
-	return ret0
-}
-
-// GetPullRequestCreationTime indicates an expected call of GetPullRequestCreationTime.
-func (mr *MockRepositoryMockRecorder) GetPullRequestCreationTime(pr any) *gomock.Call {
-	mr.mock.ctrl.T.Helper()
-	return mr.mock.ctrl.RecordCallWithMethodType(mr.mock, "GetPullRequestCreationTime", reflect.TypeOf((*MockRepository)(nil).GetPullRequestCreationTime), pr)
-}
-
 // HasSuccessfulPullRequestBuild mocks base method.
-func (m *MockRepository) HasSuccessfulPullRequestBuild(pr any) (bool, error) {
+func (m *MockRepository) HasSuccessfulPullRequestBuild(pr *host.PullRequest) (bool, error) {
 	m.ctrl.T.Helper()
 	ret := m.ctrl.Call(m, "HasSuccessfulPullRequestBuild", pr)
 	ret0, _ := ret[0].(bool)
@@ -284,50 +270,8 @@ func (mr *MockRepositoryMockRecorder) IsArchived() *gomock.Call {
 	return mr.mock.ctrl.RecordCallWithMethodType(mr.mock, "IsArchived", reflect.TypeOf((*MockRepository)(nil).IsArchived))
 }
 
-// IsPullRequestClosed mocks base method.
-func (m *MockRepository) IsPullRequestClosed(pr any) bool {
-	m.ctrl.T.Helper()
-	ret := m.ctrl.Call(m, "IsPullRequestClosed", pr)
-	ret0, _ := ret[0].(bool)
-	return ret0
-}
-
-// IsPullRequestClosed indicates an expected call of IsPullRequestClosed.
-func (mr *MockRepositoryMockRecorder) IsPullRequestClosed(pr any) *gomock.Call {
-	mr.mock.ctrl.T.Helper()
-	return mr.mock.ctrl.RecordCallWithMethodType(mr.mock, "IsPullRequestClosed", reflect.TypeOf((*MockRepository)(nil).IsPullRequestClosed), pr)
-}
-
-// IsPullRequestMerged mocks base method.
-func (m *MockRepository) IsPullRequestMerged(pr any) bool {
-	m.ctrl.T.Helper()
-	ret := m.ctrl.Call(m, "IsPullRequestMerged", pr)
-	ret0, _ := ret[0].(bool)
-	return ret0
-}
-
-// IsPullRequestMerged indicates an expected call of IsPullRequestMerged.
-func (mr *MockRepositoryMockRecorder) IsPullRequestMerged(pr any) *gomock.Call {
-	mr.mock.ctrl.T.Helper()
-	return mr.mock.ctrl.RecordCallWithMethodType(mr.mock, "IsPullRequestMerged", reflect.TypeOf((*MockRepository)(nil).IsPullRequestMerged), pr)
-}
-
-// IsPullRequestOpen mocks base method.
-func (m *MockRepository) IsPullRequestOpen(pr any) bool {
-	m.ctrl.T.Helper()
-	ret := m.ctrl.Call(m, "IsPullRequestOpen", pr)
-	ret0, _ := ret[0].(bool)
-	return ret0
-}
-
-// IsPullRequestOpen indicates an expected call of IsPullRequestOpen.
-func (mr *MockRepositoryMockRecorder) IsPullRequestOpen(pr any) *gomock.Call {
-	mr.mock.ctrl.T.Helper()
-	return mr.mock.ctrl.RecordCallWithMethodType(mr.mock, "IsPullRequestOpen", reflect.TypeOf((*MockRepository)(nil).IsPullRequestOpen), pr)
-}
-
 // ListPullRequestComments mocks base method.
-func (m *MockRepository) ListPullRequestComments(pr any) ([]host.PullRequestComment, error) {
+func (m *MockRepository) ListPullRequestComments(pr *host.PullRequest) ([]host.PullRequestComment, error) {
 	m.ctrl.T.Helper()
 	ret := m.ctrl.Call(m, "ListPullRequestComments", pr)
 	ret0, _ := ret[0].([]host.PullRequestComment)
@@ -342,7 +286,7 @@ func (mr *MockRepositoryMockRecorder) ListPullRequestComments(pr any) *gomock.Ca
 }
 
 // MergePullRequest mocks base method.
-func (m *MockRepository) MergePullRequest(deleteBranch bool, pr any) error {
+func (m *MockRepository) MergePullRequest(deleteBranch bool, pr *host.PullRequest) error {
 	m.ctrl.T.Helper()
 	ret := m.ctrl.Call(m, "MergePullRequest", deleteBranch, pr)
 	ret0, _ := ret[0].(error)
@@ -383,20 +327,6 @@ func (mr *MockRepositoryMockRecorder) Owner() *gomock.Call {
 	return mr.mock.ctrl.RecordCallWithMethodType(mr.mock, "Owner", reflect.TypeOf((*MockRepository)(nil).Owner))
 }
 
-// PullRequest mocks base method.
-func (m *MockRepository) PullRequest(pr any) *host.PullRequest {
-	m.ctrl.T.Helper()
-	ret := m.ctrl.Call(m, "PullRequest", pr)
-	ret0, _ := ret[0].(*host.PullRequest)
-	return ret0
-}
-
-// PullRequest indicates an expected call of PullRequest.
-func (mr *MockRepositoryMockRecorder) PullRequest(pr any) *gomock.Call {
-	mr.mock.ctrl.T.Helper()
-	return mr.mock.ctrl.RecordCallWithMethodType(mr.mock, "PullRequest", reflect.TypeOf((*MockRepository)(nil).PullRequest), pr)
-}
-
 // Raw mocks base method.
 func (m *MockRepository) Raw() any {
 	m.ctrl.T.Helper()
@@ -412,7 +342,7 @@ func (mr *MockRepositoryMockRecorder) Raw() *gomock.Call {
 }
 
 // UpdatePullRequest mocks base method.
-func (m *MockRepository) UpdatePullRequest(data host.PullRequestData, pr any) error {
+func (m *MockRepository) UpdatePullRequest(data host.PullRequestData, pr *host.PullRequest) error {
 	m.ctrl.T.Helper()
 	ret := m.ctrl.Call(m, "UpdatePullRequest", data, pr)
 	ret0, _ := ret[0].(error)
