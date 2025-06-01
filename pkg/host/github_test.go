@@ -47,7 +47,7 @@ func TestGitHubRepository_CanMergePullRequest(t *testing.T) {
 	}
 
 	repo := &GitHubRepository{}
-	result, err := repo.CanMergePullRequest(pr)
+	result, err := repo.CanMergePullRequest(toSbPr(pr))
 
 	require.NoError(t, err)
 	assert.True(t, result)
@@ -57,7 +57,7 @@ func TestGitHubRepository_CanMergePullRequest_MergeableNil(t *testing.T) {
 	pr := &github.PullRequest{}
 
 	repo := &GitHubRepository{}
-	result, err := repo.CanMergePullRequest(pr)
+	result, err := repo.CanMergePullRequest(toSbPr(pr))
 
 	require.NoError(t, err)
 	assert.True(t, result)
@@ -109,7 +109,7 @@ func TestGitHubRepository_ClosePullRequest(t *testing.T) {
 		client: setupGitHubTestClient(),
 		repo:   setupGitHubRepository(),
 	}
-	err := repo.ClosePullRequest("close pull request", pr)
+	err := repo.ClosePullRequest("close pull request", toSbPr(pr))
 
 	require.NoError(t, err)
 	require.True(t, gock.IsDone())
@@ -133,7 +133,7 @@ func TestGitHubRepository_CreatePullRequestComment(t *testing.T) {
 		client: setupGitHubTestClient(),
 		repo:   setupGitHubRepository(),
 	}
-	err := repo.CreatePullRequestComment("pull request comment", pr)
+	err := repo.CreatePullRequestComment("pull request comment", toSbPr(pr))
 
 	require.NoError(t, err)
 	require.True(t, gock.IsDone())
@@ -267,7 +267,13 @@ func TestGitHubRepository_FindPullRequest(t *testing.T) {
 		Reply(200).
 		JSON([]*github.PullRequest{
 			{Head: &github.PullRequestBranch{Ref: github.Ptr("other")}},
-			{Head: &github.PullRequestBranch{Ref: github.Ptr("unittest")}},
+			{
+				CreatedAt: &github.Timestamp{Time: time.Now()},
+				HTMLURL:   github.Ptr("https://github.com/unit/test/pulls/1"),
+				Head:      &github.PullRequestBranch{Ref: github.Ptr("unittest")},
+				Number:    github.Ptr(123),
+				State:     github.Ptr("open"),
+			},
 		})
 
 	repo := &GitHubRepository{
@@ -277,7 +283,11 @@ func TestGitHubRepository_FindPullRequest(t *testing.T) {
 	prId, err := repo.FindPullRequest("unittest")
 
 	require.NoError(t, err)
-	assert.IsType(t, &github.PullRequest{}, prId)
+	assert.False(t, prId.CreatedAt.IsZero())
+	assert.Equal(t, int64(123), prId.Number)
+	assert.Equal(t, "https://github.com/unit/test/pulls/1", prId.WebURL)
+	assert.IsType(t, &github.PullRequest{}, prId.Raw)
+	assert.Equal(t, PullRequestStateOpen, prId.State)
 	assert.True(t, gock.IsDone())
 }
 
@@ -319,20 +329,9 @@ func TestGitHubRepository_GetPullRequestBody(t *testing.T) {
 		Body: github.Ptr("pull request body"),
 	}
 	repo := &GitHubRepository{repo: setupGitHubRepository()}
-	body := repo.GetPullRequestBody(pr)
+	body := repo.GetPullRequestBody(toSbPr(pr))
 
 	assert.Equal(t, "pull request body", body)
-}
-
-func TestGitHubRepository_GetPullRequestCreationTime(t *testing.T) {
-	now := time.Now()
-	pr := &github.PullRequest{
-		CreatedAt: &github.Timestamp{Time: now},
-	}
-	repo := &GitHubRepository{repo: setupGitHubRepository()}
-	createdAt := repo.GetPullRequestCreationTime(pr)
-
-	assert.Equal(t, now, createdAt)
 }
 
 func TestGitHubRepository_DeleteBranch(t *testing.T) {
@@ -351,7 +350,7 @@ func TestGitHubRepository_DeleteBranch(t *testing.T) {
 			Ref: github.Ptr("unittest"),
 		},
 	}
-	err := repo.DeleteBranch(pr)
+	err := repo.DeleteBranch(toSbPr(pr))
 
 	require.NoError(t, err)
 	assert.True(t, gock.IsDone())
@@ -371,7 +370,7 @@ func TestGitHubRepository_DeleteBranch_RepoAutoDelete(t *testing.T) {
 			Ref: github.Ptr("unittest"),
 		},
 	}
-	err := repo.DeleteBranch(pr)
+	err := repo.DeleteBranch(toSbPr(pr))
 
 	require.NoError(t, err)
 	assert.True(t, gock.IsDone())
@@ -391,7 +390,7 @@ func TestGitHubRepository_DeletePullRequestComment(t *testing.T) {
 		client: setupGitHubTestClient(),
 		repo:   setupGitHubRepository(),
 	}
-	err := repo.DeletePullRequestComment(comment, pr)
+	err := repo.DeletePullRequestComment(comment, toSbPr(pr))
 
 	require.NoError(t, err)
 	assert.True(t, gock.IsDone())
@@ -421,7 +420,7 @@ func TestGitHubRepository_HasSuccessfulPullRequestBuild_Success(t *testing.T) {
 		client: setupGitHubTestClient(),
 		repo:   setupGitHubRepository(),
 	}
-	result, err := repo.HasSuccessfulPullRequestBuild(pr)
+	result, err := repo.HasSuccessfulPullRequestBuild(toSbPr(pr))
 
 	require.NoError(t, err)
 	assert.True(t, result)
@@ -452,7 +451,7 @@ func TestGitHubRepository_HasSuccessfulPullRequestBuild_Failed(t *testing.T) {
 		client: setupGitHubTestClient(),
 		repo:   setupGitHubRepository(),
 	}
-	result, err := repo.HasSuccessfulPullRequestBuild(pr)
+	result, err := repo.HasSuccessfulPullRequestBuild(toSbPr(pr))
 
 	require.NoError(t, err)
 	assert.False(t, result)
@@ -537,7 +536,7 @@ func TestGitHubRepository_ListPullRequestComments(t *testing.T) {
 		client: setupGitHubTestClient(),
 		repo:   setupGitHubRepository(),
 	}
-	result, err := repo.ListPullRequestComments(pr)
+	result, err := repo.ListPullRequestComments(toSbPr(pr))
 
 	require.NoError(t, err)
 	comment := PullRequestComment{Body: "comment body", ID: 357}
@@ -561,7 +560,7 @@ func TestGitHubRepository_MergePullRequest_NoDeleteBranch(t *testing.T) {
 		client: setupGitHubTestClient(),
 		repo:   setupGitHubRepository(),
 	}
-	err := repo.MergePullRequest(false, pr)
+	err := repo.MergePullRequest(false, toSbPr(pr))
 
 	require.NoError(t, err)
 	assert.True(t, gock.IsDone())
@@ -589,7 +588,7 @@ func TestGitHubRepository_MergePullRequest_DeleteBranch(t *testing.T) {
 		client: setupGitHubTestClient(),
 		repo:   setupGitHubRepository(),
 	}
-	err := repo.MergePullRequest(true, pr)
+	err := repo.MergePullRequest(true, toSbPr(pr))
 
 	require.NoError(t, err)
 	assert.True(t, gock.IsDone())
@@ -616,7 +615,7 @@ func TestGitHubRepository_MergePullRequest_DeleteBranchByGitHub(t *testing.T) {
 		client: setupGitHubTestClient(),
 		repo:   ghRepo,
 	}
-	err := repo.MergePullRequest(true, pr)
+	err := repo.MergePullRequest(true, toSbPr(pr))
 
 	require.NoError(t, err)
 	assert.True(t, gock.IsDone())
@@ -673,7 +672,7 @@ func TestGitHubRepository_MergePullRequest_MergeMethods(t *testing.T) {
 				client: setupGitHubTestClient(),
 				repo:   tc.repo,
 			}
-			err := repo.MergePullRequest(false, pr)
+			err := repo.MergePullRequest(false, toSbPr(pr))
 
 			require.NoError(t, err)
 			assert.True(t, gock.IsDone())
@@ -721,7 +720,7 @@ _This pull request has been created by [saturn-bot](https://github.com/wndhydrnt
 		client: setupGitHubTestClient(),
 		repo:   setupGitHubRepository(),
 	}
-	err := repo.UpdatePullRequest(prData, pr)
+	err := repo.UpdatePullRequest(prData, toSbPr(pr))
 
 	require.NoError(t, err)
 	assert.True(t, gock.IsDone())
@@ -760,7 +759,7 @@ _This pull request has been created by [saturn-bot](https://github.com/wndhydrnt
 		client: setupGitHubTestClient(),
 		repo:   setupGitHubRepository(),
 	}
-	err := repo.UpdatePullRequest(prData, pr)
+	err := repo.UpdatePullRequest(prData, toSbPr(pr))
 
 	require.NoError(t, err)
 	assert.True(t, gock.IsDone())
@@ -817,7 +816,7 @@ _This pull request has been created by [saturn-bot](https://github.com/wndhydrnt
 		client: setupGitHubTestClient(),
 		repo:   setupGitHubRepository(),
 	}
-	err := repo.UpdatePullRequest(prData, pr)
+	err := repo.UpdatePullRequest(prData, toSbPr(pr))
 
 	require.NoError(t, err)
 	assert.True(t, gock.IsDone())
@@ -881,7 +880,7 @@ _This pull request has been created by [saturn-bot](https://github.com/wndhydrnt
 		client: setupGitHubTestClient(),
 		repo:   setupGitHubRepository(),
 	}
-	err := repo.UpdatePullRequest(prData, pr)
+	err := repo.UpdatePullRequest(prData, toSbPr(pr))
 
 	require.NoError(t, err)
 	assert.True(t, gock.IsDone())

@@ -84,26 +84,21 @@ func (g *GitLabRepository) FullName() string {
 	return g.fullName
 }
 
-func (g *GitLabRepository) GetPullRequestBody(pr interface{}) string {
-	mr := pr.(*gitlab.MergeRequest)
+func (g *GitLabRepository) GetPullRequestBody(pr *PullRequest) string {
+	mr := pr.Raw.(*gitlab.MergeRequest)
 	return mr.Description
-}
-
-func (g *GitLabRepository) GetPullRequestCreationTime(pr interface{}) time.Time {
-	mr := pr.(*gitlab.MergeRequest)
-	return *mr.CreatedAt
 }
 
 func (g *GitLabRepository) WebUrl() string {
 	return g.project.WebURL
 }
 
-func (g *GitLabRepository) CanMergePullRequest(pr interface{}) (bool, error) {
+func (g *GitLabRepository) CanMergePullRequest(_ *PullRequest) (bool, error) {
 	return true, nil
 }
 
-func (g *GitLabRepository) ClosePullRequest(msg string, pr interface{}) error {
-	mr := pr.(*gitlab.MergeRequest)
+func (g *GitLabRepository) ClosePullRequest(msg string, pr *PullRequest) error {
+	mr := pr.Raw.(*gitlab.MergeRequest)
 	_, _, err := g.client.Notes.CreateMergeRequestNote(
 		g.project.ID,
 		mr.IID,
@@ -129,8 +124,8 @@ func (g *GitLabRepository) ClosePullRequest(msg string, pr interface{}) error {
 	return nil
 }
 
-func (g *GitLabRepository) CreatePullRequestComment(body string, pr interface{}) error {
-	mr := pr.(*gitlab.MergeRequest)
+func (g *GitLabRepository) CreatePullRequestComment(body string, pr *PullRequest) error {
+	mr := pr.Raw.(*gitlab.MergeRequest)
 	_, _, err := g.client.Notes.CreateMergeRequestNote(
 		g.project.ID,
 		mr.IID,
@@ -207,8 +202,8 @@ func (g *GitLabRepository) CreatePullRequest(branch string, data PullRequestData
 	return g.PullRequest(mr), nil
 }
 
-func (g *GitLabRepository) DeleteBranch(pr interface{}) error {
-	mr := pr.(*gitlab.MergeRequest)
+func (g *GitLabRepository) DeleteBranch(pr *PullRequest) error {
+	mr := pr.Raw.(*gitlab.MergeRequest)
 	if mr.ShouldRemoveSourceBranch {
 		return nil
 	}
@@ -221,8 +216,8 @@ func (g *GitLabRepository) DeleteBranch(pr interface{}) error {
 	return nil
 }
 
-func (g *GitLabRepository) DeletePullRequestComment(comment PullRequestComment, pr interface{}) error {
-	mr := pr.(*gitlab.MergeRequest)
+func (g *GitLabRepository) DeletePullRequestComment(comment PullRequestComment, pr *PullRequest) error {
+	mr := pr.Raw.(*gitlab.MergeRequest)
 	_, err := g.client.Notes.DeleteMergeRequestNote(g.project.ID, mr.IID, int(comment.ID))
 	if err != nil {
 		return fmt.Errorf("delete note of gitlab merge request %d project %d: %w", mr.IID, g.project.ID, err)
@@ -231,7 +226,7 @@ func (g *GitLabRepository) DeletePullRequestComment(comment PullRequestComment, 
 	return nil
 }
 
-func (g *GitLabRepository) FindPullRequest(branch string) (any, error) {
+func (g *GitLabRepository) FindPullRequest(branch string) (*PullRequest, error) {
 	mrs, _, err := g.client.MergeRequests.ListProjectMergeRequests(
 		g.project.ID,
 		&gitlab.ListProjectMergeRequestsOptions{
@@ -247,11 +242,11 @@ func (g *GitLabRepository) FindPullRequest(branch string) (any, error) {
 		return nil, ErrPullRequestNotFound
 	}
 
-	return mrs[0], nil
+	return g.PullRequest(mrs[0]), nil
 }
 
-func (g *GitLabRepository) HasSuccessfulPullRequestBuild(pr interface{}) (bool, error) {
-	mr := pr.(*gitlab.MergeRequest)
+func (g *GitLabRepository) HasSuccessfulPullRequestBuild(pr *PullRequest) (bool, error) {
+	mr := pr.Raw.(*gitlab.MergeRequest)
 	state, _, err := g.client.MergeRequestApprovals.GetApprovalState(g.project.ID, mr.IID)
 	if err != nil {
 		return false, fmt.Errorf("get approval state of gitlab merge request %d project %d: %w", mr.IID, g.project.ID, err)
@@ -308,26 +303,26 @@ func (g *GitLabRepository) ID() int64 {
 
 func (g *GitLabRepository) IsPullRequestClosed(pr interface{}) bool {
 	mr := pr.(*gitlab.MergeRequest)
-	return mr.State == "closed" || mr.State == "locked"
+	return isPullRequestClosed(mr)
 }
 
 func (g *GitLabRepository) IsPullRequestMerged(pr interface{}) bool {
 	mr := pr.(*gitlab.MergeRequest)
-	return mr.State == "merged"
+	return isPullRequestMerged(mr)
 }
 
 func (g *GitLabRepository) IsPullRequestOpen(pr interface{}) bool {
 	mr := pr.(*gitlab.MergeRequest)
-	return mr.State == "opened"
+	return isPullRequestOpen(mr)
 }
 
-func (g *GitLabRepository) ListPullRequestComments(pr interface{}) ([]PullRequestComment, error) {
+func (g *GitLabRepository) ListPullRequestComments(pr *PullRequest) ([]PullRequestComment, error) {
 	var result []PullRequestComment
 	if pr == nil {
 		return result, nil
 	}
 
-	mr := pr.(*gitlab.MergeRequest)
+	mr := pr.Raw.(*gitlab.MergeRequest)
 	opts := &gitlab.ListMergeRequestNotesOptions{
 		ListOptions: gitlab.ListOptions{
 			Page:    1,
@@ -354,8 +349,8 @@ func (g *GitLabRepository) ListPullRequestComments(pr interface{}) ([]PullReques
 	return result, nil
 }
 
-func (g *GitLabRepository) MergePullRequest(deleteBranch bool, pr interface{}) error {
-	mr := pr.(*gitlab.MergeRequest)
+func (g *GitLabRepository) MergePullRequest(deleteBranch bool, pr *PullRequest) error {
+	mr := pr.Raw.(*gitlab.MergeRequest)
 	_, _, err := g.client.MergeRequests.AcceptMergeRequest(
 		g.project.ID,
 		mr.IID,
@@ -385,18 +380,24 @@ func (g *GitLabRepository) PullRequest(pr any) *PullRequest {
 		return nil
 	}
 
+	createdAt := time.Time{}
+	if mr.CreatedAt != nil {
+		createdAt = ptr.From(mr.CreatedAt)
+	}
+
 	return &PullRequest{
-		CreatedAt: mr.CreatedAt,
+		CreatedAt: createdAt,
 		Number:    int64(mr.IID),
 		WebURL:    mr.WebURL,
-		State:     mapToPullRequestStateGitLab(mr.State),
+		Raw:       mr,
+		State:     mapToPullRequestStateGitLab(mr),
 	}
 }
 
-func (g *GitLabRepository) UpdatePullRequest(data PullRequestData, pr interface{}) error {
+func (g *GitLabRepository) UpdatePullRequest(data PullRequestData, pr *PullRequest) error {
 	needsUpdate := false
 	opts := &gitlab.UpdateMergeRequestOptions{}
-	mr := pr.(*gitlab.MergeRequest)
+	mr := pr.Raw.(*gitlab.MergeRequest)
 	if mr.Title != data.Title {
 		opts.Title = gitlab.Ptr(data.Title)
 		needsUpdate = true
@@ -723,17 +724,30 @@ func (g *GitLabHost) SearchCode(gitlabGroupID any, query string) ([]int64, error
 	return slices.Compact(result), nil
 }
 
-func mapToPullRequestStateGitLab(mrState string) PullRequestState {
-	switch mrState {
-	case "closed":
+func isPullRequestClosed(mr *gitlab.MergeRequest) bool {
+	return mr.State == "closed" || mr.State == "locked"
+}
+
+func isPullRequestMerged(mr *gitlab.MergeRequest) bool {
+	return mr.State == "merged"
+}
+
+func isPullRequestOpen(mr *gitlab.MergeRequest) bool {
+	return mr.State == "opened"
+}
+
+func mapToPullRequestStateGitLab(mr *gitlab.MergeRequest) PullRequestState {
+	if isPullRequestClosed(mr) {
 		return PullRequestStateClosed
-	case "locked":
-		return PullRequestStateClosed
-	case "merged":
-		return PullRequestStateMerged
-	case "opened":
-		return PullRequestStateOpen
-	default:
-		return PullRequestStateUnknown
 	}
+
+	if isPullRequestMerged(mr) {
+		return PullRequestStateMerged
+	}
+
+	if isPullRequestOpen(mr) {
+		return PullRequestStateOpen
+	}
+
+	return PullRequestStateUnknown
 }
