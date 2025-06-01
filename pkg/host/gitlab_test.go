@@ -344,7 +344,7 @@ func TestGitLabRepository_FindPullRequest(t *testing.T) {
 	result, err := underTest.FindPullRequest("saturn-bot--unit-test")
 
 	require.NoError(t, err)
-	require.IsType(t, time.Time{}, result.CreatedAt)
+	require.False(t, result.CreatedAt.IsZero())
 	require.Equal(t, int64(123), result.Number)
 	require.Equal(t, "https://gitlab.com/unit/test/-/merge_requests/123", result.WebURL)
 	require.IsType(t, &gitlab.MergeRequest{}, result.Raw)

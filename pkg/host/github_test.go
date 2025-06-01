@@ -283,7 +283,7 @@ func TestGitHubRepository_FindPullRequest(t *testing.T) {
 	prId, err := repo.FindPullRequest("unittest")
 
 	require.NoError(t, err)
-	assert.IsType(t, time.Time{}, prId.CreatedAt)
+	assert.False(t, prId.CreatedAt.IsZero())
 	assert.Equal(t, int64(123), prId.Number)
 	assert.Equal(t, "https://github.com/unit/test/pulls/1", prId.WebURL)
 	assert.IsType(t, &github.PullRequest{}, prId.Raw)
