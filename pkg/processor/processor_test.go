@@ -462,19 +462,14 @@ func TestProcessor_Process_UpdatePullRequest(t *testing.T) {
 	assert.Equal(t, prID, results[0].PullRequest)
 }
 
-// TODO: check test
 func TestProcessor_Process_NoChanges(t *testing.T) {
 	tempDir := t.TempDir()
-	prID := &host.PullRequest{State: host.PullRequestStateOpen}
+	prID := &host.PullRequest{State: host.PullRequestStateMerged}
 	ctrl := gomock.NewController(t)
 	repo := setupRepoMock(ctrl)
 	repo.EXPECT().FindPullRequest("saturn-bot--unittest").Return(prID, nil)
-	//repo.EXPECT().PullRequest(prID).Return(nil).AnyTimes()
-	//repo.EXPECT().IsPullRequestClosed(prID).Return(false).AnyTimes()
-	//repo.EXPECT().IsPullRequestMerged(prID).Return(false).AnyTimes()
 	repo.EXPECT().GetPullRequestBody(prID).Return("")
 	repo.EXPECT().BaseBranch().Return("main")
-	//repo.EXPECT().IsPullRequestOpen(prID).Return(false).AnyTimes()
 	gitc := gitmock.NewMockGitClient(ctrl)
 	gitc.EXPECT().Prepare(repo, false).Return(tempDir, nil)
 	gitc.EXPECT().UpdateTaskBranch("saturn-bot--unittest", true, repo)
