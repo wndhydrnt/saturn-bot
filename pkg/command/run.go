@@ -141,15 +141,15 @@ func ExecuteRun(opts options.Opts, repositoryNames, taskFiles []string, inputs m
 
 	repositoryFileCache := &host.RepositoryFileCache{
 		Clock: clock.Default,
-		Dir:   filepath.Join(opts.DataDir(), "cache"),
-		Ttl:   opts.RepositoryCacheTtl(),
+		Dir:   filepath.Join(opts.DataDir, "cache"),
+		Ttl:   opts.RepositoryCacheTtl,
 	}
 
 	e := &Run{
 		DryRun: opts.Config.DryRun,
 		Hosts:  opts.Hosts,
 		Processor: &processor.Processor{
-			DataDir: opts.DataDir(),
+			DataDir: opts.DataDir,
 			Git:     gitClient,
 		},
 		PushGateway:      opts.PushGateway,

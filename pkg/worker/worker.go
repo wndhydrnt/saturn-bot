@@ -168,7 +168,7 @@ func (w *Worker) Start() {
 	w.startHttpServer()
 	w.resultChan = make(chan Result, 1)
 	w.stopChan = make(chan chan struct{})
-	t := time.NewTicker(w.opts.WorkerLoopInterval())
+	t := time.NewTicker(w.opts.WorkerLoopInterval)
 	parallelExecutions := w.opts.Config.WorkerParallelExecutions
 	metricRunsMax.Set(float64(parallelExecutions))
 	executionCounter := 0
