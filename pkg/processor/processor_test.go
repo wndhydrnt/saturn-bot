@@ -4,19 +4,16 @@ import (
 	"context"
 	"fmt"
 	"os"
+	"path/filepath"
 	"testing"
 	"time"
 
 	"github.com/stretchr/testify/assert"
 	"github.com/stretchr/testify/require"
 	"github.com/wndhydrnt/saturn-bot/pkg/cache"
-	"github.com/wndhydrnt/saturn-bot/pkg/clock"
-	"github.com/wndhydrnt/saturn-bot/pkg/config"
 	"github.com/wndhydrnt/saturn-bot/pkg/git"
 	"github.com/wndhydrnt/saturn-bot/pkg/host"
-	"github.com/wndhydrnt/saturn-bot/pkg/options"
 	"github.com/wndhydrnt/saturn-bot/pkg/processor"
-	"github.com/wndhydrnt/saturn-bot/pkg/ptr"
 	"github.com/wndhydrnt/saturn-bot/pkg/task"
 	"github.com/wndhydrnt/saturn-bot/pkg/task/schema"
 	"github.com/wndhydrnt/saturn-bot/pkg/template"
@@ -57,18 +54,10 @@ func setupRepoMock(ctrl *gomock.Controller) *hostmock.MockRepository {
 	return r
 }
 
-func setupPullRequestCache(t *testing.T, tempDir string) *host.PullRequestCache {
-	cfg := config.Configuration{
-		DataDir:            ptr.To(tempDir),
-		WorkerLoopInterval: "1m",
-		RepositoryCacheTtl: "1m",
-	}
-	opts := options.Opts{Config: cfg}
-	err := options.Initialize(&opts)
+func setupPullRequestCache(t *testing.T, tempDir string) host.PullRequestCache {
+	db, err := cache.New(filepath.Join(tempDir, "cache.db"))
 	require.NoError(t, err)
-	db, err := cache.New(opts)
-	require.NoError(t, err)
-	return host.NewPullRequestCache(db, clock.Default)
+	return host.NewPullRequestCache(db)
 }
 
 func TestProcessor_Process_CreatePullRequestLocalChanges(t *testing.T) {
