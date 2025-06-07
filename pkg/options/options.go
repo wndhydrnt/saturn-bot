@@ -54,6 +54,7 @@ type Opts struct {
 	// Defaults to an object that proxies to the [time] package.
 	Clock                clock.Clock
 	Config               config.Configuration
+	DataDir              string
 	FilterFactories      FilterFactories
 	Hosts                []host.Host
 	IsCi                 bool
@@ -61,27 +62,13 @@ type Opts struct {
 	PushGateway          *push.Pusher
 	PrometheusGatherer   prometheus.Gatherer
 	PrometheusRegisterer prometheus.Registerer
-
-	dataDir            string
-	repositoryCacheTtl time.Duration
-	workerLoopInterval time.Duration
-}
-
-func (o Opts) DataDir() string {
-	return o.dataDir
-}
-
-func (o *Opts) RepositoryCacheTtl() time.Duration {
-	return o.repositoryCacheTtl
+	RepositoryCacheTtl   time.Duration
+	WorkerLoopInterval   time.Duration
 }
 
 func (o *Opts) SetPrometheusRegistry(reg *prometheus.Registry) {
 	o.PrometheusGatherer = reg
 	o.PrometheusRegisterer = reg
-}
-
-func (o Opts) WorkerLoopInterval() time.Duration {
-	return o.workerLoopInterval
 }
 
 // ToOptions takes a configuration struct, initializes global state
@@ -171,19 +158,19 @@ func Initialize(opts *Opts) error {
 		return fmt.Errorf("data directory %s is not a directory", dataDir)
 	}
 
-	opts.dataDir = dataDir
+	opts.DataDir = dataDir
 
 	loop, err := time.ParseDuration(opts.Config.WorkerLoopInterval)
 	if err != nil {
 		return fmt.Errorf("setting workerLoopInterval '%s' is not a Go duration: %w", opts.Config.WorkerLoopInterval, err)
 	}
-	opts.workerLoopInterval = loop
+	opts.WorkerLoopInterval = loop
 
 	repositoryCacheTtl, err := time.ParseDuration(opts.Config.RepositoryCacheTtl)
 	if err != nil {
 		return fmt.Errorf("setting repositoryCacheTtl '%s' is not a Go duration: %w", opts.Config.RepositoryCacheTtl, err)
 	}
-	opts.repositoryCacheTtl = repositoryCacheTtl
+	opts.RepositoryCacheTtl = repositoryCacheTtl
 
 	if opts.Config.PrometheusPushgatewayUrl != nil && opts.PrometheusRegisterer != nil && opts.PrometheusGatherer != nil {
 		metrics.Register(opts.PrometheusRegisterer)
