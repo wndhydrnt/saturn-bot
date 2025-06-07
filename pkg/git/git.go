@@ -92,7 +92,7 @@ func New(opts options.Opts) (*Git, error) {
 
 		clock:            opts.Clock,
 		cloneOpts:        opts.Config.GitCloneOptions,
-		dataDir:          opts.DataDir(),
+		dataDir:          opts.DataDir,
 		defaultCommitMsg: opts.Config.GitCommitMessage,
 		EnvVars:          envVars,
 		CmdExec:          execCmd,

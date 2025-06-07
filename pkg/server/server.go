@@ -49,7 +49,7 @@ func (s *Server) Start(opts options.Opts, taskPaths []string) error {
 
 	dbPath := opts.Config.ServerDatabasePath
 	if dbPath == "" {
-		dbPath = filepath.Join(opts.DataDir(), "db", "saturn-bot.db")
+		dbPath = filepath.Join(opts.DataDir, "db", "saturn-bot.db")
 	}
 
 	database, err := sbdb.New(opts.Config.ServerDatabaseLog, dbPath, sbdb.Migrate(db.Migrations()))
