@@ -3,20 +3,13 @@ package cache
 import (
 	"errors"
 	"fmt"
-	"path/filepath"
 
 	"github.com/wndhydrnt/saturn-bot/pkg/db"
-	"github.com/wndhydrnt/saturn-bot/pkg/options"
 	"gorm.io/gorm"
 )
 
-const (
-	dbName = "cache.db"
-)
-
-func NewCacheDb(opts options.Opts) (*gorm.DB, error) {
-	dbPath := filepath.Join(opts.DataDir(), dbName)
-	gormDb, err := db.New(false, dbPath, db.Migrate(migrations))
+func NewCacheDb(path string) (*gorm.DB, error) {
+	gormDb, err := db.New(false, path, db.Migrate(migrations))
 	if err != nil {
 		return nil, fmt.Errorf("initialize Cache db: %w", err)
 	}
@@ -28,8 +21,8 @@ type Cache struct {
 	db *gorm.DB
 }
 
-func New(opts options.Opts) (*Cache, error) {
-	gormDb, err := NewCacheDb(opts)
+func New(dbPath string) (*Cache, error) {
+	gormDb, err := NewCacheDb(dbPath)
 	if err != nil {
 		return nil, err
 	}

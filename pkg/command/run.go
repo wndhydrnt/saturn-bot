@@ -152,7 +152,7 @@ func ExecuteRun(opts options.Opts, repositoryNames, taskFiles []string, inputs m
 		Ttl:   opts.RepositoryCacheTtl,
 	}
 
-	dataCache, err := cache.New(opts)
+	dataCache, err := cache.New(filepath.Join(opts.DataDir, "cache.db"))
 	if err != nil {
 		return nil, err
 	}
