@@ -811,3 +811,57 @@ func TestProcessor_Process_PushToDefaultBranch_NoChanges(t *testing.T) {
 	assert.Nil(t, results[0].PullRequest)
 	assert.NoError(t, results[0].Error)
 }
+
+func TestProcessor_Process_CloseOpenPullRequestForFilteredRepository_PreClone(t *testing.T) {
+	tempDir := t.TempDir()
+	cachedPr := &host.PullRequest{
+		State: host.PullRequestStateOpen,
+	}
+	prCache := setupPullRequestCache(t, tempDir)
+	prCache.Set("saturn-bot--unittest", "git.local/unit/test", cachedPr)
+
+	ctrl := gomock.NewController(t)
+	repo := setupRepoMock(ctrl)
+	repo.EXPECT().ClosePullRequest("", cachedPr).Return(nil)
+	gitc := gitmock.NewMockGitClient(ctrl)
+	tt := &task.Task{Task: schema.Task{Name: "unittest"}}
+	tt.AddPreCloneFilters(&falseFilter{})
+
+	p := &processor.Processor{Git: gitc, PullRequestCache: prCache}
+	results := p.Process(false, repo, []*task.Task{tt}, true)
+
+	assert.Len(t, results, 1)
+	expectedPr := &host.PullRequest{
+		State: host.PullRequestStateClosed,
+	}
+	assert.Equal(t, expectedPr, results[0].PullRequest)
+	assert.Nil(t, prCache.Get("saturn-bot--unittest", "git.local/unit/test"))
+}
+
+func TestProcessor_Process_CloseOpenPullRequestForFilteredRepository_PostClone(t *testing.T) {
+	tempDir := t.TempDir()
+	cachedPr := &host.PullRequest{
+		State: host.PullRequestStateOpen,
+	}
+	prCache := setupPullRequestCache(t, tempDir)
+	prCache.Set("saturn-bot--unittest", "git.local/unit/test", cachedPr)
+
+	ctrl := gomock.NewController(t)
+	repo := setupRepoMock(ctrl)
+	repo.EXPECT().ClosePullRequest("", cachedPr).Return(nil)
+	gitc := gitmock.NewMockGitClient(ctrl)
+	gitc.EXPECT().Prepare(repo, false).Return(tempDir, nil)
+	tt := &task.Task{Task: schema.Task{Name: "unittest"}}
+	tt.AddPreCloneFilters(&trueFilter{})
+	tt.AddPostCloneFilters(&falseFilter{})
+
+	p := &processor.Processor{Git: gitc, PullRequestCache: prCache}
+	results := p.Process(false, repo, []*task.Task{tt}, true)
+
+	assert.Len(t, results, 1)
+	expectedPr := &host.PullRequest{
+		State: host.PullRequestStateClosed,
+	}
+	assert.Equal(t, expectedPr, results[0].PullRequest)
+	assert.Equal(t, expectedPr, prCache.Get("saturn-bot--unittest", "git.local/unit/test"))
+}

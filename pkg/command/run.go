@@ -34,9 +34,11 @@ type RunResult struct {
 }
 
 type Run struct {
+	Clock            clock.Clock
 	DryRun           bool
 	Hosts            []host.Host
 	Processor        processor.RepositoryTaskProcessor
+	PullRequestCache host.PullRequestCache
 	PushGateway      *push.Pusher
 	RepositoryLister host.RepositoryLister
 	TaskRegistry     *task.Registry
@@ -63,6 +65,10 @@ func (r *Run) Run(repositoryNames, taskFiles []string, inputs map[string]string)
 	if len(tasks) == 0 {
 		log.Log().Warn("0 tasks loaded from files - stopping")
 		return nil, nil
+	}
+
+	if err := host.UpdatePullRequestCache(r.Clock, r.Hosts, r.PullRequestCache); err != nil {
+		return nil, fmt.Errorf("update pull request cache on start of the run: %w", err)
 	}
 
 	tasks = setInputs(tasks, inputs)
@@ -151,8 +157,9 @@ func ExecuteRun(opts options.Opts, repositoryNames, taskFiles []string, inputs m
 		return nil, err
 	}
 
-	prCache := host.NewPullRequestCache(dataCache, clock.Default)
+	prCache := host.NewPullRequestCache(dataCache)
 	e := &Run{
+		Clock:  opts.Clock,
 		DryRun: opts.Config.DryRun,
 		Hosts:  opts.Hosts,
 		Processor: &processor.Processor{
@@ -160,6 +167,7 @@ func ExecuteRun(opts options.Opts, repositoryNames, taskFiles []string, inputs m
 			Git:              gitClient,
 			PullRequestCache: prCache,
 		},
+		PullRequestCache: prCache,
 		PushGateway:      opts.PushGateway,
 		RepositoryLister: repositoryFileCache,
 		TaskRegistry:     taskRegistry,

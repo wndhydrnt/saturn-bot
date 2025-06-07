@@ -38,7 +38,7 @@ func New(opts options.Opts) (*Cache, error) {
 }
 
 func (c *Cache) Delete(key string) error {
-	result := c.db.Delete("key = ?", key)
+	result := c.db.Delete(&Item{Key: key})
 	if result.Error != nil {
 		return fmt.Errorf("delete cache item %s: %w", key, result.Error)
 	}

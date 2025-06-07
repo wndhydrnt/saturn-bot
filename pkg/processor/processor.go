@@ -51,7 +51,7 @@ type ProcessResult struct {
 type Processor struct {
 	DataDir          string
 	Git              git.GitClient
-	PullRequestCache *host.PullRequestCache
+	PullRequestCache host.PullRequestCache
 }
 
 type RepositoryTaskProcessor interface {

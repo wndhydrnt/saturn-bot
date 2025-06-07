@@ -20,20 +20,36 @@ type Cacher interface {
 	Set(key string, value []byte) error
 }
 
-type PullRequestCache struct {
+// A PullRequestCache caches pull request data.
+type PullRequestCache interface {
+	// Delete deletes the data in the cache, identified by branchName and repo.
+	Delete(branchName, repo string)
+	// Get reads the data from the cache, identified by branchName and repo.
+	// It returns nil if the cache doesn't contain data.
+	Get(branchName, repoName string) *PullRequest
+	// Set writes pr to the cache, identified by branchName and repoName.
+	Set(branchName, repoName string, pr *PullRequest)
+	// LastUpdatedAtFor returns the last time at which the cache was updated for host.
+	LastUpdatedAtFor(host Host) *time.Time
+	// SetLastUpdatedAtFor sets the last time at which the cache was updated for host.
+	SetLastUpdatedAtFor(host Host, updatedAt time.Time)
+}
+
+type pullRequestCache struct {
 	cache Cacher
-	clock clock.Clock
 }
 
-func NewPullRequestCache(c Cacher, clock clock.Clock) *PullRequestCache {
-	return &PullRequestCache{cache: c, clock: clock}
+func NewPullRequestCache(c Cacher) PullRequestCache {
+	return &pullRequestCache{cache: c}
 }
 
-func (c *PullRequestCache) Delete(branchName, repo string) {
+// Delete implements [PullRequestCache].
+func (c *pullRequestCache) Delete(branchName, repo string) {
 	_ = c.cache.Delete(createKey(branchName, repo))
 }
 
-func (c *PullRequestCache) Get(branchName, repoName string) *PullRequest {
+// Get implements [PullRequestCache].
+func (c *pullRequestCache) Get(branchName, repoName string) *PullRequest {
 	key := createKey(branchName, repoName)
 	data, err := c.cache.Get(key)
 	if err != nil {
@@ -49,7 +65,8 @@ func (c *PullRequestCache) Get(branchName, repoName string) *PullRequest {
 	return pr
 }
 
-func (c *PullRequestCache) Set(branchName, repoName string, pr *PullRequest) {
+// Set implements [PullRequestCache].
+func (c *pullRequestCache) Set(branchName, repoName string, pr *PullRequest) {
 	if pr == nil {
 		return
 	}
@@ -62,19 +79,36 @@ func (c *PullRequestCache) Set(branchName, repoName string, pr *PullRequest) {
 	_ = c.cache.Set(createKey(branchName, repoName), data)
 }
 
-func (c *PullRequestCache) Update(hosts []Host) error {
+// LastUpdatedAtFor implements [PullRequestCache].
+func (c *pullRequestCache) LastUpdatedAtFor(host Host) *time.Time {
+	var since *time.Time
+	tsKey := fmt.Sprintf("%s_pr_ts", host.Name())
+	tsRaw, err := c.cache.Get(tsKey)
+	if err == nil && len(tsRaw) > 0 {
+		ts, err := strconv.ParseInt(string(tsRaw), 10, 64)
+		if err == nil {
+			since = ptr.To(time.Unix(ts, 0))
+		}
+	}
+
+	return since
+}
+
+// SetLastUpdatedAtFor implements [PullRequestCache].
+func (c *pullRequestCache) SetLastUpdatedAtFor(host Host, updatedAt time.Time) {
+	tsKey := fmt.Sprintf("%s_pr_ts", host.Name())
+	tsValue := strconv.FormatInt(updatedAt.Unix(), 10)
+	_ = c.cache.Set(tsKey, []byte(tsValue))
+}
+
+func UpdatePullRequestCache(clock clock.Clock, hosts []Host, prCache PullRequestCache) error {
+	if prCache == nil {
+		return nil
+	}
+
 	var iterErr error
 	for _, h := range hosts {
-		var since *time.Time
-		tsKey := fmt.Sprintf("%s_pr_ts", h.Name())
-		tsRaw, err := c.cache.Get(tsKey)
-		if err == nil && len(tsRaw) > 0 {
-			ts, err := strconv.ParseInt(string(tsRaw), 10, 64)
-			if err == nil {
-				since = ptr.To(time.Unix(ts, 0))
-			}
-		}
-
+		since := prCache.LastUpdatedAtFor(h)
 		if since == nil {
 			log.Log().Infof("Performing full update of PR cache for host %s", h.Name())
 		} else {
@@ -82,25 +116,24 @@ func (c *PullRequestCache) Update(hosts []Host) error {
 		}
 
 		iter := h.PullRequestIterator()
-		start := c.clock.Now().UTC().Unix()
+		start := clock.Now().UTC()
 		updateCounter := 0
 		for pr := range iter.ListPullRequests(since) {
-			existingPr := c.Get(pr.BranchName, pr.RepositoryName)
+			existingPr := prCache.Get(pr.BranchName, pr.RepositoryName)
 			// Only update the cache with the latest version of the pull request.
 			if existingPr != nil && existingPr.CreatedAt.After(pr.CreatedAt) {
 				continue
 			}
 
-			c.Set(pr.BranchName, pr.RepositoryName, pr)
+			prCache.Set(pr.BranchName, pr.RepositoryName, pr)
 			updateCounter++
 		}
 
 		if iter.ListPullRequestsError() == nil {
 			log.Log().Infof("Updated PR cache with %d new items from host %s", updateCounter, h.Name())
-			tsValue := strconv.FormatInt(start, 10)
-			_ = c.cache.Set(tsKey, []byte(tsValue))
+			prCache.SetLastUpdatedAtFor(h, start)
 		} else {
-			iterErr = errors.Join(iterErr, err)
+			iterErr = errors.Join(iterErr, iter.ListPullRequestsError())
 		}
 	}
 

@@ -120,6 +120,10 @@ func (tw *Task) AddPreCloneFilters(f ...filter.Filter) {
 	tw.filtersPreClone = append(tw.filtersPreClone, f...)
 }
 
+func (tw *Task) AddPostCloneFilters(f ...filter.Filter) {
+	tw.filtersPostClone = append(tw.filtersPostClone, f...)
+}
+
 func (tw *Task) FiltersPreClone() []filter.Filter {
 	return tw.filtersPreClone
 }
