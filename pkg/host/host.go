@@ -178,9 +178,9 @@ type PullRequestIterator interface {
 	// ListPullRequests returns an iter.Seq to iterate over pull requests in a host.
 	// If since is not nil, the function should return only the pull requests that have changed since the given time.
 	ListPullRequests(since *time.Time) iter.Seq[*PullRequest]
-	// ListPullRequestsError returns an error that occurred during ListPullRequests.
+	// Error returns an error that occurred during ListPullRequests.
 	// Callers of ListPullRequests should call this function after the iterator has returned to check if there was an error.
-	ListPullRequestsError() error
+	Error() error
 }
 
 type UserInfo struct {

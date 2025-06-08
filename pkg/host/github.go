@@ -821,7 +821,7 @@ func (it *githubPullRequestIterator) ListPullRequests(since *time.Time) iter.Seq
 	}
 }
 
-func (it *githubPullRequestIterator) ListPullRequestsError() error {
+func (it *githubPullRequestIterator) Error() error {
 	return it.err
 }
 

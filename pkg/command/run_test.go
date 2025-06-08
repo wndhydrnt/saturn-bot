@@ -159,7 +159,7 @@ func setupPullRequestIterator(ctrl *gomock.Controller, listErr error, prs ...*ho
 	}
 	iterMock := hostmock.NewMockPullRequestIterator(ctrl)
 	iterMock.EXPECT().ListPullRequests(nil).Return(iterFunc)
-	iterMock.EXPECT().ListPullRequestsError().Return(listErr)
+	iterMock.EXPECT().Error().Return(listErr)
 	return iterMock
 }
 

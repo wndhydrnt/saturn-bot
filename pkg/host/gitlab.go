@@ -765,7 +765,7 @@ func (g *gitlabPullRequestIterator) ListPullRequests(since *time.Time) iter.Seq[
 	}
 }
 
-func (g *gitlabPullRequestIterator) ListPullRequestsError() error {
+func (g *gitlabPullRequestIterator) Error() error {
 	return g.err
 }
 

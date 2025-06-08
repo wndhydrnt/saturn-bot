@@ -1239,7 +1239,7 @@ func TestGitHubHost_PullRequestIterator_FullUpdate(t *testing.T) {
 	iterator := gh.PullRequestIterator()
 	result := slices.Collect(iterator.ListPullRequests(nil))
 
-	require.NoError(t, iterator.ListPullRequestsError(), "iterator does not error")
+	require.NoError(t, iterator.Error(), "iterator does not error")
 	require.Len(t, result, 1, "returns one pull request")
 	wantPr := &PullRequest{
 		CreatedAt:      time.Date(2000, 1, 1, 0, 0, 0, 0, time.UTC),
@@ -1309,7 +1309,7 @@ func TestGitHubHost_PullRequestIterator_PartialUpdate(t *testing.T) {
 	since := time.Date(2000, 1, 2, 0, 0, 0, 0, time.UTC)
 	result := slices.Collect(iterator.ListPullRequests(ptr.To(since)))
 
-	require.NoError(t, iterator.ListPullRequestsError(), "iterator does not error")
+	require.NoError(t, iterator.Error(), "iterator does not error")
 	require.Len(t, result, 1, "returns one pull request")
 	wantPr := &PullRequest{
 		CreatedAt:      time.Date(2000, 1, 1, 0, 0, 0, 0, time.UTC),

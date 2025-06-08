@@ -135,6 +135,9 @@ func (c *pullRequestCache) SetRawFactory(hostType Type, fac PrCacheRawFactory) {
 	c.rawFactories[hostType] = fac
 }
 
+// UpdatePullRequestCache iterates over all hosts and updates prCache.
+// It performs a full update if no previous update ran for a host
+// and performs a partial update otherwise.
 func UpdatePullRequestCache(clock clock.Clock, hosts []Host, prCache PullRequestCache) error {
 	if prCache == nil {
 		return nil
@@ -163,11 +166,11 @@ func UpdatePullRequestCache(clock clock.Clock, hosts []Host, prCache PullRequest
 			updateCounter++
 		}
 
-		if iter.ListPullRequestsError() == nil {
+		if iter.Error() == nil {
 			log.Log().Infof("Updated PR cache with %d new items from host %s", updateCounter, h.Name())
 			prCache.SetLastUpdatedAtFor(h, start)
 		} else {
-			iterErr = errors.Join(iterErr, iter.ListPullRequestsError())
+			iterErr = errors.Join(iterErr, iter.Error())
 		}
 	}
 

@@ -888,7 +888,7 @@ func TestGitLabHost_PullRequestIterator_FullUpdate(t *testing.T) {
 	iterator := host.PullRequestIterator()
 	result := slices.Collect(iterator.ListPullRequests(nil))
 
-	require.NoError(t, iterator.ListPullRequestsError())
+	require.NoError(t, iterator.Error())
 	require.Len(t, result, 1)
 	wantPr := &PullRequest{
 		CreatedAt:      time.Date(2000, 1, 1, 0, 0, 0, 0, time.UTC),
@@ -933,7 +933,7 @@ func TestGitLabHost_PullRequestIterator_PartialUpdate(t *testing.T) {
 	since := ptr.To(time.Date(2000, 1, 1, 0, 0, 0, 0, time.UTC))
 	result := slices.Collect(iterator.ListPullRequests(since))
 
-	require.NoError(t, iterator.ListPullRequestsError())
+	require.NoError(t, iterator.Error())
 	require.Len(t, result, 1)
 	wantPr := &PullRequest{
 		CreatedAt:      time.Date(2000, 1, 1, 0, 0, 0, 0, time.UTC),

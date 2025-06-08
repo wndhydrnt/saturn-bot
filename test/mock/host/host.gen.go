@@ -529,6 +529,20 @@ func (m *MockPullRequestIterator) EXPECT() *MockPullRequestIteratorMockRecorder 
 	return m.recorder
 }
 
+// Error mocks base method.
+func (m *MockPullRequestIterator) Error() error {
+	m.ctrl.T.Helper()
+	ret := m.ctrl.Call(m, "Error")
+	ret0, _ := ret[0].(error)
+	return ret0
+}
+
+// Error indicates an expected call of Error.
+func (mr *MockPullRequestIteratorMockRecorder) Error() *gomock.Call {
+	mr.mock.ctrl.T.Helper()
+	return mr.mock.ctrl.RecordCallWithMethodType(mr.mock, "Error", reflect.TypeOf((*MockPullRequestIterator)(nil).Error))
+}
+
 // ListPullRequests mocks base method.
 func (m *MockPullRequestIterator) ListPullRequests(since *time.Time) iter.Seq[*host.PullRequest] {
 	m.ctrl.T.Helper()
@@ -541,20 +555,6 @@ func (m *MockPullRequestIterator) ListPullRequests(since *time.Time) iter.Seq[*h
 func (mr *MockPullRequestIteratorMockRecorder) ListPullRequests(since any) *gomock.Call {
 	mr.mock.ctrl.T.Helper()
 	return mr.mock.ctrl.RecordCallWithMethodType(mr.mock, "ListPullRequests", reflect.TypeOf((*MockPullRequestIterator)(nil).ListPullRequests), since)
-}
-
-// ListPullRequestsError mocks base method.
-func (m *MockPullRequestIterator) ListPullRequestsError() error {
-	m.ctrl.T.Helper()
-	ret := m.ctrl.Call(m, "ListPullRequestsError")
-	ret0, _ := ret[0].(error)
-	return ret0
-}
-
-// ListPullRequestsError indicates an expected call of ListPullRequestsError.
-func (mr *MockPullRequestIteratorMockRecorder) ListPullRequestsError() *gomock.Call {
-	mr.mock.ctrl.T.Helper()
-	return mr.mock.ctrl.RecordCallWithMethodType(mr.mock, "ListPullRequestsError", reflect.TypeOf((*MockPullRequestIterator)(nil).ListPullRequestsError))
 }
 
 // MockHostDetail is a mock of HostDetail interface.

@@ -43,7 +43,7 @@ func (i *iterMock) ListPullRequests(since *time.Time) iter.Seq[*PullRequest] {
 	}
 }
 
-func (i *iterMock) ListPullRequestsError() error {
+func (i *iterMock) Error() error {
 	return i.err
 }
 
