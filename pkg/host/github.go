@@ -750,6 +750,7 @@ func (g *GitHubHost) Name() string {
 	return g.client.BaseURL.Host
 }
 
+// PullRequestIterator implements [Host].
 func (g *GitHubHost) PullRequestIterator() PullRequestIterator {
 	return &githubPullRequestIterator{client: g.client, name: g.Name()}
 }

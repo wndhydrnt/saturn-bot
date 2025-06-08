@@ -714,6 +714,7 @@ func (g *GitLabHost) SearchCode(gitlabGroupID any, query string) ([]int64, error
 	return slices.Compact(result), nil
 }
 
+// PullRequestIterator implements [Host].
 func (g *GitLabHost) PullRequestIterator() PullRequestIterator {
 	return &gitlabPullRequestIterator{client: g.client}
 }

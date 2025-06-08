@@ -170,6 +170,7 @@ type Host interface {
 	CreateFromJson(dec *json.Decoder) (Repository, error)
 	ListRepositories(since *time.Time, result chan []Repository, errChan chan error)
 	ListRepositoriesWithOpenPullRequests(result chan []Repository, errChan chan error)
+	// PullRequestIterator returns an implementation of [PullRequestIterator] to iterate over pull requests of the host.
 	PullRequestIterator() PullRequestIterator
 }
 
