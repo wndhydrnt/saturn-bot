@@ -145,6 +145,9 @@ var createPullRequestRespBody = github.PullRequest{
 	HTMLURL:   github.Ptr("https://github.com/unit/test/pull/1"),
 	Head: &github.PullRequestBranch{
 		Ref: github.Ptr("saturn-bot--unittest"),
+		Repo: &github.Repository{
+			FullName: github.Ptr("unit/test"),
+		},
 	},
 	State: github.Ptr("open"),
 }

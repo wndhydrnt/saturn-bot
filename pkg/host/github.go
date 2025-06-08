@@ -326,17 +326,7 @@ func (g *GitHubRepository) PullRequest(pr any) *PullRequest {
 		return nil
 	}
 
-	return &PullRequest{
-		CreatedAt:      gpr.GetCreatedAt().Time,
-		Number:         int64(gpr.GetNumber()),
-		WebURL:         gpr.GetHTMLURL(),
-		Raw:            gpr,
-		State:          mapGithubPrToPullRequestState(gpr),
-		HostName:       g.Host().Name(),
-		BranchName:     gpr.GetHead().GetRef(),
-		RepositoryName: g.FullName(),
-		Type:           GitHubType,
-	}
+	return convertGithubPullRequestToPullRequest(gpr, g.Host().Name())
 }
 
 func (g *GitHubRepository) UpdatePullRequest(data PullRequestData, pr *PullRequest) error {
@@ -845,6 +835,7 @@ func convertGithubPullRequestToPullRequest(gpr *github.PullRequest, hostName str
 		HostName:       hostName,
 		BranchName:     gpr.GetHead().GetRef(),
 		RepositoryName: fmt.Sprintf("%s/%s", hostName, gpr.GetHead().GetRepo().GetFullName()),
+		Type:           GitHubType,
 	}
 }
 
