@@ -799,7 +799,7 @@ func (it *githubPullRequestIterator) ListPullRequests(since *time.Time) iter.Seq
 					return
 				}
 
-				var gpr *github.PullRequest
+				gpr := &github.PullRequest{}
 				_, err = it.client.Do(context.Background(), prRequest, gpr)
 				if err != nil {
 					it.err = fmt.Errorf("get pull request from url %s: %w", issue.PullRequestLinks.GetURL(), err)
