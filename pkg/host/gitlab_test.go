@@ -863,6 +863,93 @@ func TestGitLabHost_ListRepositoriesWithOpenPullRequests(t *testing.T) {
 	require.True(t, gock.IsDone())
 }
 
+func TestGitLabHost_PullRequestIterator_FullUpdate(t *testing.T) {
+	defer gock.Off()
+	gock.New("http://gitlab.local").
+		Get("/api/v4/user").
+		Reply(200).
+		JSON(&gitlab.User{ID: 4321})
+	gitlabMr := &gitlab.MergeRequest{
+		CreatedAt:    ptr.To(time.Date(2000, 1, 1, 0, 0, 0, 0, time.UTC)),
+		IID:          133,
+		SourceBranch: "saturn-bot--unittest",
+		State:        "opened",
+		WebURL:       "http://gitlab.local/unit/test/-/merge_requests/133",
+	}
+	gock.New("http://gitlab.local").
+		Get("/api/v4/merge_requests").
+		MatchParam("author_id", "4321").
+		MatchParam("per_page", "100").
+		MatchParam("order_by", "updated_at").
+		Reply(200).
+		JSON([]*gitlab.MergeRequest{gitlabMr})
+
+	host := &GitLabHost{client: setupClient()}
+	iterator := host.PullRequestIterator()
+	result := slices.Collect(iterator.ListPullRequests(nil))
+
+	require.NoError(t, iterator.ListPullRequestsError())
+	require.Len(t, result, 1)
+	wantPr := &PullRequest{
+		CreatedAt:      time.Date(2000, 1, 1, 0, 0, 0, 0, time.UTC),
+		Number:         133,
+		WebURL:         "http://gitlab.local/unit/test/-/merge_requests/133",
+		Raw:            gitlabMr,
+		State:          PullRequestStateOpen,
+		HostName:       "gitlab.local",
+		BranchName:     "saturn-bot--unittest",
+		RepositoryName: "gitlab.local/unit/test",
+		Type:           GitLabType,
+	}
+	require.Equal(t, wantPr, result[0])
+	require.True(t, gock.IsDone())
+}
+
+func TestGitLabHost_PullRequestIterator_PartialUpdate(t *testing.T) {
+	defer gock.Off()
+	gock.New("http://gitlab.local").
+		Get("/api/v4/user").
+		Reply(200).
+		JSON(&gitlab.User{ID: 4321})
+	gitlabMr := &gitlab.MergeRequest{
+		CreatedAt:    ptr.To(time.Date(2000, 1, 1, 0, 0, 0, 0, time.UTC)),
+		IID:          133,
+		SourceBranch: "saturn-bot--unittest",
+		State:        "opened",
+		WebURL:       "http://gitlab.local/unit/test/-/merge_requests/133",
+	}
+	gock.New("http://gitlab.local").
+		Get("/api/v4/merge_requests").
+		MatchParam("author_id", "^4321$").
+		MatchParam("per_page", "^100$").
+		MatchParam("order_by", "^updated_at$").
+		MatchParam("sort", "^desc$").
+		MatchParam("updated_after", "^2000-01-01T00:00:00Z$").
+		Reply(200).
+		JSON([]*gitlab.MergeRequest{gitlabMr})
+
+	host := &GitLabHost{client: setupClient()}
+	iterator := host.PullRequestIterator()
+	since := ptr.To(time.Date(2000, 1, 1, 0, 0, 0, 0, time.UTC))
+	result := slices.Collect(iterator.ListPullRequests(since))
+
+	require.NoError(t, iterator.ListPullRequestsError())
+	require.Len(t, result, 1)
+	wantPr := &PullRequest{
+		CreatedAt:      time.Date(2000, 1, 1, 0, 0, 0, 0, time.UTC),
+		Number:         133,
+		WebURL:         "http://gitlab.local/unit/test/-/merge_requests/133",
+		Raw:            gitlabMr,
+		State:          PullRequestStateOpen,
+		HostName:       "gitlab.local",
+		BranchName:     "saturn-bot--unittest",
+		RepositoryName: "gitlab.local/unit/test",
+		Type:           GitLabType,
+	}
+	require.Equal(t, wantPr, result[0])
+	require.True(t, gock.IsDone())
+}
+
 func setupClient() *gitlab.Client {
 	httpClient := &http.Client{}
 	gock.InterceptClient(httpClient)

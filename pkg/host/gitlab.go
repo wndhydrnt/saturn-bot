@@ -737,7 +737,7 @@ func (g *gitlabPullRequestIterator) ListPullRequests(since *time.Time) iter.Seq[
 				OrderBy: "updated_at",
 				Page:    1,
 				PerPage: 100,
-				Sort:    "asc",
+				Sort:    "desc",
 			},
 			UpdatedAfter: since,
 		}
