@@ -45,3 +45,15 @@ func TestCache_Set_NilValue(t *testing.T) {
 	require.ErrorIs(t, err, cache.ErrNotFound, "indicates that the item does not exist")
 	require.Nil(t, value, "does not find the item")
 }
+
+func TestCache_Set_Update(t *testing.T) {
+	underTest := setupCache(t)
+	err := underTest.Set("unittest", []byte("first"))
+	require.NoError(t, err, "stores the first write successfully")
+	err = underTest.Set("unittest", []byte("second"))
+	require.NoError(t, err, "stores the second write successfully")
+
+	value, err := underTest.Get("unittest")
+	require.NoError(t, err, "gets the item")
+	require.Equal(t, []byte("second"), value)
+}
