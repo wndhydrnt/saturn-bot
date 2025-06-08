@@ -82,9 +82,13 @@ func (c *pullRequestCache) Get(branchName, repoName string) *PullRequest {
 		return nil
 	}
 
-	rawStruct := c.rawFactories[pt.Type]()
+	fac, ok := c.rawFactories[pt.Type]
+	if !ok {
+		return nil
+	}
+
 	pr := &PullRequest{
-		Raw: rawStruct,
+		Raw: fac(),
 	}
 	err = json.Unmarshal(data, pr)
 	if err != nil {

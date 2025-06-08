@@ -131,3 +131,13 @@ func TestUpdatePullRequestCache_Error(t *testing.T) {
 	_, err = cacher.Get("mock_pr_ts")
 	require.ErrorIs(t, err, cache.ErrNotFound, "does not store the timestamp in the cache")
 }
+
+func TestPullRequestCache_Get_Unknown(t *testing.T) {
+	cacher, err := cache.New(filepath.Join(t.TempDir(), "cache.db"))
+	require.NoError(t, err, "creates the cache db")
+
+	underTest := NewPullRequestCache(cacher)
+	underTest.Set("branch", "repo", &PullRequest{Type: "unknown"})
+
+	require.Nil(t, underTest.Get("branch", "repo"), "cache is empty")
+}
