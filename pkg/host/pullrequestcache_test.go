@@ -128,7 +128,6 @@ func TestUpdatePullRequestCache_Error(t *testing.T) {
 	err = UpdatePullRequestCache(clock.NewFakeDefault(), []Host{hostm}, prCache)
 	require.Error(t, err, "returns the error")
 
-	ts, err := cacher.Get("mock_pr_ts")
-	require.NoError(t, err, "reads pr timestamp from cache")
-	require.Equal(t, "", string(ts), "updates the pr timestamp for the host")
+	_, err = cacher.Get("mock_pr_ts")
+	require.ErrorIs(t, err, cache.ErrNotFound, "does not store the timestamp in the cache")
 }

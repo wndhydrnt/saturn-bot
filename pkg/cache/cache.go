@@ -8,6 +8,10 @@ import (
 	"gorm.io/gorm"
 )
 
+var (
+	ErrNotFound = errors.New("item not found")
+)
+
 func NewCacheDb(path string) (*gorm.DB, error) {
 	gormDb, err := db.New(false, path, db.Migrate(migrations))
 	if err != nil {
@@ -41,10 +45,10 @@ func (c *Cache) Delete(key string) error {
 
 func (c *Cache) Get(key string) ([]byte, error) {
 	item := &Item{}
-	result := c.db.Where("key = ?", key).Find(item)
+	result := c.db.Where("key = ?", key).First(item)
 	if result.Error != nil {
 		if errors.Is(result.Error, gorm.ErrRecordNotFound) {
-			return []byte{}, nil
+			return nil, ErrNotFound
 		}
 
 		return nil, fmt.Errorf("get cache item %s: %w", key, result.Error)
