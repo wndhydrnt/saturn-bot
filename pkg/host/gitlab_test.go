@@ -140,6 +140,7 @@ func TestGitLabRepository_CreatePullRequest(t *testing.T) {
 		HostName:       "gitlab.local",
 		BranchName:     "saturn-bot--unit-test",
 		RepositoryName: "gitlab.local/unit/test",
+		Type:           GitLabType,
 	}
 	require.Equal(t, expectedPr, pr)
 	require.True(t, gock.IsDone())
@@ -367,6 +368,7 @@ func TestGitLabRepository_FindPullRequest(t *testing.T) {
 		HostName:       "gitlab.local",
 		BranchName:     "saturn-bot--unit-test",
 		RepositoryName: "gitlab.local/unit/test",
+		Type:           GitLabType,
 	}
 	require.Equal(t, expectedPr, result)
 	require.True(t, gock.IsDone())

@@ -142,7 +142,11 @@ func TestGitHubRepository_CreatePullRequestComment(t *testing.T) {
 var createPullRequestRespBody = github.PullRequest{
 	CreatedAt: &github.Timestamp{Time: time.Date(2000, 1, 1, 0, 0, 0, 0, time.UTC)},
 	Number:    github.Ptr(1),
-	HTMLURL:   github.Ptr("https://api.github.com/pr/1"),
+	HTMLURL:   github.Ptr("https://github.com/unit/test/pull/1"),
+	Head: &github.PullRequestBranch{
+		Ref: github.Ptr("saturn-bot--unittest"),
+	},
+	State: github.Ptr("open"),
 }
 
 func TestGitHubRepository_CreatePullRequest(t *testing.T) {
@@ -165,16 +169,27 @@ func TestGitHubRepository_CreatePullRequest(t *testing.T) {
 		Title:    "pull request title",
 	}
 
+	ghClient := setupGitHubTestClient()
 	repo := &GitHubRepository{
-		client: setupGitHubTestClient(),
+		client: ghClient,
+		host:   &GitHubHost{client: ghClient},
 		repo:   setupGitHubRepository(),
 	}
 	pr, err := repo.CreatePullRequest("unittest", prData)
 
 	require.NoError(t, err)
-	require.Equal(t, "2000-01-01 00:00:00 +0000 UTC", pr.CreatedAt.String())
-	require.Equal(t, int64(1), pr.Number)
-	require.Equal(t, "https://api.github.com/pr/1", pr.WebURL)
+	wantPr := &PullRequest{
+		CreatedAt:      time.Date(2000, 1, 1, 0, 0, 0, 0, time.UTC),
+		Number:         1,
+		WebURL:         "https://github.com/unit/test/pull/1",
+		Raw:            &createPullRequestRespBody,
+		State:          PullRequestStateOpen,
+		HostName:       "github.com",
+		BranchName:     "saturn-bot--unittest",
+		RepositoryName: "github.com/unit/test",
+		Type:           GitHubType,
+	}
+	require.Equal(t, wantPr, pr, "returns the pull request struct")
 	require.True(t, gock.IsDone())
 }
 
@@ -205,9 +220,11 @@ func TestGitHubRepository_CreatePullRequest_WithAssignees(t *testing.T) {
 		TaskName:  "Unit Test",
 		Title:     "pull request title",
 	}
+	ghClient := setupGitHubTestClient()
 
 	repo := &GitHubRepository{
-		client: setupGitHubTestClient(),
+		client: ghClient,
+		host:   &GitHubHost{client: ghClient},
 		repo:   setupGitHubRepository(),
 	}
 	_, err := repo.CreatePullRequest("unittest", prData)
@@ -244,9 +261,11 @@ func TestGitHubRepository_CreatePullRequest_WithReviewers(t *testing.T) {
 		TaskName:  "Unit Test",
 		Title:     "pull request title",
 	}
+	ghClient := setupGitHubTestClient()
 
 	repo := &GitHubRepository{
-		client: setupGitHubTestClient(),
+		client: ghClient,
+		host:   &GitHubHost{client: ghClient},
 		repo:   setupGitHubRepository(),
 	}
 	_, err := repo.CreatePullRequest("unittest", prData)
@@ -275,9 +294,11 @@ func TestGitHubRepository_FindPullRequest(t *testing.T) {
 				State:     github.Ptr("open"),
 			},
 		})
+	ghClient := setupGitHubTestClient()
 
 	repo := &GitHubRepository{
-		client: setupGitHubTestClient(),
+		client: ghClient,
+		host:   &GitHubHost{client: ghClient},
 		repo:   setupGitHubRepository(),
 	}
 	prId, err := repo.FindPullRequest("unittest")

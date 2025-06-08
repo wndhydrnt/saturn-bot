@@ -7,10 +7,14 @@ import (
 	"strconv"
 	"time"
 
+	"github.com/google/go-github/v68/github"
 	"github.com/wndhydrnt/saturn-bot/pkg/clock"
 	"github.com/wndhydrnt/saturn-bot/pkg/log"
 	"github.com/wndhydrnt/saturn-bot/pkg/ptr"
+	gitlab "gitlab.com/gitlab-org/api/client-go"
 )
+
+type PrCacheRawFactory func() any
 
 // Cacher defines functions expected by a cache.
 // [github.com/wndhydrnt/saturn-bot/pkg/cache.Cache] implements this interface.
@@ -33,14 +37,30 @@ type PullRequestCache interface {
 	LastUpdatedAtFor(host Host) *time.Time
 	// SetLastUpdatedAtFor sets the last time at which the cache was updated for host.
 	SetLastUpdatedAtFor(host Host, updatedAt time.Time)
+	// SetRawFactory adds a factory function that returns the data struct for hostType to unmarshal
+	// a pull request struct.
+	SetRawFactory(hostType Type, fac PrCacheRawFactory)
+}
+
+type typePeek struct {
+	Type Type
 }
 
 type pullRequestCache struct {
-	cache Cacher
+	cache        Cacher
+	rawFactories map[Type]PrCacheRawFactory
 }
 
 func NewPullRequestCache(c Cacher) PullRequestCache {
-	return &pullRequestCache{cache: c}
+	rawFactories := map[Type]PrCacheRawFactory{
+		GitHubType: func() any { return &github.PullRequest{} },
+		GitLabType: func() any { return &gitlab.MergeRequest{} },
+	}
+
+	return &pullRequestCache{
+		cache:        c,
+		rawFactories: rawFactories,
+	}
 }
 
 // Delete implements [PullRequestCache].
@@ -56,7 +76,16 @@ func (c *pullRequestCache) Get(branchName, repoName string) *PullRequest {
 		return nil
 	}
 
-	pr := &PullRequest{}
+	pt := &typePeek{}
+	err = json.Unmarshal(data, pt)
+	if err != nil {
+		return nil
+	}
+
+	rawStruct := c.rawFactories[pt.Type]()
+	pr := &PullRequest{
+		Raw: rawStruct,
+	}
 	err = json.Unmarshal(data, pr)
 	if err != nil {
 		return nil
@@ -99,6 +128,11 @@ func (c *pullRequestCache) SetLastUpdatedAtFor(host Host, updatedAt time.Time) {
 	tsKey := fmt.Sprintf("%s_pr_ts", host.Name())
 	tsValue := strconv.FormatInt(updatedAt.Unix(), 10)
 	_ = c.cache.Set(tsKey, []byte(tsValue))
+}
+
+// SetRawFactory implements [PullRequestCache].
+func (c *pullRequestCache) SetRawFactory(hostType Type, fac PrCacheRawFactory) {
+	c.rawFactories[hostType] = fac
 }
 
 func UpdatePullRequestCache(clock clock.Clock, hosts []Host, prCache PullRequestCache) error {

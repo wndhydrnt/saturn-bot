@@ -52,6 +52,8 @@ type PullRequest struct {
 	BranchName string
 	// RepositoryName is the full name of the repository for which the pull request has been created.
 	RepositoryName string
+	// Type indicates the type of host this pull request belongs to.
+	Type Type
 }
 
 type PullRequestComment struct {
@@ -153,6 +155,13 @@ type Repository interface {
 	// The time is used to decide if new commits need to be pulled from the host.
 	UpdatedAt() time.Time
 }
+
+type Type string
+
+const (
+	GitHubType Type = "github"
+	GitLabType Type = "gitlab"
+)
 
 type Host interface {
 	HostDetail

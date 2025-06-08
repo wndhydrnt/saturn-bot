@@ -795,6 +795,7 @@ func convertGitlabMergeRequestToPullRequest(mr *gitlab.MergeRequest) *PullReques
 		HostName:       u.Host,
 		BranchName:     mr.SourceBranch,
 		RepositoryName: u.Host + "" + parts[0],
+		Type:           GitLabType,
 	}
 }
 

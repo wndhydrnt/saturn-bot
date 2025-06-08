@@ -327,11 +327,15 @@ func (g *GitHubRepository) PullRequest(pr any) *PullRequest {
 	}
 
 	return &PullRequest{
-		CreatedAt: gpr.GetCreatedAt().Time,
-		Number:    int64(gpr.GetNumber()),
-		WebURL:    gpr.GetHTMLURL(),
-		Raw:       gpr,
-		State:     mapGithubPrToPullRequestState(gpr),
+		CreatedAt:      gpr.GetCreatedAt().Time,
+		Number:         int64(gpr.GetNumber()),
+		WebURL:         gpr.GetHTMLURL(),
+		Raw:            gpr,
+		State:          mapGithubPrToPullRequestState(gpr),
+		HostName:       g.Host().Name(),
+		BranchName:     gpr.GetHead().GetRef(),
+		RepositoryName: g.FullName(),
+		Type:           GitHubType,
 	}
 }
 

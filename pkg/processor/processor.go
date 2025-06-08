@@ -258,12 +258,12 @@ func (p *Processor) handleFilteredRepository(ctx context.Context, t *task.Task, 
 		return nil, nil
 	}
 
-	defer p.PullRequestCache.Delete(branchName, repo.FullName())
-
 	err = closePrForNonMatchingRepo(cachedPr, repo, result)
 	if err != nil {
 		return nil, fmt.Errorf("close pull request of non-matching task: %w", err)
 	}
+
+	p.PullRequestCache.Delete(branchName, repo.FullName())
 
 	return cachedPr, nil
 }
@@ -288,6 +288,8 @@ func (p *Processor) updatePrCache(ctx context.Context, t *task.Task, repo host.R
 	return nil
 }
 
+const prCloseMessage = ":information_source: saturn-bot has closed this pull request because it does not match the task anymore."
+
 // closePrForNonMatchingRepo tries to close an open Pull Request for a repository that has been filtered out.
 // A repository can be filtered out while the PR created by saturn-bot is still open if the user has
 // changed the filters and the repository doesn't match the updated filters.
@@ -295,7 +297,7 @@ func (p *Processor) updatePrCache(ctx context.Context, t *task.Task, repo host.R
 // It updates the state of pr.
 func closePrForNonMatchingRepo(pr *host.PullRequest, repo host.Repository, result Result) error {
 	if pr.State == host.PullRequestStateOpen && (result == ResultNoMatch || result == ResultSkip) {
-		err := repo.ClosePullRequest("", pr)
+		err := repo.ClosePullRequest(prCloseMessage, pr)
 		if err != nil {
 			return err
 		}

@@ -50,13 +50,14 @@ func (i *iterMock) ListPullRequestsError() error {
 func TestUpdatePullRequestCache_FullUpdate(t *testing.T) {
 	iterm := &iterMock{
 		pullRequests: []*PullRequest{
-			{BranchName: "saturn-bot--unittest", RepositoryName: "unittest"},
+			{BranchName: "saturn-bot--unittest", RepositoryName: "unittest", Type: "mock"},
 		},
 	}
 	hostm := &hostMock{iter: iterm}
 	cacher, err := cache.New(filepath.Join(t.TempDir(), "cache.db"))
 	require.NoError(t, err, "creates the cache db")
 	prCache := NewPullRequestCache(cacher)
+	prCache.SetRawFactory("mock", func() any { return map[string]interface{}{} })
 
 	err = UpdatePullRequestCache(clock.NewFakeDefault(), []Host{hostm}, prCache)
 	require.NoError(t, err, "call succeeds")
@@ -71,7 +72,7 @@ func TestUpdatePullRequestCache_FullUpdate(t *testing.T) {
 func TestUpdatePullRequestCache_PartialUpdate(t *testing.T) {
 	iterm := &iterMock{
 		pullRequests: []*PullRequest{
-			{BranchName: "saturn-bot--unittest", RepositoryName: "unittest"},
+			{BranchName: "saturn-bot--unittest", RepositoryName: "unittest", Type: "mock"},
 		},
 	}
 	hostm := &hostMock{iter: iterm}
@@ -80,6 +81,7 @@ func TestUpdatePullRequestCache_PartialUpdate(t *testing.T) {
 	prCache := NewPullRequestCache(cacher)
 	lastUpdatedAt := time.Date(1999, 12, 31, 23, 59, 59, 0, time.UTC)
 	prCache.SetLastUpdatedAtFor(hostm, lastUpdatedAt)
+	prCache.SetRawFactory("mock", func() any { return map[string]interface{}{} })
 
 	err = UpdatePullRequestCache(clock.NewFakeDefault(), []Host{hostm}, prCache)
 	require.NoError(t, err, "call succeeds")
@@ -94,14 +96,15 @@ func TestUpdatePullRequestCache_PartialUpdate(t *testing.T) {
 func TestUpdatePullRequestCache_UpdatesTheLatest(t *testing.T) {
 	iterm := &iterMock{
 		pullRequests: []*PullRequest{
-			{BranchName: "saturn-bot--unittest", RepositoryName: "unittest", CreatedAt: time.Date(2010, 1, 1, 1, 0, 0, 0, time.UTC)},
-			{BranchName: "saturn-bot--unittest", RepositoryName: "unittest", CreatedAt: time.Date(2010, 1, 1, 0, 0, 0, 0, time.UTC)},
+			{BranchName: "saturn-bot--unittest", RepositoryName: "unittest", Type: "mock", CreatedAt: time.Date(2010, 1, 1, 1, 0, 0, 0, time.UTC)},
+			{BranchName: "saturn-bot--unittest", RepositoryName: "unittest", Type: "mock", CreatedAt: time.Date(2010, 1, 1, 0, 0, 0, 0, time.UTC)},
 		},
 	}
 	hostm := &hostMock{iter: iterm}
 	cacher, err := cache.New(filepath.Join(t.TempDir(), "cache.db"))
 	require.NoError(t, err, "creates the cache db")
 	prCache := NewPullRequestCache(cacher)
+	prCache.SetRawFactory("mock", func() any { return map[string]interface{}{} })
 
 	err = UpdatePullRequestCache(clock.NewFakeDefault(), []Host{hostm}, prCache)
 	require.NoError(t, err, "call succeeds")
