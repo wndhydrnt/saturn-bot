@@ -12,7 +12,7 @@ var (
 	ErrNotFound = errors.New("item not found")
 )
 
-func NewCacheDb(path string) (*gorm.DB, error) {
+func newCacheDb(path string) (*gorm.DB, error) {
 	gormDb, err := db.New(false, path, db.Migrate(migrations))
 	if err != nil {
 		return nil, fmt.Errorf("initialize Cache db: %w", err)
@@ -25,8 +25,9 @@ type Cache struct {
 	db *gorm.DB
 }
 
+// New returns a new [Cache] that stores its data in dbPath.
 func New(dbPath string) (*Cache, error) {
-	gormDb, err := NewCacheDb(dbPath)
+	gormDb, err := newCacheDb(dbPath)
 	if err != nil {
 		return nil, err
 	}
@@ -34,8 +35,9 @@ func New(dbPath string) (*Cache, error) {
 	return &Cache{db: gormDb}, nil
 }
 
+// Delete deletes the item identified by key in the cache.
 func (c *Cache) Delete(key string) error {
-	result := c.db.Delete(&Item{Key: key})
+	result := c.db.Delete(&item{Key: key})
 	if result.Error != nil {
 		return fmt.Errorf("delete cache item %s: %w", key, result.Error)
 	}
@@ -43,9 +45,11 @@ func (c *Cache) Delete(key string) error {
 	return nil
 }
 
+// Get returns the item identified by key from the cache.
+// It returns [ErrNotFound] if the item doesn't exist in the cache.
 func (c *Cache) Get(key string) ([]byte, error) {
-	item := &Item{}
-	result := c.db.Where("key = ?", key).First(item)
+	it := &item{}
+	result := c.db.Where("key = ?", key).First(it)
 	if result.Error != nil {
 		if errors.Is(result.Error, gorm.ErrRecordNotFound) {
 			return nil, ErrNotFound
@@ -54,19 +58,20 @@ func (c *Cache) Get(key string) ([]byte, error) {
 		return nil, fmt.Errorf("get cache item %s: %w", key, result.Error)
 	}
 
-	return item.Value, nil
+	return it.Value, nil
 }
 
+// Set writes the item identified by key with value to the cache.
 func (c *Cache) Set(key string, value []byte) error {
 	if value == nil {
 		return nil
 	}
 
-	item := &Item{
+	it := &item{
 		Key:   key,
 		Value: value,
 	}
-	result := c.db.Save(item)
+	result := c.db.Save(it)
 	if result.Error != nil {
 		return fmt.Errorf("set Cache item %s: %w", key, result.Error)
 	}

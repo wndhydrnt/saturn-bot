@@ -1,6 +1,6 @@
 package cache
 
-type Item struct {
+type item struct {
 	Key   string `gorm:"primarykey"`
 	Value []byte
 }
