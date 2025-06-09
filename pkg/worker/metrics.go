@@ -18,11 +18,15 @@ const (
 var (
 	metricRunsFailed = prometheus.NewCounter(prometheus.CounterOpts{
 		Name: "worker_runs_failed_total",
-		Help: "Number of runs processed by this worker that failed.",
+		Help: "Total number of runs processed by this worker that failed.",
 	})
 	metricRuns = prometheus.NewGauge(prometheus.GaugeOpts{
 		Name: "worker_runs",
 		Help: "Current number of runs being processed in parallel.",
+	})
+	metricRunsTotal = prometheus.NewGauge(prometheus.GaugeOpts{
+		Name: "worker_runs_total",
+		Help: "Total number of runs processed by this worker.",
 	})
 	metricRunsMax = prometheus.NewGauge(prometheus.GaugeOpts{
 		Name: "worker_runs_max",
@@ -47,6 +51,7 @@ func initMetrics() {
 	)
 	metrics.Register(prometheus.DefaultRegisterer)
 	metricRunsFailed.Add(0)
+	metricRunsTotal.Set(0)
 	metricRuns.Set(0)
 	metricRunsMax.Set(0)
 }

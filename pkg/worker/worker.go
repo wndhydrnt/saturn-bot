@@ -206,6 +206,7 @@ func (w *Worker) Start() {
 
 		case result := <-w.resultChan:
 			log.Log().Debugf("Received result of run %d", result.Execution.RunID)
+			metricRunsTotal.Inc()
 			if result.RunError != nil {
 				metricRunsFailed.Inc()
 				log.Log().Errorw("Run failed", zap.Error(fmt.Errorf("ID %d: %w", result.Execution.RunID, result.RunError)))
