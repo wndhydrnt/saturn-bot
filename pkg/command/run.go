@@ -80,6 +80,14 @@ func (r *Run) Run(repositoryNames, taskFiles []string, inputs map[string]string)
 		go r.RepositoryLister.List(r.Hosts, repos, doneChan)
 	}
 
+	// Track the successful outcome of each task.
+	// Assume that a task succeeds by default (value = 1).
+	// A task is marked as not succeeding (value = 0) by code further down in this function.
+	taskSuccessTracker := make(map[string]float64, len(tasks))
+	for _, t := range tasks {
+		taskSuccessTracker[t.Name] = 1
+	}
+
 	success := true
 	var results []RunResult
 	done := false
@@ -89,10 +97,8 @@ func (r *Run) Run(repositoryNames, taskFiles []string, inputs map[string]string)
 			doFilter := len(repositoryNames) == 0
 			processResults := r.Processor.Process(r.DryRun, repo, tasks, doFilter)
 			for _, p := range processResults {
-				if p.Error == nil {
-					metrics.RunTaskSuccess.WithLabelValues(p.Task.Name).Set(1)
-				} else {
-					metrics.RunTaskSuccess.WithLabelValues(p.Task.Name).Set(0)
+				if p.Error != nil {
+					taskSuccessTracker[p.Task.Name] = 0
 					success = false
 				}
 
@@ -115,6 +121,10 @@ func (r *Run) Run(repositoryNames, taskFiles []string, inputs map[string]string)
 		if done {
 			break
 		}
+	}
+
+	for taskName, metricVal := range taskSuccessTracker {
+		metrics.RunTaskSuccess.WithLabelValues(taskName).Set(metricVal)
 	}
 
 	if !success {
