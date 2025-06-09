@@ -59,7 +59,7 @@ func NewPullRequestCache(c Cacher, factories map[Type]PullRequestFactory) PullRe
 }
 
 func NewPullRequestCacheFromHosts(c Cacher, hosts []Host) PullRequestCache {
-	factories := make(map[Type]PullRequestFactory)
+	factories := make(map[Type]PullRequestFactory, len(hosts))
 	for _, host := range hosts {
 		factories[host.Type()] = host.PullRequestFactory()
 	}
