@@ -491,6 +491,20 @@ func (mr *MockHostMockRecorder) Name() *gomock.Call {
 	return mr.mock.ctrl.RecordCallWithMethodType(mr.mock, "Name", reflect.TypeOf((*MockHost)(nil).Name))
 }
 
+// PullRequestFactory mocks base method.
+func (m *MockHost) PullRequestFactory() host.PullRequestFactory {
+	m.ctrl.T.Helper()
+	ret := m.ctrl.Call(m, "PullRequestFactory")
+	ret0, _ := ret[0].(host.PullRequestFactory)
+	return ret0
+}
+
+// PullRequestFactory indicates an expected call of PullRequestFactory.
+func (mr *MockHostMockRecorder) PullRequestFactory() *gomock.Call {
+	mr.mock.ctrl.T.Helper()
+	return mr.mock.ctrl.RecordCallWithMethodType(mr.mock, "PullRequestFactory", reflect.TypeOf((*MockHost)(nil).PullRequestFactory))
+}
+
 // PullRequestIterator mocks base method.
 func (m *MockHost) PullRequestIterator() host.PullRequestIterator {
 	m.ctrl.T.Helper()
@@ -503,6 +517,20 @@ func (m *MockHost) PullRequestIterator() host.PullRequestIterator {
 func (mr *MockHostMockRecorder) PullRequestIterator() *gomock.Call {
 	mr.mock.ctrl.T.Helper()
 	return mr.mock.ctrl.RecordCallWithMethodType(mr.mock, "PullRequestIterator", reflect.TypeOf((*MockHost)(nil).PullRequestIterator))
+}
+
+// Type mocks base method.
+func (m *MockHost) Type() host.Type {
+	m.ctrl.T.Helper()
+	ret := m.ctrl.Call(m, "Type")
+	ret0, _ := ret[0].(host.Type)
+	return ret0
+}
+
+// Type indicates an expected call of Type.
+func (mr *MockHostMockRecorder) Type() *gomock.Call {
+	mr.mock.ctrl.T.Helper()
+	return mr.mock.ctrl.RecordCallWithMethodType(mr.mock, "Type", reflect.TypeOf((*MockHost)(nil).Type))
 }
 
 // MockPullRequestIterator is a mock of PullRequestIterator interface.

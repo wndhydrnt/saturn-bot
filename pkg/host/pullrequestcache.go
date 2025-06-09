@@ -7,14 +7,14 @@ import (
 	"strconv"
 	"time"
 
-	"github.com/google/go-github/v68/github"
 	"github.com/wndhydrnt/saturn-bot/pkg/clock"
 	"github.com/wndhydrnt/saturn-bot/pkg/log"
 	"github.com/wndhydrnt/saturn-bot/pkg/ptr"
-	gitlab "gitlab.com/gitlab-org/api/client-go"
 )
 
-type PrCacheRawFactory func() any
+// PullRequestFactory is a function that returns a new instance of the struct that represents a pull request of a host.
+// This function is used to properly unmarshal cached data.
+type PullRequestFactory func() any
 
 // Cacher defines functions expected by a cache.
 // [github.com/wndhydrnt/saturn-bot/pkg/cache.Cache] implements this interface.
@@ -37,9 +37,9 @@ type PullRequestCache interface {
 	LastUpdatedAtFor(host Host) *time.Time
 	// SetLastUpdatedAtFor sets the last time at which the cache was updated for host.
 	SetLastUpdatedAtFor(host Host, updatedAt time.Time)
-	// SetRawFactory adds a factory function that returns the data struct for hostType to unmarshal
+	// SetPullRequestFactory adds a factory function that returns the data struct for hostType to unmarshal
 	// a pull request struct.
-	SetRawFactory(hostType Type, fac PrCacheRawFactory)
+	SetPullRequestFactory(hostType Type, fac PullRequestFactory)
 }
 
 type typePeek struct {
@@ -47,20 +47,24 @@ type typePeek struct {
 }
 
 type pullRequestCache struct {
-	cache        Cacher
-	rawFactories map[Type]PrCacheRawFactory
+	cache     Cacher
+	factories map[Type]PullRequestFactory
 }
 
-func NewPullRequestCache(c Cacher) PullRequestCache {
-	rawFactories := map[Type]PrCacheRawFactory{
-		GitHubType: func() any { return &github.PullRequest{} },
-		GitLabType: func() any { return &gitlab.MergeRequest{} },
+func NewPullRequestCache(c Cacher, factories map[Type]PullRequestFactory) PullRequestCache {
+	return &pullRequestCache{
+		cache:     c,
+		factories: factories,
+	}
+}
+
+func NewPullRequestCacheFromHosts(c Cacher, hosts []Host) PullRequestCache {
+	factories := make(map[Type]PullRequestFactory)
+	for _, host := range hosts {
+		factories[host.Type()] = host.PullRequestFactory()
 	}
 
-	return &pullRequestCache{
-		cache:        c,
-		rawFactories: rawFactories,
-	}
+	return NewPullRequestCache(c, factories)
 }
 
 // Delete implements [PullRequestCache].
@@ -82,7 +86,7 @@ func (c *pullRequestCache) Get(branchName, repoName string) *PullRequest {
 		return nil
 	}
 
-	fac, ok := c.rawFactories[pt.Type]
+	fac, ok := c.factories[pt.Type]
 	if !ok {
 		return nil
 	}
@@ -134,9 +138,9 @@ func (c *pullRequestCache) SetLastUpdatedAtFor(host Host, updatedAt time.Time) {
 	_ = c.cache.Set(tsKey, []byte(tsValue))
 }
 
-// SetRawFactory implements [PullRequestCache].
-func (c *pullRequestCache) SetRawFactory(hostType Type, fac PrCacheRawFactory) {
-	c.rawFactories[hostType] = fac
+// SetPullRequestFactory implements [PullRequestCache].
+func (c *pullRequestCache) SetPullRequestFactory(hostType Type, fac PullRequestFactory) {
+	c.factories[hostType] = fac
 }
 
 // UpdatePullRequestCache iterates over all hosts and updates prCache.

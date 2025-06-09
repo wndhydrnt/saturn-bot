@@ -170,8 +170,12 @@ type Host interface {
 	CreateFromJson(dec *json.Decoder) (Repository, error)
 	ListRepositories(since *time.Time, result chan []Repository, errChan chan error)
 	ListRepositoriesWithOpenPullRequests(result chan []Repository, errChan chan error)
+	// PullRequestFactory return a [PullRequestFactory] that creates a new data struct of a pull request for the host.
+	PullRequestFactory() PullRequestFactory
 	// PullRequestIterator returns an implementation of [PullRequestIterator] to iterate over pull requests of the host.
 	PullRequestIterator() PullRequestIterator
+	// Type returns the type of the host.
+	Type() Type
 }
 
 // PullRequestIterator is an iterator to iterate over pull requests in a host.

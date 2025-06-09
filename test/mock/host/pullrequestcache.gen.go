@@ -172,14 +172,14 @@ func (mr *MockPullRequestCacheMockRecorder) SetLastUpdatedAtFor(host, updatedAt 
 	return mr.mock.ctrl.RecordCallWithMethodType(mr.mock, "SetLastUpdatedAtFor", reflect.TypeOf((*MockPullRequestCache)(nil).SetLastUpdatedAtFor), host, updatedAt)
 }
 
-// SetRawFactory mocks base method.
-func (m *MockPullRequestCache) SetRawFactory(hostType host.Type, fac host.PrCacheRawFactory) {
+// SetPullRequestFactory mocks base method.
+func (m *MockPullRequestCache) SetPullRequestFactory(hostType host.Type, fac host.PullRequestFactory) {
 	m.ctrl.T.Helper()
-	m.ctrl.Call(m, "SetRawFactory", hostType, fac)
+	m.ctrl.Call(m, "SetPullRequestFactory", hostType, fac)
 }
 
-// SetRawFactory indicates an expected call of SetRawFactory.
-func (mr *MockPullRequestCacheMockRecorder) SetRawFactory(hostType, fac any) *gomock.Call {
+// SetPullRequestFactory indicates an expected call of SetPullRequestFactory.
+func (mr *MockPullRequestCacheMockRecorder) SetPullRequestFactory(hostType, fac any) *gomock.Call {
 	mr.mock.ctrl.T.Helper()
-	return mr.mock.ctrl.RecordCallWithMethodType(mr.mock, "SetRawFactory", reflect.TypeOf((*MockPullRequestCache)(nil).SetRawFactory), hostType, fac)
+	return mr.mock.ctrl.RecordCallWithMethodType(mr.mock, "SetPullRequestFactory", reflect.TypeOf((*MockPullRequestCache)(nil).SetPullRequestFactory), hostType, fac)
 }

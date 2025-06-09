@@ -22,6 +22,14 @@ func (h *hostMock) Name() string {
 	return "mock"
 }
 
+func (h *hostMock) Type() Type {
+	return "mock"
+}
+
+func (h *hostMock) PullRequestFactory() PullRequestFactory {
+	return func() any { return map[string]interface{}{} }
+}
+
 func (h *hostMock) PullRequestIterator() PullRequestIterator {
 	return h.iter
 }
@@ -56,8 +64,7 @@ func TestUpdatePullRequestCache_FullUpdate(t *testing.T) {
 	hostm := &hostMock{iter: iterm}
 	cacher, err := cache.New(filepath.Join(t.TempDir(), "cache.db"))
 	require.NoError(t, err, "creates the cache db")
-	prCache := NewPullRequestCache(cacher)
-	prCache.SetRawFactory("mock", func() any { return map[string]interface{}{} })
+	prCache := NewPullRequestCacheFromHosts(cacher, []Host{hostm})
 
 	err = UpdatePullRequestCache(clock.NewFakeDefault(), []Host{hostm}, prCache)
 	require.NoError(t, err, "call succeeds")
@@ -78,10 +85,9 @@ func TestUpdatePullRequestCache_PartialUpdate(t *testing.T) {
 	hostm := &hostMock{iter: iterm}
 	cacher, err := cache.New(filepath.Join(t.TempDir(), "cache.db"))
 	require.NoError(t, err, "creates the cache db")
-	prCache := NewPullRequestCache(cacher)
+	prCache := NewPullRequestCacheFromHosts(cacher, []Host{hostm})
 	lastUpdatedAt := time.Date(1999, 12, 31, 23, 59, 59, 0, time.UTC)
 	prCache.SetLastUpdatedAtFor(hostm, lastUpdatedAt)
-	prCache.SetRawFactory("mock", func() any { return map[string]interface{}{} })
 
 	err = UpdatePullRequestCache(clock.NewFakeDefault(), []Host{hostm}, prCache)
 	require.NoError(t, err, "call succeeds")
@@ -103,8 +109,7 @@ func TestUpdatePullRequestCache_UpdatesTheLatest(t *testing.T) {
 	hostm := &hostMock{iter: iterm}
 	cacher, err := cache.New(filepath.Join(t.TempDir(), "cache.db"))
 	require.NoError(t, err, "creates the cache db")
-	prCache := NewPullRequestCache(cacher)
-	prCache.SetRawFactory("mock", func() any { return map[string]interface{}{} })
+	prCache := NewPullRequestCacheFromHosts(cacher, []Host{hostm})
 
 	err = UpdatePullRequestCache(clock.NewFakeDefault(), []Host{hostm}, prCache)
 	require.NoError(t, err, "call succeeds")
@@ -123,7 +128,7 @@ func TestUpdatePullRequestCache_Error(t *testing.T) {
 	hostm := &hostMock{iter: iterm}
 	cacher, err := cache.New(filepath.Join(t.TempDir(), "cache.db"))
 	require.NoError(t, err, "creates the cache db")
-	prCache := NewPullRequestCache(cacher)
+	prCache := NewPullRequestCacheFromHosts(cacher, []Host{hostm})
 
 	err = UpdatePullRequestCache(clock.NewFakeDefault(), []Host{hostm}, prCache)
 	require.Error(t, err, "returns the error")
@@ -136,7 +141,7 @@ func TestPullRequestCache_Get_Unknown(t *testing.T) {
 	cacher, err := cache.New(filepath.Join(t.TempDir(), "cache.db"))
 	require.NoError(t, err, "creates the cache db")
 
-	underTest := NewPullRequestCache(cacher)
+	underTest := NewPullRequestCache(cacher, map[Type]PullRequestFactory{})
 	underTest.Set("branch", "repo", &PullRequest{Type: "unknown"})
 
 	require.Nil(t, underTest.Get("branch", "repo"), "cache is empty")

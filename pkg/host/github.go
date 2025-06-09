@@ -741,6 +741,18 @@ func (g *GitHubHost) Name() string {
 	return g.client.BaseURL.Host
 }
 
+// Type implements [Host].
+func (g *GitHubHost) Type() Type {
+	return GitHubType
+}
+
+// PullRequestFactory implements [Host].
+func (g *GitHubHost) PullRequestFactory() PullRequestFactory {
+	return func() any {
+		return &github.PullRequest{}
+	}
+}
+
 // PullRequestIterator implements [Host].
 func (g *GitHubHost) PullRequestIterator() PullRequestIterator {
 	return &githubPullRequestIterator{client: g.client}

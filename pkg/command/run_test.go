@@ -89,6 +89,14 @@ func (m *mockHost) Name() string {
 	return "git.local"
 }
 
+func (m *mockHost) Type() host.Type {
+	return "mock"
+}
+
+func (m *mockHost) PullRequestFactory() host.PullRequestFactory {
+	return func() any { return map[string]interface{}{} }
+}
+
 func (m *mockHost) PullRequestIterator() host.PullRequestIterator {
 	return m.pullRequestIterator
 }

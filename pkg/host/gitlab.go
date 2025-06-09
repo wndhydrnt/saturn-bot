@@ -714,6 +714,18 @@ func (g *GitLabHost) SearchCode(gitlabGroupID any, query string) ([]int64, error
 	return slices.Compact(result), nil
 }
 
+// Type implements [Host].
+func (g *GitLabHost) Type() Type {
+	return GitLabType
+}
+
+// PullRequestFactory implements [Host].
+func (g *GitLabHost) PullRequestFactory() PullRequestFactory {
+	return func() any {
+		return &gitlab.MergeRequest{}
+	}
+}
+
 // PullRequestIterator implements [Host].
 func (g *GitLabHost) PullRequestIterator() PullRequestIterator {
 	return &gitlabPullRequestIterator{client: g.client}
