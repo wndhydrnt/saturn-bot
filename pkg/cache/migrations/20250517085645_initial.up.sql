@@ -1,0 +1,7 @@
+CREATE TABLE IF NOT EXISTS `items` (
+  `id` INTEGER NOT NULL PRIMARY KEY,
+  `key` TEXT NOT NULL,
+  `value` TEXT NOT NULL
+);
+
+CREATE UNIQUE INDEX IF NOT EXISTS `item_key_uniq` ON `items`(`key`);

@@ -3,6 +3,7 @@ package host
 import (
 	"encoding/json"
 	"fmt"
+	"iter"
 	"net/url"
 	"path"
 	"slices"
@@ -199,7 +200,7 @@ func (g *GitLabRepository) CreatePullRequest(branch string, data PullRequestData
 		return nil, fmt.Errorf("create merge request for project %d: %w", g.project.ID, err)
 	}
 
-	return g.PullRequest(mr), nil
+	return convertGitlabMergeRequestToPullRequest(mr), nil
 }
 
 func (g *GitLabRepository) DeleteBranch(pr *PullRequest) error {
@@ -380,18 +381,7 @@ func (g *GitLabRepository) PullRequest(pr any) *PullRequest {
 		return nil
 	}
 
-	createdAt := time.Time{}
-	if mr.CreatedAt != nil {
-		createdAt = ptr.From(mr.CreatedAt)
-	}
-
-	return &PullRequest{
-		CreatedAt: createdAt,
-		Number:    int64(mr.IID),
-		WebURL:    mr.WebURL,
-		Raw:       mr,
-		State:     mapToPullRequestStateGitLab(mr),
-	}
+	return convertGitlabMergeRequestToPullRequest(mr)
 }
 
 func (g *GitLabRepository) UpdatePullRequest(data PullRequestData, pr *PullRequest) error {
@@ -722,6 +712,104 @@ func (g *GitLabHost) SearchCode(gitlabGroupID any, query string) ([]int64, error
 	slices.Sort(result)
 	log.Log().Debug("GitLab code search finished")
 	return slices.Compact(result), nil
+}
+
+// Type implements [Host].
+func (g *GitLabHost) Type() Type {
+	return GitLabType
+}
+
+// PullRequestFactory implements [Host].
+func (g *GitLabHost) PullRequestFactory() PullRequestFactory {
+	return func() any {
+		return &gitlab.MergeRequest{}
+	}
+}
+
+// PullRequestIterator implements [Host].
+func (g *GitLabHost) PullRequestIterator() PullRequestIterator {
+	return &gitlabPullRequestIterator{client: g.client}
+}
+
+type gitlabPullRequestIterator struct {
+	client *gitlab.Client
+	err    error
+}
+
+func (g *gitlabPullRequestIterator) ListPullRequests(since *time.Time) iter.Seq[*PullRequest] {
+	return func(yield func(*PullRequest) bool) {
+		user, _, err := g.client.Users.CurrentUser()
+		if err != nil {
+			g.err = fmt.Errorf("get current gitlab user: %w", err)
+			return
+		}
+
+		opts := &gitlab.ListMergeRequestsOptions{
+			AuthorID: &user.ID,
+			ListOptions: gitlab.ListOptions{
+				OrderBy: "updated_at",
+				Page:    1,
+				PerPage: 100,
+				Sort:    "desc",
+			},
+			UpdatedAfter: since,
+		}
+
+		for {
+			mrs, resp, err := g.client.MergeRequests.ListMergeRequests(opts)
+			if err != nil {
+				g.err = err
+				return
+			}
+
+			for _, mr := range mrs {
+				sbPr := convertGitlabMergeRequestToPullRequest(mr)
+				if !yield(sbPr) {
+					return
+				}
+			}
+
+			if resp.NextPage == 0 {
+				break
+			}
+
+			opts.Page = resp.NextPage
+		}
+	}
+}
+
+func (g *gitlabPullRequestIterator) Error() error {
+	return g.err
+}
+
+func convertGitlabMergeRequestToPullRequest(mr *gitlab.MergeRequest) *PullRequest {
+	u, err := url.Parse(mr.WebURL)
+	if err != nil {
+		return nil
+	}
+
+	createdAt := time.Time{}
+	if mr.CreatedAt != nil {
+		createdAt = ptr.From(mr.CreatedAt)
+	}
+
+	// Example: https://gitlab.com/marcel.amirault/test-project/-/merge_requests/133
+	parts := strings.Split(u.Path, "/-/")
+	if len(parts) < 2 {
+		return nil
+	}
+
+	return &PullRequest{
+		CreatedAt:      createdAt,
+		Number:         int64(mr.IID),
+		WebURL:         mr.WebURL,
+		State:          mapToPullRequestStateGitLab(mr),
+		Raw:            mr,
+		HostName:       u.Host,
+		BranchName:     mr.SourceBranch,
+		RepositoryName: u.Host + "" + parts[0],
+		Type:           GitLabType,
+	}
 }
 
 func isPullRequestClosed(mr *gitlab.MergeRequest) bool {

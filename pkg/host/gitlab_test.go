@@ -116,20 +116,33 @@ func TestGitLabRepository_CreatePullRequest(t *testing.T) {
 		}).
 		Reply(200).
 		JSON(gitlab.MergeRequest{
-			CreatedAt: ptr.To(time.Date(2000, 1, 1, 0, 0, 0, 0, time.UTC)),
-			IID:       1,
-			WebURL:    "http://gitlab.local/mr/1",
+			CreatedAt:    ptr.To(time.Date(2000, 1, 1, 0, 0, 0, 0, time.UTC)),
+			IID:          1,
+			SourceBranch: "saturn-bot--unit-test",
+			State:        "opened",
+			WebURL:       "http://gitlab.local/unit/test/-/merge_requests/1",
 		})
 	project := &gitlab.Project{DefaultBranch: "main", ID: 123}
 	prData := PullRequestData{Body: "Unit Test Body", Title: "Unit Test Title"}
 
 	underTest := &GitLabRepository{client: setupClient(), project: project}
-	mr, err := underTest.CreatePullRequest("saturn-bot--unit-test", prData)
+	pr, err := underTest.CreatePullRequest("saturn-bot--unit-test", prData)
 
 	require.NoError(t, err)
-	require.Equal(t, "2000-01-01 00:00:00 +0000 UTC", mr.CreatedAt.String())
-	require.Equal(t, int64(1), mr.Number)
-	require.Equal(t, "http://gitlab.local/mr/1", mr.WebURL)
+	require.IsType(t, &gitlab.MergeRequest{}, pr.Raw)
+	// Set to nil after type check to make the next check for equality easier.
+	pr.Raw = nil
+	expectedPr := &PullRequest{
+		CreatedAt:      time.Date(2000, 1, 1, 0, 0, 0, 0, time.UTC),
+		Number:         1,
+		WebURL:         "http://gitlab.local/unit/test/-/merge_requests/1",
+		State:          PullRequestStateOpen,
+		HostName:       "gitlab.local",
+		BranchName:     "saturn-bot--unit-test",
+		RepositoryName: "gitlab.local/unit/test",
+		Type:           GitLabType,
+	}
+	require.Equal(t, expectedPr, pr)
 	require.True(t, gock.IsDone())
 }
 
@@ -331,11 +344,11 @@ func TestGitLabRepository_FindPullRequest(t *testing.T) {
 		Reply(200).
 		JSON([]*gitlab.MergeRequest{
 			{
-				CreatedAt:    ptr.To(time.Now()),
+				CreatedAt:    ptr.To(time.Date(2000, 1, 1, 0, 0, 0, 0, time.UTC)),
 				IID:          123,
 				SourceBranch: "saturn-bot--unit-test",
 				State:        "opened",
-				WebURL:       "https://gitlab.com/unit/test/-/merge_requests/123",
+				WebURL:       "http://gitlab.local/unit/test/-/merge_requests/123",
 			},
 		})
 	project := &gitlab.Project{ID: 123}
@@ -344,11 +357,20 @@ func TestGitLabRepository_FindPullRequest(t *testing.T) {
 	result, err := underTest.FindPullRequest("saturn-bot--unit-test")
 
 	require.NoError(t, err)
-	require.False(t, result.CreatedAt.IsZero())
-	require.Equal(t, int64(123), result.Number)
-	require.Equal(t, "https://gitlab.com/unit/test/-/merge_requests/123", result.WebURL)
 	require.IsType(t, &gitlab.MergeRequest{}, result.Raw)
-	require.Equal(t, PullRequestStateOpen, result.State)
+	// Set to nil after type check to make the next check for equality easier.
+	result.Raw = nil
+	expectedPr := &PullRequest{
+		CreatedAt:      time.Date(2000, 1, 1, 0, 0, 0, 0, time.UTC),
+		Number:         123,
+		WebURL:         "http://gitlab.local/unit/test/-/merge_requests/123",
+		State:          PullRequestStateOpen,
+		HostName:       "gitlab.local",
+		BranchName:     "saturn-bot--unit-test",
+		RepositoryName: "gitlab.local/unit/test",
+		Type:           GitLabType,
+	}
+	require.Equal(t, expectedPr, result)
 	require.True(t, gock.IsDone())
 }
 
@@ -838,6 +860,93 @@ func TestGitLabHost_ListRepositoriesWithOpenPullRequests(t *testing.T) {
 	require.IsType(t, &GitLabRepository{}, result[0])
 	require.Equal(t, "gitlab.local/unittest/second", result[1].FullName())
 	require.IsType(t, &GitLabRepository{}, result[1])
+	require.True(t, gock.IsDone())
+}
+
+func TestGitLabHost_PullRequestIterator_FullUpdate(t *testing.T) {
+	defer gock.Off()
+	gock.New("http://gitlab.local").
+		Get("/api/v4/user").
+		Reply(200).
+		JSON(&gitlab.User{ID: 4321})
+	gitlabMr := &gitlab.MergeRequest{
+		CreatedAt:    ptr.To(time.Date(2000, 1, 1, 0, 0, 0, 0, time.UTC)),
+		IID:          133,
+		SourceBranch: "saturn-bot--unittest",
+		State:        "opened",
+		WebURL:       "http://gitlab.local/unit/test/-/merge_requests/133",
+	}
+	gock.New("http://gitlab.local").
+		Get("/api/v4/merge_requests").
+		MatchParam("author_id", "4321").
+		MatchParam("per_page", "100").
+		MatchParam("order_by", "updated_at").
+		Reply(200).
+		JSON([]*gitlab.MergeRequest{gitlabMr})
+
+	host := &GitLabHost{client: setupClient()}
+	iterator := host.PullRequestIterator()
+	result := slices.Collect(iterator.ListPullRequests(nil))
+
+	require.NoError(t, iterator.Error())
+	require.Len(t, result, 1)
+	wantPr := &PullRequest{
+		CreatedAt:      time.Date(2000, 1, 1, 0, 0, 0, 0, time.UTC),
+		Number:         133,
+		WebURL:         "http://gitlab.local/unit/test/-/merge_requests/133",
+		Raw:            gitlabMr,
+		State:          PullRequestStateOpen,
+		HostName:       "gitlab.local",
+		BranchName:     "saturn-bot--unittest",
+		RepositoryName: "gitlab.local/unit/test",
+		Type:           GitLabType,
+	}
+	require.Equal(t, wantPr, result[0])
+	require.True(t, gock.IsDone())
+}
+
+func TestGitLabHost_PullRequestIterator_PartialUpdate(t *testing.T) {
+	defer gock.Off()
+	gock.New("http://gitlab.local").
+		Get("/api/v4/user").
+		Reply(200).
+		JSON(&gitlab.User{ID: 4321})
+	gitlabMr := &gitlab.MergeRequest{
+		CreatedAt:    ptr.To(time.Date(2000, 1, 1, 0, 0, 0, 0, time.UTC)),
+		IID:          133,
+		SourceBranch: "saturn-bot--unittest",
+		State:        "opened",
+		WebURL:       "http://gitlab.local/unit/test/-/merge_requests/133",
+	}
+	gock.New("http://gitlab.local").
+		Get("/api/v4/merge_requests").
+		MatchParam("author_id", "^4321$").
+		MatchParam("per_page", "^100$").
+		MatchParam("order_by", "^updated_at$").
+		MatchParam("sort", "^desc$").
+		MatchParam("updated_after", "^2000-01-01T00:00:00Z$").
+		Reply(200).
+		JSON([]*gitlab.MergeRequest{gitlabMr})
+
+	host := &GitLabHost{client: setupClient()}
+	iterator := host.PullRequestIterator()
+	since := ptr.To(time.Date(2000, 1, 1, 0, 0, 0, 0, time.UTC))
+	result := slices.Collect(iterator.ListPullRequests(since))
+
+	require.NoError(t, iterator.Error())
+	require.Len(t, result, 1)
+	wantPr := &PullRequest{
+		CreatedAt:      time.Date(2000, 1, 1, 0, 0, 0, 0, time.UTC),
+		Number:         133,
+		WebURL:         "http://gitlab.local/unit/test/-/merge_requests/133",
+		Raw:            gitlabMr,
+		State:          PullRequestStateOpen,
+		HostName:       "gitlab.local",
+		BranchName:     "saturn-bot--unittest",
+		RepositoryName: "gitlab.local/unit/test",
+		Type:           GitLabType,
+	}
+	require.Equal(t, wantPr, result[0])
 	require.True(t, gock.IsDone())
 }
 

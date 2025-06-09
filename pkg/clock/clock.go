@@ -24,6 +24,13 @@ type Fake struct {
 	Base time.Time
 }
 
+// NewFakeDefault returns [Fake] initialized at 2000-01-01T00:00:00Z.
+func NewFakeDefault() *Fake {
+	return &Fake{
+		Base: time.Date(2000, 1, 1, 0, 0, 0, 0, time.UTC),
+	}
+}
+
 // Now fakes the current time.
 // It returns whatever base value to clock currently contains.
 // It increases the base value by one second for each call

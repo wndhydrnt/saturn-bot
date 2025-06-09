@@ -40,6 +40,7 @@ type repoCacheItem struct {
 }
 
 type mockHost struct {
+	pullRequestIterator              host.PullRequestIterator
 	repositories                     []host.Repository
 	repositoriesWithOpenPullRequests []host.Repository
 }
@@ -57,7 +58,7 @@ func (m *mockHost) CreateFromJson(dec *json.Decoder) (host.Repository, error) {
 		}
 	}
 
-	return nil, fmt.Errorf("Repository not found")
+	return nil, fmt.Errorf("repository not found")
 }
 
 func (m *mockHost) CreateFromName(name string) (host.Repository, error) {
@@ -86,6 +87,18 @@ func (m *mockHost) AuthenticatedUser() (*host.UserInfo, error) {
 
 func (m *mockHost) Name() string {
 	return "git.local"
+}
+
+func (m *mockHost) Type() host.Type {
+	return "mock"
+}
+
+func (m *mockHost) PullRequestFactory() host.PullRequestFactory {
+	return func() any { return map[string]interface{}{} }
+}
+
+func (m *mockHost) PullRequestIterator() host.PullRequestIterator {
+	return m.pullRequestIterator
 }
 
 func createTestTask(nameFilter string) schema.Task {
@@ -144,13 +157,30 @@ func setupRunRepoMock(ctrl *gomock.Controller, name string) *hostmock.MockReposi
 	return repo
 }
 
+func setupPullRequestIterator(ctrl *gomock.Controller, listErr error, prs ...*host.PullRequest) host.PullRequestIterator {
+	iterFunc := func(yield func(request *host.PullRequest) bool) {
+		for _, pr := range prs {
+			if !yield(pr) {
+				return
+			}
+		}
+	}
+	iterMock := hostmock.NewMockPullRequestIterator(ctrl)
+	iterMock.EXPECT().ListPullRequests(nil).Return(iterFunc)
+	iterMock.EXPECT().Error().Return(listErr)
+	return iterMock
+}
+
 func TestExecuteRunner_Run(t *testing.T) {
 	tmpDir := t.TempDir()
 	ctrl := gomock.NewController(t)
 	repoOne := setupRunRepoMock(ctrl, "repoOne")
 	repoTwo := setupRunRepoMock(ctrl, "repoTwo")
+	pr := &host.PullRequest{BranchName: "saturn-bot--unittest", RepositoryName: "unittest"}
+	iterMock := setupPullRequestIterator(ctrl, nil, pr)
 	hostm := &mockHost{
-		repositories: []host.Repository{repoOne, repoTwo},
+		pullRequestIterator: iterMock,
+		repositories:        []host.Repository{repoOne, repoTwo},
 	}
 	testTask := createTestTask("git.local/unittest/repo.*")
 	taskFile := createTestTaskFile(testTask)
@@ -171,6 +201,11 @@ func TestExecuteRunner_Run(t *testing.T) {
 		Return([]processor.ProcessResult{
 			{Result: processor.ResultNoChanges, Task: &task.Task{Task: testTask}},
 		})
+	prCacheMock := hostmock.NewMockPullRequestCache(ctrl)
+	prCacheMock.EXPECT().LastUpdatedAtFor(hostm).Return(nil)
+	prCacheMock.EXPECT().Get("saturn-bot--unittest", "unittest").Return(nil)
+	prCacheMock.EXPECT().Set("saturn-bot--unittest", "unittest", pr)
+	prCacheMock.EXPECT().SetLastUpdatedAtFor(hostm, time.Date(2000, 1, 1, 0, 0, 0, 0, time.UTC))
 
 	defer gock.Off()
 	gock.New("http://pgw.local").
@@ -180,10 +215,12 @@ func TestExecuteRunner_Run(t *testing.T) {
 	taskRegistry := task.NewRegistry(runTestOpts)
 
 	runner := &command.Run{
-		DryRun:      false,
-		Hosts:       []host.Host{hostm},
-		Processor:   procMock,
-		PushGateway: pushGateway,
+		Clock:            clock.NewFakeDefault(),
+		DryRun:           false,
+		Hosts:            []host.Host{hostm},
+		Processor:        procMock,
+		PullRequestCache: prCacheMock,
+		PushGateway:      pushGateway,
 		RepositoryLister: &host.RepositoryFileCache{
 			Clock: clock.Default,
 			Dir:   filepath.Join(tmpDir, "cache"),

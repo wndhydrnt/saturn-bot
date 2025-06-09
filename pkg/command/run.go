@@ -9,6 +9,7 @@ import (
 
 	"github.com/prometheus/client_golang/prometheus/push"
 	"github.com/wndhydrnt/saturn-bot/pkg/action"
+	"github.com/wndhydrnt/saturn-bot/pkg/cache"
 	"github.com/wndhydrnt/saturn-bot/pkg/clock"
 	"github.com/wndhydrnt/saturn-bot/pkg/git"
 	"github.com/wndhydrnt/saturn-bot/pkg/host"
@@ -33,9 +34,11 @@ type RunResult struct {
 }
 
 type Run struct {
+	Clock            clock.Clock
 	DryRun           bool
 	Hosts            []host.Host
 	Processor        processor.RepositoryTaskProcessor
+	PullRequestCache host.PullRequestCache
 	PushGateway      *push.Pusher
 	RepositoryLister host.RepositoryLister
 	TaskRegistry     *task.Registry
@@ -62,6 +65,10 @@ func (r *Run) Run(repositoryNames, taskFiles []string, inputs map[string]string)
 	if len(tasks) == 0 {
 		log.Log().Warn("0 tasks loaded from files - stopping")
 		return nil, nil
+	}
+
+	if err := host.UpdatePullRequestCache(r.Clock, r.Hosts, r.PullRequestCache); err != nil {
+		return nil, fmt.Errorf("update pull request cache on start of the run: %w", err)
 	}
 
 	tasks = setInputs(tasks, inputs)
@@ -145,13 +152,22 @@ func ExecuteRun(opts options.Opts, repositoryNames, taskFiles []string, inputs m
 		Ttl:   opts.RepositoryCacheTtl,
 	}
 
+	dataCache, err := cache.New(filepath.Join(opts.DataDir, "cache.db"))
+	if err != nil {
+		return nil, err
+	}
+
+	prCache := host.NewPullRequestCacheFromHosts(dataCache, opts.Hosts)
 	e := &Run{
+		Clock:  opts.Clock,
 		DryRun: opts.Config.DryRun,
 		Hosts:  opts.Hosts,
 		Processor: &processor.Processor{
-			DataDir: opts.DataDir,
-			Git:     gitClient,
+			DataDir:          opts.DataDir,
+			Git:              gitClient,
+			PullRequestCache: prCache,
 		},
+		PullRequestCache: prCache,
 		PushGateway:      opts.PushGateway,
 		RepositoryLister: repositoryFileCache,
 		TaskRegistry:     taskRegistry,

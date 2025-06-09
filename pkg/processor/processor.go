@@ -49,8 +49,9 @@ type ProcessResult struct {
 }
 
 type Processor struct {
-	DataDir string
-	Git     git.GitClient
+	DataDir          string
+	Git              git.GitClient
+	PullRequestCache host.PullRequestCache
 }
 
 type RepositoryTaskProcessor interface {
@@ -88,6 +89,15 @@ func (p *Processor) Process(dryRun bool, repo host.Repository, tasks []*task.Tas
 		}
 
 		if !match {
+			pr, err := p.handleFilteredRepository(taskCtx, t, repo, preCloneResult)
+			if err != nil {
+				taskLogger.Errorw("Failed to handle filtered task in prefilter", zap.Error(err))
+			}
+
+			if pr != nil {
+				result.PullRequest = pr
+			}
+
 			result.Result = preCloneResult
 			results = append(results, result)
 		} else {
@@ -101,7 +111,7 @@ func (p *Processor) Process(dryRun bool, repo host.Repository, tasks []*task.Tas
 
 	checkoutDir, err := p.Git.Prepare(repo, false)
 	if err != nil {
-		// A error during the preparation of the git repository is the best indicator that
+		// An error during the preparation of the git repository is the best indicator that
 		// the repository has been deleted.
 		// Log a warning, clean up and consider the repository as "not matching".
 		log.Log().Warnf("Failed to clone or pull repository '%s' - cleaning up the repository", repo.FullName())
@@ -139,6 +149,7 @@ func (p *Processor) Process(dryRun bool, repo host.Repository, tasks []*task.Tas
 			taskLogger.Errorw("Task failed", "error", result.Error)
 		}
 
+		_ = p.updatePrCache(taskCtx, t, repo, pr)
 		results = append(results, result)
 	}
 
@@ -198,13 +209,19 @@ func (p *Processor) processPostClone(ctx context.Context, repo host.Repository, 
 		}
 
 		if !match {
-			return ResultNoMatch, nil, nil
+			result := ResultNoMatch
+			pr, err := p.handleFilteredRepository(ctx, task, repo, result)
+			if err != nil {
+				logger.Errorw("Failed to handle filtered task in postfilter", zap.Error(err))
+			}
+
+			return result, pr, nil
 		}
 	}
 
 	logger.Info("Task matches repository")
 	checkoutDir := ctx.Value(sbcontext.CheckoutPath{}).(string)
-	result, prDetail, err := applyTaskToRepository(ctx, dryRun, p.Git, logger, repo, task, checkoutDir)
+	result, prDetail, err := p.applyTaskToRepository(ctx, dryRun, p.Git, logger, repo, task, checkoutDir)
 	if err != nil {
 		return ResultUnknown, prDetail, fmt.Errorf("task failed: %w", err)
 	}
@@ -218,6 +235,78 @@ func (p *Processor) processPostClone(ctx context.Context, repo host.Repository, 
 	}
 
 	return result, prDetail, nil
+}
+
+// handleFilteredRepository wraps other functions that should be executed when a repository doesn't match the filters of the current task.
+//
+// It returns the [host.PullRequest], if it exists in the cache, for further processing.
+//
+// It only acts if the [host.PullRequestCache] contains the PR. It is a no-op if the cache is empty.
+// Callers of the [Processor] need to ensure that the cache is up-to-date.
+func (p *Processor) handleFilteredRepository(ctx context.Context, t *task.Task, repo host.Repository, result Result) (*host.PullRequest, error) {
+	if p.PullRequestCache == nil {
+		return nil, nil
+	}
+
+	branchName, err := t.RenderBranchName(template.FromContext(ctx))
+	if err != nil {
+		return nil, err
+	}
+
+	cachedPr := p.PullRequestCache.Get(branchName, repo.FullName())
+	if cachedPr == nil {
+		return nil, nil
+	}
+
+	err = closePrForNonMatchingRepo(cachedPr, repo, result)
+	if err != nil {
+		return nil, fmt.Errorf("close pull request of non-matching task: %w", err)
+	}
+
+	p.PullRequestCache.Delete(branchName, repo.FullName())
+
+	return cachedPr, nil
+}
+
+// updatePrCache updates a Pull Request in the cache.
+// It performs no action of no cache is defined.
+func (p *Processor) updatePrCache(ctx context.Context, t *task.Task, repo host.Repository, pr *host.PullRequest) error {
+	if p.PullRequestCache == nil {
+		return nil
+	}
+
+	if pr == nil {
+		return nil
+	}
+
+	branchName, err := t.RenderBranchName(template.FromContext(ctx))
+	if err != nil {
+		return fmt.Errorf("render branch name to update pr cache: %w", err)
+	}
+
+	p.PullRequestCache.Set(branchName, repo.FullName(), pr)
+	return nil
+}
+
+const prCloseMessage = ":information_source: saturn-bot has closed this pull request because it does not match the task anymore."
+
+// closePrForNonMatchingRepo tries to close an open Pull Request for a repository that has been filtered out.
+// A repository can be filtered out while the PR created by saturn-bot is still open if the user has
+// changed the filters and the repository doesn't match the updated filters.
+//
+// It updates the state of pr.
+func closePrForNonMatchingRepo(pr *host.PullRequest, repo host.Repository, result Result) error {
+	if pr.State == host.PullRequestStateOpen && (result == ResultNoMatch || result == ResultSkip) {
+		err := repo.ClosePullRequest(prCloseMessage, pr)
+		if err != nil {
+			return err
+		}
+
+		pr.State = host.PullRequestStateClosed
+		return nil
+	}
+
+	return nil
 }
 
 func matchTaskToRepository(ctx context.Context, filters []filter.Filter, logger *zap.SugaredLogger) (bool, error) {
@@ -279,7 +368,7 @@ func applyTaskToDefaultBranch(ctx context.Context, dryRun bool, gitc git.GitClie
 	return ResultPushedDefaultBranch, nil
 }
 
-func applyTaskToRepository(ctx context.Context, dryRun bool, gitc git.GitClient, logger *zap.SugaredLogger, repo host.Repository, task *task.Task, workDir string) (Result, *host.PullRequest, error) {
+func (p *Processor) applyTaskToRepository(ctx context.Context, dryRun bool, gitc git.GitClient, logger *zap.SugaredLogger, repo host.Repository, task *task.Task, workDir string) (Result, *host.PullRequest, error) {
 	if task.PushToDefaultBranch {
 		result, err := applyTaskToDefaultBranch(ctx, dryRun, gitc, logger, repo, task, workDir)
 		return result, nil, err
@@ -292,7 +381,7 @@ func applyTaskToRepository(ctx context.Context, dryRun bool, gitc git.GitClient,
 		return ResultUnknown, nil, fmt.Errorf("get branch name: %w", err)
 	}
 
-	prID, err := repo.FindPullRequest(branchName)
+	prID, err := p.findPullRequest(branchName, repo)
 	if err != nil && !errors.Is(err, host.ErrPullRequestNotFound) {
 		return ResultUnknown, nil, fmt.Errorf("find pull request: %w", err)
 	}
@@ -549,6 +638,18 @@ func applyTaskToRepository(ctx context.Context, dryRun bool, gitc git.GitClient,
 	}
 
 	return ResultNoChanges, prID, nil
+}
+
+// findPullRequest looks up the pull request.
+// It defers to the repo if the cache doesn't contain the pull request.
+func (p *Processor) findPullRequest(branchName string, repo host.Repository) (*host.PullRequest, error) {
+	if p.PullRequestCache != nil {
+		if pr := p.PullRequestCache.Get(branchName, repo.FullName()); pr != nil {
+			return pr, nil
+		}
+	}
+
+	return repo.FindPullRequest(branchName)
 }
 
 func needsRebaseByUser(repo host.Repository, pr *host.PullRequest) bool {

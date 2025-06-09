@@ -6,6 +6,7 @@ import (
 	"errors"
 	"fmt"
 	htmlTemplate "html/template"
+	"iter"
 	"strings"
 	"time"
 
@@ -41,10 +42,18 @@ type PullRequest struct {
 	Number int64
 	// WebURL is the URL humans visit to view the pull request.
 	WebURL string
-	// Raw is the raw data structure of the Pull Request.
+	// Raw is the raw data structure of the pull request.
 	Raw PullRequestRaw
 	// State denotes the current state of the pull request.
 	State PullRequestState
+	// HostName is the name of the [Host] that returned the pull request.
+	HostName string
+	// BranchName is the name of the source branch.
+	BranchName string
+	// RepositoryName is the full name of the repository for which the pull request has been created.
+	RepositoryName string
+	// Type indicates the type of host this pull request belongs to.
+	Type Type
 }
 
 type PullRequestComment struct {
@@ -147,6 +156,13 @@ type Repository interface {
 	UpdatedAt() time.Time
 }
 
+type Type string
+
+const (
+	GitHubType Type = "github"
+	GitLabType Type = "gitlab"
+)
+
 type Host interface {
 	HostDetail
 	CreateFromName(name string) (Repository, error)
@@ -154,6 +170,22 @@ type Host interface {
 	CreateFromJson(dec *json.Decoder) (Repository, error)
 	ListRepositories(since *time.Time, result chan []Repository, errChan chan error)
 	ListRepositoriesWithOpenPullRequests(result chan []Repository, errChan chan error)
+	// PullRequestFactory return a [PullRequestFactory] that creates a new data struct of a pull request for the host.
+	PullRequestFactory() PullRequestFactory
+	// PullRequestIterator returns an implementation of [PullRequestIterator] to iterate over pull requests of the host.
+	PullRequestIterator() PullRequestIterator
+	// Type returns the type of the host.
+	Type() Type
+}
+
+// PullRequestIterator is an iterator to iterate over pull requests in a host.
+type PullRequestIterator interface {
+	// ListPullRequests returns an iter.Seq to iterate over pull requests in a host.
+	// If since is not nil, the function should return only the pull requests that have changed since the given time.
+	ListPullRequests(since *time.Time) iter.Seq[*PullRequest]
+	// Error returns an error that occurred during ListPullRequests.
+	// Callers of ListPullRequests should call this function after the iterator has returned to check if there was an error.
+	Error() error
 }
 
 type UserInfo struct {

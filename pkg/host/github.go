@@ -4,6 +4,7 @@ import (
 	"context"
 	"encoding/json"
 	"fmt"
+	"iter"
 	"net/http"
 	"net/url"
 	"path"
@@ -17,6 +18,7 @@ import (
 	"github.com/hashicorp/go-retryablehttp"
 	"github.com/wndhydrnt/saturn-bot/pkg/log"
 	"github.com/wndhydrnt/saturn-bot/pkg/metrics"
+	"github.com/wndhydrnt/saturn-bot/pkg/ptr"
 )
 
 var (
@@ -116,7 +118,7 @@ func (g *GitHubRepository) CreatePullRequest(branch string, data PullRequestData
 		}
 	}
 
-	return g.PullRequest(pr), nil
+	return convertGithubPullRequestToPullRequest(pr), nil
 }
 
 func (g *GitHubRepository) FindPullRequest(branch string) (*PullRequest, error) {
@@ -135,7 +137,7 @@ func (g *GitHubRepository) FindPullRequest(branch string) (*PullRequest, error) 
 
 		for _, pr := range prs {
 			if pr.GetHead().GetRef() == branch {
-				return g.PullRequest(pr), nil
+				return convertGithubPullRequestToPullRequest(pr), nil
 			}
 		}
 
@@ -224,7 +226,7 @@ func (g *GitHubRepository) ID() int64 {
 // because Merge attribute isn't set when listing pull requests via the GitHub API.
 func (g *GitHubRepository) IsPullRequestClosed(pr PullRequestRaw) bool {
 	gpr := pr.(*github.PullRequest)
-	return gpr.GetState() == "closed" && gpr.MergedAt == nil
+	return isGithubPullRequestClosed(gpr)
 }
 
 // IsPullRequestMerged implements [Repository].
@@ -232,13 +234,13 @@ func (g *GitHubRepository) IsPullRequestClosed(pr PullRequestRaw) bool {
 // because Merge attribute isn't set when listing pull requests via the GitHub API.
 func (g *GitHubRepository) IsPullRequestMerged(pr PullRequestRaw) bool {
 	gpr := pr.(*github.PullRequest)
-	return gpr.GetState() == "closed" && gpr.MergedAt != nil
+	return isGithubPullRequestMerged(gpr)
 }
 
 // IsPullRequestOpen implements [Repository].
 func (g *GitHubRepository) IsPullRequestOpen(pr PullRequestRaw) bool {
 	gpr := pr.(*github.PullRequest)
-	return gpr.GetState() == "open"
+	return isGithubPullRequestOpen(gpr)
 }
 
 func (g *GitHubRepository) ListPullRequestComments(pr *PullRequest) ([]PullRequestComment, error) {
@@ -316,21 +318,6 @@ func (g *GitHubRepository) Name() string {
 
 func (g *GitHubRepository) Owner() string {
 	return g.repo.GetOwner().GetLogin()
-}
-
-func (g *GitHubRepository) PullRequest(pr any) *PullRequest {
-	gpr, ok := pr.(*github.PullRequest)
-	if !ok {
-		return nil
-	}
-
-	return &PullRequest{
-		CreatedAt: gpr.GetCreatedAt().Time,
-		Number:    int64(gpr.GetNumber()),
-		WebURL:    gpr.GetHTMLURL(),
-		Raw:       gpr,
-		State:     g.mapToPullRequestState(gpr),
-	}
 }
 
 func (g *GitHubRepository) UpdatePullRequest(data PullRequestData, pr *PullRequest) error {
@@ -466,22 +453,6 @@ func (g *GitHubRepository) listAllReviews(prNumber int) ([]*github.PullRequestRe
 
 		opts.Page = resp.NextPage
 	}
-}
-
-func (g *GitHubRepository) mapToPullRequestState(pr *github.PullRequest) PullRequestState {
-	if g.IsPullRequestClosed(pr) {
-		return PullRequestStateClosed
-	}
-
-	if g.IsPullRequestMerged(pr) {
-		return PullRequestStateMerged
-	}
-
-	if g.IsPullRequestOpen(pr) {
-		return PullRequestStateOpen
-	}
-
-	return PullRequestStateUnknown
 }
 
 func diffAssignees(current []*github.User, want []string) (toAdd, toRemove []string) {
@@ -770,6 +741,109 @@ func (g *GitHubHost) Name() string {
 	return g.client.BaseURL.Host
 }
 
+// Type implements [Host].
+func (g *GitHubHost) Type() Type {
+	return GitHubType
+}
+
+// PullRequestFactory implements [Host].
+func (g *GitHubHost) PullRequestFactory() PullRequestFactory {
+	return func() any {
+		return &github.PullRequest{}
+	}
+}
+
+// PullRequestIterator implements [Host].
+func (g *GitHubHost) PullRequestIterator() PullRequestIterator {
+	return &githubPullRequestIterator{client: g.client}
+}
+
+type githubPullRequestIterator struct {
+	client *github.Client
+	err    error
+}
+
+func (it *githubPullRequestIterator) ListPullRequests(since *time.Time) iter.Seq[*PullRequest] {
+	return func(yield func(*PullRequest) bool) {
+		user, _, err := it.client.Users.Get(ctx, "")
+		if err != nil {
+			it.err = fmt.Errorf("get authenticated user to list pull requests: %w", err)
+			return
+		}
+
+		query := fmt.Sprintf("is:pr author:%s archived:false", user.GetLogin())
+		opts := &github.SearchOptions{
+			ListOptions: github.ListOptions{
+				Page:    1,
+				PerPage: 20,
+			},
+			Sort:  "updated",
+			Order: "desc",
+		}
+		for {
+			results, resp, err := it.client.Search.Issues(ctx, query, opts)
+			if err != nil {
+				it.err = fmt.Errorf("list pull requests page %d: %w", opts.Page, err)
+				return
+			}
+
+			for _, issue := range results.Issues {
+				if !issue.IsPullRequest() {
+					continue
+				}
+
+				if since != nil && issue.GetUpdatedAt().Before(ptr.From(since)) {
+					return
+				}
+
+				prRequest, err := it.client.NewRequest(http.MethodGet, issue.PullRequestLinks.GetURL(), nil)
+				if err != nil {
+					it.err = fmt.Errorf("create request for pull request from url %s: %w", issue.PullRequestLinks.GetURL(), err)
+					return
+				}
+
+				gpr := &github.PullRequest{}
+				_, err = it.client.Do(context.Background(), prRequest, gpr)
+				if err != nil {
+					it.err = fmt.Errorf("get pull request from url %s: %w", issue.PullRequestLinks.GetURL(), err)
+					return
+				}
+
+				pr := convertGithubPullRequestToPullRequest(gpr)
+				if !yield(pr) {
+					return
+				}
+			}
+
+			if resp.NextPage == 0 {
+				return
+			}
+
+			opts.Page = resp.NextPage
+		}
+	}
+}
+
+func (it *githubPullRequestIterator) Error() error {
+	return it.err
+}
+
+func convertGithubPullRequestToPullRequest(gpr *github.PullRequest) *PullRequest {
+	u, _ := url.Parse(gpr.GetHead().GetRepo().GetHTMLURL())
+
+	return &PullRequest{
+		CreatedAt:      gpr.GetCreatedAt().Time,
+		Number:         int64(gpr.GetNumber()),
+		WebURL:         gpr.GetHTMLURL(),
+		State:          mapGithubPrToPullRequestState(gpr),
+		Raw:            gpr,
+		HostName:       u.Host,
+		BranchName:     gpr.GetHead().GetRef(),
+		RepositoryName: fmt.Sprintf("%s%s", u.Host, u.Path),
+		Type:           GitHubType,
+	}
+}
+
 // githubBackoff is a [github.com/hashicorp/go-retryablehttp.RetryPolicy].
 func githubRetryPolicy(ctx context.Context, resp *http.Response, err error) (bool, error) {
 	ts := readGitHubRateLimitResetTime(resp)
@@ -793,6 +867,34 @@ func githubBackoff(min, max time.Duration, attemptNum int, resp *http.Response) 
 	}
 
 	return retryablehttp.DefaultBackoff(min, max, attemptNum, resp)
+}
+
+func isGithubPullRequestClosed(pr *github.PullRequest) bool {
+	return pr.GetState() == "closed" && pr.MergedAt == nil
+}
+
+func isGithubPullRequestMerged(pr *github.PullRequest) bool {
+	return pr.GetState() == "closed" && pr.MergedAt != nil
+}
+
+func isGithubPullRequestOpen(pr *github.PullRequest) bool {
+	return pr.GetState() == "open"
+}
+
+func mapGithubPrToPullRequestState(pr *github.PullRequest) PullRequestState {
+	if isGithubPullRequestClosed(pr) {
+		return PullRequestStateClosed
+	}
+
+	if isGithubPullRequestMerged(pr) {
+		return PullRequestStateMerged
+	}
+
+	if isGithubPullRequestOpen(pr) {
+		return PullRequestStateOpen
+	}
+
+	return PullRequestStateUnknown
 }
 
 // readGitHubRateLimitResetTime reads the timestamp returned by the GitHub API if a rate-limit is active.

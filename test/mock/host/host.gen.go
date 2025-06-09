@@ -11,6 +11,7 @@ package host
 
 import (
 	json "encoding/json"
+	iter "iter"
 	reflect "reflect"
 	time "time"
 
@@ -488,6 +489,100 @@ func (m *MockHost) Name() string {
 func (mr *MockHostMockRecorder) Name() *gomock.Call {
 	mr.mock.ctrl.T.Helper()
 	return mr.mock.ctrl.RecordCallWithMethodType(mr.mock, "Name", reflect.TypeOf((*MockHost)(nil).Name))
+}
+
+// PullRequestFactory mocks base method.
+func (m *MockHost) PullRequestFactory() host.PullRequestFactory {
+	m.ctrl.T.Helper()
+	ret := m.ctrl.Call(m, "PullRequestFactory")
+	ret0, _ := ret[0].(host.PullRequestFactory)
+	return ret0
+}
+
+// PullRequestFactory indicates an expected call of PullRequestFactory.
+func (mr *MockHostMockRecorder) PullRequestFactory() *gomock.Call {
+	mr.mock.ctrl.T.Helper()
+	return mr.mock.ctrl.RecordCallWithMethodType(mr.mock, "PullRequestFactory", reflect.TypeOf((*MockHost)(nil).PullRequestFactory))
+}
+
+// PullRequestIterator mocks base method.
+func (m *MockHost) PullRequestIterator() host.PullRequestIterator {
+	m.ctrl.T.Helper()
+	ret := m.ctrl.Call(m, "PullRequestIterator")
+	ret0, _ := ret[0].(host.PullRequestIterator)
+	return ret0
+}
+
+// PullRequestIterator indicates an expected call of PullRequestIterator.
+func (mr *MockHostMockRecorder) PullRequestIterator() *gomock.Call {
+	mr.mock.ctrl.T.Helper()
+	return mr.mock.ctrl.RecordCallWithMethodType(mr.mock, "PullRequestIterator", reflect.TypeOf((*MockHost)(nil).PullRequestIterator))
+}
+
+// Type mocks base method.
+func (m *MockHost) Type() host.Type {
+	m.ctrl.T.Helper()
+	ret := m.ctrl.Call(m, "Type")
+	ret0, _ := ret[0].(host.Type)
+	return ret0
+}
+
+// Type indicates an expected call of Type.
+func (mr *MockHostMockRecorder) Type() *gomock.Call {
+	mr.mock.ctrl.T.Helper()
+	return mr.mock.ctrl.RecordCallWithMethodType(mr.mock, "Type", reflect.TypeOf((*MockHost)(nil).Type))
+}
+
+// MockPullRequestIterator is a mock of PullRequestIterator interface.
+type MockPullRequestIterator struct {
+	ctrl     *gomock.Controller
+	recorder *MockPullRequestIteratorMockRecorder
+	isgomock struct{}
+}
+
+// MockPullRequestIteratorMockRecorder is the mock recorder for MockPullRequestIterator.
+type MockPullRequestIteratorMockRecorder struct {
+	mock *MockPullRequestIterator
+}
+
+// NewMockPullRequestIterator creates a new mock instance.
+func NewMockPullRequestIterator(ctrl *gomock.Controller) *MockPullRequestIterator {
+	mock := &MockPullRequestIterator{ctrl: ctrl}
+	mock.recorder = &MockPullRequestIteratorMockRecorder{mock}
+	return mock
+}
+
+// EXPECT returns an object that allows the caller to indicate expected use.
+func (m *MockPullRequestIterator) EXPECT() *MockPullRequestIteratorMockRecorder {
+	return m.recorder
+}
+
+// Error mocks base method.
+func (m *MockPullRequestIterator) Error() error {
+	m.ctrl.T.Helper()
+	ret := m.ctrl.Call(m, "Error")
+	ret0, _ := ret[0].(error)
+	return ret0
+}
+
+// Error indicates an expected call of Error.
+func (mr *MockPullRequestIteratorMockRecorder) Error() *gomock.Call {
+	mr.mock.ctrl.T.Helper()
+	return mr.mock.ctrl.RecordCallWithMethodType(mr.mock, "Error", reflect.TypeOf((*MockPullRequestIterator)(nil).Error))
+}
+
+// ListPullRequests mocks base method.
+func (m *MockPullRequestIterator) ListPullRequests(since *time.Time) iter.Seq[*host.PullRequest] {
+	m.ctrl.T.Helper()
+	ret := m.ctrl.Call(m, "ListPullRequests", since)
+	ret0, _ := ret[0].(iter.Seq[*host.PullRequest])
+	return ret0
+}
+
+// ListPullRequests indicates an expected call of ListPullRequests.
+func (mr *MockPullRequestIteratorMockRecorder) ListPullRequests(since any) *gomock.Call {
+	mr.mock.ctrl.T.Helper()
+	return mr.mock.ctrl.RecordCallWithMethodType(mr.mock, "ListPullRequests", reflect.TypeOf((*MockPullRequestIterator)(nil).ListPullRequests), since)
 }
 
 // MockHostDetail is a mock of HostDetail interface.

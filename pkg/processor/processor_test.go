@@ -52,19 +52,18 @@ func setupRepoMock(ctrl *gomock.Controller) *hostmock.MockRepository {
 	return r
 }
 
-func TestProcessor_Process_CreatePullRequestLocalChanges(t *testing.T) {
-	tempDir, err := os.MkdirTemp("", "")
-	require.NoError(t, err)
-	defer func() {
-		_ = os.RemoveAll(tempDir)
-	}()
+func setupPullRequestCache(ctrl *gomock.Controller) *hostmock.MockPullRequestCache {
+	return hostmock.NewMockPullRequestCache(ctrl)
+}
 
+func TestProcessor_Process_CreatePullRequestLocalChanges(t *testing.T) {
+	tempDir := t.TempDir()
 	ctrl := gomock.NewController(t)
 	repo := setupRepoMock(ctrl)
 	repo.EXPECT().FindPullRequest("saturn-bot--unittest").Return(nil, nil)
 	repo.EXPECT().GetPullRequestBody(nil).Return("").AnyTimes()
 	repo.EXPECT().BaseBranch().Return("main")
-	prCreate := &host.PullRequest{Number: 1}
+	prCreate := &host.PullRequest{Number: 1, State: host.PullRequestStateOpen}
 	repo.EXPECT().
 		CreatePullRequest("saturn-bot--unittest", gomock.Any()).
 		Return(prCreate, nil)
@@ -78,8 +77,14 @@ func TestProcessor_Process_CreatePullRequestLocalChanges(t *testing.T) {
 	gitc.EXPECT().Push("saturn-bot--unittest", true).Return(nil)
 	tw := &task.Task{Task: schema.Task{CommitMessage: "commit test", Name: "unittest", ChangeLimit: 1}}
 	tw.AddPreCloneFilters(&trueFilter{})
+	prCache := setupPullRequestCache(ctrl)
+	prCache.EXPECT().Get("saturn-bot--unittest", "git.local/unit/test")
+	prCache.EXPECT().Set("saturn-bot--unittest", "git.local/unit/test", prCreate)
 
-	p := &processor.Processor{Git: gitc}
+	p := &processor.Processor{
+		Git:              gitc,
+		PullRequestCache: prCache,
+	}
 	results := p.Process(false, repo, []*task.Task{tw}, true)
 
 	assert.Len(t, results, 1)
@@ -90,18 +95,13 @@ func TestProcessor_Process_CreatePullRequestLocalChanges(t *testing.T) {
 }
 
 func TestProcessor_Process_CreatePullRequestRemoteChanges(t *testing.T) {
-	tempDir, err := os.MkdirTemp("", "")
-	require.NoError(t, err)
-	defer func() {
-		_ = os.RemoveAll(tempDir)
-	}()
-
+	tempDir := t.TempDir()
 	ctrl := gomock.NewController(t)
 	repo := setupRepoMock(ctrl)
 	repo.EXPECT().FindPullRequest("saturn-bot--unittest").Return(nil, nil)
 	repo.EXPECT().GetPullRequestBody(nil).Return("").AnyTimes()
 	repo.EXPECT().BaseBranch().Return("main")
-	prCreate := &host.PullRequest{Number: 1}
+	prCreate := &host.PullRequest{Number: 1, State: host.PullRequestStateOpen}
 	repo.EXPECT().
 		CreatePullRequest("saturn-bot--unittest", gomock.Any()).
 		Return(prCreate, nil)
@@ -112,10 +112,16 @@ func TestProcessor_Process_CreatePullRequestRemoteChanges(t *testing.T) {
 	gitc.EXPECT().CommitChanges("commit test").Return(nil)
 	gitc.EXPECT().HasRemoteChanges("main").Return(true, nil)
 	gitc.EXPECT().HasRemoteChanges("saturn-bot--unittest").Return(false, nil)
+	prCache := setupPullRequestCache(ctrl)
+	prCache.EXPECT().Get("saturn-bot--unittest", "git.local/unit/test")
+	prCache.EXPECT().Set("saturn-bot--unittest", "git.local/unit/test", prCreate)
 	tw := &task.Task{Task: schema.Task{CommitMessage: "commit test", Name: "unittest"}}
 	tw.AddPreCloneFilters(&trueFilter{})
 
-	p := &processor.Processor{Git: gitc}
+	p := &processor.Processor{
+		Git:              gitc,
+		PullRequestCache: prCache,
+	}
 	results := p.Process(false, repo, []*task.Task{tw}, true)
 
 	assert.Len(t, results, 1)
@@ -149,8 +155,14 @@ func TestProcessor_Process_CreatePullRequestPreviouslyClosed(t *testing.T) {
 	gitc.EXPECT().HasRemoteChanges("saturn-bot--unittest").Return(false, nil)
 	tw := &task.Task{Task: schema.Task{CommitMessage: "commit test", Name: "unittest"}}
 	tw.AddPreCloneFilters(&trueFilter{})
+	prCache := setupPullRequestCache(ctrl)
+	prCache.EXPECT().Get("saturn-bot--unittest", "git.local/unit/test").Return(nil)
+	prCache.EXPECT().Set("saturn-bot--unittest", "git.local/unit/test", prCreate)
 
-	p := &processor.Processor{Git: gitc}
+	p := &processor.Processor{
+		Git:              gitc,
+		PullRequestCache: prCache,
+	}
 	results := p.Process(false, repo, []*task.Task{tw}, true)
 
 	assert.Len(t, results, 1)
@@ -789,4 +801,62 @@ func TestProcessor_Process_PushToDefaultBranch_NoChanges(t *testing.T) {
 	assert.Equal(t, processor.ResultNoChanges, results[0].Result)
 	assert.Nil(t, results[0].PullRequest)
 	assert.NoError(t, results[0].Error)
+}
+
+const (
+	closePrMessage = ":information_source: saturn-bot has closed this pull request because it does not match the task anymore."
+)
+
+func TestProcessor_Process_CloseOpenPullRequestForFilteredRepository_PreClone(t *testing.T) {
+	ctrl := gomock.NewController(t)
+	cachedPr := &host.PullRequest{
+		State: host.PullRequestStateOpen,
+	}
+	prCache := setupPullRequestCache(ctrl)
+	prCache.EXPECT().Get("saturn-bot--unittest", "git.local/unit/test").Return(cachedPr)
+	prCache.EXPECT().Delete("saturn-bot--unittest", "git.local/unit/test")
+
+	repo := setupRepoMock(ctrl)
+	repo.EXPECT().ClosePullRequest(closePrMessage, cachedPr).Return(nil)
+	gitc := gitmock.NewMockGitClient(ctrl)
+	tt := &task.Task{Task: schema.Task{Name: "unittest"}}
+	tt.AddPreCloneFilters(&falseFilter{})
+
+	p := &processor.Processor{Git: gitc, PullRequestCache: prCache}
+	results := p.Process(false, repo, []*task.Task{tt}, true)
+
+	assert.Len(t, results, 1)
+	expectedPr := &host.PullRequest{
+		State: host.PullRequestStateClosed,
+	}
+	assert.Equal(t, expectedPr, results[0].PullRequest)
+}
+
+func TestProcessor_Process_CloseOpenPullRequestForFilteredRepository_PostClone(t *testing.T) {
+	tempDir := t.TempDir()
+	ctrl := gomock.NewController(t)
+	cachedPr := &host.PullRequest{
+		State: host.PullRequestStateOpen,
+	}
+	prCache := setupPullRequestCache(ctrl)
+	prCache.EXPECT().Get("saturn-bot--unittest", "git.local/unit/test").Return(cachedPr)
+	prCache.EXPECT().Delete("saturn-bot--unittest", "git.local/unit/test")
+	prCache.EXPECT().Set("saturn-bot--unittest", "git.local/unit/test", cachedPr)
+
+	repo := setupRepoMock(ctrl)
+	repo.EXPECT().ClosePullRequest(closePrMessage, cachedPr).Return(nil)
+	gitc := gitmock.NewMockGitClient(ctrl)
+	gitc.EXPECT().Prepare(repo, false).Return(tempDir, nil)
+	tt := &task.Task{Task: schema.Task{Name: "unittest"}}
+	tt.AddPreCloneFilters(&trueFilter{})
+	tt.AddPostCloneFilters(&falseFilter{})
+
+	p := &processor.Processor{Git: gitc, PullRequestCache: prCache}
+	results := p.Process(false, repo, []*task.Task{tt}, true)
+
+	assert.Len(t, results, 1)
+	expectedPr := &host.PullRequest{
+		State: host.PullRequestStateClosed,
+	}
+	assert.Equal(t, expectedPr, results[0].PullRequest)
 }
