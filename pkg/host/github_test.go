@@ -148,7 +148,7 @@ var createPullRequestRespBody = github.PullRequest{
 	Head: &github.PullRequestBranch{
 		Ref: github.Ptr("saturn-bot--unittest"),
 		Repo: &github.Repository{
-			FullName: github.Ptr("unit/test"),
+			HTMLURL: github.Ptr("https://github.com/unit/test"),
 		},
 	},
 	State: github.Ptr("open"),
@@ -174,10 +174,8 @@ func TestGitHubRepository_CreatePullRequest(t *testing.T) {
 		Title:    "pull request title",
 	}
 
-	ghClient := setupGitHubTestClient()
 	repo := &GitHubRepository{
-		client: ghClient,
-		host:   &GitHubHost{client: ghClient},
+		client: setupGitHubTestClient(),
 		repo:   setupGitHubRepository(),
 	}
 	pr, err := repo.CreatePullRequest("unittest", prData)
@@ -225,11 +223,9 @@ func TestGitHubRepository_CreatePullRequest_WithAssignees(t *testing.T) {
 		TaskName:  "Unit Test",
 		Title:     "pull request title",
 	}
-	ghClient := setupGitHubTestClient()
 
 	repo := &GitHubRepository{
-		client: ghClient,
-		host:   &GitHubHost{client: ghClient},
+		client: setupGitHubTestClient(),
 		repo:   setupGitHubRepository(),
 	}
 	_, err := repo.CreatePullRequest("unittest", prData)
@@ -266,11 +262,9 @@ func TestGitHubRepository_CreatePullRequest_WithReviewers(t *testing.T) {
 		TaskName:  "Unit Test",
 		Title:     "pull request title",
 	}
-	ghClient := setupGitHubTestClient()
 
 	repo := &GitHubRepository{
-		client: ghClient,
-		host:   &GitHubHost{client: ghClient},
+		client: setupGitHubTestClient(),
 		repo:   setupGitHubRepository(),
 	}
 	_, err := repo.CreatePullRequest("unittest", prData)
@@ -299,11 +293,9 @@ func TestGitHubRepository_FindPullRequest(t *testing.T) {
 				State:     github.Ptr("open"),
 			},
 		})
-	ghClient := setupGitHubTestClient()
 
 	repo := &GitHubRepository{
-		client: ghClient,
-		host:   &GitHubHost{client: ghClient},
+		client: setupGitHubTestClient(),
 		repo:   setupGitHubRepository(),
 	}
 	prId, err := repo.FindPullRequest("unittest")
@@ -1224,7 +1216,7 @@ func TestGitHubHost_PullRequestIterator_FullUpdate(t *testing.T) {
 		Head: &github.PullRequestBranch{
 			Ref: github.Ptr("saturn-bot--unittest"),
 			Repo: &github.Repository{
-				FullName: github.Ptr("unittest/first"),
+				HTMLURL: github.Ptr("https://github.com/unittest/first"),
 			},
 		},
 	}
@@ -1293,7 +1285,7 @@ func TestGitHubHost_PullRequestIterator_PartialUpdate(t *testing.T) {
 		Head: &github.PullRequestBranch{
 			Ref: github.Ptr("saturn-bot--unittest"),
 			Repo: &github.Repository{
-				FullName: github.Ptr("unittest/first"),
+				HTMLURL: github.Ptr("https://github.com/unittest/first"),
 			},
 		},
 	}

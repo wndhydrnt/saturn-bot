@@ -118,7 +118,7 @@ func (g *GitHubRepository) CreatePullRequest(branch string, data PullRequestData
 		}
 	}
 
-	return g.PullRequest(pr), nil
+	return convertGithubPullRequestToPullRequest(pr), nil
 }
 
 func (g *GitHubRepository) FindPullRequest(branch string) (*PullRequest, error) {
@@ -137,7 +137,7 @@ func (g *GitHubRepository) FindPullRequest(branch string) (*PullRequest, error) 
 
 		for _, pr := range prs {
 			if pr.GetHead().GetRef() == branch {
-				return g.PullRequest(pr), nil
+				return convertGithubPullRequestToPullRequest(pr), nil
 			}
 		}
 
@@ -318,15 +318,6 @@ func (g *GitHubRepository) Name() string {
 
 func (g *GitHubRepository) Owner() string {
 	return g.repo.GetOwner().GetLogin()
-}
-
-func (g *GitHubRepository) PullRequest(pr any) *PullRequest {
-	gpr, ok := pr.(*github.PullRequest)
-	if !ok {
-		return nil
-	}
-
-	return convertGithubPullRequestToPullRequest(gpr, g.Host().Name())
 }
 
 func (g *GitHubRepository) UpdatePullRequest(data PullRequestData, pr *PullRequest) error {
@@ -752,13 +743,12 @@ func (g *GitHubHost) Name() string {
 
 // PullRequestIterator implements [Host].
 func (g *GitHubHost) PullRequestIterator() PullRequestIterator {
-	return &githubPullRequestIterator{client: g.client, name: g.Name()}
+	return &githubPullRequestIterator{client: g.client}
 }
 
 type githubPullRequestIterator struct {
 	client *github.Client
 	err    error
-	name   string
 }
 
 func (it *githubPullRequestIterator) ListPullRequests(since *time.Time) iter.Seq[*PullRequest] {
@@ -807,7 +797,7 @@ func (it *githubPullRequestIterator) ListPullRequests(since *time.Time) iter.Seq
 					return
 				}
 
-				pr := convertGithubPullRequestToPullRequest(gpr, it.name)
+				pr := convertGithubPullRequestToPullRequest(gpr)
 				if !yield(pr) {
 					return
 				}
@@ -826,16 +816,18 @@ func (it *githubPullRequestIterator) Error() error {
 	return it.err
 }
 
-func convertGithubPullRequestToPullRequest(gpr *github.PullRequest, hostName string) *PullRequest {
+func convertGithubPullRequestToPullRequest(gpr *github.PullRequest) *PullRequest {
+	u, _ := url.Parse(gpr.GetHead().GetRepo().GetHTMLURL())
+
 	return &PullRequest{
 		CreatedAt:      gpr.GetCreatedAt().Time,
 		Number:         int64(gpr.GetNumber()),
 		WebURL:         gpr.GetHTMLURL(),
 		State:          mapGithubPrToPullRequestState(gpr),
 		Raw:            gpr,
-		HostName:       hostName,
+		HostName:       u.Host,
 		BranchName:     gpr.GetHead().GetRef(),
-		RepositoryName: fmt.Sprintf("%s/%s", hostName, gpr.GetHead().GetRepo().GetFullName()),
+		RepositoryName: fmt.Sprintf("%s%s", u.Host, u.Path),
 		Type:           GitHubType,
 	}
 }
