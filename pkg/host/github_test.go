@@ -959,214 +959,6 @@ func TestGitHubHost_CreateFromName(t *testing.T) {
 	}
 }
 
-func TestGitHubHost_ListRepositories(t *testing.T) {
-	defer gock.Off()
-	resultChan := make(chan []Repository)
-	errChan := make(chan error)
-	gock.New("https://api.github.com").
-		Get("/user/repos").
-		MatchParams(map[string]string{
-			"direction":  "desc",
-			"page":       "1",
-			"per_page":   "20",
-			"sort":       "updated",
-			"visibility": "all",
-		}).
-		Reply(200).
-		JSON([]*github.Repository{
-			{Owner: &github.User{Login: github.Ptr("unittest")}, Name: github.Ptr("first"), UpdatedAt: &github.Timestamp{Time: time.Now()}},
-			{Owner: &github.User{Login: github.Ptr("unittest")}, Name: github.Ptr("second"), UpdatedAt: &github.Timestamp{Time: time.Now()}},
-		})
-	gock.New("https://api.github.com").
-		Get("/repos/unittest/first").
-		Reply(200).
-		JSON(&github.Repository{
-			Owner: &github.User{Login: github.Ptr("unittest")}, Name: github.Ptr("first"), UpdatedAt: &github.Timestamp{Time: time.Now()},
-		})
-	gock.New("https://api.github.com").
-		Get("/repos/unittest/second").
-		Reply(200).
-		JSON(&github.Repository{
-			Owner: &github.User{Login: github.Ptr("unittest")}, Name: github.Ptr("second"), UpdatedAt: &github.Timestamp{Time: time.Now()},
-		})
-
-	gh := &GitHubHost{
-		client: setupGitHubTestClient(),
-	}
-	go gh.ListRepositories(nil, resultChan, errChan)
-
-	result := []Repository{}
-	var wantErr error
-	done := false
-	timeout := time.After(100 * time.Millisecond)
-	for {
-		select {
-		case repo := <-resultChan:
-			result = append(result, repo...)
-		case err := <-errChan:
-			wantErr = err
-			done = true
-		case <-timeout:
-			wantErr = errors.New("test timeout")
-			done = true
-		}
-
-		if done {
-			break
-		}
-	}
-
-	require.NoError(t, wantErr)
-	assert.Len(t, result, 2)
-	assert.Equal(t, "github.com/unittest/first", result[0].FullName())
-	assert.IsType(t, &GitHubRepository{}, result[0])
-	assert.Equal(t, "github.com/unittest/second", result[1].FullName())
-	assert.IsType(t, &GitHubRepository{}, result[1])
-	assert.True(t, gock.IsDone())
-}
-
-func TestGitHubHost_ListRepositories_Since(t *testing.T) {
-	defer gock.Off()
-	since := time.Now().AddDate(0, 0, -1)
-	resultChan := make(chan []Repository)
-	errChan := make(chan error)
-	gock.New("https://api.github.com").
-		Get("/user/repos").
-		MatchParams(map[string]string{
-			"direction":  "desc",
-			"page":       "1",
-			"per_page":   "20",
-			"sort":       "updated",
-			"visibility": "all",
-		}).
-		Reply(200).
-		JSON([]*github.Repository{
-			{Owner: &github.User{Login: github.Ptr("unittest")}, Name: github.Ptr("first"), UpdatedAt: &github.Timestamp{Time: time.Now()}},
-			{Owner: &github.User{Login: github.Ptr("unittest")}, Name: github.Ptr("second"), UpdatedAt: &github.Timestamp{Time: time.Now()}},
-			{Owner: &github.User{Login: github.Ptr("unittest")}, Name: github.Ptr("old"), UpdatedAt: &github.Timestamp{Time: time.Now().AddDate(0, 0, -2)}},
-		})
-	gock.New("https://api.github.com").
-		Get("/repos/unittest/first").
-		Reply(200).
-		JSON(&github.Repository{
-			Owner: &github.User{Login: github.Ptr("unittest")}, Name: github.Ptr("first"), UpdatedAt: &github.Timestamp{Time: time.Now()},
-		})
-	gock.New("https://api.github.com").
-		Get("/repos/unittest/second").
-		Reply(200).
-		JSON(&github.Repository{
-			Owner: &github.User{Login: github.Ptr("unittest")}, Name: github.Ptr("second"), UpdatedAt: &github.Timestamp{Time: time.Now()},
-		})
-
-	gh := &GitHubHost{
-		client: setupGitHubTestClient(),
-	}
-	go gh.ListRepositories(&since, resultChan, errChan)
-
-	result := []Repository{}
-	var wantErr error
-	done := false
-	timeout := time.After(100 * time.Millisecond)
-	for {
-		select {
-		case repo := <-resultChan:
-			result = append(result, repo...)
-		case err := <-errChan:
-			wantErr = err
-			done = true
-		case <-timeout:
-			wantErr = errors.New("test timeout")
-			done = true
-		}
-
-		if done {
-			break
-		}
-	}
-
-	require.NoError(t, wantErr)
-	require.Len(t, result, 2)
-	assert.Equal(t, "github.com/unittest/first", result[0].FullName())
-	assert.IsType(t, &GitHubRepository{}, result[0])
-	assert.Equal(t, "github.com/unittest/second", result[1].FullName())
-	assert.IsType(t, &GitHubRepository{}, result[1])
-	assert.True(t, gock.IsDone())
-}
-
-func TestGitHubHost_ListRepositoriesWithOpenPullRequests(t *testing.T) {
-	defer gock.Off()
-	resultChan := make(chan []Repository)
-	errChan := make(chan error)
-	gock.New("https://api.github.com").
-		Get("/user").
-		Reply(200).
-		JSON(&github.User{
-			Login: github.Ptr("unittest"),
-		})
-	gock.New("https://api.github.com").
-		Get("/search/issues").
-		MatchParams(map[string]string{
-			"page":     "1",
-			"per_page": "20",
-			"q":        `is:pr author:unittest archived:false`,
-		}).
-		Reply(200).
-		JSON(&github.IssuesSearchResult{
-			Issues: []*github.Issue{
-				{
-					PullRequestLinks: &github.PullRequestLinks{URL: github.Ptr("https://api.github.com/repos/unittest/first/5")},
-					RepositoryURL:    github.Ptr("https://api.github.com/repos/unittest/first"),
-				},
-				{
-					PullRequestLinks: &github.PullRequestLinks{URL: github.Ptr("https://api.github.com/repos/unittest/second/10")},
-					RepositoryURL:    github.Ptr("https://api.github.com/repos/unittest/second"),
-				},
-			},
-		})
-	gock.New("https://api.github.com").
-		Get("/repos/unittest/first").
-		Reply(200).
-		JSON(&github.Repository{Owner: &github.User{Login: github.Ptr("unittest")}, Name: github.Ptr("first")})
-	gock.New("https://api.github.com").
-		Get("/repos/unittest/second").
-		Reply(200).
-		JSON(&github.Repository{Owner: &github.User{Login: github.Ptr("unittest")}, Name: github.Ptr("second")})
-
-	gh := &GitHubHost{
-		client: setupGitHubTestClient(),
-	}
-	go gh.ListRepositoriesWithOpenPullRequests(resultChan, errChan)
-
-	result := []Repository{}
-	var wantErr error
-	done := false
-	timeout := time.After(100 * time.Millisecond)
-	for {
-		select {
-		case repo := <-resultChan:
-			result = append(result, repo...)
-		case err := <-errChan:
-			wantErr = err
-			done = true
-		case <-timeout:
-			wantErr = errors.New("test timeout")
-			done = true
-		}
-
-		if done {
-			break
-		}
-	}
-
-	require.NoError(t, wantErr)
-	require.Len(t, result, 2)
-	assert.Equal(t, "github.com/unittest/first", result[0].FullName())
-	assert.IsType(t, &GitHubRepository{}, result[0])
-	assert.Equal(t, "github.com/unittest/second", result[1].FullName())
-	assert.IsType(t, &GitHubRepository{}, result[1])
-	assert.True(t, gock.IsDone())
-}
-
 func TestGitHubHost_PullRequestIterator_FullUpdate(t *testing.T) {
 	defer gock.Off()
 	gock.New("https://api.github.com").
@@ -1315,6 +1107,174 @@ func TestGitHubHost_PullRequestIterator_PartialUpdate(t *testing.T) {
 		Type:           GitHubType,
 	}
 	require.Equal(t, wantPr, result[0], "returns the expected pull request")
+	assert.True(t, gock.IsDone())
+}
+
+func TestGitHubHost_RepositoryIterator_FullUpdate(t *testing.T) {
+	defer gock.Off()
+	gock.New("https://api.github.com").
+		Get("/user/repos").
+		MatchParams(map[string]string{
+			"direction":   "desc",
+			"page":        "1",
+			"per_page":    "20",
+			"sort":        "updated",
+			"visibility":  "all",
+			"affiliation": "owner,collaborator",
+		}).
+		Reply(200).
+		SetHeader("Link", `<https://api.github.com/user/repos?page=2>; rel="next"`).
+		JSON([]*github.Repository{
+			{Owner: &github.User{Login: github.Ptr("unittest")}, Name: github.Ptr("first"), UpdatedAt: &github.Timestamp{Time: time.Now()}},
+		})
+	gock.New("https://api.github.com").
+		Get("/user/repos").
+		MatchParams(map[string]string{
+			"direction":   "desc",
+			"page":        "2",
+			"per_page":    "20",
+			"sort":        "updated",
+			"visibility":  "all",
+			"affiliation": "owner,collaborator",
+		}).
+		Reply(200).
+		JSON([]*github.Repository{
+			{Owner: &github.User{Login: github.Ptr("unittest")}, Name: github.Ptr("second"), UpdatedAt: &github.Timestamp{Time: time.Now()}},
+		})
+
+	gock.New("https://api.github.com").
+		Get("/repos/unittest/first").
+		Reply(200).
+		JSON(&github.Repository{
+			Owner: &github.User{Login: github.Ptr("unittest")}, Name: github.Ptr("first"), UpdatedAt: &github.Timestamp{Time: time.Now()},
+		})
+	gock.New("https://api.github.com").
+		Get("/repos/unittest/second").
+		Reply(200).
+		JSON(&github.Repository{
+			Owner: &github.User{Login: github.Ptr("unittest")}, Name: github.Ptr("second"), UpdatedAt: &github.Timestamp{Time: time.Now()},
+		})
+
+	gh := &GitHubHost{
+		client: setupGitHubTestClient(),
+	}
+	iterator := gh.RepositoryIterator()
+	result := slices.Collect(iterator.ListRepositories(nil))
+
+	require.NoError(t, iterator.Error())
+	assert.Len(t, result, 2)
+	assert.Equal(t, "github.com/unittest/first", result[0].FullName())
+	assert.IsType(t, &GitHubRepository{}, result[0])
+	assert.Equal(t, "github.com/unittest/second", result[1].FullName())
+	assert.IsType(t, &GitHubRepository{}, result[1])
+	assert.True(t, gock.IsDone())
+}
+
+func TestGitHubHost_RepositoryIterator_PartialUpdate(t *testing.T) {
+	defer gock.Off()
+	gock.New("https://api.github.com").
+		Get("/user/repos").
+		MatchParams(map[string]string{
+			"direction":   "desc",
+			"page":        "1",
+			"per_page":    "20",
+			"sort":        "updated",
+			"visibility":  "all",
+			"affiliation": "owner,collaborator",
+		}).
+		Reply(200).
+		JSON([]*github.Repository{
+			{
+				Owner:     &github.User{Login: github.Ptr("unittest")},
+				Name:      github.Ptr("second"),
+				UpdatedAt: &github.Timestamp{Time: time.Date(2000, 1, 1, 1, 0, 0, 0, time.UTC)},
+			},
+			{
+				Owner:     &github.User{Login: github.Ptr("unittest")},
+				Name:      github.Ptr("first"),
+				UpdatedAt: &github.Timestamp{Time: time.Date(1999, 12, 31, 23, 59, 59, 0, time.UTC)},
+			},
+		})
+	gock.New("https://api.github.com").
+		Get("/repos/unittest/second").
+		Reply(200).
+		JSON(&github.Repository{
+			Owner: &github.User{Login: github.Ptr("unittest")}, Name: github.Ptr("second"), UpdatedAt: &github.Timestamp{Time: time.Now()},
+		})
+
+	gh := &GitHubHost{
+		client: setupGitHubTestClient(),
+	}
+	iterator := gh.RepositoryIterator()
+	since := time.Date(2000, 1, 1, 0, 0, 0, 0, time.UTC)
+	result := slices.Collect(iterator.ListRepositories(ptr.To(since)))
+
+	require.NoError(t, iterator.Error())
+	assert.Len(t, result, 1)
+	assert.Equal(t, "github.com/unittest/second", result[0].FullName())
+	assert.IsType(t, &GitHubRepository{}, result[0])
+	assert.True(t, gock.IsDone())
+}
+
+func TestGitHubHost_RepositoryIterator_ErrorList(t *testing.T) {
+	defer gock.Off()
+	gock.New("https://api.github.com").
+		Get("/user/repos").
+		MatchParams(map[string]string{
+			"direction":   "desc",
+			"page":        "1",
+			"per_page":    "20",
+			"sort":        "updated",
+			"visibility":  "all",
+			"affiliation": "owner,collaborator",
+		}).
+		Reply(502).
+		SetError(errors.New("bad gateway"))
+
+	gh := &GitHubHost{
+		client: setupGitHubTestClient(),
+	}
+	iterator := gh.RepositoryIterator()
+	result := slices.Collect(iterator.ListRepositories(nil))
+
+	require.ErrorContains(t, iterator.Error(), "bad gateway")
+	require.Len(t, result, 0)
+	assert.True(t, gock.IsDone())
+}
+
+func TestGitHubHost_RepositoryIterator_ErrorGetRepository(t *testing.T) {
+	defer gock.Off()
+	gock.New("https://api.github.com").
+		Get("/user/repos").
+		MatchParams(map[string]string{
+			"direction":   "desc",
+			"page":        "1",
+			"per_page":    "20",
+			"sort":        "updated",
+			"visibility":  "all",
+			"affiliation": "owner,collaborator",
+		}).
+		Reply(200).
+		JSON([]*github.Repository{
+			{
+				Owner:     &github.User{Login: github.Ptr("unittest")},
+				Name:      github.Ptr("second"),
+				UpdatedAt: &github.Timestamp{Time: time.Date(2000, 1, 1, 1, 0, 0, 0, time.UTC)},
+			},
+		})
+	gock.New("https://api.github.com").
+		Get("/repos/unittest/second").
+		Reply(502).
+		SetError(errors.New("bad gateway"))
+
+	gh := &GitHubHost{
+		client: setupGitHubTestClient(),
+	}
+	iterator := gh.RepositoryIterator()
+	result := slices.Collect(iterator.ListRepositories(nil))
+
+	require.ErrorContains(t, iterator.Error(), "bad gateway")
+	require.Len(t, result, 0)
 	assert.True(t, gock.IsDone())
 }
 

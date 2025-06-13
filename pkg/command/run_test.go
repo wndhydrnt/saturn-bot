@@ -41,6 +41,7 @@ type repoCacheItem struct {
 
 type mockHost struct {
 	pullRequestIterator              host.PullRequestIterator
+	repositoryIterator               host.RepositoryIterator
 	repositories                     []host.Repository
 	repositoriesWithOpenPullRequests []host.Repository
 }
@@ -71,16 +72,6 @@ func (m *mockHost) CreateFromName(name string) (host.Repository, error) {
 	return nil, fmt.Errorf("Repository not found")
 }
 
-func (m *mockHost) ListRepositories(_ *time.Time, result chan []host.Repository, errChan chan error) {
-	result <- m.repositories
-	errChan <- nil
-}
-
-func (m *mockHost) ListRepositoriesWithOpenPullRequests(result chan []host.Repository, errChan chan error) {
-	result <- m.repositoriesWithOpenPullRequests
-	errChan <- nil
-}
-
 func (m *mockHost) AuthenticatedUser() (*host.UserInfo, error) {
 	return nil, nil
 }
@@ -99,6 +90,10 @@ func (m *mockHost) PullRequestFactory() host.PullRequestFactory {
 
 func (m *mockHost) PullRequestIterator() host.PullRequestIterator {
 	return m.pullRequestIterator
+}
+
+func (m *mockHost) RepositoryIterator() host.RepositoryIterator {
+	return m.repositoryIterator
 }
 
 func createTestTask(nameFilter string) schema.Task {
@@ -157,6 +152,21 @@ func setupRunRepoMock(ctrl *gomock.Controller, name string) *hostmock.MockReposi
 	return repo
 }
 
+func setupRepositoryIteratorMock(ctrl *gomock.Controller, since *time.Time, listErr error, repos ...host.Repository) host.RepositoryIterator {
+	iterFunc := func(yield func(request host.Repository) bool) {
+		for _, repo := range repos {
+			if !yield(repo) {
+				return
+			}
+		}
+	}
+
+	repoIterMock := hostmock.NewMockRepositoryIterator(ctrl)
+	repoIterMock.EXPECT().ListRepositories(since).Return(iterFunc)
+	repoIterMock.EXPECT().Error().Return(listErr)
+	return repoIterMock
+}
+
 func setupPullRequestIterator(ctrl *gomock.Controller, listErr error, prs ...*host.PullRequest) host.PullRequestIterator {
 	iterFunc := func(yield func(request *host.PullRequest) bool) {
 		for _, pr := range prs {
@@ -176,10 +186,12 @@ func TestExecuteRunner_Run(t *testing.T) {
 	ctrl := gomock.NewController(t)
 	repoOne := setupRunRepoMock(ctrl, "repoOne")
 	repoTwo := setupRunRepoMock(ctrl, "repoTwo")
+	repositoryIterMock := setupRepositoryIteratorMock(ctrl, nil, nil, repoOne, repoTwo)
 	pr := &host.PullRequest{BranchName: "saturn-bot--unittest", RepositoryName: "unittest"}
-	iterMock := setupPullRequestIterator(ctrl, nil, pr)
+	pullRequestIterMock := setupPullRequestIterator(ctrl, nil, pr)
 	hostm := &mockHost{
-		pullRequestIterator: iterMock,
+		pullRequestIterator: pullRequestIterMock,
+		repositoryIterator:  repositoryIterMock,
 		repositories:        []host.Repository{repoOne, repoTwo},
 	}
 	testTask := createTestTask("git.local/unittest/repo.*")
@@ -201,6 +213,7 @@ func TestExecuteRunner_Run(t *testing.T) {
 		Return([]processor.ProcessResult{
 			{Result: processor.ResultNoChanges, Task: &task.Task{Task: testTask}},
 		})
+
 	prCacheMock := hostmock.NewMockPullRequestCache(ctrl)
 	prCacheMock.EXPECT().LastUpdatedAtFor(hostm).Return(nil)
 	prCacheMock.EXPECT().Get("saturn-bot--unittest", "unittest").Return(nil)
@@ -237,8 +250,10 @@ func TestExecuteRunner_Run_DryRun(t *testing.T) {
 	tmpDir := t.TempDir()
 	ctrl := gomock.NewController(t)
 	repo := setupRunRepoMock(ctrl, "repo")
+	repoIterator := setupRepositoryIteratorMock(ctrl, nil, nil, repo)
 	hostm := &mockHost{
-		repositories: []host.Repository{repo},
+		repositories:       []host.Repository{repo},
+		repositoryIterator: repoIterator,
 	}
 	testTask := createTestTask("git.local/unittest/repo.*")
 	taskFile := createTestTaskFile(createTestTask("git.local/unittest/repo.*"))

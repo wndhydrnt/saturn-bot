@@ -747,122 +747,6 @@ func TestGitLabHost_CreateFromName(t *testing.T) {
 	}
 }
 
-func TestGitLabHost_ListRepositories(t *testing.T) {
-	defer gock.Off()
-	gock.New("http://gitlab.local").
-		Get("/api/v4/projects").
-		MatchParams(map[string]string{
-			"min_access_level": "30",
-			"order_by":         "updated_at",
-			"per_page":         "20",
-			"sort":             "desc",
-		}).
-		Reply(200).
-		JSON([]*gitlab.Project{
-			{ID: 1, WebURL: "http://gitlab.local/unittest/first"},
-			{ID: 2, WebURL: "http://gitlab.local/unittest/second"},
-		})
-	since := time.Unix(0, 0)
-	resultChan := make(chan []Repository)
-	errChan := make(chan error)
-
-	underTest := &GitLabHost{client: setupClient()}
-	go underTest.ListRepositories(&since, resultChan, errChan)
-
-	result := []Repository{}
-	var wantErr error
-	done := false
-	timeout := time.After(100 * time.Millisecond)
-	for {
-		select {
-		case repo := <-resultChan:
-			result = append(result, repo...)
-		case err := <-errChan:
-			wantErr = err
-			done = true
-		case <-timeout:
-			wantErr = errors.New("test timeout")
-			done = true
-		}
-
-		if done {
-			break
-		}
-	}
-
-	require.NoError(t, wantErr)
-	require.Len(t, result, 2)
-	require.Equal(t, "gitlab.local/unittest/first", result[0].FullName())
-	require.IsType(t, &GitLabRepository{}, result[0])
-	require.Equal(t, "gitlab.local/unittest/second", result[1].FullName())
-	require.IsType(t, &GitLabRepository{}, result[1])
-}
-
-func TestGitLabHost_ListRepositoriesWithOpenPullRequests(t *testing.T) {
-	defer gock.Off()
-	gock.New("http://gitlab.local").
-		Get("/api/v4/user").
-		Reply(200).
-		JSON(&gitlab.User{ID: 4321})
-	gock.New("http://gitlab.local").
-		Get("/api/v4/merge_requests").
-		MatchParam("author_id", "4321").
-		MatchParam("per_page", "20").
-		Reply(200).
-		JSON([]*gitlab.MergeRequest{
-			{IID: 1, ProjectID: 123},
-			{IID: 2, ProjectID: 123},
-			{IID: 3, ProjectID: 456},
-			{IID: 4, ProjectID: 789},
-		})
-	gock.New("http://gitlab.local").
-		Get("/api/v4/projects/123").
-		Reply(200).
-		JSON(&gitlab.Project{ID: 123, WebURL: "http://gitlab.local/unittest/first"})
-	gock.New("http://gitlab.local").
-		Get("/api/v4/projects/456").
-		Reply(200).
-		JSON(&gitlab.Project{ID: 456, WebURL: "http://gitlab.local/unittest/second"})
-	gock.New("http://gitlab.local").
-		Get("/api/v4/projects/789").
-		Reply(200).
-		JSON(&gitlab.Project{Archived: true, ID: 789, WebURL: "http://gitlab.local/unittest/third"})
-	resultChan := make(chan []Repository)
-	errChan := make(chan error)
-
-	underTest := &GitLabHost{client: setupClient()}
-	go underTest.ListRepositoriesWithOpenPullRequests(resultChan, errChan)
-
-	result := []Repository{}
-	var wantErr error
-	done := false
-	timeout := time.After(100 * time.Millisecond)
-	for {
-		select {
-		case repo := <-resultChan:
-			result = append(result, repo...)
-		case err := <-errChan:
-			wantErr = err
-			done = true
-		case <-timeout:
-			wantErr = errors.New("test timeout")
-			done = true
-		}
-
-		if done {
-			break
-		}
-	}
-
-	require.NoError(t, wantErr)
-	require.Len(t, result, 2)
-	require.Equal(t, "gitlab.local/unittest/first", result[0].FullName())
-	require.IsType(t, &GitLabRepository{}, result[0])
-	require.Equal(t, "gitlab.local/unittest/second", result[1].FullName())
-	require.IsType(t, &GitLabRepository{}, result[1])
-	require.True(t, gock.IsDone())
-}
-
 func TestGitLabHost_PullRequestIterator_FullUpdate(t *testing.T) {
 	defer gock.Off()
 	gock.New("http://gitlab.local").
@@ -947,6 +831,98 @@ func TestGitLabHost_PullRequestIterator_PartialUpdate(t *testing.T) {
 		Type:           GitLabType,
 	}
 	require.Equal(t, wantPr, result[0])
+	require.True(t, gock.IsDone())
+}
+
+func TestGitLabHost_RepositoryIterator_FullUpdate(t *testing.T) {
+	defer gock.Off()
+	gock.New("http://gitlab.local").
+		Get("/api/v4/projects").
+		MatchParams(map[string]string{
+			"min_access_level": "30",
+			"order_by":         "updated_at",
+			"page":             "1",
+			"per_page":         "20",
+			"sort":             "desc",
+		}).
+		Reply(200).
+		SetHeader("X-Next-Page", "2").
+		JSON([]*gitlab.Project{
+			{ID: 1, WebURL: "http://gitlab.local/unittest/first"},
+		})
+	gock.New("http://gitlab.local").
+		Get("/api/v4/projects").
+		MatchParams(map[string]string{
+			"min_access_level": "30",
+			"order_by":         "updated_at",
+			"page":             "2",
+			"per_page":         "20",
+			"sort":             "desc",
+		}).
+		Reply(200).
+		JSON([]*gitlab.Project{
+			{ID: 2, WebURL: "http://gitlab.local/unittest/second"},
+		})
+
+	host := &GitLabHost{client: setupClient()}
+	iterator := host.RepositoryIterator()
+	result := slices.Collect(iterator.ListRepositories(nil))
+
+	require.NoError(t, iterator.Error())
+	require.Len(t, result, 2)
+	require.Equal(t, "gitlab.local/unittest/first", result[0].FullName())
+	require.Equal(t, "gitlab.local/unittest/second", result[1].FullName())
+	require.True(t, gock.IsDone())
+}
+
+func TestGitLabHost_RepositoryIterator_PartialUpdate(t *testing.T) {
+	defer gock.Off()
+	gock.New("http://gitlab.local").
+		Get("/api/v4/projects").
+		MatchParams(map[string]string{
+			"min_access_level": "30",
+			"order_by":         "updated_at",
+			"page":             "1",
+			"per_page":         "20",
+			"sort":             "desc",
+		}).
+		Reply(200).
+		JSON([]*gitlab.Project{
+			{ID: 2, WebURL: "http://gitlab.local/unittest/second", UpdatedAt: ptr.To(time.Date(2000, 1, 1, 1, 0, 0, 0, time.UTC))},
+			{ID: 1, WebURL: "http://gitlab.local/unittest/first", UpdatedAt: ptr.To(time.Date(1999, 12, 31, 23, 59, 59, 0, time.UTC))},
+		})
+
+	host := &GitLabHost{client: setupClient()}
+	iterator := host.RepositoryIterator()
+	since := ptr.To(time.Date(2000, 1, 1, 0, 0, 0, 0, time.UTC))
+	result := slices.Collect(iterator.ListRepositories(since))
+
+	require.NoError(t, iterator.Error())
+	require.Len(t, result, 1)
+	require.Equal(t, "gitlab.local/unittest/second", result[0].FullName())
+	require.True(t, gock.IsDone())
+}
+
+func TestGitLabHost_RepositoryIterator_Error(t *testing.T) {
+	defer gock.Off()
+	gock.New("http://gitlab.local").
+		Get("/api/v4/projects").
+		MatchParams(map[string]string{
+			"min_access_level": "30",
+			"order_by":         "updated_at",
+			"page":             "1",
+			"per_page":         "20",
+			"sort":             "desc",
+		}).
+		Reply(502).
+		SetError(errors.New("bad gateway"))
+
+	host := &GitLabHost{client: setupClient()}
+	iterator := host.RepositoryIterator()
+	result := slices.Collect(iterator.ListRepositories(nil))
+
+	require.Len(t, result, 0)
+	require.ErrorContains(t, iterator.Error(), "bad gateway")
 	require.True(t, gock.IsDone())
 }
 
