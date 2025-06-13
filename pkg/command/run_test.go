@@ -40,10 +40,9 @@ type repoCacheItem struct {
 }
 
 type mockHost struct {
-	pullRequestIterator              host.PullRequestIterator
-	repositoryIterator               host.RepositoryIterator
-	repositories                     []host.Repository
-	repositoriesWithOpenPullRequests []host.Repository
+	pullRequestIterator host.PullRequestIterator
+	repositoryIterator  host.RepositoryIterator
+	repositories        []host.Repository
 }
 
 func (m *mockHost) CreateFromJson(dec *json.Decoder) (host.Repository, error) {
