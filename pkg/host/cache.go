@@ -234,6 +234,7 @@ func (rc *RepositoryFileCache) updateCacheForHost(host Host) error {
 
 	start := rc.Clock.Now()
 	repoIterator := host.RepositoryIterator()
+	updateCounter := 0
 	for repo := range repoIterator.ListRepositories(since) {
 		if repo.IsArchived() {
 			_ = rc.remove(repo)
@@ -243,11 +244,14 @@ func (rc *RepositoryFileCache) updateCacheForHost(host Host) error {
 		if err := rc.writeRepository(repo); err != nil {
 			return err
 		}
+
+		updateCounter++
 	}
 
 	if err := repoIterator.Error(); err != nil {
 		return err
 	}
 
+	log.Log().Infof("Updated repository cache with %d new items for host %s", updateCounter, host.Name())
 	return rc.writeLastUpdateTimestamp(host, start)
 }
