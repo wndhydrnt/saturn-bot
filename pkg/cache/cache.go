@@ -1,6 +1,7 @@
 package cache
 
 import (
+	"bytes"
 	"errors"
 	"fmt"
 
@@ -37,7 +38,7 @@ func New(dbPath string) (*Cache, error) {
 
 // Delete deletes the item identified by key in the cache.
 func (c *Cache) Delete(key string) error {
-	result := c.db.Delete(&item{Key: key})
+	result := c.db.Where("key = ?", key).Delete(&item{})
 	if result.Error != nil {
 		return fmt.Errorf("delete cache item %s: %w", key, result.Error)
 	}
@@ -61,20 +62,93 @@ func (c *Cache) Get(key string) ([]byte, error) {
 	return it.Value, nil
 }
 
+func (c *Cache) GetAllByTag(tag string) ([][]byte, error) {
+	var values [][]byte
+	result := c.db.
+		Table("items").
+		Select("items.value").
+		Joins("INNER JOIN tags ON tags.item_id = items.id").
+		Where("tags.name = ?", tag).
+		Find(&values)
+	if result.Error != nil {
+		return nil, fmt.Errorf("get all by tag %s: %w", tag, result.Error)
+	}
+
+	return values, nil
+}
+
 // Set writes the item identified by key with value to the cache.
 func (c *Cache) Set(key string, value []byte) error {
 	if value == nil {
 		return nil
 	}
 
-	it := &item{
-		Key:   key,
-		Value: value,
+	var it item
+	resultFirstOrCreate := c.db.Where("key = ?", key).Attrs(item{Key: key, Value: value}).FirstOrCreate(&it)
+	if resultFirstOrCreate.Error != nil {
+		return fmt.Errorf("create or get cache item: %w", resultFirstOrCreate.Error)
 	}
+
+	if bytes.Equal(it.Value, value) {
+		return nil
+	}
+
+	it.Value = value
 	result := c.db.Save(it)
 	if result.Error != nil {
 		return fmt.Errorf("set Cache item %s: %w", key, result.Error)
 	}
 
 	return nil
+}
+
+func (c *Cache) SetWithTag(key string, value []byte, tags ...string) error {
+	if value == nil {
+		return nil
+	}
+
+	var it item
+	result := c.db.Where("key = ?", key).First(&it)
+	if result.Error != nil {
+		if errors.Is(result.Error, gorm.ErrRecordNotFound) {
+			var tagsNew []tag
+			for _, t := range tags {
+				tagsNew = append(tagsNew, tag{Name: t})
+			}
+			itemNew := &item{
+				Key:   key,
+				Value: value,
+				Tags:  tagsNew,
+			}
+			resultNewSave := c.db.Save(itemNew)
+			if resultNewSave.Error != nil {
+				return fmt.Errorf("set cache item with tag: %w", resultNewSave.Error)
+			}
+
+			return nil
+		}
+
+		return fmt.Errorf("get cache item to set with tag: %w", result.Error)
+	}
+
+	return c.db.Transaction(func(tx *gorm.DB) error {
+		resultDeleteTags := tx.Where("item_id = ?", it.ID).Delete(&tag{})
+		if resultDeleteTags.Error != nil {
+			return fmt.Errorf("delete tags of cache item: %w", resultDeleteTags.Error)
+		}
+
+		var tagsNew []tag
+		for _, t := range tags {
+			tagsNew = append(tagsNew, tag{Name: t})
+		}
+
+		it.Value = value
+		it.Tags = tagsNew
+		resultSaveCurrent := tx.Save(it)
+		if resultSaveCurrent.Error != nil {
+			return fmt.Errorf("update existing cache item with tag: %w", resultSaveCurrent.Error)
+		}
+
+		return nil
+	})
 }
