@@ -40,6 +40,7 @@ func infoHandler(worker *Worker) http.HandlerFunc {
 			resp.Tasks = append(resp.Tasks, infoResponseTask{Path: workerTask.Path(), Checksum: workerTask.Checksum(), Task: workerTask.Name})
 		}
 
+		w.Header().Set("Content-Type", "application/json")
 		err := json.NewEncoder(w).Encode(&resp)
 		if err != nil {
 			log.Log().Errorf("Write task info to writer: %v", err)
