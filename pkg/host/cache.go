@@ -196,69 +196,62 @@ func (rc *RepositoryFileCache) writeRepository(repo Repository) error {
 	return nil
 }
 
-func (rc *RepositoryFileCache) receiveRepositories(expectedFinishes int, results chan []Repository, errChan chan error) error {
-	finishes := 0
-	for {
-		select {
-		case repoList := <-results:
-			for _, repo := range repoList {
-				if repo.IsArchived() {
-					_ = rc.remove(repo)
-					continue
-				}
-
-				err := rc.writeRepository(repo)
-				if err != nil {
-					return err
-				}
-			}
-
-		case err := <-errChan:
-			finishes += 1
-			if err != nil {
-				return err
-			}
-		}
-
-		if expectedFinishes == finishes {
-			return nil
-		}
-	}
-}
-
 func (rc *RepositoryFileCache) updateCache(hosts []Host) error {
 	rc.mu.Lock()
 	defer rc.mu.Unlock()
-	listRepos := make(chan []Repository)
-	listReposErrs := make(chan error)
-	start := rc.Clock.Now()
+	var wg sync.WaitGroup
+	errChan := make(chan error, len(hosts))
 	for _, h := range hosts {
-		since, err := rc.readLastUpdateTimestamp(h)
-		if err != nil {
-			return err
-		}
-
-		if since == nil {
-			log.Log().Infof("Full update of repository cache for host %s", h.Name())
-			_ = os.RemoveAll(rc.Dir)
-		} else {
-			log.Log().Infof("Partial update of repository cache for host %s since %s", h.Name(), since)
-		}
-
-		go h.ListRepositories(since, listRepos, listReposErrs)
+		wg.Add(1)
+		go func() {
+			errChan <- rc.updateCacheForHost(h)
+			wg.Done()
+		}()
 	}
 
-	err := rc.receiveRepositories(len(hosts), listRepos, listReposErrs)
+	wg.Wait()
+	close(errChan)
+	var err error
+	for updateErr := range errChan {
+		err = errors.Join(err, updateErr)
+	}
+
+	return err
+}
+
+func (rc *RepositoryFileCache) updateCacheForHost(host Host) error {
+	since, err := rc.readLastUpdateTimestamp(host)
 	if err != nil {
 		return err
 	}
 
-	for _, h := range hosts {
-		err := rc.writeLastUpdateTimestamp(h, start)
-		if err != nil {
-			return err
-		}
+	if since == nil {
+		log.Log().Infof("Full update of repository cache for host %s", host.Name())
+		_ = os.RemoveAll(filepath.Join(rc.Dir, host.Name()))
+	} else {
+		log.Log().Infof("Partial update of repository cache for host %s since %s", host.Name(), since)
 	}
 
-	return nil
+	start := rc.Clock.Now()
+	repoIterator := host.RepositoryIterator()
+	updateCounter := 0
+	for repo := range repoIterator.ListRepositories(since) {
+		if repo.IsArchived() {
+			_ = rc.remove(repo)
+			continue
+		}
+
+		if err := rc.writeRepository(repo); err != nil {
+			return err
+		}
+
+		updateCounter++
+	}
+
+	if err := repoIterator.Error(); err != nil {
+		return err
+	}
+
+	log.Log().Infof("Updated repository cache with %d new items for host %s", updateCounter, host.Name())
+	return rc.writeLastUpdateTimestamp(host, start)
 }

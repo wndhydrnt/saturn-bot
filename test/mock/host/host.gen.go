@@ -453,30 +453,6 @@ func (mr *MockHostMockRecorder) CreateFromName(name any) *gomock.Call {
 	return mr.mock.ctrl.RecordCallWithMethodType(mr.mock, "CreateFromName", reflect.TypeOf((*MockHost)(nil).CreateFromName), name)
 }
 
-// ListRepositories mocks base method.
-func (m *MockHost) ListRepositories(since *time.Time, result chan []host.Repository, errChan chan error) {
-	m.ctrl.T.Helper()
-	m.ctrl.Call(m, "ListRepositories", since, result, errChan)
-}
-
-// ListRepositories indicates an expected call of ListRepositories.
-func (mr *MockHostMockRecorder) ListRepositories(since, result, errChan any) *gomock.Call {
-	mr.mock.ctrl.T.Helper()
-	return mr.mock.ctrl.RecordCallWithMethodType(mr.mock, "ListRepositories", reflect.TypeOf((*MockHost)(nil).ListRepositories), since, result, errChan)
-}
-
-// ListRepositoriesWithOpenPullRequests mocks base method.
-func (m *MockHost) ListRepositoriesWithOpenPullRequests(result chan []host.Repository, errChan chan error) {
-	m.ctrl.T.Helper()
-	m.ctrl.Call(m, "ListRepositoriesWithOpenPullRequests", result, errChan)
-}
-
-// ListRepositoriesWithOpenPullRequests indicates an expected call of ListRepositoriesWithOpenPullRequests.
-func (mr *MockHostMockRecorder) ListRepositoriesWithOpenPullRequests(result, errChan any) *gomock.Call {
-	mr.mock.ctrl.T.Helper()
-	return mr.mock.ctrl.RecordCallWithMethodType(mr.mock, "ListRepositoriesWithOpenPullRequests", reflect.TypeOf((*MockHost)(nil).ListRepositoriesWithOpenPullRequests), result, errChan)
-}
-
 // Name mocks base method.
 func (m *MockHost) Name() string {
 	m.ctrl.T.Helper()
@@ -517,6 +493,20 @@ func (m *MockHost) PullRequestIterator() host.PullRequestIterator {
 func (mr *MockHostMockRecorder) PullRequestIterator() *gomock.Call {
 	mr.mock.ctrl.T.Helper()
 	return mr.mock.ctrl.RecordCallWithMethodType(mr.mock, "PullRequestIterator", reflect.TypeOf((*MockHost)(nil).PullRequestIterator))
+}
+
+// RepositoryIterator mocks base method.
+func (m *MockHost) RepositoryIterator() host.RepositoryIterator {
+	m.ctrl.T.Helper()
+	ret := m.ctrl.Call(m, "RepositoryIterator")
+	ret0, _ := ret[0].(host.RepositoryIterator)
+	return ret0
+}
+
+// RepositoryIterator indicates an expected call of RepositoryIterator.
+func (mr *MockHostMockRecorder) RepositoryIterator() *gomock.Call {
+	mr.mock.ctrl.T.Helper()
+	return mr.mock.ctrl.RecordCallWithMethodType(mr.mock, "RepositoryIterator", reflect.TypeOf((*MockHost)(nil).RepositoryIterator))
 }
 
 // Type mocks base method.
@@ -583,6 +573,58 @@ func (m *MockPullRequestIterator) ListPullRequests(since *time.Time) iter.Seq[*h
 func (mr *MockPullRequestIteratorMockRecorder) ListPullRequests(since any) *gomock.Call {
 	mr.mock.ctrl.T.Helper()
 	return mr.mock.ctrl.RecordCallWithMethodType(mr.mock, "ListPullRequests", reflect.TypeOf((*MockPullRequestIterator)(nil).ListPullRequests), since)
+}
+
+// MockRepositoryIterator is a mock of RepositoryIterator interface.
+type MockRepositoryIterator struct {
+	ctrl     *gomock.Controller
+	recorder *MockRepositoryIteratorMockRecorder
+	isgomock struct{}
+}
+
+// MockRepositoryIteratorMockRecorder is the mock recorder for MockRepositoryIterator.
+type MockRepositoryIteratorMockRecorder struct {
+	mock *MockRepositoryIterator
+}
+
+// NewMockRepositoryIterator creates a new mock instance.
+func NewMockRepositoryIterator(ctrl *gomock.Controller) *MockRepositoryIterator {
+	mock := &MockRepositoryIterator{ctrl: ctrl}
+	mock.recorder = &MockRepositoryIteratorMockRecorder{mock}
+	return mock
+}
+
+// EXPECT returns an object that allows the caller to indicate expected use.
+func (m *MockRepositoryIterator) EXPECT() *MockRepositoryIteratorMockRecorder {
+	return m.recorder
+}
+
+// Error mocks base method.
+func (m *MockRepositoryIterator) Error() error {
+	m.ctrl.T.Helper()
+	ret := m.ctrl.Call(m, "Error")
+	ret0, _ := ret[0].(error)
+	return ret0
+}
+
+// Error indicates an expected call of Error.
+func (mr *MockRepositoryIteratorMockRecorder) Error() *gomock.Call {
+	mr.mock.ctrl.T.Helper()
+	return mr.mock.ctrl.RecordCallWithMethodType(mr.mock, "Error", reflect.TypeOf((*MockRepositoryIterator)(nil).Error))
+}
+
+// ListRepositories mocks base method.
+func (m *MockRepositoryIterator) ListRepositories(since *time.Time) iter.Seq[host.Repository] {
+	m.ctrl.T.Helper()
+	ret := m.ctrl.Call(m, "ListRepositories", since)
+	ret0, _ := ret[0].(iter.Seq[host.Repository])
+	return ret0
+}
+
+// ListRepositories indicates an expected call of ListRepositories.
+func (mr *MockRepositoryIteratorMockRecorder) ListRepositories(since any) *gomock.Call {
+	mr.mock.ctrl.T.Helper()
+	return mr.mock.ctrl.RecordCallWithMethodType(mr.mock, "ListRepositories", reflect.TypeOf((*MockRepositoryIterator)(nil).ListRepositories), since)
 }
 
 // MockHostDetail is a mock of HostDetail interface.

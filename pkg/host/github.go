@@ -626,113 +626,6 @@ func (g *GitHubHost) CreateFromName(name string) (Repository, error) {
 	return &GitHubRepository{client: g.client, host: g, repo: repo}, nil
 }
 
-func (g *GitHubHost) ListRepositories(since *time.Time, result chan []Repository, errChan chan error) {
-	opts := &github.RepositoryListByAuthenticatedUserOptions{
-		Affiliation: "owner,collaborator",
-		Direction:   "desc",
-		ListOptions: github.ListOptions{
-			Page:    1,
-			PerPage: 20,
-		},
-		Sort:       "updated",
-		Visibility: "all",
-	}
-	for {
-		repos, resp, err := g.client.Repositories.ListByAuthenticatedUser(ctx, opts)
-		if err != nil {
-			errChan <- fmt.Errorf("list github repositories: %w", err)
-			return
-		}
-
-		var batch []Repository
-		for _, repo := range repos {
-			// Return immediately because entries are sorted by "updated"
-			if since != nil && repo.GetUpdatedAt().Before(*since) {
-				result <- batch // Drain the remaining repositories
-				errChan <- nil
-				return
-			}
-
-			// Get the repository again because ListByAuthenticatedUser doesn't return a full repository object.
-			repoFull, _, err := g.client.Repositories.Get(ctx, repo.GetOwner().GetLogin(), repo.GetName())
-			if err != nil {
-				errChan <- fmt.Errorf("get github repository %s/%s: %w", repo.GetOwner().GetLogin(), repo.GetName(), err)
-				return
-			}
-
-			batch = append(
-				batch,
-				&GitHubRepository{client: g.client, host: g, repo: repoFull},
-			)
-		}
-
-		result <- batch
-		if resp.NextPage == 0 {
-			errChan <- nil
-			return
-		}
-
-		opts.Page = resp.NextPage
-	}
-}
-
-func (g *GitHubHost) ListRepositoriesWithOpenPullRequests(result chan []Repository, errChan chan error) {
-	user, _, err := g.client.Users.Get(ctx, "")
-	if err != nil {
-		errChan <- fmt.Errorf("get authenticated user to list repositories: %w", err)
-		return
-	}
-
-	query := fmt.Sprintf("is:pr author:%s archived:false", user.GetLogin())
-	opts := &github.SearchOptions{
-		ListOptions: github.ListOptions{
-			Page:    1,
-			PerPage: 20,
-		},
-	}
-	for {
-		results, resp, err := g.client.Search.Issues(ctx, query, opts)
-		if err != nil {
-			errChan <- fmt.Errorf("list repositories with open pull requests: %w", err)
-			return
-		}
-
-		var batch []Repository
-		for _, issue := range results.Issues {
-			if issue.IsPullRequest() {
-				u, err := url.Parse(issue.GetRepositoryURL())
-				if err != nil {
-					errChan <- fmt.Errorf("parse repository url of issue %s: %w", issue.GetURL(), err)
-					return
-				}
-
-				// Search result does not contain data about the associated repository, except for the URL.
-				// go-github does not provide a built-in way to extract org/name data from a URL.
-				// Need to parse the URL, extract the data and request the repository.
-				parts := strings.Split(strings.TrimPrefix(u.Path, "/repos/"), "/")
-				repo, _, err := g.client.Repositories.Get(ctx, parts[0], parts[1])
-				if err != nil {
-					errChan <- fmt.Errorf("get repository of issue %s: %w", issue.GetURL(), err)
-					return
-				}
-
-				batch = append(
-					batch,
-					&GitHubRepository{client: g.client, host: g, repo: repo},
-				)
-			}
-		}
-
-		result <- batch
-		if resp.NextPage == 0 {
-			errChan <- nil
-			break
-		}
-
-		opts.Page = resp.NextPage
-	}
-}
-
 func (g *GitHubHost) Name() string {
 	if g.client.BaseURL.Host == "api.github.com" {
 		return "github.com"
@@ -744,6 +637,10 @@ func (g *GitHubHost) Name() string {
 // Type implements [Host].
 func (g *GitHubHost) Type() Type {
 	return GitHubType
+}
+
+func (g *GitHubHost) RepositoryIterator() RepositoryIterator {
+	return &githubRepositoryIterator{host: g}
 }
 
 // PullRequestFactory implements [Host].
@@ -825,6 +722,62 @@ func (it *githubPullRequestIterator) ListPullRequests(since *time.Time) iter.Seq
 }
 
 func (it *githubPullRequestIterator) Error() error {
+	return it.err
+}
+
+type githubRepositoryIterator struct {
+	err  error
+	host *GitHubHost
+}
+
+func (it *githubRepositoryIterator) ListRepositories(since *time.Time) iter.Seq[Repository] {
+	return func(yield func(Repository) bool) {
+		opts := &github.RepositoryListByAuthenticatedUserOptions{
+			Affiliation: "owner,collaborator",
+			Direction:   "desc",
+			ListOptions: github.ListOptions{
+				Page:    1,
+				PerPage: 20,
+			},
+			Sort:       "updated",
+			Visibility: "all",
+		}
+		for {
+			repos, resp, err := it.host.client.Repositories.ListByAuthenticatedUser(ctx, opts)
+			if err != nil {
+				it.err = fmt.Errorf("list github repositories: %w", err)
+				return
+			}
+
+			for _, repo := range repos {
+				// Return immediately because entries are sorted by "updated"
+				if since != nil && repo.GetUpdatedAt().Before(*since) {
+					return
+				}
+
+				// Get the repository again because ListByAuthenticatedUser doesn't return a full repository object.
+				repoFull, _, err := it.host.client.Repositories.Get(ctx, repo.GetOwner().GetLogin(), repo.GetName())
+				if err != nil {
+					it.err = fmt.Errorf("get github repository %s/%s: %w", repo.GetOwner().GetLogin(), repo.GetName(), err)
+					return
+				}
+
+				sbRepo := &GitHubRepository{client: it.host.client, host: it.host, repo: repoFull}
+				if !yield(sbRepo) {
+					return
+				}
+			}
+
+			if resp.NextPage == 0 {
+				return
+			}
+
+			opts.Page = resp.NextPage
+		}
+	}
+}
+
+func (it *githubRepositoryIterator) Error() error {
 	return it.err
 }
 

@@ -575,103 +575,6 @@ func (g *GitLabHost) Name() string {
 	return g.client.BaseURL().Host
 }
 
-func (g *GitLabHost) ListRepositories(since *time.Time, result chan []Repository, errChan chan error) {
-	// NOTE: GitLab client currently doesn't support attribute `updated_after` of the API.
-	// Need to sort by `updated_at` in descending order and compare dates in code.
-	opts := &gitlab.ListProjectsOptions{
-		OrderBy:        gitlab.Ptr("updated_at"),
-		Sort:           gitlab.Ptr("desc"),
-		MinAccessLevel: gitlab.Ptr(gitlab.AccessLevelValue(30)),
-		ListOptions: gitlab.ListOptions{
-			Page:    1,
-			PerPage: 20,
-		},
-	}
-	for {
-		projects, resp, err := g.client.Projects.ListProjects(opts)
-		if err != nil {
-			errChan <- fmt.Errorf("list gitlab projects: %w", err)
-			return
-		}
-
-		var batch []Repository
-		for _, project := range projects {
-			if since != nil && project.UpdatedAt != nil && project.UpdatedAt.Before(ptr.From(since)) {
-				result <- batch
-				errChan <- nil
-				return
-			}
-
-			glr := &GitLabRepository{client: g.client, host: g, project: project, userCache: g.userCache}
-			batch = append(batch, glr)
-		}
-
-		result <- batch
-		if resp.NextPage == 0 {
-			errChan <- nil
-			return
-		}
-
-		opts.Page = resp.NextPage
-	}
-}
-
-func (g *GitLabHost) ListRepositoriesWithOpenPullRequests(result chan []Repository, errChan chan error) {
-	user, _, err := g.client.Users.CurrentUser()
-	if err != nil {
-		errChan <- fmt.Errorf("list current gitlab user: %w", err)
-		return
-	}
-
-	opts := &gitlab.ListMergeRequestsOptions{
-		AuthorID: &user.ID,
-		ListOptions: gitlab.ListOptions{
-			Page:    1,
-			PerPage: 20,
-		},
-	}
-	visitedProjectsIDs := map[int]struct{}{}
-	for {
-		mergeRequests, resp, err := g.client.MergeRequests.ListMergeRequests(opts)
-		if err != nil {
-			errChan <- fmt.Errorf("list gitlab projects with open merge requests: %w", err)
-			return
-		}
-
-		var batch []Repository
-		for _, mergeRequest := range mergeRequests {
-			_, exists := visitedProjectsIDs[mergeRequest.ProjectID]
-			if exists {
-				continue
-			}
-
-			visitedProjectsIDs[mergeRequest.ProjectID] = struct{}{}
-			project, _, err := g.client.Projects.GetProject(mergeRequest.ProjectID, &gitlab.GetProjectOptions{})
-			if err != nil {
-				errChan <- fmt.Errorf("get gitlab project %d with open merge request %d: %w", mergeRequest.ProjectID, mergeRequest.IID, err)
-				return
-			}
-
-			if project.Archived {
-				log.Log().Debugf("Ignore project %d because it has been archived", project.ID)
-				continue
-			}
-
-			repo := &GitLabRepository{client: g.client, host: g, project: project, userCache: g.userCache}
-			batch = append(batch, repo)
-		}
-
-		result <- batch
-
-		if resp.NextPage == 0 {
-			errChan <- nil
-			return
-		}
-
-		opts.Page = resp.NextPage
-	}
-}
-
 // SearchCode implements [GitLabSearcher].
 // It returns a list of unique IDs of all projects returned by the search query.
 // The IDs are sorted in ascending order.
@@ -717,6 +620,10 @@ func (g *GitLabHost) SearchCode(gitlabGroupID any, query string) ([]int64, error
 // Type implements [Host].
 func (g *GitLabHost) Type() Type {
 	return GitLabType
+}
+
+func (g *GitLabHost) RepositoryIterator() RepositoryIterator {
+	return &gitlabRepositoryIterator{host: g}
 }
 
 // PullRequestFactory implements [Host].
@@ -780,6 +687,55 @@ func (g *gitlabPullRequestIterator) ListPullRequests(since *time.Time) iter.Seq[
 
 func (g *gitlabPullRequestIterator) Error() error {
 	return g.err
+}
+
+type gitlabRepositoryIterator struct {
+	err  error
+	host *GitLabHost
+}
+
+func (it *gitlabRepositoryIterator) ListRepositories(since *time.Time) iter.Seq[Repository] {
+	return func(yield func(Repository) bool) {
+		// NOTE: GitLab client currently doesn't support attribute `updated_after` of the API.
+		// Need to sort by `updated_at` in descending order and compare dates in code.
+		opts := &gitlab.ListProjectsOptions{
+			OrderBy:        gitlab.Ptr("updated_at"),
+			Sort:           gitlab.Ptr("desc"),
+			MinAccessLevel: gitlab.Ptr(gitlab.AccessLevelValue(30)),
+			ListOptions: gitlab.ListOptions{
+				Page:    1,
+				PerPage: 20,
+			},
+		}
+		for {
+			projects, resp, err := it.host.client.Projects.ListProjects(opts)
+			if err != nil {
+				it.err = fmt.Errorf("list gitlab projects: %w", err)
+				return
+			}
+
+			for _, project := range projects {
+				if since != nil && project.UpdatedAt != nil && project.UpdatedAt.Before(ptr.From(since)) {
+					return
+				}
+
+				glr := &GitLabRepository{client: it.host.client, host: it.host, project: project, userCache: it.host.userCache}
+				if !yield(glr) {
+					return
+				}
+			}
+
+			if resp.NextPage == 0 {
+				return
+			}
+
+			opts.Page = resp.NextPage
+		}
+	}
+}
+
+func (it *gitlabRepositoryIterator) Error() error {
+	return it.err
 }
 
 func convertGitlabMergeRequestToPullRequest(mr *gitlab.MergeRequest) *PullRequest {

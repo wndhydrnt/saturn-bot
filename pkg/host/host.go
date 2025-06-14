@@ -168,8 +168,8 @@ type Host interface {
 	CreateFromName(name string) (Repository, error)
 	// CreateFromJson takes a JSON decoder from which to unmarshal a Repository and return it.
 	CreateFromJson(dec *json.Decoder) (Repository, error)
-	ListRepositories(since *time.Time, result chan []Repository, errChan chan error)
-	ListRepositoriesWithOpenPullRequests(result chan []Repository, errChan chan error)
+	// RepositoryIterator returns an implementation of [RepositoryIterator] to iterate over repositories of the host.
+	RepositoryIterator() RepositoryIterator
 	// PullRequestFactory return a [PullRequestFactory] that creates a new data struct of a pull request for the host.
 	PullRequestFactory() PullRequestFactory
 	// PullRequestIterator returns an implementation of [PullRequestIterator] to iterate over pull requests of the host.
@@ -185,6 +185,16 @@ type PullRequestIterator interface {
 	ListPullRequests(since *time.Time) iter.Seq[*PullRequest]
 	// Error returns an error that occurred during ListPullRequests.
 	// Callers of ListPullRequests should call this function after the iterator has returned to check if there was an error.
+	Error() error
+}
+
+// RepositoryIterator is an iterator to iterate over repositories in a host.
+type RepositoryIterator interface {
+	// ListRepositories returns an iter.Seq to iterate over repositories in a host.
+	// If since is not nil, the function should return only the repositories that have been updated since the given time.
+	ListRepositories(since *time.Time) iter.Seq[Repository]
+	// Error returns an error that occurred during ListRepositories.
+	// Callers of ListRepositories should call this function after the iterator has returned to check if there was an error.
 	Error() error
 }
 
