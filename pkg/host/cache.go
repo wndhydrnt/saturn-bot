@@ -199,7 +199,7 @@ func (rc *RepositoryFileCache) writeRepository(repo Repository) error {
 func (rc *RepositoryFileCache) updateCache(hosts []Host) error {
 	rc.mu.Lock()
 	defer rc.mu.Unlock()
-	wg := &sync.WaitGroup{}
+	var wg sync.WaitGroup
 	errChan := make(chan error, len(hosts))
 	for _, h := range hosts {
 		wg.Add(1)
