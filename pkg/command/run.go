@@ -156,16 +156,12 @@ func ExecuteRun(opts options.Opts, repositoryNames, taskFiles []string, inputs m
 		return nil, fmt.Errorf("new git client for run: %w", err)
 	}
 
-	repositoryFileCache := &host.RepositoryFileCache{
-		Clock: clock.Default,
-		Dir:   filepath.Join(opts.DataDir, "cache"),
-		Ttl:   opts.RepositoryCacheTtl,
-	}
-
 	dataCache, err := cache.New(filepath.Join(opts.DataDir, "cache.db"))
 	if err != nil {
 		return nil, err
 	}
+
+	repositoryCache := host.NewRepositoryCache(dataCache, clock.Default, filepath.Join(opts.DataDir, "cache"), opts.RepositoryCacheTtl)
 
 	prCache := host.NewPullRequestCacheFromHosts(dataCache, opts.Hosts)
 	e := &Run{
@@ -179,7 +175,7 @@ func ExecuteRun(opts options.Opts, repositoryNames, taskFiles []string, inputs m
 		},
 		PullRequestCache: prCache,
 		PushGateway:      opts.PushGateway,
-		RepositoryLister: repositoryFileCache,
+		RepositoryLister: repositoryCache,
 		TaskRegistry:     taskRegistry,
 	}
 	return e.Run(repositoryNames, taskFiles, inputs)

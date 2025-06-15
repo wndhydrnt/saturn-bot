@@ -14,6 +14,7 @@ import (
 	"github.com/prometheus/client_golang/prometheus/push"
 	"github.com/stretchr/testify/require"
 	"github.com/wndhydrnt/saturn-bot/pkg/action"
+	"github.com/wndhydrnt/saturn-bot/pkg/cache"
 	"github.com/wndhydrnt/saturn-bot/pkg/clock"
 	"github.com/wndhydrnt/saturn-bot/pkg/command"
 	"github.com/wndhydrnt/saturn-bot/pkg/filter"
@@ -180,6 +181,14 @@ func setupPullRequestIterator(ctrl *gomock.Controller, listErr error, prs ...*ho
 	return iterMock
 }
 
+func setupCacher(t *testing.T) host.Cacher {
+	t.Helper()
+	dbPath := filepath.Join(t.TempDir(), "cache.db")
+	cacher, err := cache.New(dbPath)
+	require.NoError(t, err)
+	return cacher
+}
+
 func TestExecuteRunner_Run(t *testing.T) {
 	tmpDir := t.TempDir()
 	ctrl := gomock.NewController(t)
@@ -233,9 +242,10 @@ func TestExecuteRunner_Run(t *testing.T) {
 		Processor:        procMock,
 		PullRequestCache: prCacheMock,
 		PushGateway:      pushGateway,
-		RepositoryLister: &host.RepositoryFileCache{
-			Clock: clock.Default,
-			Dir:   filepath.Join(tmpDir, "cache"),
+		RepositoryLister: &host.RepositoryCache{
+			Cacher: setupCacher(t),
+			Clock:  clock.Default,
+			Dir:    filepath.Join(tmpDir, "cache"),
 		},
 		TaskRegistry: taskRegistry,
 	}
@@ -274,9 +284,10 @@ func TestExecuteRunner_Run_DryRun(t *testing.T) {
 		DryRun:    true,
 		Hosts:     []host.Host{hostm},
 		Processor: procMock,
-		RepositoryLister: &host.RepositoryFileCache{
-			Clock: clock.Default,
-			Dir:   filepath.Join(tmpDir, "cache"),
+		RepositoryLister: &host.RepositoryCache{
+			Cacher: setupCacher(t),
+			Clock:  clock.Default,
+			Dir:    filepath.Join(tmpDir, "cache"),
 		},
 		TaskRegistry: taskRegistry,
 	}

@@ -20,8 +20,11 @@ type PullRequestFactory func() any
 // [github.com/wndhydrnt/saturn-bot/pkg/cache.Cache] implements this interface.
 type Cacher interface {
 	Delete(key string) error
+	DeleteAllByTag(tagName string) error
 	Get(key string) ([]byte, error)
+	GetAllByTag(tag string) ([][]byte, error)
 	Set(key string, value []byte) error
+	SetWithTags(key string, value []byte, tags ...string) error
 }
 
 // A PullRequestCache caches pull request data.

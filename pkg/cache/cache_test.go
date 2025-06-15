@@ -26,6 +26,30 @@ func TestCache_Delete(t *testing.T) {
 	require.Nil(t, value, "does not find the item")
 }
 
+func TestCache_DeleteAllByTag(t *testing.T) {
+	underTest := setupCache(t)
+	err := underTest.SetWithTags("first", []byte("value"), "test")
+	require.NoError(t, err, "stores the first item")
+	err = underTest.SetWithTags("second", []byte("value"), "test")
+	require.NoError(t, err, "stores the second item")
+	values, err := underTest.GetAllByTag("test")
+	require.NoError(t, err, "reads all the items")
+	require.Equal(t, [][]byte{[]byte("value"), []byte("value")}, values)
+
+	err = underTest.DeleteAllByTag("test")
+	require.NoError(t, err, "succeeds at deleting all items by tag")
+	values, err = underTest.GetAllByTag("test")
+	require.NoError(t, err, "reads all the items")
+	require.Len(t, values, 0, "no items found")
+}
+
+func TestCache_DeleteAllByTag_NoEntries(t *testing.T) {
+	underTest := setupCache(t)
+
+	err := underTest.DeleteAllByTag("test")
+	require.NoError(t, err, "succeeds at deleting all items by tag")
+}
+
 func TestCache_SetGet(t *testing.T) {
 	underTest := setupCache(t)
 	err := underTest.Set("unittest", []byte("value"))
@@ -68,7 +92,7 @@ func TestCache_GetAllByTag(t *testing.T) {
 func TestCache_SetWithTag(t *testing.T) {
 	underTest := setupCache(t)
 
-	err := underTest.SetWithTag("unittest", []byte("value"), "one", "two")
+	err := underTest.SetWithTags("unittest", []byte("value"), "one", "two")
 	require.NoError(t, err, "first set succeeds")
 
 	valuesOneBefore, err := underTest.GetAllByTag("one")
@@ -81,7 +105,7 @@ func TestCache_SetWithTag(t *testing.T) {
 	require.Equal(t, 1, len(valuesTwoBefore), "first get by tag 'two' returns the expected number of items")
 	require.Equal(t, []byte("value"), valuesTwoBefore[0], "first get by tag 'two' returns the expected value")
 
-	err = underTest.SetWithTag("unittest", []byte("other"), "two")
+	err = underTest.SetWithTags("unittest", []byte("other"), "two")
 	require.NoError(t, err, "second set succeeds")
 
 	valuesOneAfter, err := underTest.GetAllByTag("one")

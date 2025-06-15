@@ -46,6 +46,44 @@ func (c *Cache) Delete(key string) error {
 	return nil
 }
 
+// DeleteAllByTag deletes all items in the cache that have been tagged by tagName.
+// Deletes an item even if multiple tags refer to it.
+func (c *Cache) DeleteAllByTag(tagName string) error {
+	return c.db.Transaction(func(tx *gorm.DB) error {
+		var itemIDs []uint
+		// Get all IDs of items first because sqlite doesn't support joins in DELETE statements.
+		selectItemIDsResult := tx.
+			Table("items").
+			Select("items.id").
+			Joins("INNER JOIN tags ON tags.item_id = items.id").
+			Where("tags.name = ?", tagName).
+			Find(&itemIDs)
+		if selectItemIDsResult.Error != nil {
+			return fmt.Errorf("select items to delete by tag %s: %w", tagName, selectItemIDsResult.Error)
+		}
+
+		if len(itemIDs) == 0 {
+			return nil
+		}
+
+		deleteTagsResult := tx.
+			Where("item_id IN ?", itemIDs).
+			Delete(&tag{})
+		if deleteTagsResult.Error != nil {
+			return fmt.Errorf("delete tag entries for %s: %w", tagName, deleteTagsResult.Error)
+		}
+
+		deleteItemsResult := tx.
+			Where("id IN ?", itemIDs).
+			Delete(&item{})
+		if deleteItemsResult.Error != nil {
+			return fmt.Errorf("delete items for tag %s: %w", tagName, deleteItemsResult.Error)
+		}
+
+		return nil
+	})
+}
+
 // Get returns the item identified by key from the cache.
 // It returns [ErrNotFound] if the item doesn't exist in the cache.
 func (c *Cache) Get(key string) ([]byte, error) {
@@ -102,7 +140,7 @@ func (c *Cache) Set(key string, value []byte) error {
 	return nil
 }
 
-func (c *Cache) SetWithTag(key string, value []byte, tags ...string) error {
+func (c *Cache) SetWithTags(key string, value []byte, tags ...string) error {
 	if value == nil {
 		return nil
 	}
