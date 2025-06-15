@@ -100,6 +100,7 @@ func (c *Cache) Get(key string) ([]byte, error) {
 	return it.Value, nil
 }
 
+// GetAllByTag returns the values of all items tagged with tag.
 func (c *Cache) GetAllByTag(tag string) ([][]byte, error) {
 	var values [][]byte
 	result := c.db.
@@ -140,6 +141,8 @@ func (c *Cache) Set(key string, value []byte) error {
 	return nil
 }
 
+// SetWithTags adds the item identified by key with value to the cache.
+// One or more tags can be passed to tag the item.
 func (c *Cache) SetWithTags(key string, value []byte, tags ...string) error {
 	if value == nil {
 		return nil
