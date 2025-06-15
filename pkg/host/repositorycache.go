@@ -36,7 +36,9 @@ type RepositoryCache struct {
 	mu sync.Mutex
 }
 
+// NewRepositoryCache returns a new [RepositoryCache].
 func NewRepositoryCache(c Cacher, clock clock.Clock, dir string, ttl time.Duration) *RepositoryCache {
+	// TODO(v1): Remove argument dir.
 	fi, err := os.Stat(dir)
 	if err == nil && fi.IsDir() {
 		removeErr := os.RemoveAll(dir)
