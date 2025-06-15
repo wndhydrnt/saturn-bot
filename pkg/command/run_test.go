@@ -242,12 +242,8 @@ func TestExecuteRunner_Run(t *testing.T) {
 		Processor:        procMock,
 		PullRequestCache: prCacheMock,
 		PushGateway:      pushGateway,
-		RepositoryLister: &host.RepositoryCache{
-			Cacher: setupCacher(t),
-			Clock:  clock.Default,
-			Dir:    filepath.Join(tmpDir, "cache"),
-		},
-		TaskRegistry: taskRegistry,
+		RepositoryLister: host.NewRepositoryCache(setupCacher(t), clock.Default, filepath.Join(tmpDir, "cache"), 0),
+		TaskRegistry:     taskRegistry,
 	}
 	_, err := runner.Run([]string{}, []string{taskFile}, map[string]string{})
 
@@ -281,15 +277,11 @@ func TestExecuteRunner_Run_DryRun(t *testing.T) {
 	taskRegistry := task.NewRegistry(runTestOpts)
 
 	runner := &command.Run{
-		DryRun:    true,
-		Hosts:     []host.Host{hostm},
-		Processor: procMock,
-		RepositoryLister: &host.RepositoryCache{
-			Cacher: setupCacher(t),
-			Clock:  clock.Default,
-			Dir:    filepath.Join(tmpDir, "cache"),
-		},
-		TaskRegistry: taskRegistry,
+		DryRun:           true,
+		Hosts:            []host.Host{hostm},
+		Processor:        procMock,
+		RepositoryLister: host.NewRepositoryCache(setupCacher(t), clock.Default, filepath.Join(tmpDir, "cache"), 0),
+		TaskRegistry:     taskRegistry,
 	}
 	_, err := runner.Run([]string{}, []string{taskFile}, map[string]string{})
 
