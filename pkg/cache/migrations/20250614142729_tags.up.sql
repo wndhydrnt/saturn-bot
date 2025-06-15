@@ -1,0 +1,6 @@
+CREATE TABLE IF NOT EXISTS `tags` (
+  `id` INTEGER NOT NULL PRIMARY KEY,
+  `name` TEXT NOT NULL,
+  `item_id` INTEGER NOT NULL,
+  FOREIGN KEY (item_id) REFERENCES items (id)
+);

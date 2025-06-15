@@ -55,6 +55,20 @@ func (mr *MockCacherMockRecorder) Delete(key any) *gomock.Call {
 	return mr.mock.ctrl.RecordCallWithMethodType(mr.mock, "Delete", reflect.TypeOf((*MockCacher)(nil).Delete), key)
 }
 
+// DeleteAllByTag mocks base method.
+func (m *MockCacher) DeleteAllByTag(tagName string) error {
+	m.ctrl.T.Helper()
+	ret := m.ctrl.Call(m, "DeleteAllByTag", tagName)
+	ret0, _ := ret[0].(error)
+	return ret0
+}
+
+// DeleteAllByTag indicates an expected call of DeleteAllByTag.
+func (mr *MockCacherMockRecorder) DeleteAllByTag(tagName any) *gomock.Call {
+	mr.mock.ctrl.T.Helper()
+	return mr.mock.ctrl.RecordCallWithMethodType(mr.mock, "DeleteAllByTag", reflect.TypeOf((*MockCacher)(nil).DeleteAllByTag), tagName)
+}
+
 // Get mocks base method.
 func (m *MockCacher) Get(key string) ([]byte, error) {
 	m.ctrl.T.Helper()
@@ -70,6 +84,21 @@ func (mr *MockCacherMockRecorder) Get(key any) *gomock.Call {
 	return mr.mock.ctrl.RecordCallWithMethodType(mr.mock, "Get", reflect.TypeOf((*MockCacher)(nil).Get), key)
 }
 
+// GetAllByTag mocks base method.
+func (m *MockCacher) GetAllByTag(tag string) ([][]byte, error) {
+	m.ctrl.T.Helper()
+	ret := m.ctrl.Call(m, "GetAllByTag", tag)
+	ret0, _ := ret[0].([][]byte)
+	ret1, _ := ret[1].(error)
+	return ret0, ret1
+}
+
+// GetAllByTag indicates an expected call of GetAllByTag.
+func (mr *MockCacherMockRecorder) GetAllByTag(tag any) *gomock.Call {
+	mr.mock.ctrl.T.Helper()
+	return mr.mock.ctrl.RecordCallWithMethodType(mr.mock, "GetAllByTag", reflect.TypeOf((*MockCacher)(nil).GetAllByTag), tag)
+}
+
 // Set mocks base method.
 func (m *MockCacher) Set(key string, value []byte) error {
 	m.ctrl.T.Helper()
@@ -82,6 +111,25 @@ func (m *MockCacher) Set(key string, value []byte) error {
 func (mr *MockCacherMockRecorder) Set(key, value any) *gomock.Call {
 	mr.mock.ctrl.T.Helper()
 	return mr.mock.ctrl.RecordCallWithMethodType(mr.mock, "Set", reflect.TypeOf((*MockCacher)(nil).Set), key, value)
+}
+
+// SetWithTags mocks base method.
+func (m *MockCacher) SetWithTags(key string, value []byte, tags ...string) error {
+	m.ctrl.T.Helper()
+	varargs := []any{key, value}
+	for _, a := range tags {
+		varargs = append(varargs, a)
+	}
+	ret := m.ctrl.Call(m, "SetWithTags", varargs...)
+	ret0, _ := ret[0].(error)
+	return ret0
+}
+
+// SetWithTags indicates an expected call of SetWithTags.
+func (mr *MockCacherMockRecorder) SetWithTags(key, value any, tags ...any) *gomock.Call {
+	mr.mock.ctrl.T.Helper()
+	varargs := append([]any{key, value}, tags...)
+	return mr.mock.ctrl.RecordCallWithMethodType(mr.mock, "SetWithTags", reflect.TypeOf((*MockCacher)(nil).SetWithTags), varargs...)
 }
 
 // MockPullRequestCache is a mock of PullRequestCache interface.
