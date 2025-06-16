@@ -1,5 +1,23 @@
 # Changelog
 
+## [0.27.0](https://github.com/wndhydrnt/saturn-bot/compare/v0.26.1...v0.27.0) (2025-06-16)
+
+
+### Features
+
+* **processor:** Handle pull requests when a task does not match them anymore ([#185](https://github.com/wndhydrnt/saturn-bot/issues/185)) ([c9eb36b](https://github.com/wndhydrnt/saturn-bot/commit/c9eb36bee812e2063fe0a64091b49ea14f4d54c8))
+* **server:** Add link to run index view from task results view ([bf26816](https://github.com/wndhydrnt/saturn-bot/commit/bf26816608c4a925e25c3a7800e5b7bbc008019f))
+* **server:** Add view that displays the error of a repository that occured during a run ([#180](https://github.com/wndhydrnt/saturn-bot/issues/180)) ([e0c280b](https://github.com/wndhydrnt/saturn-bot/commit/e0c280b38454cd12c02e5372526ed3d27b4234f6))
+* **worker:** Add metric worker_runs_total ([d769771](https://github.com/wndhydrnt/saturn-bot/commit/d769771b39c9f310d60309918fa8bdf0402c74c3))
+
+
+### Bug Fixes
+
+* **build:** Upgrade Go to v1.23.10 ([82ed7e1](https://github.com/wndhydrnt/saturn-bot/commit/82ed7e18b723498cad8359f4384e23ab75817958))
+* **command:** Value of metric run_task_success does not indicate when one repository failed ([dbb6089](https://github.com/wndhydrnt/saturn-bot/commit/dbb6089344d42cd2fd01cd51f37fb6409ce36b96))
+* **processor:** maxOpenPRs limit not triggered when branch of existing PR has been modified ([4da7120](https://github.com/wndhydrnt/saturn-bot/commit/4da7120d5bdb6e6a975a4a79c079fe2f92d9abc3))
+* **worker:** Set Content-Type header for /info endpoint ([2310f6e](https://github.com/wndhydrnt/saturn-bot/commit/2310f6ee6a255249d4b7cbec3f4614c5b4ed5c44))
+
 ## [0.26.1](https://github.com/wndhydrnt/saturn-bot/compare/v0.26.0...v0.26.1) (2025-04-28)
 
 
