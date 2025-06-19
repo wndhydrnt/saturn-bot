@@ -52,21 +52,21 @@ func (g *GitHubRepository) CloneUrlSsh() string {
 	return g.repo.GetSSHURL()
 }
 
-func (g *GitHubRepository) ClosePullRequest(msg string, pr *PullRequest) error {
+func (g *GitHubRepository) ClosePullRequest(msg string, pr *PullRequest) (*PullRequest, error) {
 	gpr := pr.Raw.(*github.PullRequest)
 	comment := &github.IssueComment{Body: github.Ptr(msg)}
 	_, _, err := g.client.Issues.CreateComment(ctx, g.repo.GetOwner().GetLogin(), g.repo.GetName(), gpr.GetNumber(), comment)
 	if err != nil {
-		return fmt.Errorf("create comment before closing pull request: %w", err)
+		return nil, fmt.Errorf("create comment before closing pull request: %w", err)
 	}
 
 	gpr.State = github.Ptr("closed")
-	_, _, err = g.client.PullRequests.Edit(ctx, g.repo.GetOwner().GetLogin(), g.repo.GetName(), gpr.GetNumber(), gpr)
+	gprUpdated, _, err := g.client.PullRequests.Edit(ctx, g.repo.GetOwner().GetLogin(), g.repo.GetName(), gpr.GetNumber(), gpr)
 	if err != nil {
-		return fmt.Errorf("close pull request: %w", err)
+		return nil, fmt.Errorf("close pull request: %w", err)
 	}
 
-	return nil
+	return convertGithubPullRequestToPullRequest(gprUpdated), nil
 }
 
 func (g *GitHubRepository) CreatePullRequestComment(body string, pr *PullRequest) error {

@@ -101,11 +101,12 @@ func (mr *MockRepositoryMockRecorder) CloneUrlSsh() *gomock.Call {
 }
 
 // ClosePullRequest mocks base method.
-func (m *MockRepository) ClosePullRequest(msg string, pr *host.PullRequest) error {
+func (m *MockRepository) ClosePullRequest(msg string, pr *host.PullRequest) (*host.PullRequest, error) {
 	m.ctrl.T.Helper()
 	ret := m.ctrl.Call(m, "ClosePullRequest", msg, pr)
-	ret0, _ := ret[0].(error)
-	return ret0
+	ret0, _ := ret[0].(*host.PullRequest)
+	ret1, _ := ret[1].(error)
+	return ret0, ret1
 }
 
 // ClosePullRequest indicates an expected call of ClosePullRequest.

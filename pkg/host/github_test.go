@@ -105,15 +105,19 @@ func TestGitHubRepository_ClosePullRequest(t *testing.T) {
 			"state": "closed",
 		}).
 		Reply(200).
-		JSON(map[string]string{})
+		JSON(github.PullRequest{
+			Number: github.Ptr(987),
+			State:  github.Ptr("closed"),
+		})
 
 	repo := &GitHubRepository{
 		client: setupGitHubTestClient(),
 		repo:   setupGitHubRepository(),
 	}
-	err := repo.ClosePullRequest("close pull request", toSbPr(pr))
+	prUpdated, err := repo.ClosePullRequest("close pull request", toSbPr(pr))
 
 	require.NoError(t, err)
+	require.Equal(t, PullRequestStateClosed, prUpdated.State)
 	require.True(t, gock.IsDone())
 }
 

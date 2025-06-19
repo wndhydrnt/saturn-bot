@@ -127,7 +127,7 @@ type Repository interface {
 	CanMergePullRequest(pr *PullRequest) (bool, error)
 	CloneUrlHttp() string
 	CloneUrlSsh() string
-	ClosePullRequest(msg string, pr *PullRequest) error
+	ClosePullRequest(msg string, pr *PullRequest) (*PullRequest, error)
 	CreatePullRequestComment(body string, pr *PullRequest) error
 	CreatePullRequest(branch string, data PullRequestData) (*PullRequest, error)
 	DeleteBranch(pr *PullRequest) error
