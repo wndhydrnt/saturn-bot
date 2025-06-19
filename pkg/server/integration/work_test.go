@@ -826,3 +826,160 @@ func TestServer_API_ReportWorkV1_AutoMergeOpenPrSchedule1Hour(t *testing.T) {
 
 	executeTestCase(t, tc)
 }
+
+func TestServer_API_ReportWorkV1_UserMergedPrAndTaskNotMatchingAnymore(t *testing.T) {
+	testTask := schema.Task{Name: "unittest"}
+	taskHash := "7d4262799e93d4fb6abc2f299a1846921256fc7aa64d80f87d2ad579e5c31306"
+
+	tc := testCase{
+		name:  `When a user merged a PR manually and the Task does not match anymore then the status is set to "merged"`,
+		tasks: []schema.Task{testTask},
+		apiCalls: []apiCall{
+			// Schedule a new run for the task.
+			{
+				method: "POST",
+				path:   "/api/v1/runs",
+				requestBody: openapi.ScheduleRunV1Request{
+					TaskName: testTask.Name,
+				},
+				statusCode: http.StatusOK,
+				responseBody: openapi.ScheduleRunV1Response{
+					RunID: 1,
+				},
+			},
+			// And process the first run.
+			{
+				method:     "GET",
+				path:       "/api/v1/worker/work",
+				statusCode: http.StatusOK,
+				responseBody: openapi.GetWorkV1Response{
+					RunID: 1,
+					Task: openapi.WorkTaskV1{
+						Hash: taskHash,
+						Name: testTask.Name,
+					},
+				},
+			},
+			// And report an open PR as the result of the first run.
+			{
+				method: "POST",
+				path:   "/api/v1/worker/work",
+				requestBody: openapi.ReportWorkV1Request{
+					RunID: 1,
+					Task: openapi.WorkTaskV1{
+						Hash: taskHash,
+						Name: testTask.Name,
+					},
+					TaskResults: []openapi.ReportWorkV1TaskResult{
+						{
+							PullRequestUrl: ptr.To("git.local/unit/test/pr/1"),
+							RepositoryName: "git.local/unit/test",
+							Result:         int(processor.ResultPrCreated),
+							State:          openapi.TaskResultStateV1Open,
+						},
+						{
+							RepositoryName: "git.local/unit/other",
+							Result:         int(processor.ResultNoMatch),
+							State:          openapi.TaskResultStateV1Unknown,
+						},
+					},
+				},
+				statusCode: http.StatusCreated,
+				responseBody: openapi.ReportWorkV1Response{
+					Result: "ok",
+				},
+			},
+			// And list the results of the first run.
+			{
+				method:     "GET",
+				path:       "/api/v1/taskResults",
+				query:      "runId=1",
+				statusCode: http.StatusOK,
+				responseBody: openapi.ListTaskResultsV1Response{
+					Page: openapi.Page{CurrentPage: 1, ItemsPerPage: 20, TotalItems: 1, TotalPages: 1},
+					TaskResults: []openapi.TaskResultV1{
+						{
+							PullRequestUrl: ptr.To("git.local/unit/test/pr/1"),
+							RepositoryName: "git.local/unit/test",
+							RunId:          1,
+							Status:         openapi.TaskResultStateV1Open,
+						},
+					},
+				},
+			},
+			// And schedule a second run for the task.
+			{
+				method: "POST",
+				path:   "/api/v1/runs",
+				requestBody: openapi.ScheduleRunV1Request{
+					TaskName: testTask.Name,
+				},
+				statusCode: http.StatusOK,
+				responseBody: openapi.ScheduleRunV1Response{
+					RunID: 2,
+				},
+			},
+			// And process the second run.
+			{
+				method:     "GET",
+				path:       "/api/v1/worker/work",
+				statusCode: http.StatusOK,
+				responseBody: openapi.GetWorkV1Response{
+					RunID: 2,
+					Task: openapi.WorkTaskV1{
+						Hash: taskHash,
+						Name: testTask.Name,
+					},
+				},
+			},
+			// And report that the task did not match the repository this time.
+			{
+				method: "POST",
+				path:   "/api/v1/worker/work",
+				requestBody: openapi.ReportWorkV1Request{
+					RunID: 2,
+					Task: openapi.WorkTaskV1{
+						Hash: taskHash,
+						Name: testTask.Name,
+					},
+					TaskResults: []openapi.ReportWorkV1TaskResult{
+						{
+							RepositoryName: "git.local/unit/test",
+							Result:         int(processor.ResultNoMatch),
+							State:          openapi.TaskResultStateV1Unknown,
+						},
+						{
+							RepositoryName: "git.local/unit/other",
+							Result:         int(processor.ResultNoMatch),
+							State:          openapi.TaskResultStateV1Unknown,
+						},
+					},
+				},
+				statusCode: http.StatusCreated,
+				responseBody: openapi.ReportWorkV1Response{
+					Result: "ok",
+				},
+			},
+			// And list the results of the second run.
+			{
+				method:     "GET",
+				path:       "/api/v1/taskResults",
+				query:      "runId=2",
+				statusCode: http.StatusOK,
+				responseBody: openapi.ListTaskResultsV1Response{
+					Page: openapi.Page{CurrentPage: 1, ItemsPerPage: 20, TotalItems: 1, TotalPages: 1},
+					TaskResults: []openapi.TaskResultV1{
+						{
+							PullRequestUrl: ptr.To("git.local/unit/test/pr/1"),
+							RepositoryName: "git.local/unit/test",
+							RunId:          2,
+							Status:         openapi.TaskResultStateV1Merged,
+						},
+					},
+				},
+			},
+		},
+	}
+
+	executeTestCase(t, tc)
+}
