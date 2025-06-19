@@ -15,7 +15,7 @@ Run the Docker container:
 <!-- x-release-please-start-version -->
 
 ```shell
-docker run --rm -it ghcr.io/wndhydrnt/saturn-bot:v0.27.0 version
+docker run --rm -it ghcr.io/wndhydrnt/saturn-bot:v0.27.1 version
 ```
 
 <!-- x-release-please-end -->
