@@ -73,14 +73,22 @@ func TestGitLabRepository_ClosePullRequest(t *testing.T) {
 		MatchType("json").
 		JSON(map[string]string{"state_event": "close"}).
 		Reply(200).
-		JSON(map[string]string{})
+		JSON(gitlab.MergeRequest{
+			CreatedAt:    ptr.To(time.Date(2000, 1, 1, 0, 0, 0, 0, time.UTC)),
+			IID:          987,
+			SourceBranch: "saturn-bot--unit-test",
+			State:        "closed",
+			WebURL:       "http://gitlab.local/unit/test/-/merge_requests/1",
+		})
 	project := &gitlab.Project{ID: 123}
 	mr := &gitlab.MergeRequest{IID: 987}
 
 	underTest := &GitLabRepository{client: setupClient(), project: project}
 
-	err := underTest.ClosePullRequest("Unit Test", toSbPr(mr))
+	prUpdated, err := underTest.ClosePullRequest("Unit Test", toSbPr(mr))
+
 	require.NoError(t, err)
+	require.Equal(t, PullRequestStateClosed, prUpdated.State)
 	require.True(t, gock.IsDone())
 }
 

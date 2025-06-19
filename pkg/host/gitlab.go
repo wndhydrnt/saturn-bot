@@ -98,7 +98,7 @@ func (g *GitLabRepository) CanMergePullRequest(_ *PullRequest) (bool, error) {
 	return true, nil
 }
 
-func (g *GitLabRepository) ClosePullRequest(msg string, pr *PullRequest) error {
+func (g *GitLabRepository) ClosePullRequest(msg string, pr *PullRequest) (*PullRequest, error) {
 	mr := pr.Raw.(*gitlab.MergeRequest)
 	_, _, err := g.client.Notes.CreateMergeRequestNote(
 		g.project.ID,
@@ -108,10 +108,10 @@ func (g *GitLabRepository) ClosePullRequest(msg string, pr *PullRequest) error {
 		},
 	)
 	if err != nil {
-		return fmt.Errorf("create note for gitlab merge request %d: %w", mr.IID, err)
+		return nil, fmt.Errorf("create note for gitlab merge request %d: %w", mr.IID, err)
 	}
 
-	_, _, err = g.client.MergeRequests.UpdateMergeRequest(
+	mrUpdated, _, err := g.client.MergeRequests.UpdateMergeRequest(
 		g.project.ID,
 		mr.IID,
 		&gitlab.UpdateMergeRequestOptions{
@@ -119,10 +119,10 @@ func (g *GitLabRepository) ClosePullRequest(msg string, pr *PullRequest) error {
 		},
 	)
 	if err != nil {
-		return fmt.Errorf("close gitlab merge request %d: %w", mr.IID, err)
+		return nil, fmt.Errorf("close gitlab merge request %d: %w", mr.IID, err)
 	}
 
-	return nil
+	return convertGitlabMergeRequestToPullRequest(mrUpdated), nil
 }
 
 func (g *GitLabRepository) CreatePullRequestComment(body string, pr *PullRequest) error {

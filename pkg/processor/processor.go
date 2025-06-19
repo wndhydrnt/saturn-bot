@@ -258,14 +258,14 @@ func (p *Processor) handleFilteredRepository(ctx context.Context, t *task.Task, 
 		return nil, nil
 	}
 
-	err = closePrForNonMatchingRepo(cachedPr, repo, result)
+	prUpdated, err := closePrForNonMatchingRepo(cachedPr, repo, result)
 	if err != nil {
 		return nil, fmt.Errorf("close pull request of non-matching task: %w", err)
 	}
 
 	p.PullRequestCache.Delete(branchName, repo.FullName())
 
-	return cachedPr, nil
+	return prUpdated, nil
 }
 
 // updatePrCache updates a Pull Request in the cache.
@@ -295,18 +295,17 @@ const prCloseMessage = ":information_source: saturn-bot has closed this pull req
 // changed the filters and the repository doesn't match the updated filters.
 //
 // It updates the state of pr.
-func closePrForNonMatchingRepo(pr *host.PullRequest, repo host.Repository, result Result) error {
-	if pr.State == host.PullRequestStateOpen && (result == ResultNoMatch || result == ResultSkip) {
-		err := repo.ClosePullRequest(prCloseMessage, pr)
+func closePrForNonMatchingRepo(pr *host.PullRequest, repo host.Repository, result Result) (*host.PullRequest, error) {
+	if pr.State == host.PullRequestStateOpen && result == ResultNoMatch {
+		prUpdated, err := repo.ClosePullRequest(prCloseMessage, pr)
 		if err != nil {
-			return err
+			return nil, err
 		}
 
-		pr.State = host.PullRequestStateClosed
-		return nil
+		return prUpdated, nil
 	}
 
-	return nil
+	return pr, nil
 }
 
 func matchTaskToRepository(ctx context.Context, filters []filter.Filter, logger *zap.SugaredLogger) (bool, error) {
@@ -415,7 +414,7 @@ func (p *Processor) applyTaskToRepository(ctx context.Context, dryRun bool, gitc
 				logger.Info("Auto-closing pull request")
 				if !dryRun {
 					msg := fmt.Sprintf("Pull request has been open for longer than %s. Closing automatically.", dur.String())
-					err := repo.ClosePullRequest(msg, prID)
+					prID, err = repo.ClosePullRequest(msg, prID)
 					if err != nil {
 						return ResultUnknown, prID, fmt.Errorf("auto-close pull request: %w", err)
 					}
@@ -504,7 +503,7 @@ func (p *Processor) applyTaskToRepository(ctx context.Context, dryRun bool, gitc
 	if !hasChangesInRemoteDefaultBranch && prID != nil && prID.State == host.PullRequestStateOpen {
 		logger.Info("Closing pull request because base branch contains all changes")
 		if !dryRun {
-			err := repo.ClosePullRequest("Everything up-to-date. Closing.", prID)
+			prID, err = repo.ClosePullRequest("Everything up-to-date. Closing.", prID)
 			if err != nil {
 				return ResultUnknown, prID, fmt.Errorf("close pull request: %w", err)
 			}
