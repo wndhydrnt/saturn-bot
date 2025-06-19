@@ -86,7 +86,7 @@ func (s *Sync) createTask(t *task.Task) error {
 		Name:   t.Name,
 	}
 	return s.db.Transaction(func(tx *gorm.DB) error {
-		if err := s.db.Save(&taskDB).Error; err != nil {
+		if err := tx.Save(&taskDB).Error; err != nil {
 			return fmt.Errorf("create task '%s' in db: %w", t.Name, err)
 		}
 
@@ -106,7 +106,7 @@ func (s *Sync) deactivateTask(t db.Task) error {
 	log.Log().Debugf("Deactivating task in DB - %s", t.Name)
 	return s.db.Transaction(func(tx *gorm.DB) error {
 		t.Active = false
-		saveResult := s.db.Save(t)
+		saveResult := tx.Save(t)
 		if saveResult.Error != nil {
 			return fmt.Errorf("deactivate task %s: %w", t.Name, saveResult.Error)
 		}

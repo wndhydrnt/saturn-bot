@@ -135,7 +135,7 @@ func (ws *WorkerService) ScheduleRun(
 	}
 
 	if result.Error != nil {
-		return 0, fmt.Errorf("read next scheduled run: %w", tx.Error)
+		return 0, fmt.Errorf("read next scheduled run: %w", result.Error)
 	}
 
 	// Check for equality to prevent runs based on a cron schedule
