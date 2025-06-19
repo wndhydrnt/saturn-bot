@@ -46,6 +46,7 @@ func New(enableLog bool, path string, migrate Migrator) (*gorm.DB, error) {
 		return nil, fmt.Errorf("open sql driver sqlite3: %w", err)
 	}
 
+	db.SetMaxOpenConns(1) // sqlite supports one writer only
 	gormDb, err := gorm.Open(gormlite.OpenDB(db), cfg)
 	if err != nil {
 		return nil, err
