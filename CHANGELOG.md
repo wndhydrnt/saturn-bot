@@ -1,5 +1,14 @@
 # Changelog
 
+## [0.27.1](https://github.com/wndhydrnt/saturn-bot/compare/v0.27.0...v0.27.1) (2025-06-19)
+
+
+### Bug Fixes
+
+* **db:** Reduce open connections to the database to 1 ([5ef5011](https://github.com/wndhydrnt/saturn-bot/commit/5ef5011c0092a182b222fd5c8a215f64b23e3df4))
+* **processor:** Do not auto-close skipped pull requests ([#188](https://github.com/wndhydrnt/saturn-bot/issues/188)) ([8b3a5f0](https://github.com/wndhydrnt/saturn-bot/commit/8b3a5f0f8daf17d1f3bfd4aa84eb3e1ad48eabee))
+* **server:** Resolve two transaction deadlocks ([40ddef7](https://github.com/wndhydrnt/saturn-bot/commit/40ddef7d7b70e402250e092a660e6a8fea66d932))
+
 ## [0.27.0](https://github.com/wndhydrnt/saturn-bot/compare/v0.26.1...v0.27.0) (2025-06-16)
 
 
