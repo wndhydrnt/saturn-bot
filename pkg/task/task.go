@@ -322,6 +322,18 @@ func (tw *Task) Stop() {
 	}
 }
 
+// UpdateLabels updates the labels of the task with one or more label.
+// It removes any duplicate labels.
+func (tw *Task) UpdateLabels(label ...string) {
+	if len(label) == 0 {
+		return
+	}
+
+	labels := append(tw.Labels, label...)
+	slices.Sort(labels)
+	tw.Labels = slices.Compact(labels)
+}
+
 // ValidateInputs validates the values in data.
 // It returns a list of errors where each error details a failed validation.
 func ValidateInputs(data map[string]string, t *Task) []error {
@@ -352,6 +364,7 @@ func ValidateInputs(data map[string]string, t *Task) []error {
 type Registry struct {
 	actionFactories options.ActionFactories
 	filterFactories options.FilterFactories
+	globalLabels    []string
 	hosts           []host.Host
 	isCi            bool
 	pathJava        string
@@ -370,6 +383,7 @@ func NewRegistry(opts options.Opts) *Registry {
 	return &Registry{
 		actionFactories: opts.ActionFactories,
 		filterFactories: opts.FilterFactories,
+		globalLabels:    opts.Config.Labels,
 		hosts:           opts.Hosts,
 		isCi:            opts.IsCi,
 		pathJava:        opts.Config.JavaPath,
@@ -415,6 +429,9 @@ func (tr *Registry) ReadTasks(taskFile string) error {
 			path:     entry.Path,
 		}
 		wrapper.Task = entry.Task
+
+		wrapper.UpdateLabels(tr.globalLabels...)
+
 		wrapper.actions, err = createActionsForTask(wrapper.Task.Actions, tr.actionFactories, entry.Path)
 		if err != nil {
 			return fmt.Errorf("parse actions of task: %w", err)

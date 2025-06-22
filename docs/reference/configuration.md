@@ -199,6 +199,18 @@ Set to `ssh` to clone repositories via SSH.
 | Env Var | `SATURN_BOT_JAVAPATH` |
 | Type    | `string`              |
 
+## labels
+
+[json-path:../../pkg/config/config.schema.json:$.properties.labels.description]
+
+Labels specified here are merged with the [labels of a task](./task/index.md#labels).
+
+| Name    | Value               |
+|---------|---------------------|
+| Default | `[]`                |
+| Env Var | `SATURN_BOT_LABELS` |
+| Type    | `[string]`          |
+
 ## pluginLogLevel
 
 [json-path:../../pkg/config/config.schema.json:$.properties.pluginLogLevel.description]

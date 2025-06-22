@@ -58,6 +58,11 @@ type Configuration struct {
 	// saturn-bot searches for the binary in $PATH.
 	JavaPath string `json:"javaPath,omitempty" yaml:"javaPath,omitempty" mapstructure:"javaPath,omitempty"`
 
+	// List of labels to add to each pull request created by saturn-bot. Allows an
+	// operator of saturn-bot to ensure that specific labels are always added without
+	// relying on the authors of tasks to set them.
+	Labels []string `json:"labels,omitempty" yaml:"labels,omitempty" mapstructure:"labels,omitempty"`
+
 	// Format of log messages.
 	LogFormat ConfigurationLogFormat `json:"logFormat,omitempty" yaml:"logFormat,omitempty" mapstructure:"logFormat,omitempty"`
 
@@ -437,6 +442,9 @@ func (j *Configuration) UnmarshalJSON(b []byte) error {
 	if v, ok := raw["javaPath"]; !ok || v == nil {
 		plain.JavaPath = "java"
 	}
+	if v, ok := raw["labels"]; !ok || v == nil {
+		plain.Labels = []string{}
+	}
 	if v, ok := raw["logFormat"]; !ok || v == nil {
 		plain.LogFormat = "auto"
 	}
@@ -541,6 +549,9 @@ func (j *Configuration) UnmarshalYAML(value *yaml.Node) error {
 	}
 	if v, ok := raw["javaPath"]; !ok || v == nil {
 		plain.JavaPath = "java"
+	}
+	if v, ok := raw["labels"]; !ok || v == nil {
+		plain.Labels = []string{}
 	}
 	if v, ok := raw["logFormat"]; !ok || v == nil {
 		plain.LogFormat = "auto"
