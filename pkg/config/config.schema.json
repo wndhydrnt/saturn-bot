@@ -93,6 +93,14 @@
       "description": "Path to the Java binary to execute plugins. If not set explicitly, then saturn-bot searches for the binary in $PATH.",
       "type": "string"
     },
+    "labels": {
+      "default": [],
+      "description": "List of labels to add to each pull request created by saturn-bot. Allows an operator of saturn-bot to ensure that specific labels are always added without relying on the authors of tasks to set them.",
+      "items": {
+        "type": "string"
+      },
+      "type": "array"
+    },
     "pluginLogLevel": {
       "default": "debug",
       "description": "Level of logs sent by plugins. Set this to the same value as `logLevel` in order to display the logs of a plugin.",

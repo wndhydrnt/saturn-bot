@@ -10,6 +10,7 @@ import (
 	"github.com/stretchr/testify/assert"
 	"github.com/stretchr/testify/require"
 	"github.com/wndhydrnt/saturn-bot/pkg/action"
+	"github.com/wndhydrnt/saturn-bot/pkg/config"
 	"github.com/wndhydrnt/saturn-bot/pkg/filter"
 	"github.com/wndhydrnt/saturn-bot/pkg/host"
 	"github.com/wndhydrnt/saturn-bot/pkg/options"
@@ -233,6 +234,31 @@ name: Task Two
 
 	assert.Len(t, tr.GetTasks(), 1)
 	assert.Equal(t, "Task Two", tr.GetTasks()[0].Name)
+}
+
+func TestRegistry_GlobalLabels(t *testing.T) {
+	tasksRaw := `
+name: Task One
+labels: ["unit", "test"]
+`
+
+	f, err := os.CreateTemp("", "*.yaml")
+	require.NoError(t, err)
+	_, err = f.WriteString(tasksRaw)
+	require.NoError(t, err)
+	f.Close()
+	defer func() {
+		err := os.Remove(f.Name())
+		require.NoError(t, err)
+	}()
+
+	tr := task.NewRegistry(options.Opts{Config: config.Configuration{Labels: []string{"unit", "global"}}})
+	err = tr.ReadAll([]string{f.Name()})
+	require.NoError(t, err)
+
+	assert.Len(t, tr.GetTasks(), 1)
+	labelsWant := []string{"global", "test", "unit"}
+	assert.Equal(t, labelsWant, tr.GetTasks()[0].Labels, "Global labels added, no duplicates")
 }
 
 func TestTask_Inputs(t *testing.T) {

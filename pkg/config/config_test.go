@@ -33,6 +33,7 @@ func TestReadConfig(t *testing.T) {
 				LogFormat:                "auto",
 				LogLevel:                 "info",
 				JavaPath:                 "java",
+				Labels:                   []string{},
 				PluginLogLevel:           "debug",
 				PythonPath:               "python",
 				RepositoryCacheTtl:       "6h",
