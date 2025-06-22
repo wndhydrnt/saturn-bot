@@ -17,6 +17,7 @@ import (
 	"github.com/wndhydrnt/saturn-bot/pkg/metrics"
 	"github.com/wndhydrnt/saturn-bot/pkg/options"
 	"github.com/wndhydrnt/saturn-bot/pkg/processor"
+	"github.com/wndhydrnt/saturn-bot/pkg/ptr"
 	"github.com/wndhydrnt/saturn-bot/pkg/task"
 	"go.uber.org/zap"
 )
@@ -80,13 +81,9 @@ func (r *Run) Run(repositoryNames, taskFiles []string, inputs map[string]string)
 		go r.RepositoryLister.List(r.Hosts, repos, doneChan)
 	}
 
-	// Track the successful outcome of each task.
-	// Assume that a task succeeds by default (value = 1).
-	// A task is marked as not succeeding (value = 0) by code further down in this function.
-	taskSuccessTracker := make(map[string]float64, len(tasks))
-	for _, t := range tasks {
-		taskSuccessTracker[t.Name] = 1
-	}
+	// Track the outcome of each task.
+	taskSuccessTracker := initTaskSuccessTracker(tasks)
+	defer recordTaskSuccessMetric(taskSuccessTracker)
 
 	success := true
 	var results []RunResult
@@ -97,8 +94,12 @@ func (r *Run) Run(repositoryNames, taskFiles []string, inputs map[string]string)
 			doFilter := len(repositoryNames) == 0
 			processResults := r.Processor.Process(r.DryRun, repo, tasks, doFilter)
 			for _, p := range processResults {
+				if p.Error == nil && taskSuccessTracker[p.Task.Name] == nil {
+					taskSuccessTracker[p.Task.Name] = ptr.To(float64(1))
+				}
+
 				if p.Error != nil {
-					taskSuccessTracker[p.Task.Name] = 0
+					taskSuccessTracker[p.Task.Name] = ptr.To(float64(0))
 					success = false
 				}
 
@@ -121,10 +122,6 @@ func (r *Run) Run(repositoryNames, taskFiles []string, inputs map[string]string)
 		if done {
 			break
 		}
-	}
-
-	for taskName, metricVal := range taskSuccessTracker {
-		metrics.RunTaskSuccess.WithLabelValues(taskName).Set(metricVal)
 	}
 
 	if !success {
@@ -249,4 +246,28 @@ func setInputs(tasks []*task.Task, inputs map[string]string) []*task.Task {
 	}
 
 	return tasksWithInputs
+}
+
+// initTaskSuccessTracker initializes a map to track the outcome of each task.
+// Initial value for each entry is always nil, which means that no value has been recorded.
+// See also function recordTaskSuccessMetric.
+func initTaskSuccessTracker(tasks []*task.Task) map[string]*float64 {
+	data := make(map[string]*float64, len(tasks))
+	for _, t := range tasks {
+		data[t.Name] = nil
+	}
+
+	return data
+}
+
+// recordTaskSuccessMetric updates the metric [github.com/wndhydrnt/saturn-bot/pkg/metrics.RunTaskSuccess]
+// with the outcome of each task.
+func recordTaskSuccessMetric(tracker map[string]*float64) {
+	for taskName, metricVal := range tracker {
+		// Default to 0 if nil, which means failure.
+		// Handles that case where a "global" error occurs before any task can be executed.
+		// For example a failure to list the repositories from the host.
+		val := ptr.FromDef(metricVal, 0.0)
+		metrics.RunTaskSuccess.WithLabelValues(taskName).Set(val)
+	}
 }

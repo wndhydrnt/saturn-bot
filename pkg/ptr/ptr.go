@@ -10,3 +10,13 @@ func To[T any](v T) *T {
 func From[T any](v *T) T {
 	return *v
 }
+
+// FromDef dereferences a pointer.
+// It returns def if the pointer is nil.
+func FromDef[T any](v *T, def T) T {
+	if v == nil {
+		return def
+	}
+
+	return *v
+}
