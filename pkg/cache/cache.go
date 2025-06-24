@@ -108,6 +108,7 @@ func (c *Cache) GetAllByTag(tag string) ([][]byte, error) {
 		Select("items.value").
 		Joins("INNER JOIN tags ON tags.item_id = items.id").
 		Where("tags.name = ?", tag).
+		Order("items.value asc").
 		Find(&values)
 	if result.Error != nil {
 		return nil, fmt.Errorf("get all by tag %s: %w", tag, result.Error)
