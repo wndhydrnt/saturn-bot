@@ -1,6 +1,7 @@
 package plugin
 
 import (
+	"bytes"
 	"context"
 	"errors"
 	"fmt"
@@ -278,11 +279,24 @@ func NewContext(ctx context.Context) *protoV1.Context {
 type StdioHandler func(pluginName string, msg []byte)
 
 // NewStdioHandler returns a StdioHandler that adds a message to the log when it receives data.
-// `level` denotes the log level at which the data received is logged.
+// `defaultLevel` denotes the log level at which the data received is logged.
 // `stream` is the identifier of the stream from which the data was read.
-func NewStdioHandler(level zapcore.Level, stream string) StdioHandler {
+func NewStdioHandler(defaultLevel zapcore.Level, stream string) StdioHandler {
 	return func(pluginName string, msg []byte) {
-		log.Log().Logf(level, "PLUGIN [%s %s] %s", pluginName, stream, msg)
+		parts := bytes.Split(msg, []byte("%|%"))
+		if len(parts) != 2 {
+			log.Log().Logw(defaultLevel, string(msg), "plugin", pluginName, "stream", stream)
+			return
+		}
+
+		var lvl zapcore.Level
+		err := lvl.UnmarshalText(parts[0])
+		if err != nil {
+			log.Log().Logw(defaultLevel, string(msg), "plugin", pluginName, "stream", stream)
+			return
+		}
+
+		log.Log().Logw(lvl, string(parts[1]), "plugin", pluginName, "stream", stream)
 	}
 }
 
