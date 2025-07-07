@@ -16,6 +16,7 @@ import (
 	sbcontext "github.com/wndhydrnt/saturn-bot/pkg/context"
 	"github.com/wndhydrnt/saturn-bot/pkg/host"
 	"github.com/wndhydrnt/saturn-bot/pkg/log"
+	"go.uber.org/zap"
 	"go.uber.org/zap/zapcore"
 )
 
@@ -168,6 +169,13 @@ func (p *Plugin) Start(opts StartOptions) error {
 
 func (p *Plugin) Stop() {
 	if p.client != nil {
+		if !p.client.Exited() {
+			_, err := p.Provider.Shutdown(&protoV1.ShutdownRequest{})
+			if err != nil {
+				log.Log().Warnw("Failed to shutdown plugin", zap.Error(err))
+			}
+		}
+
 		// It is safe to call Kill() multiple times.
 		p.client.Kill()
 	}

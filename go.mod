@@ -118,3 +118,7 @@ require (
 	google.golang.org/protobuf v1.34.2 // indirect
 	moul.io/http2curl/v2 v2.3.0 // indirect
 )
+
+replace (
+	github.com/wndhydrnt/saturn-bot-go v0.5.0 => ../saturn-bot-go
+)
