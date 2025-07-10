@@ -143,6 +143,15 @@ func (p *Plugin) OnPrMerged(req *protoV1.OnPrMergedRequest) (*protoV1.OnPrMerged
 	return reply, nil
 }
 
+func (p *Plugin) Shutdown(req *protoV1.ShutdownRequest) (*protoV1.ShutdownResponse, error) {
+	reply, err := p.Provider.Shutdown(req)
+	if err != nil {
+		return nil, fmt.Errorf("rpc call Shutdown: %w", err)
+	}
+
+	return reply, nil
+}
+
 func (p *Plugin) Start(opts StartOptions) error {
 	if p.Provider == nil {
 		err := p.init(opts)
@@ -170,7 +179,7 @@ func (p *Plugin) Start(opts StartOptions) error {
 func (p *Plugin) Stop() {
 	if p.client != nil {
 		if !p.client.Exited() {
-			_, err := p.Provider.Shutdown(&protoV1.ShutdownRequest{})
+			_, err := p.Shutdown(&protoV1.ShutdownRequest{})
 			if err != nil {
 				log.Log().Warnw("Failed to shutdown plugin", zap.Error(err))
 			}

@@ -63,9 +63,8 @@ func onPrMergedPlugin(opts ExecPluginOptions, p *plugin.Plugin) (any, error) {
 	})
 }
 
-func shutdown(opts ExecPluginOptions, p *plugin.Plugin) (any, error) {
-	p.Stop()
-	return nil, nil
+func shutdown(_ ExecPluginOptions, p *plugin.Plugin) (any, error) {
+	return p.Shutdown(&protoV1.ShutdownRequest{})
 }
 
 // ExecPluginOptions defines all options expected by function ExecPlugin.
