@@ -113,7 +113,7 @@ type Configuration struct {
 	// If `true`, serves the user interface.
 	ServerServeUi bool `json:"serverServeUi,omitempty" yaml:"serverServeUi,omitempty" mapstructure:"serverServeUi,omitempty"`
 
-	// Duration to wait for runs to finish on shutdown before stopping the server.
+	// Duration to wait for active runs to finish before stopping the server.
 	ServerShutdownTimeout string `json:"serverShutdownTimeout,omitempty" yaml:"serverShutdownTimeout,omitempty" mapstructure:"serverShutdownTimeout,omitempty"`
 
 	// Secret to authenticate webhook requests sent by GitHub.

@@ -173,7 +173,7 @@
     },
     "serverShutdownTimeout": {
       "default": "5m",
-      "description": "Duration to wait for runs to finish on shutdown before stopping the server.",
+      "description": "Duration to wait for active runs to finish before stopping the server.",
       "type": "string"
     },
     "workerLoopInterval": {

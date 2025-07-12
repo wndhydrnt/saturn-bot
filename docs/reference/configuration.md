@@ -322,6 +322,22 @@ Labels specified here are merged with the [labels of a task](./task/index.md#lab
 | Env Var | `SATURN_BOT_SERVERDATABASEPATH` |
 | Type    | `string`                        |
 
+## serverShutdownTimeout
+
+[json-path:../../pkg/config/config.schema.json:$.properties.serverShutdownTimeout.description]
+
+!!! note
+
+    When running the server component in Kubernetes, set `terminationGracePeriodSeconds` of
+    the [PodSpec](https://kubernetes.io/docs/reference/generated/kubernetes-api/v1.32/#podspec-v1-core)
+    to a value slightly higher than this value.
+
+| Name    | Value                              |
+|---------|------------------------------------|
+| Default | `5m`                               |
+| Env Var | `SATURN_BOT_SERVERSHUTDOWNTIMEOUT` |
+| Type    | `string`                           |
+
 ## serverWebhookSecretGithub
 
 [json-path:../../pkg/config/config.schema.json:$.properties.serverWebhookSecretGithub.description]
