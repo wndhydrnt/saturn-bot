@@ -1,8 +1,10 @@
 package service
 
 import (
+	"context"
 	"errors"
 	"fmt"
+	"sync/atomic"
 	"time"
 
 	"github.com/adhocore/gronx"
@@ -32,16 +34,19 @@ func (e ErrorMissingInput) Error() string {
 }
 
 type WorkerService struct {
-	clock       clock.Clock
-	db          *gorm.DB
-	taskService *TaskService
+	clock                 clock.Clock
+	db                    *gorm.DB
+	inShutdown            atomic.Bool
+	shutdownCheckInterval time.Duration
+	taskService           *TaskService
 }
 
-func NewWorkerService(clock clock.Clock, db *gorm.DB, taskService *TaskService) *WorkerService {
+func NewWorkerService(clock clock.Clock, db *gorm.DB, taskService *TaskService, shutdownCheckInterval time.Duration) *WorkerService {
 	return &WorkerService{
-		clock:       clock,
-		db:          db,
-		taskService: taskService,
+		clock:                 clock,
+		db:                    db,
+		shutdownCheckInterval: shutdownCheckInterval,
+		taskService:           taskService,
 	}
 }
 
@@ -158,6 +163,10 @@ func (ws *WorkerService) findTask(name string) (*task.Task, error) {
 
 func (ws *WorkerService) NextRun() (db.Run, *task.Task, error) {
 	var run db.Run
+	if ws.shuttingDown() {
+		return run, nil, ErrNoRun
+	}
+
 	tx := ws.db.
 		Where("status = ?", db.RunStatusPending).
 		Order("schedule_after asc").
@@ -417,6 +426,91 @@ func (ws *WorkerService) ListTaskResults(opts ListTaskResultsOptions, listOpts *
 
 	listOpts.SetTotalItems(int(count))
 	return taskResults, nil
+}
+
+func (ws *WorkerService) Shutdown(ctx context.Context) error {
+	ws.inShutdown.Store(true)
+
+	runCount, err := ws.countActiveRuns()
+	if err != nil {
+		return fmt.Errorf("list running runs on shutdown: %w", err)
+	}
+
+	if runCount == 0 {
+		return nil
+	}
+
+	checkInterval := ws.shutdownCheckInterval
+	if ws.shutdownCheckInterval == 0 {
+		checkInterval = time.Second
+	}
+
+	ticker := time.NewTicker(checkInterval)
+	for {
+		select {
+		case <-ticker.C:
+			runCount, err := ws.countActiveRuns()
+			if err != nil {
+				ticker.Stop()
+				return fmt.Errorf("list running runs on shutdown: %w", err)
+			}
+
+			if runCount == 0 {
+				ticker.Stop()
+				return nil
+			}
+
+			log.Log().Warnf("Waiting for %d runs to finish before shutdown", runCount)
+
+		case <-ctx.Done():
+			markErr := ws.markActiveRunsAsFailed("Run failed to report before shutdown")
+			return fmt.Errorf("shutdown worker service: %w", errors.Join(ctx.Err(), markErr))
+		}
+	}
+}
+
+func (ws *WorkerService) shuttingDown() bool {
+	return ws.inShutdown.Load()
+}
+
+func (ws *WorkerService) countActiveRuns() (int64, error) {
+	var count int64
+	result := ws.db.
+		Model(&db.Run{}).
+		Where("status = ?", db.RunStatusRunning).
+		Count(&count)
+	return count, result.Error
+}
+
+func (ws *WorkerService) markActiveRunsAsFailed(errMsg string) error {
+	var runs []db.Run
+	findResult := ws.db.
+		Where("status = ?", db.RunStatusRunning).
+		Find(&runs)
+	if findResult.Error != nil {
+		return fmt.Errorf("find runs to mark as failed on shutdown: %w", findResult.Error)
+	}
+
+	for _, run := range runs {
+		t, err := ws.findTask(run.TaskName)
+		if err != nil {
+			return fmt.Errorf("find task to mark as failed on shutdown: %w", err)
+		}
+
+		err = ws.ReportRun(openapi.ReportWorkV1Request{
+			Error: ptr.To(errMsg),
+			RunID: int(run.ID),
+			Task: openapi.WorkTaskV1{
+				Hash: t.Checksum(),
+				Name: t.Name,
+			},
+		})
+		if err != nil {
+			return fmt.Errorf("mark run %d of task %s as failed on shutdown: %w", run.ID, t.Name, err)
+		}
+	}
+
+	return nil
 }
 
 func calcNextScheduleTime(run db.Run, now time.Time, t *task.Task, isOpen bool) *time.Time {

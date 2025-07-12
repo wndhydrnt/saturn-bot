@@ -113,6 +113,9 @@ type Configuration struct {
 	// If `true`, serves the user interface.
 	ServerServeUi bool `json:"serverServeUi,omitempty" yaml:"serverServeUi,omitempty" mapstructure:"serverServeUi,omitempty"`
 
+	// Duration to wait for runs to finish on shutdown before stopping the server.
+	ServerShutdownTimeout string `json:"serverShutdownTimeout,omitempty" yaml:"serverShutdownTimeout,omitempty" mapstructure:"serverShutdownTimeout,omitempty"`
+
 	// Secret to authenticate webhook requests sent by GitHub.
 	ServerWebhookSecretGithub string `json:"serverWebhookSecretGithub,omitempty" yaml:"serverWebhookSecretGithub,omitempty" mapstructure:"serverWebhookSecretGithub,omitempty"`
 
@@ -484,6 +487,9 @@ func (j *Configuration) UnmarshalJSON(b []byte) error {
 	if v, ok := raw["serverServeUi"]; !ok || v == nil {
 		plain.ServerServeUi = true
 	}
+	if v, ok := raw["serverShutdownTimeout"]; !ok || v == nil {
+		plain.ServerShutdownTimeout = "5m"
+	}
 	if v, ok := raw["serverWebhookSecretGithub"]; !ok || v == nil {
 		plain.ServerWebhookSecretGithub = ""
 	}
@@ -591,6 +597,9 @@ func (j *Configuration) UnmarshalYAML(value *yaml.Node) error {
 	}
 	if v, ok := raw["serverServeUi"]; !ok || v == nil {
 		plain.ServerServeUi = true
+	}
+	if v, ok := raw["serverShutdownTimeout"]; !ok || v == nil {
+		plain.ServerShutdownTimeout = "5m"
 	}
 	if v, ok := raw["serverWebhookSecretGithub"]; !ok || v == nil {
 		plain.ServerWebhookSecretGithub = ""
