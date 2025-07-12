@@ -499,7 +499,7 @@ func (ws *WorkerService) markActiveRunsAsFailed(errMsg string) error {
 
 		err = ws.ReportRun(openapi.ReportWorkV1Request{
 			Error: ptr.To(errMsg),
-			RunID: int(run.ID),
+			RunID: int(run.ID), // #nosec G115 -- no info by gosec on how to fix this
 			Task: openapi.WorkTaskV1{
 				Hash: t.Checksum(),
 				Name: t.Name,
