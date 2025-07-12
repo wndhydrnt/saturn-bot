@@ -4,6 +4,7 @@ import (
 	"context"
 	"encoding/json"
 	"errors"
+	"fmt"
 	"net/http"
 	"time"
 
@@ -30,7 +31,39 @@ type APIServer struct {
 
 // Stop gracefully stops the API server.
 func (a *APIServer) Stop(ctx context.Context, checkInterval time.Duration) error {
-	return a.WorkerService.Shutdown(ctx, checkInterval)
+	a.WorkerService.Shutdown()
+
+	runCountInitial, err := a.WorkerService.CountRunningRuns()
+	if err != nil {
+		return err
+	}
+
+	if runCountInitial == 0 {
+		return nil
+	}
+
+	ticker := time.NewTicker(checkInterval)
+	for {
+		select {
+		case <-ticker.C:
+			runCount, err := a.WorkerService.CountRunningRuns()
+			if err != nil {
+				ticker.Stop()
+				return err
+			}
+
+			if runCount == 0 {
+				ticker.Stop()
+				return nil
+			}
+
+			log.Log().Warnf("Waiting for %d runs to finish before shutdown", runCount)
+
+		case <-ctx.Done():
+			markErr := a.WorkerService.MarkActiveRunsAsFailed("Run failed to report before shutdown")
+			return fmt.Errorf("shutdown worker service: %w", errors.Join(ctx.Err(), markErr))
+		}
+	}
 }
 
 // NewAPIServerOptions are passed to [RegisterAPIServer].

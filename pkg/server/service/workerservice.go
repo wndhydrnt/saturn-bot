@@ -1,7 +1,6 @@
 package service
 
 import (
-	"context"
 	"errors"
 	"fmt"
 	"sync/atomic"
@@ -426,49 +425,18 @@ func (ws *WorkerService) ListTaskResults(opts ListTaskResultsOptions, listOpts *
 	return taskResults, nil
 }
 
-// Shutdown waits for all runs to finish until the deadline of the context has been reached.
-// It checks every checkInterval for active runs.
-func (ws *WorkerService) Shutdown(ctx context.Context, checkInterval time.Duration) error {
+// Shutdown tells the worker service that the server is shutting down.
+// The worker service doesn't return new work when [NextRun] is called.
+func (ws *WorkerService) Shutdown() {
 	ws.inShutdown.Store(true)
-
-	runCount, err := ws.countActiveRuns()
-	if err != nil {
-		return fmt.Errorf("list running runs on shutdown: %w", err)
-	}
-
-	if runCount == 0 {
-		return nil
-	}
-
-	ticker := time.NewTicker(checkInterval)
-	for {
-		select {
-		case <-ticker.C:
-			runCount, err := ws.countActiveRuns()
-			if err != nil {
-				ticker.Stop()
-				return fmt.Errorf("list running runs on shutdown: %w", err)
-			}
-
-			if runCount == 0 {
-				ticker.Stop()
-				return nil
-			}
-
-			log.Log().Warnf("Waiting for %d runs to finish before shutdown", runCount)
-
-		case <-ctx.Done():
-			markErr := ws.markActiveRunsAsFailed("Run failed to report before shutdown")
-			return fmt.Errorf("shutdown worker service: %w", errors.Join(ctx.Err(), markErr))
-		}
-	}
 }
 
 func (ws *WorkerService) shuttingDown() bool {
 	return ws.inShutdown.Load()
 }
 
-func (ws *WorkerService) countActiveRuns() (int64, error) {
+// CountRunningRuns returns the number of runs in state "running".
+func (ws *WorkerService) CountRunningRuns() (int64, error) {
 	var count int64
 	result := ws.db.
 		Model(&db.Run{}).
@@ -477,7 +445,9 @@ func (ws *WorkerService) countActiveRuns() (int64, error) {
 	return count, result.Error
 }
 
-func (ws *WorkerService) markActiveRunsAsFailed(errMsg string) error {
+// MarkActiveRunsAsFailed marks all runs in state "running" as failed.
+// errMesg is set as the error.
+func (ws *WorkerService) MarkActiveRunsAsFailed(errMsg string) error {
 	var runs []db.Run
 	findResult := ws.db.
 		Where("status = ?", db.RunStatusRunning).
