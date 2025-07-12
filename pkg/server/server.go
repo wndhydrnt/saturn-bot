@@ -29,12 +29,14 @@ import (
 )
 
 type Server struct {
-	apiServer       *api.APIServer
-	httpServer      *http.Server
-	shutdownTimeout time.Duration
+	apiServer             *api.APIServer
+	httpServer            *http.Server
+	shutdownCheckInterval time.Duration
+	shutdownTimeout       time.Duration
 }
 
 func (s *Server) Start(opts options.Opts, taskPaths []string) error {
+	s.shutdownCheckInterval = opts.ServerShutdownCheckInterval
 	s.shutdownTimeout = opts.ServerShutdownTimeout
 	if opts.Config.ServerApiKey == "" {
 		return fmt.Errorf("required setting serverApiKey not configured - see https://saturn-bot.readthedocs.io/en/latest/reference/configuration/#serverapikey")
@@ -62,7 +64,7 @@ func (s *Server) Start(opts options.Opts, taskPaths []string) error {
 
 	dbInfoService := service.NewDbInfo(database)
 	taskService := service.NewTaskService(opts.Clock, database, taskRegistry)
-	workerService := service.NewWorkerService(opts.Clock, database, taskService, opts.ServerShutdownCheckInterval)
+	workerService := service.NewWorkerService(opts.Clock, database, taskService)
 	syncService := service.NewSync(opts.Clock, database, taskService, workerService)
 	if err := syncService.SyncTasksInDatabase(); err != nil {
 		return err
@@ -121,6 +123,7 @@ func (s *Server) Start(opts options.Opts, taskPaths []string) error {
 	return nil
 }
 
+// Stop initiates a graceful shutdown of the server.
 func (s *Server) Stop() error {
 	apiErr := s.stopApiServer()
 	httpErr := s.stopHttpServer()
@@ -135,7 +138,11 @@ func (s *Server) stopApiServer() error {
 	log.Log().Debug("Shutting down API server")
 	ctx, cancel := context.WithTimeout(context.Background(), s.shutdownTimeout)
 	defer cancel()
-	err := s.apiServer.WorkerService.Shutdown(ctx)
+	checkInterval := s.shutdownCheckInterval
+	if checkInterval == 0 {
+		checkInterval = 1 * time.Second
+	}
+	err := s.apiServer.Stop(ctx, checkInterval)
 	if err != nil {
 		if errors.Is(err, context.DeadlineExceeded) {
 			log.Log().Errorf("API server shutdown timed out")

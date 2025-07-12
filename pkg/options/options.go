@@ -52,20 +52,24 @@ type Opts struct {
 	// Clock interfaces to a clock.
 	// Its purpose is to fake time in unit tests.
 	// Defaults to an object that proxies to the [time] package.
-	Clock                       clock.Clock
-	Config                      config.Configuration
-	DataDir                     string
-	FilterFactories             FilterFactories
-	Hosts                       []host.Host
-	IsCi                        bool
-	SkipPlugins                 bool
-	PushGateway                 *push.Pusher
-	PrometheusGatherer          prometheus.Gatherer
-	PrometheusRegisterer        prometheus.Registerer
-	RepositoryCacheTtl          time.Duration
+	Clock                clock.Clock
+	Config               config.Configuration
+	DataDir              string
+	FilterFactories      FilterFactories
+	Hosts                []host.Host
+	IsCi                 bool
+	SkipPlugins          bool
+	PushGateway          *push.Pusher
+	PrometheusGatherer   prometheus.Gatherer
+	PrometheusRegisterer prometheus.Registerer
+	RepositoryCacheTtl   time.Duration
+	// ServerShutdownCheckInterval is the interval at which the API server checks if all conditions
+	// have been met before shutting down gracefully.
 	ServerShutdownCheckInterval time.Duration
-	ServerShutdownTimeout       time.Duration
-	WorkerLoopInterval          time.Duration
+	// ServerShutdownTimeout is the maximum duration the API server waits before
+	// it abandons a graceful shutdown and exits.
+	ServerShutdownTimeout time.Duration
+	WorkerLoopInterval    time.Duration
 }
 
 func (o *Opts) SetPrometheusRegistry(reg *prometheus.Registry) {

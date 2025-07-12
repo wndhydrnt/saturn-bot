@@ -34,19 +34,17 @@ func (e ErrorMissingInput) Error() string {
 }
 
 type WorkerService struct {
-	clock                 clock.Clock
-	db                    *gorm.DB
-	inShutdown            atomic.Bool
-	shutdownCheckInterval time.Duration
-	taskService           *TaskService
+	clock       clock.Clock
+	db          *gorm.DB
+	inShutdown  atomic.Bool
+	taskService *TaskService
 }
 
-func NewWorkerService(clock clock.Clock, db *gorm.DB, taskService *TaskService, shutdownCheckInterval time.Duration) *WorkerService {
+func NewWorkerService(clock clock.Clock, db *gorm.DB, taskService *TaskService) *WorkerService {
 	return &WorkerService{
-		clock:                 clock,
-		db:                    db,
-		shutdownCheckInterval: shutdownCheckInterval,
-		taskService:           taskService,
+		clock:       clock,
+		db:          db,
+		taskService: taskService,
 	}
 }
 
@@ -428,7 +426,9 @@ func (ws *WorkerService) ListTaskResults(opts ListTaskResultsOptions, listOpts *
 	return taskResults, nil
 }
 
-func (ws *WorkerService) Shutdown(ctx context.Context) error {
+// Shutdown waits for all runs to finish until the deadline of the context has been reached.
+// It checks every checkInterval for active runs.
+func (ws *WorkerService) Shutdown(ctx context.Context, checkInterval time.Duration) error {
 	ws.inShutdown.Store(true)
 
 	runCount, err := ws.countActiveRuns()
@@ -438,11 +438,6 @@ func (ws *WorkerService) Shutdown(ctx context.Context) error {
 
 	if runCount == 0 {
 		return nil
-	}
-
-	checkInterval := ws.shutdownCheckInterval
-	if ws.shutdownCheckInterval == 0 {
-		checkInterval = time.Second
 	}
 
 	ticker := time.NewTicker(checkInterval)

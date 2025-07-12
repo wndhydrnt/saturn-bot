@@ -5,6 +5,7 @@ import (
 	"encoding/json"
 	"errors"
 	"net/http"
+	"time"
 
 	"github.com/go-chi/chi/v5"
 	"github.com/oapi-codegen/runtime/strictmiddleware/nethttp"
@@ -25,6 +26,11 @@ type APIServer struct {
 	Clock         clock.Clock
 	TaskService   *service.TaskService
 	WorkerService *service.WorkerService
+}
+
+// Stop gracefully stops the API server.
+func (a *APIServer) Stop(ctx context.Context, checkInterval time.Duration) error {
+	return a.WorkerService.Shutdown(ctx, checkInterval)
 }
 
 // NewAPIServerOptions are passed to [RegisterAPIServer].
