@@ -29,6 +29,7 @@ func Test_Shutdown_WaitForRunningRuns(t *testing.T) {
 	httpExpect := httpexpect.Default(t, opts.Config.ServerBaseUrl)
 	// Schedule a first run
 	assertApiCall(httpExpect, apiCall{
+		sleep:  5 * time.Millisecond, // Wait for HTTP server to start up
 		method: "POST",
 		path:   "/api/v1/runs",
 		requestBody: openapi.ScheduleRunV1Request{
