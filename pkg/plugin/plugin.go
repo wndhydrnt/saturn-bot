@@ -143,6 +143,8 @@ func (p *Plugin) OnPrMerged(req *protoV1.OnPrMergedRequest) (*protoV1.OnPrMerged
 	return reply, nil
 }
 
+// Shutdown lets a plugin know that its process is about to be stopped.
+// A plugin can clean up any resources before it is stopped.
 func (p *Plugin) Shutdown(req *protoV1.ShutdownRequest) (*protoV1.ShutdownResponse, error) {
 	reply, err := p.Provider.Shutdown(req)
 	if err != nil {
