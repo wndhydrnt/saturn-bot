@@ -192,16 +192,20 @@ func TestPlugin_Do_Error(t *testing.T) {
 	require.False(t, match)
 }
 
-func TestPlugin_Start(t *testing.T) {
+func TestPlugin_Start_Stop(t *testing.T) {
 	opts := plugin.StartOptions{Config: map[string]string{"message": "Hello World"}}
 	ctrl := gomock.NewController(t)
 	provider := pluginmock.NewMockProvider(ctrl)
 	provider.EXPECT().
 		GetPlugin(&protoV1.GetPluginRequest{Config: opts.Config}).
 		Return(&protoV1.GetPluginResponse{Name: "unittest", Priority: 10}, nil)
+	provider.EXPECT().
+		Shutdown(&protoV1.ShutdownRequest{}).
+		Return(&protoV1.ShutdownResponse{}, nil)
 
 	p := &plugin.Plugin{Provider: provider}
 	err := p.Start(opts)
+	p.Stop()
 
 	require.NoError(t, err)
 	require.Equal(t, "unittest", p.Name)

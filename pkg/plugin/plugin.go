@@ -181,14 +181,14 @@ func (p *Plugin) Start(opts StartOptions) error {
 // Stop stops the plugin process.
 // It calls the Shutdown RPC method before it stops the process.
 func (p *Plugin) Stop() {
-	if p.client != nil {
-		if !p.client.Exited() {
-			_, err := p.Shutdown(&protoV1.ShutdownRequest{})
-			if err != nil {
-				log.Log().Warnw("Failed to shutdown plugin", zap.Error(err))
-			}
+	if p.Provider != nil {
+		_, err := p.Shutdown(&protoV1.ShutdownRequest{})
+		if err != nil {
+			log.Log().Warnw("Failed to shutdown plugin", zap.Error(err))
 		}
+	}
 
+	if p.client != nil {
 		// It is safe to call Kill() multiple times.
 		p.client.Kill()
 	}
