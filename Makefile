@@ -1,7 +1,7 @@
 VERSION?=v0.0.0-dev
 VERSION_HASH?=$(shell git rev-parse HEAD)
 VERSION_DATETIME?=$(shell date -u +"%Y-%m-%dT%H:%M:%SZ")
-BUILD_FLAGS=-ldflags="-X 'github.com/wndhydrnt/saturn-bot/pkg/version.Version=$(VERSION)' -X 'github.com/wndhydrnt/saturn-bot/pkg/version.Hash=$(VERSION_HASH)' -X 'github.com/wndhydrnt/saturn-bot/pkg/version.DateTime=$(VERSION_DATETIME)'"
+BUILD_FLAGS=-ldflags="-X 'github.com/wndhydrnt/saturn-bot/pkg/version.Version=$(VERSION)'"
 GO_JSONSCHEMA_VERSION=v0.16.0
 OS=$(shell uname -s)
 ARCH=$(shell uname -m)

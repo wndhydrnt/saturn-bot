@@ -13,9 +13,9 @@ import (
 )
 
 func Init(registry prometheus.Registerer, dbInfo *service.DbInfo) {
-	promversion.Version = version.Version
-	promversion.Revision = version.Hash
-	promversion.BuildDate = version.DateTime
+	promversion.Version = version.Info.Version
+	promversion.Revision = version.Info.Commit
+	promversion.BuildDate = version.Info.BuildDate
 	registry.MustRegister(promversioncollector.NewCollector("server"))
 
 	registry.MustRegister(prometheus.NewGaugeFunc(
