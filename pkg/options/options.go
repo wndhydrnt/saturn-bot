@@ -65,6 +65,7 @@ type Opts struct {
 	RepositoryCacheTtl   time.Duration
 	// ServerShutdownCheckInterval is the interval at which the API server checks if all conditions
 	// have been met before shutting down gracefully.
+	// This option isn't exposed as a configuration item because it's used by tests only.
 	ServerShutdownCheckInterval time.Duration
 	// ServerShutdownTimeout is the maximum duration the API server waits before
 	// it abandons a graceful shutdown and exits.
