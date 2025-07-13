@@ -63,7 +63,14 @@ type Opts struct {
 	PrometheusGatherer   prometheus.Gatherer
 	PrometheusRegisterer prometheus.Registerer
 	RepositoryCacheTtl   time.Duration
-	WorkerLoopInterval   time.Duration
+	// ServerShutdownCheckInterval is the interval at which the API server checks if all conditions
+	// have been met before shutting down gracefully.
+	// This option isn't exposed as a configuration item because it's used by tests only.
+	ServerShutdownCheckInterval time.Duration
+	// ServerShutdownTimeout is the maximum duration the API server waits before
+	// it abandons a graceful shutdown and exits.
+	ServerShutdownTimeout time.Duration
+	WorkerLoopInterval    time.Duration
 }
 
 func (o *Opts) SetPrometheusRegistry(reg *prometheus.Registry) {
@@ -181,6 +188,12 @@ func Initialize(opts *Opts) error {
 	if opts.Clock == nil {
 		opts.Clock = clock.Default
 	}
+
+	shutdownTimeout, err := time.ParseDuration(opts.Config.ServerShutdownTimeout)
+	if err != nil {
+		return fmt.Errorf("setting serverShutdownTimeout '%s' is not a Go duration: %w", opts.Config.ServerShutdownTimeout, err)
+	}
+	opts.ServerShutdownTimeout = shutdownTimeout
 
 	return nil
 }

@@ -29,10 +29,15 @@ import (
 )
 
 type Server struct {
-	httpServer *http.Server
+	apiServer             *api.APIServer
+	httpServer            *http.Server
+	shutdownCheckInterval time.Duration
+	shutdownTimeout       time.Duration
 }
 
 func (s *Server) Start(opts options.Opts, taskPaths []string) error {
+	s.shutdownCheckInterval = opts.ServerShutdownCheckInterval
+	s.shutdownTimeout = opts.ServerShutdownTimeout
 	if opts.Config.ServerApiKey == "" {
 		return fmt.Errorf("required setting serverApiKey not configured - see https://saturn-bot.readthedocs.io/en/latest/reference/configuration/#serverapikey")
 	}
@@ -96,6 +101,7 @@ func (s *Server) Start(opts options.Opts, taskPaths []string) error {
 		TaskService:   taskService,
 		WorkerService: workerService,
 	})
+	s.apiServer = apiServer
 	if opts.Config.ServerServeUi {
 		log.Log().Info("Registering UI routes")
 		ui.RegisterUiRoutes(router, apiServer)
@@ -117,21 +123,53 @@ func (s *Server) Start(opts options.Opts, taskPaths []string) error {
 	return nil
 }
 
+// Stop initiates a graceful shutdown of the server.
 func (s *Server) Stop() error {
-	if s.httpServer != nil {
-		log.Log().Debug("Shutting down HTTP server")
-		ctx := context.Background()
-		ctx, cancel := context.WithDeadline(ctx, time.Now().Add(1*time.Minute))
-		err := s.httpServer.Shutdown(ctx)
-		cancel()
-		if err != nil {
-			return fmt.Errorf("shutdown of http server failed: %w", err)
-		}
+	apiErr := s.stopApiServer()
+	httpErr := s.stopHttpServer()
+	return errors.Join(apiErr, httpErr)
+}
 
-		log.Log().Debug("Shutdown of HTTP server finished")
+func (s *Server) stopApiServer() error {
+	if s.apiServer == nil {
 		return nil
 	}
 
+	log.Log().Debug("Shutting down API server")
+	ctx, cancel := context.WithTimeout(context.Background(), s.shutdownTimeout)
+	defer cancel()
+	checkInterval := s.shutdownCheckInterval
+	if checkInterval == 0 {
+		checkInterval = 1 * time.Second
+	}
+	err := s.apiServer.Stop(ctx, checkInterval)
+	if err != nil {
+		if errors.Is(err, context.DeadlineExceeded) {
+			log.Log().Errorf("API server shutdown timed out")
+		} else {
+			return err
+		}
+	} else {
+		log.Log().Debug("Shutdown of API server finished")
+	}
+
+	return nil
+}
+
+func (s *Server) stopHttpServer() error {
+	if s.httpServer == nil {
+		return nil
+	}
+
+	log.Log().Debug("Shutting down HTTP server")
+	ctx, cancel := context.WithTimeout(context.Background(), 10*time.Second)
+	defer cancel()
+	err := s.httpServer.Shutdown(ctx)
+	if err != nil {
+		return fmt.Errorf("shutdown of http server failed: %w", err)
+	}
+
+	log.Log().Debug("Shutdown of HTTP server finished")
 	return nil
 }
 
