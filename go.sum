@@ -230,8 +230,8 @@ github.com/valyala/bytebufferpool v1.0.0/go.mod h1:6bBcMArwyJ5K/AmCkWv1jt77kVWyC
 github.com/valyala/fasthttp v1.34.0 h1:d3AAQJ2DRcxJYHm7OXNXtXt2as1vMDfxeIcFvhmGGm4=
 github.com/valyala/fasthttp v1.34.0/go.mod h1:epZA5N+7pY6ZaEKRmstzOuYJx9HI8DI1oaCGZpdH4h0=
 github.com/valyala/tcplisten v1.0.0/go.mod h1:T0xQ8SeCZGxckz9qRXTfG43PvQ/mcWh7FwZEA7Ioqkc=
-github.com/wndhydrnt/saturn-bot-go v0.5.0 h1:ZWgRoxbueRcuue20qdlXrTZ++3QeqvfF1jaNdQ5ZhcM=
-github.com/wndhydrnt/saturn-bot-go v0.5.0/go.mod h1:kgjTySVkesKSYKP2e8xfwOZbfeU12c8A4U7DGWPjUUo=
+github.com/wndhydrnt/saturn-bot-go v0.6.0 h1:ISai9bdIH/C6dkiCsVaflRHSL7LQPagYt3M95wLE2Fo=
+github.com/wndhydrnt/saturn-bot-go v0.6.0/go.mod h1:kgjTySVkesKSYKP2e8xfwOZbfeU12c8A4U7DGWPjUUo=
 github.com/xeipuuv/gojsonpointer v0.0.0-20180127040702-4e3ac2762d5f/go.mod h1:N2zxlSyiKSe5eX1tZViRH5QA0qijqEDrYZiPEAiq3wU=
 github.com/xeipuuv/gojsonpointer v0.0.0-20190905194746-02993c407bfb h1:zGWFAtiMcyryUHoUjUJX0/lt1H2+i2Ka2n+D3DImSNo=
 github.com/xeipuuv/gojsonpointer v0.0.0-20190905194746-02993c407bfb/go.mod h1:N2zxlSyiKSe5eX1tZViRH5QA0qijqEDrYZiPEAiq3wU=

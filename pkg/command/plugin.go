@@ -28,6 +28,7 @@ var (
 		"onPrClosed":  onPrClosedPlugin,
 		"onPrCreated": onPrCreatedPlugin,
 		"onPrMerged":  onPrMergedPlugin,
+		"shutdown":    shutdown,
 	}
 )
 
@@ -60,6 +61,10 @@ func onPrMergedPlugin(opts ExecPluginOptions, p *plugin.Plugin) (any, error) {
 	return p.OnPrMerged(&protoV1.OnPrMergedRequest{
 		Context: opts.Context,
 	})
+}
+
+func shutdown(_ ExecPluginOptions, p *plugin.Plugin) (any, error) {
+	return p.Shutdown(&protoV1.ShutdownRequest{})
 }
 
 // ExecPluginOptions defines all options expected by function ExecPlugin.

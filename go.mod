@@ -37,7 +37,7 @@ require (
 	github.com/spf13/cobra v1.8.1
 	github.com/stretchr/testify v1.9.0
 	github.com/toshi0607/chi-prometheus v0.1.4
-	github.com/wndhydrnt/saturn-bot-go v0.5.0
+	github.com/wndhydrnt/saturn-bot-go v0.6.0
 	gitlab.com/gitlab-org/api/client-go v0.116.0
 	go.uber.org/atomic v1.11.0
 	go.uber.org/mock v0.4.0
