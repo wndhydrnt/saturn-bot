@@ -146,7 +146,7 @@ func (p *Plugin) OnPrMerged(req *protoV1.OnPrMergedRequest) (*protoV1.OnPrMerged
 func (p *Plugin) Shutdown(req *protoV1.ShutdownRequest) (*protoV1.ShutdownResponse, error) {
 	reply, err := p.Provider.Shutdown(req)
 	if err != nil {
-		return nil, fmt.Errorf("rpc call Shutdown: %w", err)
+		return nil, fmt.Errorf("rpc Shutdown: %w", err)
 	}
 
 	return reply, nil
@@ -176,6 +176,8 @@ func (p *Plugin) Start(opts StartOptions) error {
 	return nil
 }
 
+// Stop stops the plugin process.
+// It calls the Shutdown RPC method before it stops the process.
 func (p *Plugin) Stop() {
 	if p.client != nil {
 		if !p.client.Exited() {
