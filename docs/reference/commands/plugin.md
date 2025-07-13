@@ -29,6 +29,7 @@ Available Commands:
   onPrClosed  Test the onPrClosed function of a plugin
   onPrCreated Test the onPrCreated function of a plugin
   onPrMerged  Test the onPrMerged function of a plugin
+  shutdown    Test the shutdown function of a plugin
 
 Flags:
       --address string          Address of the plugin to connect to.
