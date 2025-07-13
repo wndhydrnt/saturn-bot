@@ -35,7 +35,7 @@ func TestCiRunner_Run_Valid(t *testing.T) {
 	validFile.Close()
 
 	runner, err := command.NewCiRunner(options.Opts{
-		Config: config.Configuration{RepositoryCacheTtl: "6h", WorkerLoopInterval: "1m"},
+		Config: config.Configuration{RepositoryCacheTtl: "6h", ServerShutdownTimeout: "5m", WorkerLoopInterval: "1m"},
 	})
 	require.NoError(t, err)
 
@@ -60,7 +60,7 @@ func TestCiRunner_Run_Invalid(t *testing.T) {
 	invalidFile.Close()
 
 	runner, err := command.NewCiRunner(options.Opts{
-		Config: config.Configuration{RepositoryCacheTtl: "6h", WorkerLoopInterval: "1m"},
+		Config: config.Configuration{RepositoryCacheTtl: "6h", ServerShutdownTimeout: "5m", WorkerLoopInterval: "1m"},
 	})
 	require.NoError(t, err)
 

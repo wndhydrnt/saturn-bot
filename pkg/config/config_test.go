@@ -41,6 +41,7 @@ func TestReadConfig(t *testing.T) {
 				ServerBaseUrl:            "http://localhost:3035",
 				ServerCompress:           true,
 				ServerServeUi:            true,
+				ServerShutdownTimeout:    "5m",
 				WorkerLoopInterval:       "10s",
 				WorkerParallelExecutions: 1,
 				WorkerServerAPIBaseURL:   "http://localhost:3035",
