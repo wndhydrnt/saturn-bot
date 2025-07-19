@@ -1,0 +1,19 @@
+{
+  "$schema": "https://docs.renovatebot.com/renovate-schema.json",
+  "extends": ["docker:disableMajor"],
+  "automergeStrategy": "squash",
+  "commitMessagePrefix": "fix(dependencies):",
+  "semanticCommits": "disabled",
+  "prConcurrentLimit": 5,
+  "packageRules": [
+    {
+      "matchUpdateTypes": ["minor", "patch"],
+      "automerge": true,
+      "minimumReleaseAge": "7 days"
+    },
+    {
+      "matchManagers": ["github-actions"],
+      "commitMessagePrefix": "chore(deps):"
+    }
+  ]
+}
