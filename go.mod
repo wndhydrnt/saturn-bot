@@ -8,7 +8,7 @@ require (
 	github.com/antchfx/xmlquery v1.4.2
 	github.com/antchfx/xpath v1.3.2
 	github.com/gavv/httpexpect/v2 v2.16.0
-	github.com/go-chi/chi/v5 v5.0.13
+	github.com/go-chi/chi/v5 v5.2.2
 	github.com/gofrs/flock v0.12.1
 	github.com/golang-migrate/migrate/v4 v4.18.1
 	github.com/gomarkdown/markdown v0.0.0-20250207164621-7a1f277a159e
