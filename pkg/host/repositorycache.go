@@ -228,12 +228,6 @@ func (rc *RepositoryCache) updateCacheForHost(host Host) error {
 	repoIterator := host.RepositoryIterator()
 	updateCounter := 0
 	for repo := range repoIterator.ListRepositories(since) {
-		if repo.IsArchived() {
-			log.Log().Debugf("Deleting archived repository %s from cache", repo.FullName())
-			_ = rc.remove(repo)
-			continue
-		}
-
 		if err := rc.writeRepository(repo); err != nil {
 			return err
 		}

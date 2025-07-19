@@ -365,6 +365,8 @@ func shouldReport(result processor.Result) bool {
 		return false
 	case processor.ResultSkip:
 		return false
+	case processor.ResultArchived:
+		return false
 	default:
 		return true
 	}
@@ -372,6 +374,8 @@ func shouldReport(result processor.Result) bool {
 
 func mapPullRequestStateToTaskResultStatus(state host.PullRequestState) client.TaskResultStateV1 {
 	switch state {
+	case host.PullRequestStateArchived:
+		return client.TaskResultStateV1Archived
 	case host.PullRequestStateClosed:
 		return client.TaskResultStateV1Closed
 	case host.PullRequestStateMerged:

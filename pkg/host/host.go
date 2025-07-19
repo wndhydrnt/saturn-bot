@@ -29,6 +29,7 @@ const (
 	PullRequestStateOpen
 	PullRequestStateClosed
 	PullRequestStateMerged
+	PullRequestStateArchived
 )
 
 // PullRequestRaw is the raw, underlying struct of a Pull Request in a host.

@@ -24,7 +24,7 @@ type dataRunsIndexFilters struct {
 
 var (
 	runStatusOptions        = []string{string(openapi.Failed), string(openapi.Finished), string(openapi.Pending), string(openapi.Running)}
-	taskResultStatusOptions = []openapi.TaskResultStateV1{openapi.TaskResultStateV1Closed, openapi.TaskResultStateV1Error, openapi.TaskResultStateV1Merged, openapi.TaskResultStateV1Open}
+	taskResultStatusOptions = []openapi.TaskResultStateV1{openapi.TaskResultStateV1Merged, openapi.TaskResultStateV1Open, openapi.TaskResultStateV1Error, openapi.TaskResultStateV1Closed, openapi.TaskResultStateV1Archived}
 )
 
 // ListRun renders the list of known runs.
