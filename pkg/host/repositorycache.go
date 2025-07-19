@@ -71,16 +71,6 @@ func (rc *RepositoryCache) List(hosts []Host, result chan Repository, errChan ch
 	errChan <- nil
 }
 
-func (rc *RepositoryCache) remove(repo Repository) error {
-	key := getRepositoryCacheKey(repo)
-	err := rc.Cacher.Delete(key)
-	if err != nil {
-		return fmt.Errorf("delete repository from cache: %w", err)
-	}
-
-	return nil
-}
-
 func (rc *RepositoryCache) readLastUpdateTimestamp(h Host) (*time.Time, error) {
 	meta, err := rc.readMetadata(h)
 	if err != nil {
