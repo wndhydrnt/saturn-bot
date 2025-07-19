@@ -46,12 +46,13 @@ const (
 
 // Defines values for TaskResultStateV1.
 const (
-	TaskResultStateV1Closed  TaskResultStateV1 = "closed"
-	TaskResultStateV1Error   TaskResultStateV1 = "error"
-	TaskResultStateV1Merged  TaskResultStateV1 = "merged"
-	TaskResultStateV1Open    TaskResultStateV1 = "open"
-	TaskResultStateV1Pushed  TaskResultStateV1 = "pushed"
-	TaskResultStateV1Unknown TaskResultStateV1 = "unknown"
+	TaskResultStateV1Archived TaskResultStateV1 = "archived"
+	TaskResultStateV1Closed   TaskResultStateV1 = "closed"
+	TaskResultStateV1Error    TaskResultStateV1 = "error"
+	TaskResultStateV1Merged   TaskResultStateV1 = "merged"
+	TaskResultStateV1Open     TaskResultStateV1 = "open"
+	TaskResultStateV1Pushed   TaskResultStateV1 = "pushed"
+	TaskResultStateV1Unknown  TaskResultStateV1 = "unknown"
 )
 
 // DeleteRunV1Response defines model for DeleteRunV1Response.
@@ -206,6 +207,7 @@ type ReportWorkV1TaskResult struct {
 	Result int `json:"result"`
 
 	// State State of the result.
+	// `archived` indicates that the repository of a pull request has been archived.
 	// `closed` indicates that a pull request existed and has been closed.
 	// `error` indicates that an error occurred while applying the task to the repository.
 	// `merged` indicates that a pull request has been merged.
@@ -267,6 +269,7 @@ type ScheduleRunV1Response struct {
 }
 
 // TaskResultStateV1 State of the result.
+// `archived` indicates that the repository of a pull request has been archived.
 // `closed` indicates that a pull request existed and has been closed.
 // `error` indicates that an error occurred while applying the task to the repository.
 // `merged` indicates that a pull request has been merged.
@@ -290,6 +293,7 @@ type TaskResultV1 struct {
 	RunId int `json:"runId"`
 
 	// Status State of the result.
+	// `archived` indicates that the repository of a pull request has been archived.
 	// `closed` indicates that a pull request existed and has been closed.
 	// `error` indicates that an error occurred while applying the task to the repository.
 	// `merged` indicates that a pull request has been merged.
