@@ -245,7 +245,7 @@ func (ws *WorkerService) ReportRun(req openapi.ReportWorkV1Request) error {
 			}
 
 			status := mapTaskResultStateFromApiToDb(taskResult.State)
-			if resultDb.Status == status && isSamePullRequestUrl(taskResult.PullRequestUrl, resultDb.PullRequestUrl) {
+			if !shouldCreateNewTaskResult(taskResult, resultDb, status) {
 				// No change in status. Skip this result.
 				continue
 			}
@@ -532,4 +532,23 @@ func isSamePullRequestUrl(a, b *string) bool {
 	}
 
 	return ptr.From(a) == ptr.From(b)
+}
+
+func shouldCreateNewTaskResult(resultApi openapi.ReportWorkV1TaskResult, resultDb db.TaskResult, computedStatus db.TaskResultStatus) bool {
+	if resultDb.Status != computedStatus {
+		// The status changes. Create a new task result.
+		return true
+	}
+
+	if !isSamePullRequestUrl(resultApi.PullRequestUrl, resultDb.PullRequestUrl) {
+		// New pull request. For example, because of new changes.
+		return true
+	}
+
+	if ptr.FromDef(resultApi.Error, "") != ptr.FromDef(resultDb.Error, "") {
+		// Previous run errored, but with a different error.
+		return true
+	}
+
+	return false
 }
