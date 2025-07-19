@@ -1,5 +1,26 @@
 # Changelog
 
+## [0.29.0](https://github.com/wndhydrnt/saturn-bot/compare/v0.28.0...v0.29.0) (2025-07-19)
+
+
+### Features
+
+* **plugin:** Call method Shutdown of a plugin before stopping it ([#194](https://github.com/wndhydrnt/saturn-bot/issues/194)) ([b713a77](https://github.com/wndhydrnt/saturn-bot/commit/b713a7782369d72aa06f5d069423febf9c9957df))
+* **server:** Wait for workers to report before shutting down ([#192](https://github.com/wndhydrnt/saturn-bot/issues/192)) ([1e3d830](https://github.com/wndhydrnt/saturn-bot/commit/1e3d8303760a1d6ac57a8e5ed2ec2fac86782a18))
+
+
+### Bug Fixes
+
+* **dependencies:** Update debian Docker digest to d42b86d ([#197](https://github.com/wndhydrnt/saturn-bot/issues/197)) ([0a5a06e](https://github.com/wndhydrnt/saturn-bot/commit/0a5a06ebfa26c2da2fb6086ca8bccd4c6f8a0727))
+* **dependencies:** Update dependency mkdocs-material to v9.6.15 ([#205](https://github.com/wndhydrnt/saturn-bot/issues/205)) ([54ea609](https://github.com/wndhydrnt/saturn-bot/commit/54ea60976b2dc32b1155d1930722502628ba0bcf))
+* **dependencies:** Update module github.com/adhocore/gronx to v1.19.6 ([#206](https://github.com/wndhydrnt/saturn-bot/issues/206)) ([09fcdb8](https://github.com/wndhydrnt/saturn-bot/commit/09fcdb8a53908c978bef8c1c76aca3528d7c18b6))
+* **dependencies:** Update module github.com/go-chi/chi/v5 to v5.2.2 [SECURITY] ([#196](https://github.com/wndhydrnt/saturn-bot/issues/196)) ([154c41a](https://github.com/wndhydrnt/saturn-bot/commit/154c41a2f564ae5b823704ec15621d92500826eb))
+* **dependencies:** Update module github.com/gosimple/slug to v1.15.0 ([#200](https://github.com/wndhydrnt/saturn-bot/issues/200)) ([32cabec](https://github.com/wndhydrnt/saturn-bot/commit/32cabec4b71970e407734ca2341bce3fad1a1c7c))
+* **dependencies:** Update module github.com/ncruces/go-sqlite3 to v0.26.3 ([#202](https://github.com/wndhydrnt/saturn-bot/issues/202)) ([3f9f9b6](https://github.com/wndhydrnt/saturn-bot/commit/3f9f9b6007bd8defad8ed4e0c0cdccc601929cfb))
+* **dependencies:** Update module github.com/prometheus/client_golang to v1.22.0 ([#204](https://github.com/wndhydrnt/saturn-bot/issues/204)) ([06de07e](https://github.com/wndhydrnt/saturn-bot/commit/06de07e3651ed8bd69c6821e528a51806ba16869))
+* **server:** Create new task result if the reported error changes ([2d0969b](https://github.com/wndhydrnt/saturn-bot/commit/2d0969b0cc992a803bda234780409cb703ea56bc))
+* **server:** Display status "archived" if the repository of a PR has been archived ([#195](https://github.com/wndhydrnt/saturn-bot/issues/195)) ([384ffe7](https://github.com/wndhydrnt/saturn-bot/commit/384ffe7184ebe75d9ffc514b868d062cd6f3fe25))
+
 ## [0.28.0](https://github.com/wndhydrnt/saturn-bot/compare/v0.27.1...v0.28.0) (2025-06-24)
 
 
