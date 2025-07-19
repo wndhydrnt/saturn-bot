@@ -518,29 +518,13 @@ func mapTaskResultStateFromApiToDb(state openapi.TaskResultStateV1) db.TaskResul
 	return db.TaskResultStatus(state)
 }
 
-func isSamePullRequestUrl(a, b *string) bool {
-	if a == nil && b == nil {
-		return true
-	}
-
-	if a == nil && b != nil {
-		return false
-	}
-
-	if a != nil && b == nil {
-		return false
-	}
-
-	return ptr.From(a) == ptr.From(b)
-}
-
 func shouldCreateNewTaskResult(resultApi openapi.ReportWorkV1TaskResult, resultDb db.TaskResult, computedStatus db.TaskResultStatus) bool {
 	if resultDb.Status != computedStatus {
 		// The status changes. Create a new task result.
 		return true
 	}
 
-	if !isSamePullRequestUrl(resultApi.PullRequestUrl, resultDb.PullRequestUrl) {
+	if ptr.FromDef(resultApi.PullRequestUrl, "") != ptr.FromDef(resultDb.PullRequestUrl, "") {
 		// New pull request. For example, because of new changes.
 		return true
 	}
