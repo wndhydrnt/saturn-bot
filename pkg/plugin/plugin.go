@@ -1,6 +1,7 @@
 package plugin
 
 import (
+	"bytes"
 	"context"
 	"errors"
 	"fmt"
@@ -203,11 +204,11 @@ func (p *Plugin) String() string {
 func (p *Plugin) init(opts StartOptions) error {
 	// Ensure that default handlers for stdio are set up.
 	if opts.OnDataStderr == nil {
-		opts.OnDataStderr = NewStderrHandler(zapcore.DebugLevel)
+		opts.OnDataStderr = NewStderrHandler(zapcore.DebugLevel, log.Log())
 	}
 
 	if opts.OnDataStdout == nil {
-		opts.OnDataStdout = NewStdoutHandler(zapcore.DebugLevel)
+		opts.OnDataStdout = NewStdoutHandler(zapcore.DebugLevel, log.Log())
 	}
 
 	p.stderrAdapter = &stdioAdapter{onMessage: opts.OnDataStderr}
@@ -299,22 +300,34 @@ func NewContext(ctx context.Context) *protoV1.Context {
 type StdioHandler func(pluginName string, msg []byte)
 
 // NewStdioHandler returns a StdioHandler that adds a message to the log when it receives data.
-// `level` denotes the log level at which the data received is logged.
+// `defaultLevel` denotes the level to log messages if a log message does not set its own level.
 // `stream` is the identifier of the stream from which the data was read.
-func NewStdioHandler(level zapcore.Level, stream string) StdioHandler {
+func NewStdioHandler(defaultLevel zapcore.Level, logger *zap.SugaredLogger, stream string) StdioHandler {
 	return func(pluginName string, msg []byte) {
-		log.Log().Logf(level, "PLUGIN [%s %s] %s", pluginName, stream, msg)
+		parts := bytes.Split(msg, []byte("%|%"))
+		if len(parts) != 2 {
+			logger.Logw(defaultLevel, string(msg), "plugin", pluginName, "stream", stream)
+			return
+		}
+
+		var lvl zapcore.Level
+		err := lvl.UnmarshalText(parts[0])
+		if err == nil {
+			logger.Logw(lvl, string(parts[1]), "plugin", pluginName, "stream", stream)
+		} else {
+			logger.Logw(defaultLevel, string(msg), "plugin", pluginName, "stream", stream)
+		}
 	}
 }
 
 // NewStderrHandler returns an StdioHandler for the stream "stderr".
-func NewStderrHandler(level zapcore.Level) StdioHandler {
-	return NewStdioHandler(level, "stderr")
+func NewStderrHandler(level zapcore.Level, logger *zap.SugaredLogger) StdioHandler {
+	return NewStdioHandler(level, logger, "stderr")
 }
 
 // NewStdoutHandler returns an StdioHandler for the stream "stdout".
-func NewStdoutHandler(level zapcore.Level) StdioHandler {
-	return NewStdioHandler(level, "stdout")
+func NewStdoutHandler(level zapcore.Level, logger *zap.SugaredLogger) StdioHandler {
+	return NewStdioHandler(level, logger, "stdout")
 }
 
 // parseAddr parses a go-plugin connection string.
