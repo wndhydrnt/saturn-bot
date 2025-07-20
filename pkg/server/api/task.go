@@ -49,12 +49,12 @@ func (a *APIServer) GetTaskV1(_ context.Context, request openapi.GetTaskV1Reques
 }
 
 // ListTasksV1 implements [openapi.ServerInterface].
-func (th *APIServer) ListTasksV1(_ context.Context, request openapi.ListTasksV1RequestObject) (openapi.ListTasksV1ResponseObject, error) {
+func (a *APIServer) ListTasksV1(_ context.Context, request openapi.ListTasksV1RequestObject) (openapi.ListTasksV1ResponseObject, error) {
 	resp := openapi.ListTasksV1200JSONResponse{
 		Results: []openapi.ListTasksV1ResponseTask{},
 	}
 	listOpts := toListOptions(request.Params.ListOptions)
-	tasks, err := th.TaskService.ListTasksFromDatabase(service.ListTasksFromDatabaseOptions{
+	tasks, err := a.TaskService.ListTasksFromDatabase(service.ListTasksFromDatabaseOptions{
 		Active: request.Params.Active,
 	}, &listOpts)
 	if err != nil {

@@ -1,5 +1,18 @@
 # Changelog
 
+## [0.28.0](https://github.com/wndhydrnt/saturn-bot/compare/v0.27.1...v0.28.0) (2025-06-24)
+
+
+### Features
+
+* **task:** Add labels to each pull request ([#191](https://github.com/wndhydrnt/saturn-bot/issues/191)) ([b788195](https://github.com/wndhydrnt/saturn-bot/commit/b78819593b166b4028aae8bddc0d726dc8edaad0))
+
+
+### Bug Fixes
+
+* **cache:** Make order of cache items deterministic ([f66d901](https://github.com/wndhydrnt/saturn-bot/commit/f66d901c85e8a14b223bba140b876a8ab9b2ca4c))
+* **command:** Set run_task_success metric if a failure before task execution occurs ([32cdc49](https://github.com/wndhydrnt/saturn-bot/commit/32cdc499f87a6e363a16ded212f9bdc7fad92093))
+
 ## [0.27.1](https://github.com/wndhydrnt/saturn-bot/compare/v0.27.0...v0.27.1) (2025-06-19)
 
 

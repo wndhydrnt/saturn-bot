@@ -2,7 +2,7 @@ openapi: 3.0.3
 info:
   title: saturn-bot server API
   # x-release-please-start-version
-  version: 0.27.1
+  version: 0.28.0
   # x-release-please-end-version
 security:
   - ApiKeyAuth: []
@@ -626,6 +626,7 @@ components:
     TaskResultStateV1:
       description: |
         State of the result.
+        `archived` indicates that the repository of a pull request has been archived.
         `closed` indicates that a pull request existed and has been closed.
         `error` indicates that an error occurred while applying the task to the repository.
         `merged` indicates that a pull request has been merged.
@@ -634,6 +635,7 @@ components:
         `unknown` is a fallback value for any unexpected status.
       type: string
       enum:
+        - archived
         - closed
         - error
         - merged

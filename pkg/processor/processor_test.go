@@ -49,6 +49,7 @@ func setupRepoMock(ctrl *gomock.Controller) *hostmock.MockRepository {
 	r.EXPECT().Name().Return("test").AnyTimes()
 	r.EXPECT().Owner().Return("unit").AnyTimes()
 	r.EXPECT().WebUrl().Return("http://git.local/unit/test").AnyTimes()
+	r.EXPECT().IsArchived().Return(false).AnyTimes()
 	return r
 }
 
@@ -863,6 +864,32 @@ func TestProcessor_Process_CloseOpenPullRequestForFilteredRepository_PostClone(t
 	assert.Len(t, results, 1)
 	expectedPr := &host.PullRequest{
 		State: host.PullRequestStateClosed,
+	}
+	assert.Equal(t, expectedPr, results[0].PullRequest)
+}
+
+func TestProcessor_Process_SetResultOpenPrArchivedRepository(t *testing.T) {
+	ctrl := gomock.NewController(t)
+	cachedPr := &host.PullRequest{
+		State: host.PullRequestStateOpen,
+	}
+	prCache := setupPullRequestCache(ctrl)
+	prCache.EXPECT().Get("saturn-bot--unittest", "git.local/unit/test").Return(cachedPr)
+	prCache.EXPECT().Delete("saturn-bot--unittest", "git.local/unit/test")
+
+	repo := hostmock.NewMockRepository(ctrl)
+	repo.EXPECT().FullName().Return("git.local/unit/test").AnyTimes()
+	repo.EXPECT().IsArchived().Return(true).AnyTimes()
+	gitc := gitmock.NewMockGitClient(ctrl)
+	tt := &task.Task{Task: schema.Task{Name: "unittest"}}
+	tt.AddPreCloneFilters(&falseFilter{})
+
+	p := &processor.Processor{Git: gitc, PullRequestCache: prCache}
+	results := p.Process(false, repo, []*task.Task{tt}, true)
+
+	assert.Len(t, results, 1)
+	expectedPr := &host.PullRequest{
+		State: host.PullRequestStateArchived,
 	}
 	assert.Equal(t, expectedPr, results[0].PullRequest)
 }

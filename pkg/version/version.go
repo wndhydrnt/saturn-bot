@@ -3,6 +3,7 @@ package version
 import (
 	"fmt"
 	"runtime"
+	"runtime/debug"
 	"strings"
 )
 
@@ -30,16 +31,14 @@ func (vi VersionInfo) String() string {
 }
 
 var (
-	Version  = "v0.0.0-dev"
-	Hash     = ""
-	DateTime = ""
-	Info     VersionInfo
+	Version = "v0.0.0-dev"
+	Info    VersionInfo
 )
 
 func init() {
 	Info = VersionInfo{
-		BuildDate: DateTime,
-		Commit:    Hash,
+		BuildDate: readBuildInfo("vcs.time"),
+		Commit:    readBuildInfo("vcs.revision"),
 		GoArch:    runtime.GOARCH,
 		GoOS:      runtime.GOOS,
 		GoVersion: runtime.Version(),
@@ -50,4 +49,16 @@ func init() {
 // String returns the full version string.
 func String() string {
 	return Info.String()
+}
+
+func readBuildInfo(key string) string {
+	if info, ok := debug.ReadBuildInfo(); ok {
+		for _, setting := range info.Settings {
+			if setting.Key == key {
+				return setting.Value
+			}
+		}
+	}
+
+	return ""
 }

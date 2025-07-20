@@ -3,6 +3,7 @@ package service
 import (
 	"errors"
 	"fmt"
+	"sync/atomic"
 	"time"
 
 	"github.com/adhocore/gronx"
@@ -34,6 +35,7 @@ func (e ErrorMissingInput) Error() string {
 type WorkerService struct {
 	clock       clock.Clock
 	db          *gorm.DB
+	inShutdown  atomic.Bool
 	taskService *TaskService
 }
 
@@ -158,6 +160,10 @@ func (ws *WorkerService) findTask(name string) (*task.Task, error) {
 
 func (ws *WorkerService) NextRun() (db.Run, *task.Task, error) {
 	var run db.Run
+	if ws.shuttingDown() {
+		return run, nil, ErrNoRun
+	}
+
 	tx := ws.db.
 		Where("status = ?", db.RunStatusPending).
 		Order("schedule_after asc").
@@ -239,7 +245,7 @@ func (ws *WorkerService) ReportRun(req openapi.ReportWorkV1Request) error {
 			}
 
 			status := mapTaskResultStateFromApiToDb(taskResult.State)
-			if resultDb.Status == status && isSamePullRequestUrl(taskResult.PullRequestUrl, resultDb.PullRequestUrl) {
+			if !shouldCreateNewTaskResult(taskResult, resultDb, status) {
 				// No change in status. Skip this result.
 				continue
 			}
@@ -419,6 +425,59 @@ func (ws *WorkerService) ListTaskResults(opts ListTaskResultsOptions, listOpts *
 	return taskResults, nil
 }
 
+// Shutdown tells the worker service that the server is shutting down.
+// The worker service doesn't return new work when [NextRun] is called.
+func (ws *WorkerService) Shutdown() {
+	ws.inShutdown.Store(true)
+}
+
+func (ws *WorkerService) shuttingDown() bool {
+	return ws.inShutdown.Load()
+}
+
+// CountRunningRuns returns the number of runs in state "running".
+func (ws *WorkerService) CountRunningRuns() (int64, error) {
+	var count int64
+	result := ws.db.
+		Model(&db.Run{}).
+		Where("status = ?", db.RunStatusRunning).
+		Count(&count)
+	return count, result.Error
+}
+
+// MarkActiveRunsAsFailed marks all runs in state "running" as failed.
+// errMesg is set as the error.
+func (ws *WorkerService) MarkActiveRunsAsFailed(errMsg string) error {
+	var runs []db.Run
+	findResult := ws.db.
+		Where("status = ?", db.RunStatusRunning).
+		Find(&runs)
+	if findResult.Error != nil {
+		return fmt.Errorf("find runs to mark as failed on shutdown: %w", findResult.Error)
+	}
+
+	for _, run := range runs {
+		t, err := ws.findTask(run.TaskName)
+		if err != nil {
+			return fmt.Errorf("find task to mark as failed on shutdown: %w", err)
+		}
+
+		err = ws.ReportRun(openapi.ReportWorkV1Request{
+			Error: ptr.To(errMsg),
+			RunID: int(run.ID), // #nosec G115 -- no info by gosec on how to fix this
+			Task: openapi.WorkTaskV1{
+				Hash: t.Checksum(),
+				Name: t.Name,
+			},
+		})
+		if err != nil {
+			return fmt.Errorf("mark run %d of task %s as failed on shutdown: %w", run.ID, t.Name, err)
+		}
+	}
+
+	return nil
+}
+
 func calcNextScheduleTime(run db.Run, now time.Time, t *task.Task, isOpen bool) *time.Time {
 	// If task defines a cron trigger, always adhere to the cron schedule.
 	if run.Reason == db.RunReasonCron {
@@ -459,18 +518,21 @@ func mapTaskResultStateFromApiToDb(state openapi.TaskResultStateV1) db.TaskResul
 	return db.TaskResultStatus(state)
 }
 
-func isSamePullRequestUrl(a, b *string) bool {
-	if a == nil && b == nil {
+func shouldCreateNewTaskResult(resultApi openapi.ReportWorkV1TaskResult, resultDb db.TaskResult, computedStatus db.TaskResultStatus) bool {
+	if resultDb.Status != computedStatus {
+		// The status changes. Create a new task result.
 		return true
 	}
 
-	if a == nil && b != nil {
-		return false
+	if ptr.FromDef(resultApi.PullRequestUrl, "") != ptr.FromDef(resultDb.PullRequestUrl, "") {
+		// New pull request. For example, because of new changes.
+		return true
 	}
 
-	if a != nil && b == nil {
-		return false
+	if ptr.FromDef(resultApi.Error, "") != ptr.FromDef(resultDb.Error, "") {
+		// Previous run errored, but with a different error.
+		return true
 	}
 
-	return ptr.From(a) == ptr.From(b)
+	return false
 }

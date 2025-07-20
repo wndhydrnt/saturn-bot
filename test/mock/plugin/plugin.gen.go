@@ -129,3 +129,18 @@ func (mr *MockProviderMockRecorder) OnPrMerged(arg0 any) *gomock.Call {
 	mr.mock.ctrl.T.Helper()
 	return mr.mock.ctrl.RecordCallWithMethodType(mr.mock, "OnPrMerged", reflect.TypeOf((*MockProvider)(nil).OnPrMerged), arg0)
 }
+
+// Shutdown mocks base method.
+func (m *MockProvider) Shutdown(arg0 *protocolv1.ShutdownRequest) (*protocolv1.ShutdownResponse, error) {
+	m.ctrl.T.Helper()
+	ret := m.ctrl.Call(m, "Shutdown", arg0)
+	ret0, _ := ret[0].(*protocolv1.ShutdownResponse)
+	ret1, _ := ret[1].(error)
+	return ret0, ret1
+}
+
+// Shutdown indicates an expected call of Shutdown.
+func (mr *MockProviderMockRecorder) Shutdown(arg0 any) *gomock.Call {
+	mr.mock.ctrl.T.Helper()
+	return mr.mock.ctrl.RecordCallWithMethodType(mr.mock, "Shutdown", reflect.TypeOf((*MockProvider)(nil).Shutdown), arg0)
+}

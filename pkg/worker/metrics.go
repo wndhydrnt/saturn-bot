@@ -39,9 +39,9 @@ var (
 )
 
 func initMetrics() {
-	promversion.Version = version.Version
-	promversion.Revision = version.Hash
-	promversion.BuildDate = version.DateTime
+	promversion.Version = version.Info.Version
+	promversion.Revision = version.Info.Commit
+	promversion.BuildDate = version.Info.BuildDate
 	prometheus.DefaultRegisterer.MustRegister(
 		promversioncollector.NewCollector("worker"),
 		metricRunsFailed,

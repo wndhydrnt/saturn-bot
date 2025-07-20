@@ -171,6 +171,11 @@
       "description": "If `true`, serves the user interface.",
       "type": "boolean"
     },
+    "serverShutdownTimeout": {
+      "default": "5m",
+      "description": "Duration to wait for active runs to finish before stopping the server.",
+      "type": "string"
+    },
     "workerLoopInterval": {
       "default": "10s",
       "description": "Interval at which a worker queries the server to receive new tasks to execute.",

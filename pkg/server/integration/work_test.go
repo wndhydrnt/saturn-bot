@@ -826,3 +826,133 @@ func TestServer_API_ReportWorkV1_AutoMergeOpenPrSchedule1Hour(t *testing.T) {
 
 	executeTestCase(t, tc)
 }
+
+func TestServer_API_ReportWorkV1_ErrorChange(t *testing.T) {
+	task := schema.Task{Name: "unittest"}
+	taskHash := "7d4262799e93d4fb6abc2f299a1846921256fc7aa64d80f87d2ad579e5c31306"
+
+	tc := testCase{
+		name:  `When the outcome of a result changes then it creates a new task result entry`,
+		tasks: []schema.Task{task},
+		apiCalls: []apiCall{
+			// Schedule the first run.
+			{
+				method: "POST",
+				path:   "/api/v1/runs",
+				requestBody: openapi.ScheduleRunV1Request{
+					TaskName: task.Name,
+				},
+				statusCode: http.StatusOK,
+				responseBody: openapi.ScheduleRunV1Response{
+					RunID: 1,
+				},
+			},
+			// Process the first run.
+			{
+				method:     "GET",
+				path:       "/api/v1/worker/work",
+				statusCode: http.StatusOK,
+				responseBody: openapi.GetWorkV1Response{
+					RunID: 1,
+					Task: openapi.WorkTaskV1{
+						Hash: taskHash,
+						Name: task.Name,
+					},
+				},
+			},
+			// And report the result of the first run.
+			{
+				method: "POST",
+				path:   "/api/v1/worker/work",
+				requestBody: openapi.ReportWorkV1Request{
+					Error: ptr.To("run failed"),
+					RunID: 1,
+					Task: openapi.WorkTaskV1{
+						Hash: taskHash,
+						Name: task.Name,
+					},
+					TaskResults: []openapi.ReportWorkV1TaskResult{
+						{
+							Error:          ptr.To("first error"),
+							RepositoryName: "git.local/unit/test",
+							Result:         int(processor.ResultUnknown),
+							State:          openapi.TaskResultStateV1Error,
+						},
+					},
+				},
+				statusCode: http.StatusCreated,
+				responseBody: openapi.ReportWorkV1Response{
+					Result: "ok",
+				},
+			},
+			// Schedule the second run.
+			{
+				method: "POST",
+				path:   "/api/v1/runs",
+				requestBody: openapi.ScheduleRunV1Request{
+					TaskName: task.Name,
+				},
+				statusCode: http.StatusOK,
+				responseBody: openapi.ScheduleRunV1Response{
+					RunID: 2,
+				},
+			},
+			// Process the second run.
+			{
+				method:     "GET",
+				path:       "/api/v1/worker/work",
+				statusCode: http.StatusOK,
+				responseBody: openapi.GetWorkV1Response{
+					RunID: 2,
+					Task: openapi.WorkTaskV1{
+						Hash: taskHash,
+						Name: task.Name,
+					},
+				},
+			},
+			// And report the result of the second run.
+			{
+				method: "POST",
+				path:   "/api/v1/worker/work",
+				requestBody: openapi.ReportWorkV1Request{
+					Error: ptr.To("run failed"),
+					RunID: 2,
+					Task: openapi.WorkTaskV1{
+						Hash: taskHash,
+						Name: task.Name,
+					},
+					TaskResults: []openapi.ReportWorkV1TaskResult{
+						{
+							Error:          ptr.To("second error"),
+							RepositoryName: "git.local/unit/test",
+							Result:         int(processor.ResultUnknown),
+							State:          openapi.TaskResultStateV1Error,
+						},
+					},
+				},
+				statusCode: http.StatusCreated,
+				responseBody: openapi.ReportWorkV1Response{
+					Result: "ok",
+				},
+			},
+			{
+				method:     "GET",
+				path:       fmt.Sprintf("/api/v1/tasks/%s/results", task.Name),
+				statusCode: http.StatusOK,
+				responseBody: openapi.ListTaskRecentTaskResultsV1Response{
+					Page: openapi.Page{CurrentPage: 1, ItemsPerPage: 20, TotalItems: 1, TotalPages: 1},
+					TaskResults: []openapi.TaskResultV1{
+						{
+							Error:          ptr.To("second error"),
+							RepositoryName: "git.local/unit/test",
+							RunId:          2,
+							Status:         openapi.TaskResultStateV1Error,
+						},
+					},
+				},
+			},
+		},
+	}
+
+	executeTestCase(t, tc)
+}

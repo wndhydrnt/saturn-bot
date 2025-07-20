@@ -39,6 +39,7 @@ const (
 	ResultNoMatch
 	ResultSkip
 	ResultPushedDefaultBranch
+	ResultArchived
 )
 
 type ProcessResult struct {
@@ -76,7 +77,7 @@ func (p *Processor) Process(dryRun bool, repo host.Repository, tasks []*task.Tas
 		taskLogger := logger.With(log.FieldTask(t.Name))
 		taskCtx := sbcontext.WithLog(ctx, taskLogger)
 		taskCtx = sbcontext.WithRunData(taskCtx, t.RunData())
-		match, preCloneResult, err := p.filterPreClone(taskCtx, t)
+		match, preCloneResult, err := p.filterPreClone(taskCtx, t, repo)
 		result := ProcessResult{
 			Task: t,
 		}
@@ -156,8 +157,12 @@ func (p *Processor) Process(dryRun bool, repo host.Repository, tasks []*task.Tas
 	return results
 }
 
-func (p *Processor) filterPreClone(ctx context.Context, task *task.Task) (bool, Result, error) {
+func (p *Processor) filterPreClone(ctx context.Context, task *task.Task, repo host.Repository) (bool, Result, error) {
 	logger := sbcontext.Log(ctx)
+	if repo.IsArchived() {
+		return false, ResultArchived, nil
+	}
+
 	if task.HasReachMaxOpenPRs() {
 		logger.Debug("Skipping task because Max Open PRs have been reached")
 		return false, ResultSkip, nil
@@ -256,6 +261,13 @@ func (p *Processor) handleFilteredRepository(ctx context.Context, t *task.Task, 
 	cachedPr := p.PullRequestCache.Get(branchName, repo.FullName())
 	if cachedPr == nil {
 		return nil, nil
+	}
+
+	if repo.IsArchived() && cachedPr.State == host.PullRequestStateOpen {
+		// Can't close a pull request for an archived repository because it is in read-only mode.
+		p.PullRequestCache.Delete(branchName, repo.FullName())
+		cachedPr.State = host.PullRequestStateArchived
+		return cachedPr, nil
 	}
 
 	prUpdated, err := closePrForNonMatchingRepo(cachedPr, repo, result)

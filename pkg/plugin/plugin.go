@@ -17,6 +17,7 @@ import (
 	sbcontext "github.com/wndhydrnt/saturn-bot/pkg/context"
 	"github.com/wndhydrnt/saturn-bot/pkg/host"
 	"github.com/wndhydrnt/saturn-bot/pkg/log"
+	"go.uber.org/zap"
 	"go.uber.org/zap/zapcore"
 )
 
@@ -143,6 +144,17 @@ func (p *Plugin) OnPrMerged(req *protoV1.OnPrMergedRequest) (*protoV1.OnPrMerged
 	return reply, nil
 }
 
+// Shutdown lets a plugin know that its process is about to be stopped.
+// A plugin can clean up any resources before it is stopped.
+func (p *Plugin) Shutdown(req *protoV1.ShutdownRequest) (*protoV1.ShutdownResponse, error) {
+	reply, err := p.Provider.Shutdown(req)
+	if err != nil {
+		return nil, fmt.Errorf("rpc Shutdown: %w", err)
+	}
+
+	return reply, nil
+}
+
 func (p *Plugin) Start(opts StartOptions) error {
 	if p.Provider == nil {
 		err := p.init(opts)
@@ -167,7 +179,16 @@ func (p *Plugin) Start(opts StartOptions) error {
 	return nil
 }
 
+// Stop stops the plugin process.
+// It calls the Shutdown RPC method before it stops the process.
 func (p *Plugin) Stop() {
+	if p.Provider != nil {
+		_, err := p.Shutdown(&protoV1.ShutdownRequest{})
+		if err != nil {
+			log.Log().Warnw("Failed to shutdown plugin", zap.Error(err))
+		}
+	}
+
 	if p.client != nil {
 		// It is safe to call Kill() multiple times.
 		p.client.Kill()
