@@ -1,6 +1,7 @@
 package plugin_test
 
 import (
+	"bytes"
 	"context"
 	"fmt"
 	"testing"
@@ -13,6 +14,8 @@ import (
 	hostmock "github.com/wndhydrnt/saturn-bot/test/mock/host"
 	pluginmock "github.com/wndhydrnt/saturn-bot/test/mock/plugin"
 	"go.uber.org/mock/gomock"
+	"go.uber.org/zap"
+	"go.uber.org/zap/zapcore"
 )
 
 func setupRepoPluginTest(ctrl *gomock.Controller) (repoMock *hostmock.MockRepository, payload *protoV1.Repository) {
@@ -280,6 +283,45 @@ func TestGetPluginExec(t *testing.T) {
 		t.Run(fmt.Sprintf("%v", tc.args), func(t *testing.T) {
 			result := plugin.GetPluginExec(tc.args.path, tc.args.javaExec, tc.args.pythonExec)
 			require.Equal(t, tc.result, result)
+		})
+	}
+}
+
+func TestStdioHandler(t *testing.T) {
+	testCases := []struct {
+		level zapcore.Level
+		in    string
+		out   string
+	}{
+		{
+			level: zapcore.DebugLevel,
+			in:    "Hello World",
+			out:   "DEBUG\tHello World\t{\"plugin\": \"unittest\", \"stream\": \"test\"}",
+		},
+		{
+			level: zapcore.DebugLevel,
+			in:    "info%|%Hello World",
+			out:   "INFO\tHello World\t{\"plugin\": \"unittest\", \"stream\": \"test\"}",
+		},
+		{
+			level: zapcore.WarnLevel,
+			in:    "info%|%Hello World",
+			out:   "",
+		},
+	}
+
+	for _, tc := range testCases {
+		t.Run(tc.in, func(t *testing.T) {
+			out := &bytes.Buffer{}
+			core := zapcore.NewCore(
+				zapcore.NewConsoleEncoder(zap.NewDevelopmentConfig().EncoderConfig),
+				zapcore.AddSync(out),
+				zapcore.DebugLevel,
+			)
+			logger := zap.New(core).Sugar()
+			handler := plugin.NewStdioHandler(tc.level, logger, "test")
+			handler("unittest", []byte(tc.in))
+			require.Contains(t, out.String(), tc.out)
 		})
 	}
 }

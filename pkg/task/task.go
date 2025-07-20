@@ -488,8 +488,8 @@ func (tr *Registry) startPlugin(taskPath string, taskPlugin schema.Plugin) (*plu
 	opts := plugin.StartOptions{
 		Config:       pluginConfiguration,
 		Exec:         plugin.GetPluginExec(taskPlugin.PathAbs(taskPath), tr.pathJava, tr.pathPython),
-		OnDataStderr: plugin.NewStderrHandler(tr.pluginLogLevel),
-		OnDataStdout: plugin.NewStdoutHandler(tr.pluginLogLevel),
+		OnDataStderr: plugin.NewStderrHandler(tr.pluginLogLevel, log.Log()),
+		OnDataStdout: plugin.NewStdoutHandler(tr.pluginLogLevel, log.Log()),
 	}
 
 	p := &plugin.Plugin{}
