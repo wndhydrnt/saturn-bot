@@ -183,17 +183,17 @@ func (mr *MockPullRequestCacheMockRecorder) Get(branchName, repoName any) *gomoc
 }
 
 // LastUpdatedAtFor mocks base method.
-func (m *MockPullRequestCache) LastUpdatedAtFor(host host.Host) *time.Time {
+func (m *MockPullRequestCache) LastUpdatedAtFor(arg0 host.Host) *time.Time {
 	m.ctrl.T.Helper()
-	ret := m.ctrl.Call(m, "LastUpdatedAtFor", host)
+	ret := m.ctrl.Call(m, "LastUpdatedAtFor", arg0)
 	ret0, _ := ret[0].(*time.Time)
 	return ret0
 }
 
 // LastUpdatedAtFor indicates an expected call of LastUpdatedAtFor.
-func (mr *MockPullRequestCacheMockRecorder) LastUpdatedAtFor(host any) *gomock.Call {
+func (mr *MockPullRequestCacheMockRecorder) LastUpdatedAtFor(arg0 any) *gomock.Call {
 	mr.mock.ctrl.T.Helper()
-	return mr.mock.ctrl.RecordCallWithMethodType(mr.mock, "LastUpdatedAtFor", reflect.TypeOf((*MockPullRequestCache)(nil).LastUpdatedAtFor), host)
+	return mr.mock.ctrl.RecordCallWithMethodType(mr.mock, "LastUpdatedAtFor", reflect.TypeOf((*MockPullRequestCache)(nil).LastUpdatedAtFor), arg0)
 }
 
 // Set mocks base method.
@@ -209,15 +209,15 @@ func (mr *MockPullRequestCacheMockRecorder) Set(branchName, repoName, pr any) *g
 }
 
 // SetLastUpdatedAtFor mocks base method.
-func (m *MockPullRequestCache) SetLastUpdatedAtFor(host host.Host, updatedAt time.Time) {
+func (m *MockPullRequestCache) SetLastUpdatedAtFor(arg0 host.Host, updatedAt time.Time) {
 	m.ctrl.T.Helper()
-	m.ctrl.Call(m, "SetLastUpdatedAtFor", host, updatedAt)
+	m.ctrl.Call(m, "SetLastUpdatedAtFor", arg0, updatedAt)
 }
 
 // SetLastUpdatedAtFor indicates an expected call of SetLastUpdatedAtFor.
-func (mr *MockPullRequestCacheMockRecorder) SetLastUpdatedAtFor(host, updatedAt any) *gomock.Call {
+func (mr *MockPullRequestCacheMockRecorder) SetLastUpdatedAtFor(arg0, updatedAt any) *gomock.Call {
 	mr.mock.ctrl.T.Helper()
-	return mr.mock.ctrl.RecordCallWithMethodType(mr.mock, "SetLastUpdatedAtFor", reflect.TypeOf((*MockPullRequestCache)(nil).SetLastUpdatedAtFor), host, updatedAt)
+	return mr.mock.ctrl.RecordCallWithMethodType(mr.mock, "SetLastUpdatedAtFor", reflect.TypeOf((*MockPullRequestCache)(nil).SetLastUpdatedAtFor), arg0, updatedAt)
 }
 
 // SetPullRequestFactory mocks base method.
