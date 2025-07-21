@@ -44,7 +44,7 @@ func TestServer_WebhookGithub_Success(t *testing.T) {
 						Github: []schema.GithubTrigger{
 							{
 								Event: ptr.To("push"),
-								RunData: schema.GithubTriggerRunData{
+								RunData: map[string]string{
 									"tag":    `.ref | match("refs\/tags\/(.+)") | .captures[0].string`,
 									"repoID": `.repository.id`,
 								},
