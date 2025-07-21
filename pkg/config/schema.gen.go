@@ -149,9 +149,9 @@ var enumValues_ConfigurationGitLogLevel = []interface{}{
 }
 
 // UnmarshalJSON implements json.Unmarshaler.
-func (j *ConfigurationGitLogLevel) UnmarshalJSON(b []byte) error {
+func (j *ConfigurationGitLogLevel) UnmarshalJSON(value []byte) error {
 	var v string
-	if err := json.Unmarshal(b, &v); err != nil {
+	if err := json.Unmarshal(value, &v); err != nil {
 		return err
 	}
 	var ok bool
@@ -199,9 +199,9 @@ var enumValues_ConfigurationGitUrl = []interface{}{
 }
 
 // UnmarshalJSON implements json.Unmarshaler.
-func (j *ConfigurationGitUrl) UnmarshalJSON(b []byte) error {
+func (j *ConfigurationGitUrl) UnmarshalJSON(value []byte) error {
 	var v string
-	if err := json.Unmarshal(b, &v); err != nil {
+	if err := json.Unmarshal(value, &v); err != nil {
 		return err
 	}
 	var ok bool
@@ -251,9 +251,9 @@ var enumValues_ConfigurationLogFormat = []interface{}{
 }
 
 // UnmarshalJSON implements json.Unmarshaler.
-func (j *ConfigurationLogFormat) UnmarshalJSON(b []byte) error {
+func (j *ConfigurationLogFormat) UnmarshalJSON(value []byte) error {
 	var v string
-	if err := json.Unmarshal(b, &v); err != nil {
+	if err := json.Unmarshal(value, &v); err != nil {
 		return err
 	}
 	var ok bool
@@ -305,9 +305,9 @@ var enumValues_ConfigurationLogLevel = []interface{}{
 }
 
 // UnmarshalJSON implements json.Unmarshaler.
-func (j *ConfigurationLogLevel) UnmarshalJSON(b []byte) error {
+func (j *ConfigurationLogLevel) UnmarshalJSON(value []byte) error {
 	var v string
-	if err := json.Unmarshal(b, &v); err != nil {
+	if err := json.Unmarshal(value, &v); err != nil {
 		return err
 	}
 	var ok bool
@@ -359,9 +359,9 @@ var enumValues_ConfigurationPluginLogLevel = []interface{}{
 }
 
 // UnmarshalJSON implements json.Unmarshaler.
-func (j *ConfigurationPluginLogLevel) UnmarshalJSON(b []byte) error {
+func (j *ConfigurationPluginLogLevel) UnmarshalJSON(value []byte) error {
 	var v string
-	if err := json.Unmarshal(b, &v); err != nil {
+	if err := json.Unmarshal(value, &v); err != nil {
 		return err
 	}
 	var ok bool
@@ -399,14 +399,14 @@ func (j *ConfigurationPluginLogLevel) UnmarshalYAML(value *yaml.Node) error {
 }
 
 // UnmarshalJSON implements json.Unmarshaler.
-func (j *Configuration) UnmarshalJSON(b []byte) error {
+func (j *Configuration) UnmarshalJSON(value []byte) error {
 	var raw map[string]interface{}
-	if err := json.Unmarshal(b, &raw); err != nil {
+	if err := json.Unmarshal(value, &raw); err != nil {
 		return err
 	}
 	type Plain Configuration
 	var plain Plain
-	if err := json.Unmarshal(b, &plain); err != nil {
+	if err := json.Unmarshal(value, &plain); err != nil {
 		return err
 	}
 	if v, ok := raw["dryRun"]; !ok || v == nil {

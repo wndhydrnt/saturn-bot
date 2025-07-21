@@ -475,7 +475,7 @@ func (tr *Registry) ReadTasks(taskFile string) error {
 }
 
 func (tr *Registry) startPlugin(taskPath string, taskPlugin schema.Plugin) (*plugin.Plugin, error) {
-	pluginConfiguration := make(schema.PluginConfiguration, len(taskPlugin.Configuration))
+	pluginConfiguration := make(map[string]string, len(taskPlugin.Configuration))
 	// Copy to not modify the original
 	for k, v := range taskPlugin.Configuration {
 		pluginConfiguration[k] = v
