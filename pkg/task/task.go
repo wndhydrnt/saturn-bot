@@ -19,7 +19,6 @@ import (
 	"github.com/wndhydrnt/saturn-bot/pkg/host"
 	"github.com/wndhydrnt/saturn-bot/pkg/log"
 	"github.com/wndhydrnt/saturn-bot/pkg/options"
-	"github.com/wndhydrnt/saturn-bot/pkg/params"
 	"github.com/wndhydrnt/saturn-bot/pkg/plugin"
 	"github.com/wndhydrnt/saturn-bot/pkg/ptr"
 	"github.com/wndhydrnt/saturn-bot/pkg/task/schema"
@@ -40,7 +39,7 @@ func createActionsForTask(actionDefs []schema.Action, factories options.ActionFa
 			return nil, fmt.Errorf("no action registered for identifier %s", def.Action)
 		}
 
-		action, err := factory.Create(params.Params(def.Params), taskPath)
+		action, err := factory.Create(def.Params, taskPath)
 		if err != nil {
 			return nil, fmt.Errorf("failed to initialize action %s at %d: %w", def.Action, idx, err)
 		}
@@ -65,7 +64,7 @@ func createFiltersForTask(filterDefs []schema.Filter, factories options.FilterFa
 			return nil, nil, fmt.Errorf("no filter registered for identifier %s", def.Filter)
 		}
 
-		preF, err := factory.CreatePreClone(filterCreateOptions, params.Params(def.Params))
+		preF, err := factory.CreatePreClone(filterCreateOptions, def.Params)
 		if err != nil {
 			return nil, nil, fmt.Errorf("failed to initialize pre-clone filter %s at %d: %w", def.Filter, idx, err)
 		}
@@ -78,7 +77,7 @@ func createFiltersForTask(filterDefs []schema.Filter, factories options.FilterFa
 			preClone = append(preClone, preF)
 		}
 
-		postF, err := factory.CreatePostClone(filterCreateOptions, params.Params(def.Params))
+		postF, err := factory.CreatePostClone(filterCreateOptions, def.Params)
 		if err != nil {
 			return nil, nil, fmt.Errorf("failed to initialize post-clone filter %s at %d: %w", def.Filter, idx, err)
 		}
@@ -475,7 +474,7 @@ func (tr *Registry) ReadTasks(taskFile string) error {
 }
 
 func (tr *Registry) startPlugin(taskPath string, taskPlugin schema.Plugin) (*plugin.Plugin, error) {
-	pluginConfiguration := make(schema.PluginConfiguration, len(taskPlugin.Configuration))
+	pluginConfiguration := make(map[string]string, len(taskPlugin.Configuration))
 	// Copy to not modify the original
 	for k, v := range taskPlugin.Configuration {
 		pluginConfiguration[k] = v

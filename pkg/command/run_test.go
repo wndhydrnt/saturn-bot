@@ -103,7 +103,7 @@ func createTestTask(nameFilter string) schema.Task {
 		Filters: []schema.Filter{
 			{
 				Filter: "repository",
-				Params: schema.FilterParams{
+				Params: map[string]any{
 					"host":  parts[0],
 					"owner": parts[1],
 					"name":  parts[2],

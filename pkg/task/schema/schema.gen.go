@@ -12,16 +12,13 @@ type Action struct {
 	Action string `json:"action" yaml:"action" mapstructure:"action"`
 
 	// Key/value pairs passed as parameters to the action.
-	Params ActionParams `json:"params,omitempty" yaml:"params,omitempty" mapstructure:"params,omitempty"`
+	Params map[string]interface{} `json:"params,omitempty" yaml:"params,omitempty" mapstructure:"params,omitempty"`
 }
 
-// Key/value pairs passed as parameters to the action.
-type ActionParams map[string]interface{}
-
 // UnmarshalJSON implements json.Unmarshaler.
-func (j *Action) UnmarshalJSON(b []byte) error {
+func (j *Action) UnmarshalJSON(value []byte) error {
 	var raw map[string]interface{}
-	if err := json.Unmarshal(b, &raw); err != nil {
+	if err := json.Unmarshal(value, &raw); err != nil {
 		return err
 	}
 	if _, ok := raw["action"]; raw != nil && !ok {
@@ -29,7 +26,7 @@ func (j *Action) UnmarshalJSON(b []byte) error {
 	}
 	type Plain Action
 	var plain Plain
-	if err := json.Unmarshal(b, &plain); err != nil {
+	if err := json.Unmarshal(value, &plain); err != nil {
 		return err
 	}
 	*j = Action(plain)
@@ -59,19 +56,16 @@ type Filter struct {
 	Filter string `json:"filter" yaml:"filter" mapstructure:"filter"`
 
 	// Key/value pairs passed as parameters to the filter.
-	Params FilterParams `json:"params,omitempty" yaml:"params,omitempty" mapstructure:"params,omitempty"`
+	Params map[string]interface{} `json:"params,omitempty" yaml:"params,omitempty" mapstructure:"params,omitempty"`
 
 	// Reverse the result of the filter, i.e. negate it.
 	Reverse bool `json:"reverse,omitempty" yaml:"reverse,omitempty" mapstructure:"reverse,omitempty"`
 }
 
-// Key/value pairs passed as parameters to the filter.
-type FilterParams map[string]interface{}
-
 // UnmarshalJSON implements json.Unmarshaler.
-func (j *Filter) UnmarshalJSON(b []byte) error {
+func (j *Filter) UnmarshalJSON(value []byte) error {
 	var raw map[string]interface{}
-	if err := json.Unmarshal(b, &raw); err != nil {
+	if err := json.Unmarshal(value, &raw); err != nil {
 		return err
 	}
 	if _, ok := raw["filter"]; raw != nil && !ok {
@@ -79,7 +73,7 @@ func (j *Filter) UnmarshalJSON(b []byte) error {
 	}
 	type Plain Filter
 	var plain Plain
-	if err := json.Unmarshal(b, &plain); err != nil {
+	if err := json.Unmarshal(value, &plain); err != nil {
 		return err
 	}
 	if v, ok := raw["reverse"]; !ok || v == nil {
@@ -122,12 +116,8 @@ type GithubTrigger struct {
 
 	// Key/value pairs to extract run data from the webhook payload. Key is the key to
 	// set in the run data and value is a jq expression.
-	RunData GithubTriggerRunData `json:"runData,omitempty" yaml:"runData,omitempty" mapstructure:"runData,omitempty"`
+	RunData map[string]string `json:"runData,omitempty" yaml:"runData,omitempty" mapstructure:"runData,omitempty"`
 }
-
-// Key/value pairs to extract run data from the webhook payload. Key is the key to
-// set in the run data and value is a jq expression.
-type GithubTriggerRunData map[string]string
 
 type GitlabTrigger struct {
 	// GitLab webhook event, like push. See
@@ -141,12 +131,8 @@ type GitlabTrigger struct {
 
 	// Key/value pairs to extract run data from the webhook payload. Key is the key to
 	// set in the run data and value is a jq expression.
-	RunData GitlabTriggerRunData `json:"runData,omitempty" yaml:"runData,omitempty" mapstructure:"runData,omitempty"`
+	RunData map[string]string `json:"runData,omitempty" yaml:"runData,omitempty" mapstructure:"runData,omitempty"`
 }
-
-// Key/value pairs to extract run data from the webhook payload. Key is the key to
-// set in the run data and value is a jq expression.
-type GitlabTriggerRunData map[string]string
 
 // A input allows customizing a task at runtime.
 type Input struct {
@@ -164,24 +150,6 @@ type Input struct {
 
 	// If not empty, a regular expression that validates the value of the input.
 	Validation *string `json:"validation,omitempty" yaml:"validation,omitempty" mapstructure:"validation,omitempty"`
-}
-
-// UnmarshalJSON implements json.Unmarshaler.
-func (j *Input) UnmarshalJSON(b []byte) error {
-	var raw map[string]interface{}
-	if err := json.Unmarshal(b, &raw); err != nil {
-		return err
-	}
-	if _, ok := raw["name"]; raw != nil && !ok {
-		return fmt.Errorf("field name in Input: required")
-	}
-	type Plain Input
-	var plain Plain
-	if err := json.Unmarshal(b, &plain); err != nil {
-		return err
-	}
-	*j = Input(plain)
-	return nil
 }
 
 // UnmarshalYAML implements yaml.Unmarshaler.
@@ -202,25 +170,39 @@ func (j *Input) UnmarshalYAML(value *yaml.Node) error {
 	return nil
 }
 
+// UnmarshalJSON implements json.Unmarshaler.
+func (j *Input) UnmarshalJSON(value []byte) error {
+	var raw map[string]interface{}
+	if err := json.Unmarshal(value, &raw); err != nil {
+		return err
+	}
+	if _, ok := raw["name"]; raw != nil && !ok {
+		return fmt.Errorf("field name in Input: required")
+	}
+	type Plain Input
+	var plain Plain
+	if err := json.Unmarshal(value, &plain); err != nil {
+		return err
+	}
+	*j = Input(plain)
+	return nil
+}
+
 // A plugin extends saturn-bot and allows custom filtering or modification of
 // repositories.
 type Plugin struct {
 	// Key/value pairs that hold additional configuration for the plugin. Sent to the
 	// plugin once on startup.
-	Configuration PluginConfiguration `json:"configuration,omitempty" yaml:"configuration,omitempty" mapstructure:"configuration,omitempty"`
+	Configuration map[string]string `json:"configuration,omitempty" yaml:"configuration,omitempty" mapstructure:"configuration,omitempty"`
 
 	// Path corresponds to the JSON schema field "path".
 	Path string `json:"path" yaml:"path" mapstructure:"path"`
 }
 
-// Key/value pairs that hold additional configuration for the plugin. Sent to the
-// plugin once on startup.
-type PluginConfiguration map[string]string
-
 // UnmarshalJSON implements json.Unmarshaler.
-func (j *Plugin) UnmarshalJSON(b []byte) error {
+func (j *Plugin) UnmarshalJSON(value []byte) error {
 	var raw map[string]interface{}
-	if err := json.Unmarshal(b, &raw); err != nil {
+	if err := json.Unmarshal(value, &raw); err != nil {
 		return err
 	}
 	if _, ok := raw["path"]; raw != nil && !ok {
@@ -228,7 +210,7 @@ func (j *Plugin) UnmarshalJSON(b []byte) error {
 	}
 	type Plain Plugin
 	var plain Plain
-	if err := json.Unmarshal(b, &plain); err != nil {
+	if err := json.Unmarshal(value, &plain); err != nil {
 		return err
 	}
 	*j = Plugin(plain)
@@ -359,6 +341,24 @@ type TaskTriggerWebhook struct {
 	Gitlab []GitlabTrigger `json:"gitlab,omitempty" yaml:"gitlab,omitempty" mapstructure:"gitlab,omitempty"`
 }
 
+// UnmarshalJSON implements json.Unmarshaler.
+func (j *TaskTriggerWebhook) UnmarshalJSON(value []byte) error {
+	var raw map[string]interface{}
+	if err := json.Unmarshal(value, &raw); err != nil {
+		return err
+	}
+	type Plain TaskTriggerWebhook
+	var plain Plain
+	if err := json.Unmarshal(value, &plain); err != nil {
+		return err
+	}
+	if v, ok := raw["delay"]; !ok || v == nil {
+		plain.Delay = 0.0
+	}
+	*j = TaskTriggerWebhook(plain)
+	return nil
+}
+
 // UnmarshalYAML implements yaml.Unmarshaler.
 func (j *TaskTriggerWebhook) UnmarshalYAML(value *yaml.Node) error {
 	var raw map[string]interface{}
@@ -378,27 +378,9 @@ func (j *TaskTriggerWebhook) UnmarshalYAML(value *yaml.Node) error {
 }
 
 // UnmarshalJSON implements json.Unmarshaler.
-func (j *TaskTriggerWebhook) UnmarshalJSON(b []byte) error {
+func (j *Task) UnmarshalJSON(value []byte) error {
 	var raw map[string]interface{}
-	if err := json.Unmarshal(b, &raw); err != nil {
-		return err
-	}
-	type Plain TaskTriggerWebhook
-	var plain Plain
-	if err := json.Unmarshal(b, &plain); err != nil {
-		return err
-	}
-	if v, ok := raw["delay"]; !ok || v == nil {
-		plain.Delay = 0.0
-	}
-	*j = TaskTriggerWebhook(plain)
-	return nil
-}
-
-// UnmarshalJSON implements json.Unmarshaler.
-func (j *Task) UnmarshalJSON(b []byte) error {
-	var raw map[string]interface{}
-	if err := json.Unmarshal(b, &raw); err != nil {
+	if err := json.Unmarshal(value, &raw); err != nil {
 		return err
 	}
 	if _, ok := raw["name"]; raw != nil && !ok {
@@ -406,7 +388,7 @@ func (j *Task) UnmarshalJSON(b []byte) error {
 	}
 	type Plain Task
 	var plain Plain
-	if err := json.Unmarshal(b, &plain); err != nil {
+	if err := json.Unmarshal(value, &plain); err != nil {
 		return err
 	}
 	if v, ok := raw["active"]; !ok || v == nil {
