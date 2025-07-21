@@ -31,7 +31,7 @@ require (
 	github.com/knadh/koanf/v2 v2.2.2
 	github.com/mattn/go-isatty v0.0.20
 	github.com/ncruces/go-sqlite3 v0.26.3
-	github.com/ncruces/go-sqlite3/gormlite v0.16.3
+	github.com/ncruces/go-sqlite3/gormlite v0.24.0
 	github.com/oapi-codegen/runtime v1.1.1
 	github.com/prometheus/client_golang v1.22.0
 	github.com/prometheus/common v0.62.0
@@ -45,7 +45,7 @@ require (
 	go.uber.org/mock v0.5.2
 	go.uber.org/zap v1.27.0
 	gopkg.in/yaml.v3 v3.0.1
-	gorm.io/gorm v1.25.11
+	gorm.io/gorm v1.25.12
 )
 
 require (
