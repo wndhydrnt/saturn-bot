@@ -6,7 +6,7 @@ require (
 	github.com/atombender/go-jsonschema v0.17.0
 	github.com/bwplotka/mdox v0.9.0
 	github.com/oapi-codegen/oapi-codegen/v2 v2.4.1
-	go.uber.org/mock v0.5.0
+	go.uber.org/mock v0.5.2
 	golang.org/x/tools v0.26.0
 )
 

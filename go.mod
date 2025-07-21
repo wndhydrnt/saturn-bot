@@ -42,7 +42,7 @@ require (
 	github.com/wndhydrnt/saturn-bot-go v0.6.0
 	gitlab.com/gitlab-org/api/client-go v0.116.0
 	go.uber.org/atomic v1.11.0
-	go.uber.org/mock v0.4.0
+	go.uber.org/mock v0.5.2
 	go.uber.org/zap v1.27.0
 	gopkg.in/yaml.v3 v3.0.1
 	gorm.io/gorm v1.25.11
