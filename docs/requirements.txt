@@ -1,5 +1,5 @@
 jsonpath-python==1.0.6
-mkdocs-awesome-pages-plugin==2.9.2
+mkdocs-awesome-pages-plugin==2.10.1
 mkdocs-material==9.6.15
 mkdocs-material-extensions==1.3.1
 mkdocs-redirects==1.2.2
