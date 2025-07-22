@@ -14,7 +14,7 @@ RUN --mount=type=cache,target=/go/pkg/mod/ \
     make build
 
 # debian:bookworm-20250610-slim
-FROM debian@sha256:d42b86d7e24d78a33edcf1ef4f65a20e34acb1e1abd53cabc3f7cdf769fc4082
+FROM debian@sha256:b6507e340c43553136f5078284c8c68d86ec8262b1724dde73c325e8d3dcdeba
 ENV SATURN_BOT_DATADIR=/var/lib/saturn-bot
 RUN groupadd --system --gid 1001 saturn-bot && \
     useradd --system --gid saturn-bot --no-create-home --home /nonexistent --comment "saturn-bot user" --shell /bin/false --uid 1001 saturn-bot && \
