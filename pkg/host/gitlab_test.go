@@ -43,7 +43,7 @@ func TestGitLabRepository_GetFullName(t *testing.T) {
 }
 
 func TestGitLabRepository_GetPullRequestBody(t *testing.T) {
-	mr := &gitlab.MergeRequest{Description: "Unit Test"}
+	mr := &gitlab.BasicMergeRequest{Description: "Unit Test"}
 
 	underTest := &GitLabRepository{}
 
@@ -51,7 +51,7 @@ func TestGitLabRepository_GetPullRequestBody(t *testing.T) {
 }
 
 func TestGitLabRepository_CanMergePullRequest(t *testing.T) {
-	mr := &gitlab.MergeRequest{}
+	mr := &gitlab.BasicMergeRequest{}
 
 	underTest := &GitLabRepository{}
 
@@ -73,7 +73,7 @@ func TestGitLabRepository_ClosePullRequest(t *testing.T) {
 		MatchType("json").
 		JSON(map[string]string{"state_event": "close"}).
 		Reply(200).
-		JSON(gitlab.MergeRequest{
+		JSON(gitlab.BasicMergeRequest{
 			CreatedAt:    ptr.To(time.Date(2000, 1, 1, 0, 0, 0, 0, time.UTC)),
 			IID:          987,
 			SourceBranch: "saturn-bot--unit-test",
@@ -81,7 +81,7 @@ func TestGitLabRepository_ClosePullRequest(t *testing.T) {
 			WebURL:       "http://gitlab.local/unit/test/-/merge_requests/1",
 		})
 	project := &gitlab.Project{ID: 123}
-	mr := &gitlab.MergeRequest{IID: 987}
+	mr := &gitlab.BasicMergeRequest{IID: 987}
 
 	underTest := &GitLabRepository{client: setupClient(), project: project}
 
@@ -101,7 +101,7 @@ func TestGitLabRepository_CreatePullRequestComment(t *testing.T) {
 		Reply(200).
 		JSON(map[string]string{})
 	project := &gitlab.Project{ID: 123}
-	mr := &gitlab.MergeRequest{IID: 987}
+	mr := &gitlab.BasicMergeRequest{IID: 987}
 
 	underTest := &GitLabRepository{client: setupClient(), project: project}
 
@@ -123,7 +123,7 @@ func TestGitLabRepository_CreatePullRequest(t *testing.T) {
 			RemoveSourceBranch: gitlab.Ptr(false),
 		}).
 		Reply(200).
-		JSON(gitlab.MergeRequest{
+		JSON(gitlab.BasicMergeRequest{
 			CreatedAt:    ptr.To(time.Date(2000, 1, 1, 0, 0, 0, 0, time.UTC)),
 			IID:          1,
 			SourceBranch: "saturn-bot--unit-test",
@@ -137,7 +137,7 @@ func TestGitLabRepository_CreatePullRequest(t *testing.T) {
 	pr, err := underTest.CreatePullRequest("saturn-bot--unit-test", prData)
 
 	require.NoError(t, err)
-	require.IsType(t, &gitlab.MergeRequest{}, pr.Raw)
+	require.IsType(t, &gitlab.BasicMergeRequest{}, pr.Raw)
 	// Set to nil after type check to make the next check for equality easier.
 	pr.Raw = nil
 	expectedPr := &PullRequest{
@@ -306,7 +306,7 @@ func TestGitLabRepository_DeleteBranch(t *testing.T) {
 		Delete("/api/v4/projects/123/repository/branches/saturn-bot--unit-test").
 		Reply(200)
 	project := &gitlab.Project{ID: 123}
-	mr := &gitlab.MergeRequest{IID: 987, SourceBranch: "saturn-bot--unit-test"}
+	mr := &gitlab.BasicMergeRequest{IID: 987, SourceBranch: "saturn-bot--unit-test"}
 
 	underTest := &GitLabRepository{client: setupClient(), project: project}
 	err := underTest.DeleteBranch(toSbPr(mr))
@@ -318,7 +318,7 @@ func TestGitLabRepository_DeleteBranch(t *testing.T) {
 func TestGitLabRepository_DeleteBranch_NoDeleteIfGitLabDeletesMR(t *testing.T) {
 	defer gock.Off()
 	project := &gitlab.Project{ID: 123}
-	mr := &gitlab.MergeRequest{IID: 987, SourceBranch: "saturn-bot--unit-test", ShouldRemoveSourceBranch: true}
+	mr := &gitlab.BasicMergeRequest{IID: 987, SourceBranch: "saturn-bot--unit-test", ShouldRemoveSourceBranch: true}
 
 	underTest := &GitLabRepository{client: setupClient(), project: project}
 	err := underTest.DeleteBranch(toSbPr(mr))
@@ -335,7 +335,7 @@ func TestGitLabRepository_DeletePullRequestComment(t *testing.T) {
 		JSON(map[string]string{})
 	comment := PullRequestComment{ID: 456}
 	project := &gitlab.Project{ID: 123}
-	mr := &gitlab.MergeRequest{IID: 987}
+	mr := &gitlab.BasicMergeRequest{IID: 987}
 
 	underTest := &GitLabRepository{client: setupClient(), project: project}
 	err := underTest.DeletePullRequestComment(comment, toSbPr(mr))
@@ -350,7 +350,7 @@ func TestGitLabRepository_FindPullRequest(t *testing.T) {
 		Get("/api/v4/projects/123/merge_requests").
 		MatchParams(map[string]string{"source_branch": "saturn-bot--unit-test", "state": "all"}).
 		Reply(200).
-		JSON([]*gitlab.MergeRequest{
+		JSON([]*gitlab.BasicMergeRequest{
 			{
 				CreatedAt:    ptr.To(time.Date(2000, 1, 1, 0, 0, 0, 0, time.UTC)),
 				IID:          123,
@@ -365,7 +365,7 @@ func TestGitLabRepository_FindPullRequest(t *testing.T) {
 	result, err := underTest.FindPullRequest("saturn-bot--unit-test")
 
 	require.NoError(t, err)
-	require.IsType(t, &gitlab.MergeRequest{}, result.Raw)
+	require.IsType(t, &gitlab.BasicMergeRequest{}, result.Raw)
 	// Set to nil after type check to make the next check for equality easier.
 	result.Raw = nil
 	expectedPr := &PullRequest{
@@ -388,7 +388,7 @@ func TestGitLabRepository_FindPullRequest_NotFound(t *testing.T) {
 		Get("/api/v4/projects/123/merge_requests").
 		MatchParams(map[string]string{"source_branch": "saturn-bot--unit-test", "state": "all"}).
 		Reply(200).
-		JSON([]*gitlab.MergeRequest{})
+		JSON([]*gitlab.BasicMergeRequest{})
 	project := &gitlab.Project{ID: 123}
 
 	underTest := &GitLabRepository{client: setupClient(), project: project}
@@ -415,7 +415,7 @@ func TestGitLabRepository_HasSuccessfulPullRequestBuild(t *testing.T) {
 			{AllowFailure: true, Status: "failed"},
 			{AllowFailure: false, Status: "success"},
 		})
-	mr := &gitlab.MergeRequest{IID: 987, SHA: "f7g8"}
+	mr := &gitlab.BasicMergeRequest{IID: 987, SHA: "f7g8"}
 	project := &gitlab.Project{ID: 123}
 
 	underTest := &GitLabRepository{client: setupClient(), project: project}
@@ -437,7 +437,7 @@ func TestGitLabRepository_HasSuccessfulPullRequestBuild_RuleNotApproved(t *testi
 				{Approved: false},
 			},
 		})
-	mr := &gitlab.MergeRequest{IID: 987}
+	mr := &gitlab.BasicMergeRequest{IID: 987}
 	project := &gitlab.Project{ID: 123}
 
 	underTest := &GitLabRepository{client: setupClient(), project: project}
@@ -464,7 +464,7 @@ func TestGitLabRepository_HasSuccessfulPullRequestBuild_FailedBuild(t *testing.T
 		JSON([]*gitlab.CommitStatus{
 			{AllowFailure: false, Status: "failed"},
 		})
-	mr := &gitlab.MergeRequest{IID: 987, SHA: "f7g8"}
+	mr := &gitlab.BasicMergeRequest{IID: 987, SHA: "f7g8"}
 	project := &gitlab.Project{ID: 123}
 
 	underTest := &GitLabRepository{client: setupClient(), project: project}
@@ -495,7 +495,7 @@ func TestGitLabRepository_IsPullRequestClosed(t *testing.T) {
 	}
 	for _, tc := range testCases {
 		t.Run(tc.state, func(t *testing.T) {
-			mr := &gitlab.MergeRequest{State: tc.state}
+			mr := &gitlab.BasicMergeRequest{State: tc.state}
 
 			underTest := &GitLabRepository{client: setupClient()}
 			result := underTest.IsPullRequestClosed(mr)
@@ -521,7 +521,7 @@ func TestGitLabRepository_IsPullRequestMerged(t *testing.T) {
 	}
 	for _, tc := range testCases {
 		t.Run(tc.state, func(t *testing.T) {
-			mr := &gitlab.MergeRequest{State: tc.state}
+			mr := &gitlab.BasicMergeRequest{State: tc.state}
 
 			underTest := &GitLabRepository{client: setupClient()}
 			result := underTest.IsPullRequestMerged(mr)
@@ -551,7 +551,7 @@ func TestGitLabRepository_IsPullRequestOpen(t *testing.T) {
 	}
 	for _, tc := range testCases {
 		t.Run(tc.state, func(t *testing.T) {
-			mr := &gitlab.MergeRequest{State: tc.state}
+			mr := &gitlab.BasicMergeRequest{State: tc.state}
 
 			underTest := &GitLabRepository{client: setupClient()}
 			result := underTest.IsPullRequestOpen(mr)
@@ -570,7 +570,7 @@ func TestGitLabRepository_ListPullRequestComments(t *testing.T) {
 			{Body: "First note", ID: 1},
 			{Body: "Second note", ID: 2},
 		})
-	mr := &gitlab.MergeRequest{IID: 987}
+	mr := &gitlab.BasicMergeRequest{IID: 987}
 	project := &gitlab.Project{DefaultBranch: "main", ID: 123}
 
 	underTest := &GitLabRepository{client: setupClient(), project: project}
@@ -594,7 +594,7 @@ func TestGitLabRepository_MergePullRequest(t *testing.T) {
 		Reply(200).
 		JSON(map[string]string{})
 	project := &gitlab.Project{ID: 123}
-	mr := &gitlab.MergeRequest{IID: 987}
+	mr := &gitlab.BasicMergeRequest{IID: 987}
 
 	underTest := &GitLabRepository{client: setupClient(), project: project}
 	err := underTest.MergePullRequest(true, toSbPr(mr))
@@ -619,7 +619,7 @@ func TestGitLabRepository_UpdatePullRequest(t *testing.T) {
 		Title: "New PR Title",
 	}
 	project := &gitlab.Project{ID: 123}
-	mr := &gitlab.MergeRequest{Description: "PR Body", IID: 987, Title: "PR Title"}
+	mr := &gitlab.BasicMergeRequest{Description: "PR Body", IID: 987, Title: "PR Title"}
 
 	underTest := &GitLabRepository{client: setupClient(), project: project}
 	err := underTest.UpdatePullRequest(prData, toSbPr(mr))
@@ -635,7 +635,7 @@ func TestGitLabRepository_UpdatePullRequest_NoUpdateRequired(t *testing.T) {
 		Title: "PR Title",
 	}
 	project := &gitlab.Project{ID: 123}
-	mr := &gitlab.MergeRequest{
+	mr := &gitlab.BasicMergeRequest{
 		Description: "PR Body\n\n---\n\n**Auto-merge:** Disabled. Merge this manually.\n\n**Ignore:** This PR will be recreated if closed.\n\n---\n\n- [ ] If you want to rebase this PR, check this box\n\n---\n\n_This pull request has been created by [saturn-bot](https://github.com/wndhydrnt/saturn-bot)_ 🪐🤖.\n",
 		IID:         987,
 		Title:       "PR Title",
@@ -687,7 +687,7 @@ func TestGitLabRepository_UpdatePullRequest_UpdatedAssigneesReviewers(t *testing
 		Title:     "PR Title",
 	}
 	project := &gitlab.Project{ID: 123}
-	mr := &gitlab.MergeRequest{
+	mr := &gitlab.BasicMergeRequest{
 		Assignees: []*gitlab.BasicUser{
 			{ID: 1, Username: "abby"},
 			{ID: 2, Username: "owen"},
@@ -761,7 +761,7 @@ func TestGitLabHost_PullRequestIterator_FullUpdate(t *testing.T) {
 		Get("/api/v4/user").
 		Reply(200).
 		JSON(&gitlab.User{ID: 4321})
-	gitlabMr := &gitlab.MergeRequest{
+	gitlabMr := &gitlab.BasicMergeRequest{
 		CreatedAt:    ptr.To(time.Date(2000, 1, 1, 0, 0, 0, 0, time.UTC)),
 		IID:          133,
 		SourceBranch: "saturn-bot--unittest",
@@ -774,7 +774,7 @@ func TestGitLabHost_PullRequestIterator_FullUpdate(t *testing.T) {
 		MatchParam("per_page", "100").
 		MatchParam("order_by", "updated_at").
 		Reply(200).
-		JSON([]*gitlab.MergeRequest{gitlabMr})
+		JSON([]*gitlab.BasicMergeRequest{gitlabMr})
 
 	host := &GitLabHost{client: setupClient()}
 	iterator := host.PullRequestIterator()
@@ -803,7 +803,7 @@ func TestGitLabHost_PullRequestIterator_PartialUpdate(t *testing.T) {
 		Get("/api/v4/user").
 		Reply(200).
 		JSON(&gitlab.User{ID: 4321})
-	gitlabMr := &gitlab.MergeRequest{
+	gitlabMr := &gitlab.BasicMergeRequest{
 		CreatedAt:    ptr.To(time.Date(2000, 1, 1, 0, 0, 0, 0, time.UTC)),
 		IID:          133,
 		SourceBranch: "saturn-bot--unittest",
@@ -818,7 +818,7 @@ func TestGitLabHost_PullRequestIterator_PartialUpdate(t *testing.T) {
 		MatchParam("sort", "^desc$").
 		MatchParam("updated_after", "^2000-01-01T00:00:00Z$").
 		Reply(200).
-		JSON([]*gitlab.MergeRequest{gitlabMr})
+		JSON([]*gitlab.BasicMergeRequest{gitlabMr})
 
 	host := &GitLabHost{client: setupClient()}
 	iterator := host.PullRequestIterator()
