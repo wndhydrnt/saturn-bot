@@ -5,7 +5,7 @@ go 1.23.3
 require (
 	github.com/atombender/go-jsonschema v0.20.0
 	github.com/bwplotka/mdox v0.9.0
-	github.com/oapi-codegen/oapi-codegen/v2 v2.4.1
+	github.com/oapi-codegen/oapi-codegen/v2 v2.5.0
 	go.uber.org/mock v0.5.2
 	golang.org/x/tools v0.35.0
 )
@@ -33,7 +33,7 @@ require (
 	github.com/efficientgo/tools/extkingpin v0.0.0-20210609125236-d73259166f20 // indirect
 	github.com/fatih/color v1.17.0 // indirect
 	github.com/felixge/fgprof v0.9.1 // indirect
-	github.com/getkin/kin-openapi v0.127.0 // indirect
+	github.com/getkin/kin-openapi v0.132.0 // indirect
 	github.com/go-kit/kit v0.10.0 // indirect
 	github.com/go-logfmt/logfmt v0.5.0 // indirect
 	github.com/go-openapi/jsonpointer v0.21.0 // indirect
@@ -48,7 +48,6 @@ require (
 	github.com/google/pprof v0.0.0-20210407192527-94a9f03dee38 // indirect
 	github.com/gorilla/css v1.0.0 // indirect
 	github.com/inconshreveable/mousetrap v1.1.0 // indirect
-	github.com/invopop/yaml v0.3.1 // indirect
 	github.com/josharian/intern v1.0.0 // indirect
 	github.com/kennygrant/sanitize v1.2.4 // indirect
 	github.com/lucasb-eyer/go-colorful v1.2.0 // indirect
@@ -65,6 +64,8 @@ require (
 	github.com/muesli/reflow v0.2.1-0.20210115123740-9e1d0d53df68 // indirect
 	github.com/muesli/termenv v0.8.1 // indirect
 	github.com/niklasfasching/go-org v1.3.0 // indirect
+	github.com/oasdiff/yaml v0.0.0-20250309154309-f31be36b4037 // indirect
+	github.com/oasdiff/yaml3 v0.0.0-20250309153720-d2182401db90 // indirect
 	github.com/oklog/run v1.1.0 // indirect
 	github.com/olekukonko/tablewriter v0.0.5 // indirect
 	github.com/perimeterx/marshmallow v1.1.5 // indirect
@@ -78,7 +79,8 @@ require (
 	github.com/sanity-io/litter v1.5.8 // indirect
 	github.com/sergi/go-diff v1.1.0 // indirect
 	github.com/sosodev/duration v1.3.1 // indirect
-	github.com/speakeasy-api/openapi-overlay v0.9.0 // indirect
+	github.com/speakeasy-api/jsonpath v0.6.0 // indirect
+	github.com/speakeasy-api/openapi-overlay v0.10.2 // indirect
 	github.com/spf13/afero v1.2.2 // indirect
 	github.com/spf13/cast v1.3.1 // indirect
 	github.com/spf13/cobra v1.9.1 // indirect
