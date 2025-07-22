@@ -5,7 +5,7 @@ go 1.23.3
 require (
 	github.com/atombender/go-jsonschema v0.20.0
 	github.com/bwplotka/mdox v0.9.0
-	github.com/oapi-codegen/oapi-codegen/v2 v2.4.1
+	github.com/oapi-codegen/oapi-codegen/v2 v2.5.0
 	go.uber.org/mock v0.5.2
 	golang.org/x/tools v0.35.0
 )
@@ -33,7 +33,7 @@ require (
 	github.com/efficientgo/tools/extkingpin v0.0.0-20210609125236-d73259166f20 // indirect
 	github.com/fatih/color v1.17.0 // indirect
 	github.com/felixge/fgprof v0.9.1 // indirect
-	github.com/getkin/kin-openapi v0.127.0 // indirect
+	github.com/getkin/kin-openapi v0.132.0 // indirect
 	github.com/go-kit/kit v0.10.0 // indirect
 	github.com/go-logfmt/logfmt v0.5.0 // indirect
 	github.com/go-openapi/jsonpointer v0.21.0 // indirect
@@ -78,7 +78,7 @@ require (
 	github.com/sanity-io/litter v1.5.8 // indirect
 	github.com/sergi/go-diff v1.1.0 // indirect
 	github.com/sosodev/duration v1.3.1 // indirect
-	github.com/speakeasy-api/openapi-overlay v0.9.0 // indirect
+	github.com/speakeasy-api/openapi-overlay v0.10.2 // indirect
 	github.com/spf13/afero v1.2.2 // indirect
 	github.com/spf13/cast v1.3.1 // indirect
 	github.com/spf13/cobra v1.9.1 // indirect
