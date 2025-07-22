@@ -32,7 +32,7 @@ require (
 	github.com/mattn/go-isatty v0.0.20
 	github.com/ncruces/go-sqlite3 v0.26.3
 	github.com/ncruces/go-sqlite3/gormlite v0.24.0
-	github.com/oapi-codegen/runtime v1.1.1
+	github.com/oapi-codegen/runtime v1.1.2
 	github.com/prometheus/client_golang v1.22.0
 	github.com/prometheus/common v0.65.0
 	github.com/santhosh-tekuri/jsonschema/v5 v5.3.1
