@@ -15,6 +15,7 @@ require (
 	github.com/golang-migrate/migrate/v4 v4.18.3
 	github.com/gomarkdown/markdown v0.0.0-20250311123330-531bef5e742b
 	github.com/google/go-github/v68 v68.0.0
+	github.com/google/go-github/v74 v74.0.0
 	github.com/gosimple/slug v1.15.0
 	github.com/gregjones/httpcache v0.0.0-20190611155906-901d90724c79
 	github.com/h2non/gock v1.2.0
