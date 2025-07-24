@@ -42,7 +42,7 @@ jobs:
             echo "TAGS_FULL=${{ env.REGISTRY }}/${{ env.IMAGE_NAME }}:${{ github.ref_name }}-full,${{ env.REGISTRY }}/${{ env.IMAGE_NAME }}:latest-full" >> "$GITHUB_OUTPUT"
           fi
       - name: Build and push
-        uses: docker/build-push-action@v5
+        uses: docker/build-push-action@v6
         with:
           build-args: |
             "VERSION=${{ github.ref_name }}"
@@ -52,7 +52,7 @@ jobs:
           push: true
           tags: ${{ steps.set-tags.outputs.TAGS }}
       - name: Build and push full
-        uses: docker/build-push-action@v5
+        uses: docker/build-push-action@v6
         with:
           build-args: |
             "BASE=${{ github.ref_name }}"
