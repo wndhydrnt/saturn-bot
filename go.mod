@@ -26,7 +26,7 @@ require (
 	github.com/hashicorp/go-retryablehttp v0.7.8
 	github.com/itchyny/gojq v0.12.17
 	github.com/knadh/koanf/parsers/yaml v0.1.0
-	github.com/knadh/koanf/providers/confmap v0.1.0
+	github.com/knadh/koanf/providers/confmap v1.0.0
 	github.com/knadh/koanf/providers/env v0.1.0
 	github.com/knadh/koanf/providers/file v0.1.0
 	github.com/knadh/koanf/v2 v2.2.2
