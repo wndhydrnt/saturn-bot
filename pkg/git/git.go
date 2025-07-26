@@ -265,6 +265,24 @@ func (g *Git) Push(branchName string, force bool) error {
 }
 
 func (g *Git) UpdateTaskBranch(branchName string, forceRebase bool, repo host.Repository) (bool, error) {
+	updated, err := g.updateTaskBranch(branchName, forceRebase, repo)
+	if err != nil {
+		if errors.Is(err, &GitCommandError{}) {
+			_, err = g.Prepare(repo, true)
+			if err != nil {
+				return false, fmt.Errorf("prepare git repo on retry after update error: %w", err)
+			}
+
+			return g.updateTaskBranch(branchName, forceRebase, repo)
+		}
+
+		return false, err
+	}
+
+	return updated, nil
+}
+
+func (g *Git) updateTaskBranch(branchName string, forceRebase bool, repo host.Repository) (bool, error) {
 	_, _, err := g.Execute("checkout", repo.BaseBranch())
 	if err != nil {
 		var gitErr *GitCommandError
