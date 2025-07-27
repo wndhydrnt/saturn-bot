@@ -5,7 +5,6 @@ import (
 	"testing"
 	"time"
 
-	"github.com/google/go-github/v68/github"
 	"github.com/wndhydrnt/saturn-bot/pkg/ptr"
 	"github.com/wndhydrnt/saturn-bot/pkg/server/api/openapi"
 	"github.com/wndhydrnt/saturn-bot/pkg/task/schema"
@@ -131,7 +130,7 @@ func TestServer_WebhookGitlab_NoTrigger(t *testing.T) {
 					"X-Gitlab-Event": "Push Hook",
 					"X-Gitlab-Token": "secret",
 				},
-				requestBody: github.PushEvent{},
+				requestBody: gitlab.PushEvent{},
 				statusCode:  http.StatusOK,
 			},
 			// Check that no new run has been scheduled.

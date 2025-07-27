@@ -14,7 +14,6 @@ require (
 	github.com/gofrs/flock v0.12.1
 	github.com/golang-migrate/migrate/v4 v4.18.3
 	github.com/gomarkdown/markdown v0.0.0-20250311123330-531bef5e742b
-	github.com/google/go-github/v68 v68.0.0
 	github.com/google/go-github/v74 v74.0.0
 	github.com/gosimple/slug v1.15.0
 	github.com/gregjones/httpcache v0.0.0-20190611155906-901d90724c79
@@ -28,7 +27,6 @@ require (
 	github.com/knadh/koanf/parsers/yaml v1.1.0
 	github.com/knadh/koanf/providers/confmap v1.0.0
 	github.com/knadh/koanf/providers/env v1.1.0
-	github.com/knadh/koanf/providers/env/v2 v2.0.0
 	github.com/knadh/koanf/providers/file v0.1.0
 	github.com/knadh/koanf/v2 v2.2.2
 	github.com/mattn/go-isatty v0.0.20
