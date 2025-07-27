@@ -13,7 +13,7 @@ import (
 	"github.com/knadh/koanf/providers/env/v2"
 	"github.com/knadh/koanf/providers/file"
 	"github.com/knadh/koanf/v2"
-	"github.com/santhosh-tekuri/jsonschema/v5"
+	"github.com/santhosh-tekuri/jsonschema/v6"
 )
 
 const (
@@ -53,9 +53,13 @@ func toValidation(c Configuration) interface{} {
 }
 
 func Read(cfgFile string) (cfg Configuration, err error) {
+	schemaUnmarshal, err := jsonschema.UnmarshalJSON(strings.NewReader(schemaRaw))
+	if err != nil {
+		return cfg, fmt.Errorf("unmarshal json schema: %w", err)
+	}
+
 	compiler := jsonschema.NewCompiler()
-	compiler.ExtractAnnotations = true
-	err = compiler.AddResource("config.schema.json", strings.NewReader(schemaRaw))
+	err = compiler.AddResource("config.schema.json", schemaUnmarshal)
 	if err != nil {
 		return cfg, fmt.Errorf("add resource to JSON schema compiler: %w", err)
 	}
@@ -116,7 +120,9 @@ func createKoanfDefaults(schema *jsonschema.Schema) map[string]interface{} {
 	defaults := map[string]interface{}{}
 	for name, item := range schema.Properties {
 		if item.Default != nil {
-			defaults[name] = item.Default
+			// Changed in github.com/santhosh-tekuri/jsonschema/v6
+			// item.Default is a pointer to an interface that needs to be dereferenced.
+			defaults[name] = *item.Default
 		}
 	}
 

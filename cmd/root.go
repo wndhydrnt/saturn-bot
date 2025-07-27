@@ -6,7 +6,7 @@ import (
 	"io"
 	"os"
 
-	"github.com/santhosh-tekuri/jsonschema/v5"
+	"github.com/santhosh-tekuri/jsonschema/v6"
 	"github.com/spf13/cobra"
 	"github.com/wndhydrnt/saturn-bot/pkg/log"
 )
