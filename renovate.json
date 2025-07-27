@@ -6,6 +6,14 @@
   "semanticCommits": "disabled",
   "postUpdateOptions": ["gomodTidy"],
   "prConcurrentLimit": 5,
+  "dockerfile": {
+    "description": ["Currently managed manually"],
+    "enabled": false
+  },
+  "docker-compose": {
+    "description": ["Currently managed manually"],
+    "enabled": false
+  },
   "packageRules": [
     {
       "matchUpdateTypes": ["minor", "patch"],
