@@ -4,6 +4,7 @@
   "automergeStrategy": "squash",
   "commitMessagePrefix": "fix(dependencies):",
   "semanticCommits": "disabled",
+  "postUpdateOptions": ["gomodTidy"],
   "prConcurrentLimit": 5,
   "packageRules": [
     {
