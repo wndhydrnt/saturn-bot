@@ -10,7 +10,7 @@ import (
 
 	"github.com/knadh/koanf/parsers/yaml"
 	"github.com/knadh/koanf/providers/confmap"
-	"github.com/knadh/koanf/providers/env"
+	"github.com/knadh/koanf/providers/env/v2"
 	"github.com/knadh/koanf/providers/file"
 	"github.com/knadh/koanf/v2"
 	"github.com/santhosh-tekuri/jsonschema/v5"
@@ -80,7 +80,11 @@ func Read(cfgFile string) (cfg Configuration, err error) {
 	}
 
 	// Load configuration from env vars last. Env vars overwrite previously set configuration.
-	if err := k.Load(env.Provider(envPrefix, ".", createEnvMapper(schema)), nil); err != nil {
+	envProvider := env.Provider(".", env.Opt{
+		Prefix:        envPrefix,
+		TransformFunc: createEnvTransformer(schema),
+	})
+	if err := k.Load(envProvider, nil); err != nil {
 		return cfg, fmt.Errorf("load configuration from environment: %w", err)
 	}
 
@@ -119,19 +123,19 @@ func createKoanfDefaults(schema *jsonschema.Schema) map[string]interface{} {
 	return defaults
 }
 
-func createEnvMapper(schema *jsonschema.Schema) func(s string) string {
+func createEnvTransformer(schema *jsonschema.Schema) func(k, v string) (string, any) {
 	mapping := map[string]string{}
 	for name := range schema.Properties {
 		envKey := strings.ToUpper(fmt.Sprintf("%s%s", envPrefix, name))
 		mapping[envKey] = name
 	}
 
-	return func(s string) string {
-		realKey, ok := mapping[s]
+	return func(k, v string) (string, any) {
+		realKey, ok := mapping[k]
 		if ok {
-			return realKey
+			return realKey, v
 		}
 
-		return s
+		return k, v
 	}
 }
