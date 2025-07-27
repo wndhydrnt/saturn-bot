@@ -1,5 +1,38 @@
 # Changelog
 
+## [0.29.1](https://github.com/wndhydrnt/saturn-bot/compare/v0.29.0...v0.29.1) (2025-07-27)
+
+
+### Bug Fixes
+
+* **config:** Use v2 of koanf env provider ([af2bd94](https://github.com/wndhydrnt/saturn-bot/commit/af2bd94a2cf3834e75a19636d3e21f7200ece829))
+* **dependencies:** Update dependency mkdocs-awesome-pages-plugin to v2.10.1 ([#217](https://github.com/wndhydrnt/saturn-bot/issues/217)) ([b2b0692](https://github.com/wndhydrnt/saturn-bot/commit/b2b06927db07ba5f77b8532052029a5fd76b5390))
+* **dependencies:** Update dependency mkdocs-swagger-ui-tag to v0.7.1 ([#218](https://github.com/wndhydrnt/saturn-bot/issues/218)) ([6d8b600](https://github.com/wndhydrnt/saturn-bot/commit/6d8b600bfc991e60fa210aa5033e0dadf68916f5))
+* **dependencies:** Update github.com/gomarkdown/markdown digest to 531bef5 ([#198](https://github.com/wndhydrnt/saturn-bot/issues/198)) ([c01a495](https://github.com/wndhydrnt/saturn-bot/commit/c01a4957e1b3e1ea5e53417cd7c61043ca9e5ac9))
+* **dependencies:** Update module github.com/atombender/go-jsonschema to v0.20.0 ([#219](https://github.com/wndhydrnt/saturn-bot/issues/219)) ([3aced1d](https://github.com/wndhydrnt/saturn-bot/commit/3aced1dcd782cf9a512a77ac705c8224f8f079d7))
+* **dependencies:** Update module github.com/gavv/httpexpect/v2 to v2.17.0 ([#220](https://github.com/wndhydrnt/saturn-bot/issues/220)) ([1da2fe6](https://github.com/wndhydrnt/saturn-bot/commit/1da2fe675ea2fd58f7b4e1e71517aa512d126779))
+* **dependencies:** Update module github.com/google/go-github/v68 to v74 ([#235](https://github.com/wndhydrnt/saturn-bot/issues/235)) ([5b3c7d9](https://github.com/wndhydrnt/saturn-bot/commit/5b3c7d930bab393b2b8267830ffbeccb6463fcd3))
+* **dependencies:** Update module github.com/hashicorp/go-plugin to v1.6.3 ([#211](https://github.com/wndhydrnt/saturn-bot/issues/211)) ([07864a2](https://github.com/wndhydrnt/saturn-bot/commit/07864a261c817f851881e18389cd7a531fc120b8))
+* **dependencies:** Update module github.com/hashicorp/go-retryablehttp to v0.7.8 ([#213](https://github.com/wndhydrnt/saturn-bot/issues/213)) ([eac292c](https://github.com/wndhydrnt/saturn-bot/commit/eac292c9b5bdc9211e2cad8e3909ca4746c0b0dd))
+* **dependencies:** Update module github.com/itchyny/gojq to v0.12.17 ([#214](https://github.com/wndhydrnt/saturn-bot/issues/214)) ([24d627a](https://github.com/wndhydrnt/saturn-bot/commit/24d627a94b0d99a940c5ef104b1416d6f886ea73))
+* **dependencies:** Update module github.com/knadh/koanf/parsers/yaml to v1 ([#234](https://github.com/wndhydrnt/saturn-bot/issues/234)) ([5bab5df](https://github.com/wndhydrnt/saturn-bot/commit/5bab5dff3de86cb22b1b498dedc5917ff10a8e7c))
+* **dependencies:** Update module github.com/knadh/koanf/providers/confmap to v1 ([#238](https://github.com/wndhydrnt/saturn-bot/issues/238)) ([194dc8e](https://github.com/wndhydrnt/saturn-bot/commit/194dc8e2dc399a4af60fc1ae9aa91eee02ed11f7))
+* **dependencies:** Update module github.com/knadh/koanf/providers/env to v2 ([#239](https://github.com/wndhydrnt/saturn-bot/issues/239)) ([dffd66e](https://github.com/wndhydrnt/saturn-bot/commit/dffd66e8394440b94ffc3831e6af945106b4178f))
+* **dependencies:** Update module github.com/knadh/koanf/providers/file to v1 ([#240](https://github.com/wndhydrnt/saturn-bot/issues/240)) ([f8e446c](https://github.com/wndhydrnt/saturn-bot/commit/f8e446c0f0c9e4bcecacda15a52e67bf0cbd2dbd))
+* **dependencies:** Update module github.com/knadh/koanf/v2 to v2.2.2 ([#201](https://github.com/wndhydrnt/saturn-bot/issues/201)) ([cddfd49](https://github.com/wndhydrnt/saturn-bot/commit/cddfd4934d261abf31dccdd4080dbe664bba4d89))
+* **dependencies:** Update module github.com/ncruces/go-sqlite3 to v0.27.1 ([#236](https://github.com/wndhydrnt/saturn-bot/issues/236)) ([18f84a7](https://github.com/wndhydrnt/saturn-bot/commit/18f84a7b9542ba0dd98843f3dcd1db2047fb841e))
+* **dependencies:** Update module github.com/ncruces/go-sqlite3/gormlite to v0.24.0 ([#203](https://github.com/wndhydrnt/saturn-bot/issues/203)) ([b804cd1](https://github.com/wndhydrnt/saturn-bot/commit/b804cd1230f20d12e8460351b1ea6491db8ac8b5))
+* **dependencies:** Update module github.com/oapi-codegen/oapi-codegen/v2 to v2.5.0 ([#227](https://github.com/wndhydrnt/saturn-bot/issues/227)) ([18ac712](https://github.com/wndhydrnt/saturn-bot/commit/18ac7126b29821f2b4ddd3cb262cdbf0dc67c648))
+* **dependencies:** Update module github.com/oapi-codegen/runtime to v1.1.2 ([#225](https://github.com/wndhydrnt/saturn-bot/issues/225)) ([e740170](https://github.com/wndhydrnt/saturn-bot/commit/e7401705a40bf2fdb22b20794992b726355c2744))
+* **dependencies:** Update module github.com/prometheus/common to v0.65.0 ([#221](https://github.com/wndhydrnt/saturn-bot/issues/221)) ([88c61aa](https://github.com/wndhydrnt/saturn-bot/commit/88c61aa01d2d92b63af16b305ddf3a1e0d96dac9))
+* **dependencies:** Update module github.com/santhosh-tekuri/jsonschema/v5 to v6 ([#242](https://github.com/wndhydrnt/saturn-bot/issues/242)) ([e8c315d](https://github.com/wndhydrnt/saturn-bot/commit/e8c315d90ec5c871a72d5c30ce74fd067a64a4d1))
+* **dependencies:** Update module github.com/spf13/cobra to v1.9.1 ([#222](https://github.com/wndhydrnt/saturn-bot/issues/222)) ([e62266e](https://github.com/wndhydrnt/saturn-bot/commit/e62266e38d9ce177882cd80c18725bc8d12605ce))
+* **dependencies:** Update module gitlab.com/gitlab-org/api/client-go to v0.134.0 ([#223](https://github.com/wndhydrnt/saturn-bot/issues/223)) ([f5485dc](https://github.com/wndhydrnt/saturn-bot/commit/f5485dc3bcbeb8b81cb4f5fb2bd7db16079adfe0))
+* **dependencies:** Update module go.uber.org/mock to v0.5.2 ([#215](https://github.com/wndhydrnt/saturn-bot/issues/215)) ([44f93c4](https://github.com/wndhydrnt/saturn-bot/commit/44f93c45bcdc7f60a4f7c55743d06e75ef12caa3))
+* **dependencies:** Update module golang.org/x/tools to v0.35.0 ([#226](https://github.com/wndhydrnt/saturn-bot/issues/226)) ([2fe4360](https://github.com/wndhydrnt/saturn-bot/commit/2fe4360c5db87c0284e2e8824e7df9b559501304))
+* **dependencies:** Update module gorm.io/gorm to v1.30.0 ([#228](https://github.com/wndhydrnt/saturn-bot/issues/228)) ([64b3687](https://github.com/wndhydrnt/saturn-bot/commit/64b368767fc1608e87b53d03cc404cfdfd3100a3))
+* **dependencies:** Update python Docker tag ([#229](https://github.com/wndhydrnt/saturn-bot/issues/229)) ([24e615d](https://github.com/wndhydrnt/saturn-bot/commit/24e615d419b62b4912658fb4c47567cb97cbe764))
+
 ## [0.29.0](https://github.com/wndhydrnt/saturn-bot/compare/v0.28.0...v0.29.0) (2025-07-20)
 
 
