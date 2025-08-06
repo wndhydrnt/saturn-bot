@@ -1,5 +1,16 @@
 # Changelog
 
+## [0.29.2](https://github.com/wndhydrnt/saturn-bot/compare/v0.29.1...v0.29.2) (2025-08-06)
+
+
+### Bug Fixes
+
+* **dependencies:** Update dependency mkdocs-material to v9.6.16 ([#247](https://github.com/wndhydrnt/saturn-bot/issues/247)) ([efb7141](https://github.com/wndhydrnt/saturn-bot/commit/efb7141a03682b4ff8458cafe9678ce383649abf))
+* **dependencies:** Update module github.com/prometheus/client_golang to v1.23.0 ([#248](https://github.com/wndhydrnt/saturn-bot/issues/248)) ([4dd1652](https://github.com/wndhydrnt/saturn-bot/commit/4dd1652ff8ad96a2f1afa5688a51f7ebadf02547))
+* **dependencies:** Update module gitlab.com/gitlab-org/api/client-go to v0.137.0 ([#243](https://github.com/wndhydrnt/saturn-bot/issues/243)) ([83ad137](https://github.com/wndhydrnt/saturn-bot/commit/83ad137965a8b48c0d5f5a9710fd2a710f01e1ae))
+* **dependencies:** Update module gorm.io/gorm to v1.30.1 ([#245](https://github.com/wndhydrnt/saturn-bot/issues/245)) ([321b552](https://github.com/wndhydrnt/saturn-bot/commit/321b5524dff9b8a066992b5b12a434641ecaaafe))
+* **dependencies:** Update python Docker tag to v3.13.5 ([#246](https://github.com/wndhydrnt/saturn-bot/issues/246)) ([2a5ca91](https://github.com/wndhydrnt/saturn-bot/commit/2a5ca9127647d36b6af0fbed7c831187107aaa7b))
+
 ## [0.29.1](https://github.com/wndhydrnt/saturn-bot/compare/v0.29.0...v0.29.1) (2025-07-27)
 
 
