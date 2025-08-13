@@ -72,7 +72,7 @@ Status of the last run of a task. 1 indicates success. 0 indicates failure.
 
 Use this metric to alert that a task has failed.
 
-## `sb_collector_success`
+## `sb_server_collector_success`
 
 Exported by: `server`
 

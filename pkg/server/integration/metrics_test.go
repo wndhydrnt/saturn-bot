@@ -129,5 +129,5 @@ func Test_Metrics(t *testing.T) {
 		Body().
 		Contains(`sb_server_task_run_success{task="fail",unit="test"} 0`).
 		Contains(`sb_server_task_run_success{task="metric-labels",unit="test"} 1`).
-		Contains("sb_collector_success 1")
+		Contains("sb_server_collector_success 1")
 }

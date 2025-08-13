@@ -12,7 +12,7 @@ import (
 )
 
 const (
-	collectSuccessFqName = "sb_collector_success"
+	collectSuccessFqName = "sb_server_collector_success"
 	collectSuccessHelp   = "Status of the last metric collection. 1 = metric collection succeeded, 0 = an error occurred."
 	taskRunSuccessFqName = "sb_server_task_run_success"
 	taskRunSuccessHelp   = "Status of the last run of a task. 1 = the run succeeded, 0 = the run failed."
