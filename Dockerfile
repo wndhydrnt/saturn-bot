@@ -1,4 +1,4 @@
-FROM golang@1.24.6-bookworm AS base
+FROM golang:1.24.6-bookworm AS base
 ENV CGO_ENABLED=0
 WORKDIR /src
 COPY go.mod go.sum ./
