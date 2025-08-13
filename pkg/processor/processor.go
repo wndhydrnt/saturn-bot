@@ -20,7 +20,7 @@ import (
 	"go.uber.org/zap"
 )
 
-//go:generate go run --modfile=../../tools/go.mod golang.org/x/tools/cmd/stringer -type=Result
+//go:generate go tool golang.org/x/tools/cmd/stringer -type=Result
 type Result int
 
 const (
