@@ -185,6 +185,10 @@ maxOpenPRs: 0
 
 [json-path:../../../pkg/task/schema/task.schema.json:$.properties.mergeOnce.description]
 
+## metricLabels
+
+[json-path:../../../pkg/task/schema/task.schema.json:$.properties.metricLabels.description]
+
 ## name
 
 [json-path:../../../pkg/task/schema/task.schema.json:$.properties.name.description]

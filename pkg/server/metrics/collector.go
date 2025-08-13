@@ -13,9 +13,9 @@ import (
 
 const (
 	collectSuccessFqName = "sb_collector_success"
-	collectSuccessHelp   = "Status of the last metric collection. 1 = metric collection, 0 = an error occurred."
+	collectSuccessHelp   = "Status of the last metric collection. 1 = metric collection succeeded, 0 = an error occurred."
 	taskRunSuccessFqName = "sb_server_task_run_success"
-	taskRunSuccessHelp   = "Status of the latest run of a task. 1 = the run succeeded, 0 = the run failed."
+	taskRunSuccessHelp   = "Status of the last run of a task. 1 = the run succeeded, 0 = the run failed."
 )
 
 var (
