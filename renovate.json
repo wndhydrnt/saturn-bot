@@ -6,6 +6,9 @@
   "semanticCommits": "disabled",
   "postUpdateOptions": ["gomodTidy"],
   "prConcurrentLimit": 5,
+  "constraints": {
+    "go": "1.24"
+  },
   "dockerfile": {
     "description": ["Currently managed manually"],
     "enabled": false
