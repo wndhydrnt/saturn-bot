@@ -1,5 +1,4 @@
-# golang:1.23.10-bookworm
-FROM golang@sha256:658feba89d0b82ef8343c974e3328ebbd6abcb8713c252aec88d1041f8d690d6 AS base
+FROM golang@1.24.6-bookworm AS base
 ENV CGO_ENABLED=0
 WORKDIR /src
 COPY go.mod go.sum ./
