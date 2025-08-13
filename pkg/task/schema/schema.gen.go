@@ -296,6 +296,10 @@ type Task struct {
 	// been merged for this task.
 	MergeOnce bool `json:"mergeOnce,omitempty" yaml:"mergeOnce,omitempty" mapstructure:"mergeOnce,omitempty"`
 
+	// Key/value pairs to add as custom labels to the metric
+	// sb_server_task_run_success. Only available in server mode.
+	MetricLabels map[string]string `json:"metricLabels,omitempty" yaml:"metricLabels,omitempty" mapstructure:"metricLabels,omitempty"`
+
 	// The name of the task. Used as an identifier.
 	Name string `json:"name" yaml:"name" mapstructure:"name"`
 

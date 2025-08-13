@@ -19,7 +19,7 @@ import (
 func Test_Shutdown_WaitForRunningRuns(t *testing.T) {
 	task1 := schema.Task{Name: "Task1"}
 	task2 := schema.Task{Name: "Task2"}
-	taskFiles := bootstrapTaskFiles(t, []schema.Task{task1, task2})
+	taskFiles := bootstrapTaskFiles(t, task1, task2)
 	opts := setupOptions(t, nil, nil)
 	opts.ServerShutdownTimeout = 10 * time.Second
 	svr := &server.Server{}
@@ -116,7 +116,7 @@ func Test_Shutdown_WaitForRunningRuns(t *testing.T) {
 
 func Test_Shutdown_MarkLateRunsAsFailed(t *testing.T) {
 	task := schema.Task{Name: "Task1"}
-	taskFiles := bootstrapTaskFiles(t, []schema.Task{task})
+	taskFiles := bootstrapTaskFiles(t, task)
 	opts := setupOptions(t, nil, nil)
 	opts.ServerShutdownCheckInterval = 1 * time.Nanosecond
 	svrFirst := &server.Server{}

@@ -33,7 +33,7 @@ func Test_Sync(t *testing.T) {
 			{Name: "input-name"},
 		},
 	}
-	taskFilesFirst := bootstrapTaskFiles(t, []schema.Task{taskNoTrigger, taskCronTrigger, taskToDelete, taskCronTriggerLater, taskWithInput})
+	taskFilesFirst := bootstrapTaskFiles(t, taskNoTrigger, taskCronTrigger, taskToDelete, taskCronTriggerLater, taskWithInput)
 
 	serverFirst := &server.Server{}
 	err := serverFirst.Start(opts, taskFilesFirst)
@@ -47,7 +47,7 @@ func Test_Sync(t *testing.T) {
 	taskCronTrigger.BranchName = "test/cron-trigger"
 	taskCronTriggerLater.Trigger = &schema.TaskTrigger{Cron: ptr.To("16 15 * * *")}
 
-	taskFilesSecond := bootstrapTaskFiles(t, []schema.Task{taskNoTrigger, taskCronTrigger, taskCronTriggerLater, taskWithInput})
+	taskFilesSecond := bootstrapTaskFiles(t, taskNoTrigger, taskCronTrigger, taskCronTriggerLater, taskWithInput)
 	serverSecond := &server.Server{}
 	promReg := prometheus.NewRegistry()
 	opts.SetPrometheusRegistry(promReg)

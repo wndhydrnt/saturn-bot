@@ -77,7 +77,7 @@ type testCase struct {
 func executeTestCase(t *testing.T, tc testCase) {
 	t.Helper()
 	opts := setupOptions(t, tc.config, tc.fakeClock)
-	taskFiles := bootstrapTaskFiles(t, tc.tasks)
+	taskFiles := bootstrapTaskFiles(t, tc.tasks...)
 
 	server := &server.Server{}
 	err := server.Start(opts, taskFiles)
@@ -105,7 +105,7 @@ func randomPort() int {
 	}
 }
 
-func bootstrapTaskFiles(t *testing.T, tasks []schema.Task) []string {
+func bootstrapTaskFiles(t *testing.T, tasks ...schema.Task) []string {
 	var filePaths []string
 	for _, task := range tasks {
 		f, err := os.CreateTemp("", "*.yaml")

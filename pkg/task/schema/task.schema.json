@@ -95,6 +95,13 @@
       "description": "If `true`, no new pull request is being created if a previous pull request has been merged for this task.",
       "type": "boolean"
     },
+    "metricLabels": {
+      "additionalProperties": {
+        "type": "string"
+      },
+      "description": "Key/value pairs to add as custom labels to the metric sb_server_task_run_success. Only available in server mode.",
+      "type": "object"
+    },
     "name": {
       "description": "The name of the task. Used as an identifier.",
       "type": "string"
