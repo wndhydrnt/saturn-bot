@@ -1,0 +1,7 @@
+Display version information.
+
+Usage:
+  saturn-bot version [flags]
+
+Flags:
+  -h, --help   help for version
