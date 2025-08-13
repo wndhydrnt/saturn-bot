@@ -2,7 +2,7 @@ module github.com/wndhydrnt/saturn-bot
 
 go 1.23.0
 
-toolchain go1.24.5
+toolchain go1.24.6
 
 require (
 	github.com/Masterminds/sprig/v3 v3.3.0
