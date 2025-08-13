@@ -12,11 +12,20 @@ import (
 	"go.uber.org/zap"
 )
 
-func Init(registry prometheus.Registerer, dbInfo *service.DbInfo) {
+// Init creates and registers all metric collectors of the server with registry.
+func Init(
+	registry prometheus.Registerer,
+	dbInfo *service.DbInfo,
+	taskService *service.TaskService,
+	workerService *service.WorkerService,
+) {
 	promversion.Version = version.Info.Version
 	promversion.Revision = version.Info.Commit
 	promversion.BuildDate = version.Info.BuildDate
-	registry.MustRegister(promversioncollector.NewCollector("server"))
+	registry.MustRegister(
+		promversioncollector.NewCollector("server"),
+		NewCollector(taskService, workerService),
+	)
 
 	registry.MustRegister(prometheus.NewGaugeFunc(
 		prometheus.GaugeOpts{

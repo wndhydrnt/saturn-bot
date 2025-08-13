@@ -71,3 +71,27 @@ Exported by: `run`, `worker`
 Status of the last run of a task. 1 indicates success. 0 indicates failure.
 
 Use this metric to alert that a task has failed.
+
+## `sb_server_collector_success`
+
+Exported by: `server`
+
+Status of the last metric collection.
+`1` indicates that the last metric collection succeeded.
+`0` indicates that an error occurred during metric collection.
+
+Use this metric to alert on the availability of metrics.
+
+## `sb_server_task_run_success`
+
+Exported by: `server`
+
+Status of the last run of a task.
+`1` indicates that the run finished successfully.
+`0` indicates that the run failed.
+
+Use this metric to alert on failing runs.
+
+Additional label pairs can be added by setting [`metricLabels`](../reference/task/index.md#metriclabels)
+in a task file.
+These labels can be used to, for example, route alerts to the actual owners of a task.

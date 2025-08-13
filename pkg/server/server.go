@@ -70,7 +70,7 @@ func (s *Server) Start(opts options.Opts, taskPaths []string) error {
 		return err
 	}
 
-	metrics.Init(opts.PrometheusRegisterer, dbInfoService)
+	metrics.Init(opts.PrometheusRegisterer, dbInfoService, taskService, workerService)
 
 	router := newRouter(opts)
 	webhookService, err := service.NewWebhookService(opts.Clock, taskRegistry, workerService)
