@@ -189,6 +189,11 @@ maxOpenPRs: 0
 
 [json-path:../../../pkg/task/schema/task.schema.json:$.properties.metricLabels.description]
 
+```yaml title="Define a custom label"
+metricLabels:
+  task_owner: some-team
+```
+
 ## name
 
 [json-path:../../../pkg/task/schema/task.schema.json:$.properties.name.description]
