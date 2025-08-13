@@ -3,6 +3,7 @@ package integration_test
 import (
 	"net/http"
 	"testing"
+	"time"
 
 	"github.com/gavv/httpexpect/v2"
 	"github.com/stretchr/testify/require"
@@ -22,6 +23,13 @@ func Test_Metrics(t *testing.T) {
 	svr := &server.Server{}
 	err := svr.Start(opts, taskFiles)
 	require.NoError(t, err, "sever starts up")
+	defer func() {
+		err := svr.Stop()
+		require.NoError(t, err, "Server shuts down")
+	}()
+
+	// Give the HTTP server time to start up - works around flaky tests
+	time.Sleep(1 * time.Millisecond)
 
 	e := httpexpect.Default(t, opts.Config.ServerBaseUrl)
 
