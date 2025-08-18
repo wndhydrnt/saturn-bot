@@ -1,10 +1,16 @@
 name: Hadolint
 
 on:
-  pull_request: {}
+  pull_request:
+    paths:
+      - Dockerfile
+      - full.Dockerfile
   push:
     branches:
       - main
+    paths:
+      - Dockerfile
+      - full.Dockerfile
 
 jobs:
   build:
