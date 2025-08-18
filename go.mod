@@ -19,7 +19,7 @@ require (
 	github.com/hashicorp/go-cleanhttp v0.5.2
 	github.com/hashicorp/go-hclog v1.6.3
 	github.com/hashicorp/go-multierror v1.1.1
-	github.com/hashicorp/go-plugin v1.6.3
+	github.com/hashicorp/go-plugin v1.7.0
 	github.com/hashicorp/go-retryablehttp v0.7.8
 	github.com/itchyny/gojq v0.12.17
 	github.com/knadh/koanf/parsers/yaml v1.1.0
@@ -77,7 +77,7 @@ require (
 	github.com/gosimple/unidecode v1.0.1 // indirect
 	github.com/h2non/parth v0.0.0-20190131123155-b4df798d6542 // indirect
 	github.com/hashicorp/errwrap v1.1.0 // indirect
-	github.com/hashicorp/yamux v0.1.1 // indirect
+	github.com/hashicorp/yamux v0.1.2 // indirect
 	github.com/huandu/xstrings v1.5.0 // indirect
 	github.com/imkira/go-interpol v1.1.0 // indirect
 	github.com/inconshreveable/mousetrap v1.1.0 // indirect
