@@ -13,7 +13,7 @@ services:
       timeout: "1s"
       retries: 2
       start_period: 5s
-    image: ghcr.io/wndhydrnt/saturn-bot:v0.29.1 # x-release-please-version
+    image: ghcr.io/wndhydrnt/saturn-bot:v0.29.1
     networks:
       - saturn-bot
     ports:
@@ -42,7 +42,7 @@ services:
       timeout: "1s"
       retries: 2
       start_period: 5s
-    image: ghcr.io/wndhydrnt/saturn-bot:v0.29.1 # x-release-please-version
+    image: ghcr.io/wndhydrnt/saturn-bot:v0.29.1
     networks:
       - saturn-bot
     ports:
