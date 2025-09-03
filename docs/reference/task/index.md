@@ -101,13 +101,8 @@ autoMerge: false
 Examples
 
 ```yaml
-# Merge pull request automatically.
-autoMerge: true
-```
-
-```yaml
-# Don't merge pull request automatically.
-autoMerge: false
+# Automatically merges pull requests once they’ve been open for 30 min.
+autoMergeAfter: 30m
 ```
 
 ## branchName
