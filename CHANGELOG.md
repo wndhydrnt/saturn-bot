@@ -1,5 +1,28 @@
 # Changelog
 
+## [0.30.0](https://github.com/wndhydrnt/saturn-bot/compare/v0.29.1...v0.30.0) (2025-10-15)
+
+
+### Features
+
+* **server:** Export metric that indicates if the last run of a task was successful ([#252](https://github.com/wndhydrnt/saturn-bot/issues/252)) ([9781c52](https://github.com/wndhydrnt/saturn-bot/commit/9781c52f3dfad3fb39784e8dfc956436a93ebea8))
+
+
+### Bug Fixes
+
+* **dependencies:** Update dependency go to v1.24.6 ([#251](https://github.com/wndhydrnt/saturn-bot/issues/251)) ([176c946](https://github.com/wndhydrnt/saturn-bot/commit/176c946a8cad230eb2df76cc0d7e654a95d217e0))
+* **dependencies:** Update dependency mkdocs-material to v9.6.16 ([#247](https://github.com/wndhydrnt/saturn-bot/issues/247)) ([efb7141](https://github.com/wndhydrnt/saturn-bot/commit/efb7141a03682b4ff8458cafe9678ce383649abf))
+* **dependencies:** Update module github.com/hashicorp/go-plugin to v1.7.0 ([#257](https://github.com/wndhydrnt/saturn-bot/issues/257)) ([04ba327](https://github.com/wndhydrnt/saturn-bot/commit/04ba327e9c94ba2d7feec66c67c3d02ac9df3d06))
+* **dependencies:** Update module github.com/prometheus/client_golang to v1.23.0 ([#248](https://github.com/wndhydrnt/saturn-bot/issues/248)) ([4dd1652](https://github.com/wndhydrnt/saturn-bot/commit/4dd1652ff8ad96a2f1afa5688a51f7ebadf02547))
+* **dependencies:** Update module gitlab.com/gitlab-org/api/client-go to v0.137.0 ([#243](https://github.com/wndhydrnt/saturn-bot/issues/243)) ([83ad137](https://github.com/wndhydrnt/saturn-bot/commit/83ad137965a8b48c0d5f5a9710fd2a710f01e1ae))
+* **dependencies:** Update module gitlab.com/gitlab-org/api/client-go to v0.138.0 ([#258](https://github.com/wndhydrnt/saturn-bot/issues/258)) ([9fcf2a3](https://github.com/wndhydrnt/saturn-bot/commit/9fcf2a3614761d7cf19be6bff5fd0d4927e06eac))
+* **dependencies:** Update module gitlab.com/gitlab-org/api/client-go to v0.139.0 ([#260](https://github.com/wndhydrnt/saturn-bot/issues/260)) ([4411894](https://github.com/wndhydrnt/saturn-bot/commit/44118948fef3e76a42e5c0b3a1775a5409c542a7))
+* **dependencies:** Update module gitlab.com/gitlab-org/api/client-go to v0.139.2 ([#261](https://github.com/wndhydrnt/saturn-bot/issues/261)) ([068fae8](https://github.com/wndhydrnt/saturn-bot/commit/068fae897354c593917de72d470ee33b475978aa))
+* **dependencies:** Update module gorm.io/gorm to v1.30.1 ([#245](https://github.com/wndhydrnt/saturn-bot/issues/245)) ([321b552](https://github.com/wndhydrnt/saturn-bot/commit/321b5524dff9b8a066992b5b12a434641ecaaafe))
+* **dependencies:** Update python Docker tag to v3.13.5 ([#246](https://github.com/wndhydrnt/saturn-bot/issues/246)) ([2a5ca91](https://github.com/wndhydrnt/saturn-bot/commit/2a5ca9127647d36b6af0fbed7c831187107aaa7b))
+* **dependencies:** Update python Docker tag to v3.13.6 ([#262](https://github.com/wndhydrnt/saturn-bot/issues/262)) ([78bf12e](https://github.com/wndhydrnt/saturn-bot/commit/78bf12ed5be873ed8ea8590ddd0ab6c2eb378f72))
+* **dependencies:** Upgrade to Go 1.24.x ([#253](https://github.com/wndhydrnt/saturn-bot/issues/253)) ([fb6c2be](https://github.com/wndhydrnt/saturn-bot/commit/fb6c2be6393074fb172ff8abc5dcac01a4c96a0b))
+
 ## [0.29.1](https://github.com/wndhydrnt/saturn-bot/compare/v0.29.0...v0.29.1) (2025-07-27)
 
 
