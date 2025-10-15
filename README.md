@@ -1,3 +1,7 @@
+<h1>
+  :exclamation: :information_source: Development of this project continues at <a href="https://codeberg.org/saturn-sync/saturn">codeberg.org/saturn-sync/saturn</a>.
+</h1>
+
 # saturn-bot 🪐🤖
 
 Create, modify or delete files across many repositories in parallel.
